@@ -128,3 +128,4 @@ class ChatInviteLink(Object):
             member_count=invite.usage,
             pending_join_request_count=invite.requested
         )
+

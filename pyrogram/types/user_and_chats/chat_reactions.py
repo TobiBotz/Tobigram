@@ -67,3 +67,4 @@ class ChatReactions(Object):
             )
 
         return None
+

@@ -61,3 +61,4 @@ class ChatAdminWithInviteLinks(Object):
             chat_invite_links_count=admin.invites_count,
             revoked_chat_invite_links_count=admin.revoked_invites_count
         )
+

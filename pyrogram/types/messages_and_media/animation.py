@@ -17,12 +17,12 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 import pyrogram
 from pyrogram import raw, utils
 from pyrogram import types
-from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
+from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType, ThumbnailSource
 from ..object import Object
 
 
@@ -90,6 +90,29 @@ class Animation(Object):
         self.duration = duration
         self.thumbs = thumbs
 
+    async def add_to_gifs(
+        self,
+        unsave: bool = False
+    ) -> bool:
+        """Bound method *add_to_gifs* of :obj:`~pyrogram.types.Message`.
+
+        .. include:: /_includes/usable-by/users.rst
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            await app.add_to_gifs(message.animation.file_id)
+
+        Parameters:
+            unsave (``bool``, optional):
+                Whether to remove the GIF from the list of saved GIFs. Defaults to ``False``.
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.add_to_gifs(self.file_id, unsave)
+
     @staticmethod
     def _parse(
         client,
@@ -119,3 +142,51 @@ class Animation(Object):
             thumbs=types.Thumbnail._parse(client, animation),
             client=client
         )
+
+    @staticmethod
+    def _parse_chat_animation(
+        client,
+        video: "raw.types.Photo",
+        file_name: str
+    ) -> Optional["Animation"]:
+        if isinstance(video, raw.types.Photo):
+            if not video.video_sizes:
+                return None
+
+            videos: List[raw.types.VideoSize] = []
+
+            for v in video.video_sizes:
+                if isinstance(v, raw.types.VideoSize):
+                    videos.append(v)
+
+            videos.sort(key=lambda v: v.w * v.h)
+
+            main = videos[-1]
+
+            return Animation(
+                file_id=FileId(
+                    file_type=FileType.PHOTO,
+                    dc_id=video.dc_id,
+                    media_id=video.id,
+                    access_hash=video.access_hash,
+                    file_reference=video.file_reference,
+                    thumbnail_source=ThumbnailSource.THUMBNAIL,
+                    thumbnail_file_type=FileType.PHOTO,
+                    thumbnail_size=main.type,
+                    volume_id=0,
+                    local_id=0
+                ).encode(),
+                file_unique_id=FileUniqueId(
+                    file_unique_type=FileUniqueType.DOCUMENT,
+                    media_id=video.id
+                ).encode(),
+                width=main.w,
+                height=main.h,
+                duration=0,
+                file_size=main.size,
+                date=utils.timestamp_to_datetime(video.date),
+                file_name=file_name,
+                mime_type="video/mp4",
+                client=client
+            )
+

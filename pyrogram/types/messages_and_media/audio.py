@@ -119,3 +119,4 @@ class Audio(Object):
             thumbs=types.Thumbnail._parse(client, audio),
             client=client
         )
+

@@ -45,3 +45,4 @@ __all__ = [
     "InlineQueryResultCachedSticker", "InlineQueryResultCachedDocument", "InlineQueryResultCachedVideo",
     "InlineQueryResultCachedVoice", "InlineQueryResultCachedAudio"
 ]
+

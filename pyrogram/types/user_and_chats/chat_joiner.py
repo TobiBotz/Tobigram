@@ -80,3 +80,4 @@ class ChatJoiner(Object):
             ),
             client=client
         )
+

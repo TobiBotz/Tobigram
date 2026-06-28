@@ -54,3 +54,4 @@ class TermsOfService(Object):
                 for entity in terms_of_service.entities
             ] if terms_of_service.entities else None
         )
+

@@ -16,9 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
+
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
+
 from ..object import Object
 
 
@@ -51,8 +53,8 @@ class Venue(Object):
         location: "types.Location",
         title: str,
         address: str,
-        foursquare_id: str = None,
-        foursquare_type: str = None
+        foursquare_id: Optional[str] = None,
+        foursquare_type: Optional[str] = None,
     ):
         super().__init__(client)
 
@@ -65,10 +67,11 @@ class Venue(Object):
     @staticmethod
     def _parse(client, venue: "raw.types.MessageMediaVenue"):
         return Venue(
-            location=types.Location._parse(client, venue.geo),
+            location=types.Location._parse(venue.geo),
             title=venue.title,
             address=venue.address,
             foursquare_id=venue.venue_id or None,
-            foursquare_type=venue.venue_type,
-            client=client
+            foursquare_type=venue.venue_type or None,
+            client=client,
         )
+

@@ -48,3 +48,4 @@ class Restriction(Object):
             reason=restriction.reason,
             text=restriction.text
         )
+

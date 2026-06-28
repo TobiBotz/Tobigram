@@ -173,3 +173,4 @@ class ChatEventFilter(Object):
             group_call=group_call,
             invites=invites
         )
+

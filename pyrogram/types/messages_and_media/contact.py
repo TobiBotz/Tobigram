@@ -69,3 +69,4 @@ class Contact(Object):
             user_id=contact.user_id or None,
             client=client
         )
+

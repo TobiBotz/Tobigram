@@ -25,7 +25,7 @@ class Dice(Object):
     """A dice with a random value from 1 to 6 for currently supported base emoji.
 
     Parameters:
-        emoji (``string``):
+        emoji (``str``):
             Emoji on which the dice throw animation is based.
 
         value (``int``):
@@ -45,3 +45,4 @@ class Dice(Object):
             value=dice.value,
             client=client
         )
+

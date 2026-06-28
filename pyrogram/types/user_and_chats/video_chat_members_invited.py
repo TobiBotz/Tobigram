@@ -48,3 +48,4 @@ class VideoChatMembersInvited(Object):
         users = [types.User._parse(client, users[i]) for i in action.users]
 
         return VideoChatMembersInvited(users=users)
+

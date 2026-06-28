@@ -63,3 +63,4 @@ class CDNFileHashMismatch(SecurityError):
 
     def __init__(self, msg: str = None):
         super().__init__("A CDN file hash mismatch has occurred." if msg is None else msg)
+

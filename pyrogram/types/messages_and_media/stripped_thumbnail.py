@@ -45,3 +45,4 @@ class StrippedThumbnail(Object):
             data=stripped_thumbnail.bytes,
             client=client
         )
+

@@ -96,3 +96,4 @@ class Document(Object):
             thumbs=types.Thumbnail._parse(client, document),
             client=client
         )
+

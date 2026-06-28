@@ -95,6 +95,19 @@ def camel(s: str):
 
 
 # noinspection PyShadowingBuiltins, PyShadowingNames
+def get_return_type_hint(qualtype: str) -> str:
+    """Get return type hint for generic TLObject"""
+    if qualtype.startswith("Vector"):
+        # Extract inner type from Vector<Type>
+        inner = qualtype.split("<")[1][:-1]
+        ns, name = inner.split(".") if "." in inner else ("", inner)
+        return f'"List[raw.base.{".".join([ns, name]).strip(".")}]"'
+    else:
+        ns, name = qualtype.split(".") if "." in qualtype else ("", qualtype)
+        return f'"raw.base.{".".join([ns, name]).strip(".")}"'
+
+
+# noinspection PyShadowingBuiltins, PyShadowingNames
 def get_type_hint(type: str) -> str:
     is_flag = FLAGS_RE.match(type)
     is_core = False
@@ -129,7 +142,7 @@ def get_type_hint(type: str) -> str:
         return f"Optional[{type}] = None" if is_flag else type
     else:
         ns, name = type.split(".") if "." in type else ("", type)
-        type = f'"raw.base.' + ".".join([ns, name]).strip(".") + '"'
+        type = '"raw.base.' + ".".join([ns, name]).strip(".") + '"'
 
         return f'{type}{" = None" if is_flag else ""}'
 
@@ -199,6 +212,19 @@ def get_references(t: str, kind: str):
     return None, 0
 
 
+def indent_desc(desc: str, indent: str = "    ") -> str:
+    lines = desc.splitlines()
+
+    if len(lines) <= 1:
+        return desc
+
+    first, *rest = lines
+
+    return first + "\n" + "\n".join(
+        (indent + line if line.strip() else "") for line in rest
+    )
+
+
 # noinspection PyShadowingBuiltins
 def start(format: bool = False):
     shutil.rmtree(DESTINATION_PATH / "types", ignore_errors=True)
@@ -258,10 +284,13 @@ def start(format: bool = False):
 
             args = ARGS_RE.findall(line)
 
-            # Fix arg name being "self" (reserved python keyword)
+            # Fix arg name being reserved python keyword
             for i, item in enumerate(args):
                 if item[0] == "self":
                     args[i] = ("is_self", item[1])
+
+                if item[0] == "from":
+                    args[i] = ("from_peer", item[1])
 
             combinator = Combinator(
                 section=section,
@@ -332,7 +361,7 @@ def start(format: bool = False):
         else:
             type_docs = "Telegram API base type."
 
-        docstring = type_docs
+        docstring = indent_desc(type_docs)
 
         docstring += f"\n\n    Constructors:\n" \
                      f"        This base type has {constr_count} constructor{'s' if constr_count > 1 else ''} available.\n\n" \
@@ -391,13 +420,12 @@ def start(format: bool = False):
         for i, arg in enumerate(sorted_args):
             arg_name, arg_type = arg
             is_optional = FLAGS_RE.match(arg_type)
-            flag_number = is_optional.group(1) if is_optional else -1
             arg_type = arg_type.split("?")[-1]
 
             arg_docs = combinator_docs.get(c.qualname, None)
 
             if arg_docs:
-                arg_docs = arg_docs["params"].get(arg_name, "N/A")
+                arg_docs = indent_desc(arg_docs["params"].get(arg_name, "N/A"), indent="            ")
             else:
                 arg_docs = "N/A"
 
@@ -405,7 +433,7 @@ def start(format: bool = False):
                 "{} ({}{}):\n            {}\n".format(
                     arg_name,
                     get_docstring_arg_type(arg_type),
-                    ", *optional*".format(flag_number) if is_optional else "",
+                    ", *optional*" if is_optional else "",
                     arg_docs
                 )
             )
@@ -418,19 +446,28 @@ def start(format: bool = False):
             else:
                 constructor_docs = "Telegram API type."
 
-            docstring += constructor_docs + "\n"
+            docstring += indent_desc(constructor_docs) + "\n"
             docstring += f"\n    Constructor of :obj:`~pyrogram.raw.base.{c.qualtype}`."
         else:
             function_docs = docs["method"].get(c.qualname, None)
 
             if function_docs:
-                docstring += function_docs["desc"] + "\n"
+                docstring += indent_desc(function_docs.get("desc", "").strip()) + "\n"
+
+                if function_docs.get("usable_by"):
+                    docstring += "\n    .. include:: /_includes/usable-by/" + function_docs["usable_by"] + ".rst"
+
+                if function_docs.get("can_use_without_auth"):
+                    docstring += "\n\n    .. note::\n\n        " + "This method can be used by not yet logged in connections."
+
+                if function_docs.get("can_use_business_connection"):
+                    docstring += "\n\n    .. note::\n\n        " + "This method can be invoked over a `business connection » <https://corefork.telegram.org/api/bots/connected-business-bots>`__"
             else:
-                docstring += f"Telegram API function."
+                docstring += "Telegram API function."
 
         docstring += f"\n\n    Details:\n        - Layer: ``{layer}``\n        - ID: ``{c.id[2:].upper()}``\n\n"
-        docstring += f"    Parameters:\n        " + \
-                     (f"\n        ".join(docstring_args) if docstring_args else "No parameters required.\n")
+        docstring += "    Parameters:\n        " + \
+                     ("\n        ".join(docstring_args) if docstring_args else "No parameters required.\n")
 
         if c.section == "functions":
             docstring += "\n    Returns:\n        " + get_docstring_arg_type(c.qualtype)
@@ -539,6 +576,12 @@ def start(format: bool = False):
         slots = ", ".join([f'"{i[0]}"' for i in sorted_args])
         return_arguments = ", ".join([f"{i[0]}={i[0]}" for i in sorted_args])
 
+        # Generate generic type hint for functions
+        if c.section == "functions":
+            generic_type = f"[{get_return_type_hint(c.qualtype)}]"
+        else:
+            generic_type = ""
+
         compiled_combinator = combinator_tmpl.format(
             notice=notice,
             warning=WARNING,
@@ -551,7 +594,8 @@ def start(format: bool = False):
             fields=fields,
             read_types=read_types,
             write_types=write_types,
-            return_arguments=return_arguments
+            return_arguments=return_arguments,
+            generic_type=generic_type
         )
 
         directory = "types" if c.section == "types" else c.section
@@ -650,3 +694,4 @@ if "__main__" == __name__:
     NOTICE_PATH = Path("../../NOTICE")
 
     start(format=False)
+

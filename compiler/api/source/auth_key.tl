@@ -38,3 +38,4 @@ req_DH_params#d712e4be nonce:int128 server_nonce:int128 p:bytes q:bytes public_k
 set_client_DH_params#f5045f1f nonce:int128 server_nonce:int128 encrypted_data:bytes = Set_client_DH_params_answer;
 
 destroy_auth_key#d1435160 = DestroyAuthKeyRes;
+

@@ -101,3 +101,4 @@ class UnknownError(RPCError):
     CODE = 520
     """:obj:`int`: Error code"""
     NAME = "Unknown error"
+
