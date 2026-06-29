@@ -21,13 +21,14 @@ import os
 import re
 import shutil
 
-HOME = "compiler/docs"
-DESTINATION = "docs/source/telegram"
-PYROGRAM_API_DEST = "docs/source/api"
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+HOME = os.path.join(ROOT, "compiler/docs")
+DESTINATION = os.path.join(ROOT, "docs/source/telegram")
+PYROGRAM_API_DEST = os.path.join(ROOT, "docs/source/api")
 
-FUNCTIONS_PATH = "pyrogram/raw/functions"
-TYPES_PATH = "pyrogram/raw/types"
-BASE_PATH = "pyrogram/raw/base"
+FUNCTIONS_PATH = os.path.join(ROOT, "pyrogram/raw/functions")
+TYPES_PATH = os.path.join(ROOT, "pyrogram/raw/types")
+BASE_PATH = os.path.join(ROOT, "pyrogram/raw/base")
 
 FUNCTIONS_BASE = "functions"
 TYPES_BASE = "types"
@@ -43,14 +44,15 @@ def generate(source_path, base):
     all_entities = {}
 
     def build(path, level=0):
-        last = path.split("/")[-1]
+        last = os.path.basename(path)
 
         for i in os.listdir(path):
+            child = os.path.join(path, i)
             try:
                 if not i.startswith("__"):
-                    build("/".join([path, i]), level=level + 1)
+                    build(child, level=level + 1)
             except NotADirectoryError:
-                with open(path + "/" + i, encoding="utf-8") as f:
+                with open(child, encoding="utf-8") as f:
                     p = ast.parse(f.read())
 
                 for node in ast.walk(p):
@@ -65,15 +67,15 @@ def generate(source_path, base):
                 if level:
                     full_path = base + "/" + full_path
 
-                namespace = path.split("/")[-1]
+                namespace = os.path.basename(path)
                 if namespace in ["base", "types", "functions"]:
                     namespace = ""
 
                 full_name = f"{(namespace + '.') if namespace else ''}{name}"
 
-                os.makedirs(os.path.dirname(DESTINATION + "/" + full_path), exist_ok=True)
+                os.makedirs(os.path.dirname(os.path.join(DESTINATION, full_path)), exist_ok=True)
 
-                with open(DESTINATION + "/" + full_path, "w", encoding="utf-8") as f:
+                with open(os.path.join(DESTINATION, full_path), "w", encoding="utf-8") as f:
                     f.write(
                         page_template.format(
                             title=full_name,
@@ -109,7 +111,7 @@ def generate(source_path, base):
             inner_path = base + "/index" + ".rst"
             module = "pyrogram.raw.{}".format(base)
 
-        with open(DESTINATION + "/" + inner_path, "w", encoding="utf-8") as f:
+        with open(os.path.join(DESTINATION, inner_path), "w", encoding="utf-8") as f:
             if k == base:
                 f.write(":tocdepth: 1\n\n")
                 k = "Raw " + k
@@ -333,15 +335,15 @@ def pyrogram_api():
         """
     )
 
-    root = PYROGRAM_API_DEST + "/methods"
+    root = PYROGRAM_API_DEST
 
-    shutil.rmtree(root, ignore_errors=True)
-    os.mkdir(root)
+    shutil.rmtree(os.path.join(root, "methods"), ignore_errors=True)
+    os.makedirs(os.path.join(root, "methods"), exist_ok=True)
 
-    with open(HOME + "/template/methods.rst") as f:
+    with open(os.path.join(HOME, "template/methods.rst")) as f:
         template = f.read()
 
-    with open(root + "/index.rst", "w") as f:
+    with open(os.path.join(root, "methods/index.rst"), "w") as f:
         fmt_keys = {}
 
         for k, v in categories.items():
@@ -349,7 +351,7 @@ def pyrogram_api():
             fmt_keys.update({k: "\n    ".join("{0} <{0}>".format(m) for m in methods)})
 
             for method in methods:
-                with open(root + "/{}.rst".format(method), "w") as f2:
+                with open(os.path.join(root, "methods/{}.rst".format(method)), "w") as f2:
                     title = "{}()".format(method)
 
                     f2.write(title + "\n" + "=" * len(title) + "\n\n")
@@ -358,7 +360,7 @@ def pyrogram_api():
             functions = ["idle", "compose"]
 
             for func in functions:
-                with open(root + "/{}.rst".format(func), "w") as f2:
+                with open(os.path.join(root, "methods/{}.rst".format(func)), "w") as f2:
                     title = "{}()".format(func)
 
                     f2.write(title + "\n" + "=" * len(title) + "\n\n")
@@ -495,15 +497,15 @@ def pyrogram_api():
         """
     )
 
-    root = PYROGRAM_API_DEST + "/types"
+    root = PYROGRAM_API_DEST
 
-    shutil.rmtree(root, ignore_errors=True)
-    os.mkdir(root)
+    shutil.rmtree(os.path.join(root, "types"), ignore_errors=True)
+    os.makedirs(os.path.join(root, "types"), exist_ok=True)
 
-    with open(HOME + "/template/types.rst") as f:
+    with open(os.path.join(HOME, "template/types.rst")) as f:
         template = f.read()
 
-    with open(root + "/index.rst", "w") as f:
+    with open(os.path.join(root, "types/index.rst"), "w") as f:
         fmt_keys = {}
 
         for k, v in categories.items():
@@ -513,7 +515,7 @@ def pyrogram_api():
 
             # noinspection PyShadowingBuiltins
             for type in types:
-                with open(root + "/{}.rst".format(type), "w") as f2:
+                with open(os.path.join(root, "types/{}.rst".format(type)), "w") as f2:
                     title = "{}".format(type)
 
                     f2.write(title + "\n" + "=" * len(title) + "\n\n")
@@ -606,15 +608,15 @@ def pyrogram_api():
         """
     )
 
-    root = PYROGRAM_API_DEST + "/bound-methods"
+    root = PYROGRAM_API_DEST
 
-    shutil.rmtree(root, ignore_errors=True)
-    os.mkdir(root)
+    shutil.rmtree(os.path.join(root, "bound-methods"), ignore_errors=True)
+    os.makedirs(os.path.join(root, "bound-methods"), exist_ok=True)
 
-    with open(HOME + "/template/bound-methods.rst") as f:
+    with open(os.path.join(HOME, "template/bound-methods.rst")) as f:
         template = f.read()
 
-    with open(root + "/index.rst", "w") as f:
+    with open(os.path.join(root, "bound-methods/index.rst"), "w") as f:
         fmt_keys = {}
 
         for k, v in categories.items():
@@ -627,7 +629,7 @@ def pyrogram_api():
 
             # noinspection PyShadowingBuiltins
             for bm in bound_methods:
-                with open(root + "/{}.rst".format(bm), "w") as f2:
+                with open(os.path.join(root, "bound-methods/{}.rst".format(bm)), "w") as f2:
                     title = "{}()".format(bm)
 
                     f2.write(title + "\n" + "=" * len(title) + "\n\n")
@@ -642,10 +644,10 @@ def start():
 
     shutil.rmtree(DESTINATION, ignore_errors=True)
 
-    with open(HOME + "/template/page.txt", encoding="utf-8") as f:
+    with open(os.path.join(HOME, "template/page.txt"), encoding="utf-8") as f:
         page_template = f.read()
 
-    with open(HOME + "/template/toctree.txt", encoding="utf-8") as f:
+    with open(os.path.join(HOME, "template/toctree.txt"), encoding="utf-8") as f:
         toctree = f.read()
 
     generate(TYPES_PATH, TYPES_BASE)
@@ -655,11 +657,4 @@ def start():
 
 
 if "__main__" == __name__:
-    FUNCTIONS_PATH = "../../pyrogram/raw/functions"
-    TYPES_PATH = "../../pyrogram/raw/types"
-    BASE_PATH = "../../pyrogram/raw/base"
-    HOME = "."
-    DESTINATION = "../../docs/source/telegram"
-    PYROGRAM_API_DEST = "../../docs/source/api"
-
     start()

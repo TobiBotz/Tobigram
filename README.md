@@ -5,7 +5,7 @@
         Homepage
     </a>
     •
-    <a href="https://github.com/rjriajul/wzgram">
+    <a href="https://rjriajul.github.io/wzgram">
         Documentation
     </a>
     <br/>
@@ -47,10 +47,23 @@ identity (bot API alternative) using Python.
 
 ### Installing
 
-``` bash
+```bash
 pip install wzgram
 ```
 
+For better performance:
+
+```bash
+pip install wzgram[fast]
+```
+
+### Documentation
+
+Full documentation is available at **[https://rjriajul.github.io/wzgram](https://rjriajul.github.io/wzgram)**
+
 ### Resources
 
-- Check out the [source code](https://github.com/rjriajul/wzgram) to learn more about wzgram.
+- Check out the [source code](https://github.com/rjriajul/wzgram)
+- Browse the [documentation](https://rjriajul.github.io/wzgram)
+- Report issues on the [issue tracker](https://github.com/rjriajul/wzgram/issues)
+- See [contributing guide](CONTRIBUTING.md)

@@ -68,6 +68,11 @@ fast = [
     "uvloop<=0.22.1; sys_platform == 'darwin' or sys_platform == 'linux'",
 ]
 
+docs = [
+    "sphinx>=7",
+    "furo>=2023",
+]
+
 [tool.hatch.version]
 path = "pyrogram/__init__.py"
 

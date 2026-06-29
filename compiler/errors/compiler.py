@@ -21,9 +21,10 @@ import os
 import re
 import shutil
 
-HOME = "compiler/errors"
-DEST = "pyrogram/errors/exceptions"
-NOTICE_PATH = "NOTICE"
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+HOME = os.path.join(ROOT, "compiler/errors")
+DEST = os.path.join(ROOT, "pyrogram/errors/exceptions")
+NOTICE_PATH = os.path.join(ROOT, "NOTICE")
 
 
 def snek(s):
@@ -41,7 +42,7 @@ def start():
     shutil.rmtree(DEST, ignore_errors=True)
     os.makedirs(DEST)
 
-    files = [i for i in os.listdir("{}/source".format(HOME))]
+    files = [i for i in os.listdir(os.path.join(HOME, "source"))]
 
     with open(NOTICE_PATH, encoding="utf-8") as f:
         notice = []
@@ -51,7 +52,7 @@ def start():
 
         notice = "\n".join(notice)
 
-    with open("{}/all.py".format(DEST), "w", encoding="utf-8") as f_all:
+    with open(os.path.join(DEST, "all.py"), "w", encoding="utf-8") as f_all:
         f_all.write(notice + "\n\n")
         f_all.write("count = {count}\n\n")
         f_all.write("exceptions = {\n")
@@ -63,7 +64,7 @@ def start():
 
             f_all.write("    {}: {{\n".format(code))
 
-            init = "{}/__init__.py".format(DEST)
+            init = os.path.join(DEST, "__init__.py")
 
             if not os.path.exists(init):
                 with open(init, "w", encoding="utf-8") as f_init:
@@ -72,8 +73,8 @@ def start():
             with open(init, "a", encoding="utf-8") as f_init:
                 f_init.write("from .{}_{} import *\n".format(name.lower(), code))
 
-            with open("{}/source/{}".format(HOME, i), encoding="utf-8") as f_csv, \
-                open("{}/{}_{}.py".format(DEST, name.lower(), code), "w", encoding="utf-8") as f_class:
+            with open(os.path.join(HOME, "source", i), encoding="utf-8") as f_csv, \
+                open(os.path.join(DEST, "{}_{}.py".format(name.lower(), code)), "w", encoding="utf-8") as f_class:
                 reader = csv.reader(f_csv, delimiter="\t")
 
                 super_class = caml(name)
@@ -102,10 +103,10 @@ def start():
 
                     sub_classes.append((sub_class, error_id, error_message))
 
-                with open("{}/template/class.txt".format(HOME), "r", encoding="utf-8") as f_class_template:
+                with open(os.path.join(HOME, "template", "class.txt"), "r", encoding="utf-8") as f_class_template:
                     class_template = f_class_template.read()
 
-                    with open("{}/template/sub_class.txt".format(HOME), "r", encoding="utf-8") as f_sub_class_template:
+                    with open(os.path.join(HOME, "template", "sub_class.txt"), "r", encoding="utf-8") as f_sub_class_template:
                         sub_class_template = f_sub_class_template.read()
 
                     class_template = class_template.format(
@@ -127,17 +128,13 @@ def start():
 
         f_all.write("}\n")
 
-    with open("{}/all.py".format(DEST), encoding="utf-8") as f:
+    with open(os.path.join(DEST, "all.py"), encoding="utf-8") as f:
         content = f.read()
 
-    with open("{}/all.py".format(DEST), "w", encoding="utf-8") as f:
+    with open(os.path.join(DEST, "all.py"), "w", encoding="utf-8") as f:
         f.write(re.sub("{count}", str(count), content))
 
 
 if "__main__" == __name__:
-    HOME = "."
-    DEST = "../../pyrogram/errors/exceptions"
-    NOTICE_PATH = "../../NOTICE"
-
     start()
 
