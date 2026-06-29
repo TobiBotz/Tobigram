@@ -21,6 +21,7 @@ import ipaddress
 import logging
 import socket
 from concurrent.futures import ThreadPoolExecutor
+from typing import Optional
 
 import socks
 
@@ -30,16 +31,20 @@ log = logging.getLogger(__name__)
 class TCP:
     TIMEOUT = 10
 
-    def __init__(self, ipv6: bool, proxy: dict):
+    def __init__(self, ipv6: bool, proxy: dict, crypto_executor_workers: int = 1, loop: Optional[asyncio.AbstractEventLoop] = None):
         self.socket = None
 
         self.reader = None
         self.writer = None
 
         self.lock = asyncio.Lock()
-        self.loop = asyncio.get_event_loop()
+        self.loop = loop or asyncio.get_event_loop()
 
         self.proxy = proxy
+
+        self.crypto_executor = ThreadPoolExecutor(
+            max_workers=crypto_executor_workers, thread_name_prefix="Crypto"
+        )
 
         if proxy:
             hostname = proxy.get("hostname")

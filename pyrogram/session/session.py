@@ -52,6 +52,7 @@ class Session:
     ACKS_THRESHOLD = 10
     PING_INTERVAL = 5
     STORED_MSG_IDS_MAX_SIZE = 1000 * 2
+    CRYPTO_EXECUTOR_WORKERS = 1
 
     TRANSPORT_ERRORS = {
         404: "auth key not found",
@@ -106,7 +107,9 @@ class Session:
                 self.test_mode,
                 self.client.ipv6,
                 self.client.proxy,
-                self.is_media
+                self.is_media,
+                crypto_executor_workers=self.CRYPTO_EXECUTOR_WORKERS,
+                loop=self.loop
             )
 
             try:
@@ -185,7 +188,7 @@ class Session:
 
     async def handle_packet(self, packet):
         data = await self.loop.run_in_executor(
-            pyrogram.crypto_executor,
+            self.connection.protocol.crypto_executor,
             mtproto.unpack,
             BytesIO(packet),
             self.session_id,
@@ -324,7 +327,7 @@ class Session:
         log.debug("Sent: %s", message)
 
         payload = await self.loop.run_in_executor(
-            pyrogram.crypto_executor,
+            self.connection.protocol.crypto_executor,
             mtproto.pack,
             message,
             self.salt,

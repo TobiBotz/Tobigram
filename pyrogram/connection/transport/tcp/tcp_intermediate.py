@@ -26,8 +26,8 @@ log = logging.getLogger(__name__)
 
 
 class TCPIntermediate(TCP):
-    def __init__(self, ipv6: bool, proxy: dict):
-        super().__init__(ipv6, proxy)
+    def __init__(self, ipv6: bool, proxy: dict, crypto_executor_workers: int = 1, loop: Optional[asyncio.AbstractEventLoop] = None):
+        super().__init__(ipv6, proxy, crypto_executor_workers, loop)
 
     async def connect(self, address: tuple):
         await super().connect(address)

@@ -27,8 +27,8 @@ log = logging.getLogger(__name__)
 
 
 class TCPFull(TCP):
-    def __init__(self, ipv6: bool, proxy: dict):
-        super().__init__(ipv6, proxy)
+    def __init__(self, ipv6: bool, proxy: dict, crypto_executor_workers: int = 1, loop: Optional[asyncio.AbstractEventLoop] = None):
+        super().__init__(ipv6, proxy, crypto_executor_workers, loop)
 
         self.seq_no = None
 

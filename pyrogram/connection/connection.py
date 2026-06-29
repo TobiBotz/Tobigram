@@ -18,7 +18,7 @@
 
 import asyncio
 import logging
-from typing import Optional
+from typing import Optional, Type
 
 from .transport import TCP, TCPAbridged
 from ..session.internals import DataCenter
@@ -29,19 +29,36 @@ log = logging.getLogger(__name__)
 class Connection:
     MAX_CONNECTION_ATTEMPTS = 3
 
-    def __init__(self, dc_id: int, test_mode: bool, ipv6: bool, proxy: dict, media: bool = False):
+    def __init__(
+        self,
+        dc_id: int,
+        test_mode: bool,
+        ipv6: bool,
+        proxy: dict,
+        media: bool = False,
+        protocol_factory: Type[TCP] = TCPAbridged,
+        crypto_executor_workers: int = 1,
+        loop: Optional[asyncio.AbstractEventLoop] = None
+    ):
         self.dc_id = dc_id
         self.test_mode = test_mode
         self.ipv6 = ipv6
         self.proxy = proxy
         self.media = media
+        self.protocol_factory = protocol_factory
+        self.crypto_executor_workers = crypto_executor_workers
 
         self.address = DataCenter(dc_id, test_mode, ipv6, media)
         self.protocol: TCP = None
 
+        if isinstance(loop, asyncio.AbstractEventLoop):
+            self.loop = loop
+        else:
+            self.loop = asyncio.get_event_loop()
+
     async def connect(self):
         for i in range(Connection.MAX_CONNECTION_ATTEMPTS):
-            self.protocol = TCPAbridged(self.ipv6, self.proxy)
+            self.protocol = self.protocol_factory(self.ipv6, self.proxy, self.crypto_executor_workers, self.loop)
 
             try:
                 log.info("Connecting...")
