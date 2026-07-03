@@ -40,7 +40,9 @@ class Connection:
         media: bool = False,
         protocol_factory: Type[TCP] = TCPAbridged,
         crypto_executor: Optional[ThreadPoolExecutor] = None,
-        loop: Optional[asyncio.AbstractEventLoop] = None
+        loop: Optional[asyncio.AbstractEventLoop] = None,
+        server_address: str = None,
+        port: int = None
     ):
         self.dc_id = dc_id
         self.test_mode = test_mode
@@ -50,7 +52,10 @@ class Connection:
         self.protocol_factory = protocol_factory
         self.crypto_executor = crypto_executor or get_crypto_executor()
 
-        self.address = DataCenter(dc_id, test_mode, ipv6, media)
+        if server_address and port:
+            self.address = (server_address, port)
+        else:
+            self.address = DataCenter(dc_id, test_mode, ipv6, media)
         self.protocol: TCP = None
 
         if isinstance(loop, asyncio.AbstractEventLoop):

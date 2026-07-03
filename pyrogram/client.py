@@ -1386,9 +1386,9 @@ class Client(Methods):
                 auth_key = await Auth(
                     self,
                     dc_id,
-                    server_address,
-                    port,
-                    await self.storage.test_mode()
+                    await self.storage.test_mode(),
+                    server_address=server_address,
+                    port=port
                 ).create()
             else:
                 auth_key = await self.storage.auth_key()

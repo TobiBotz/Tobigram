@@ -37,11 +37,13 @@ log = logging.getLogger(__name__)
 class Auth:
     MAX_RETRIES = 5
 
-    def __init__(self, client: "pyrogram.Client", dc_id: int, test_mode: bool):
+    def __init__(self, client: "pyrogram.Client", dc_id: int, test_mode: bool, server_address: str = None, port: int = None):
         self.dc_id = dc_id
         self.test_mode = test_mode
         self.ipv6 = client.ipv6
         self.proxy = client.proxy
+        self.server_address = server_address
+        self.port = port
 
         self.connection = None
 
@@ -76,7 +78,7 @@ class Auth:
         # The server may close the connection at any time, causing the auth key creation to fail.
         # If that happens, just try again up to MAX_RETRIES times.
         while True:
-            self.connection = Connection(self.dc_id, self.test_mode, self.ipv6, self.proxy)
+            self.connection = Connection(self.dc_id, self.test_mode, self.ipv6, self.proxy, server_address=self.server_address, port=self.port)
 
             try:
                 log.info("Start creating a new auth key on DC%s", self.dc_id)
