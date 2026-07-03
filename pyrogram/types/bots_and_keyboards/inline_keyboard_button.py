@@ -158,20 +158,33 @@ class InlineKeyboardButton(Object):
                 )
             )
 
+    def _to_raw_style(self) -> "raw.base.KeyboardButtonStyle":
+        if self.style == ButtonStyle.PRIMARY:
+            return raw.types.KeyboardButtonStyle(bg_primary=True)
+        if self.style == ButtonStyle.DANGER:
+            return raw.types.KeyboardButtonStyle(bg_danger=True)
+        if self.style == ButtonStyle.SUCCESS:
+            return raw.types.KeyboardButtonStyle(bg_success=True)
+        return None
+
     async def write(self, client: "pyrogram.Client"):
+        raw_style = self._to_raw_style()
+
         if self.callback_data is not None:
             # Telegram only wants bytes, but we are allowed to pass strings too, for convenience.
             data = bytes(self.callback_data, "utf-8") if isinstance(self.callback_data, str) else self.callback_data
 
             return raw.types.KeyboardButtonCallback(
                 text=self.text,
-                data=data
+                data=data,
+                style=raw_style
             )
 
         if self.url is not None:
             return raw.types.KeyboardButtonUrl(
                 text=self.text,
-                url=self.url
+                url=self.url,
+                style=raw_style
             )
 
         if self.login_url is not None:
@@ -183,29 +196,34 @@ class InlineKeyboardButton(Object):
         if self.user_id is not None:
             return raw.types.InputKeyboardButtonUserProfile(
                 text=self.text,
-                user_id=await client.resolve_peer(self.user_id)
+                user_id=await client.resolve_peer(self.user_id),
+                style=raw_style
             )
 
         if self.switch_inline_query is not None:
             return raw.types.KeyboardButtonSwitchInline(
                 text=self.text,
-                query=self.switch_inline_query
+                query=self.switch_inline_query,
+                style=raw_style
             )
 
         if self.switch_inline_query_current_chat is not None:
             return raw.types.KeyboardButtonSwitchInline(
                 text=self.text,
                 query=self.switch_inline_query_current_chat,
-                same_peer=True
+                same_peer=True,
+                style=raw_style
             )
 
         if self.callback_game is not None:
             return raw.types.KeyboardButtonGame(
-                text=self.text
+                text=self.text,
+                style=raw_style
             )
 
         if self.web_app is not None:
             return raw.types.KeyboardButtonWebView(
                 text=self.text,
-                url=self.web_app.url
+                url=self.web_app.url,
+                style=raw_style
             )

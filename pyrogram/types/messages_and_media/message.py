@@ -2001,7 +2001,9 @@ class Message(Object, Update):
     def html_text(self) -> str:
         return self.content.html
 
-    # region Deprecated
+    @property
+    def is_topic_message(self) -> Optional[bool]:
+        return self.topic_message
     # TODO: Remove later
 
     @property
