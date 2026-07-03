@@ -49,8 +49,21 @@ class SendPhoto:
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
         ] = None,
+        message_thread_id: int = None,
+        direct_messages_topic_id: int = None,
+        effect_id: int = None,
+        show_caption_above_media: bool = None,
+        reply_parameters: Optional["types.ReplyParameters"] = None,
+        repeat_period: int = None,
+        view_once: bool = None,
+        business_connection_id: str = None,
+        allow_paid_broadcast: bool = None,
+        paid_message_star_count: int = None,
+        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
         rich_text: str = None,
         rich_text_parse_mode: str = "markdown",
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
         progress: Callable = None,
         progress_args: tuple = ()
     ) -> Optional["types.Message"]:
@@ -154,6 +167,20 @@ class SendPhoto:
                 # Send self-destructing photo
                 await app.send_photo("me", "photo.jpg", ttl_seconds=10)
         """
+        if reply_parameters is None:
+            if reply_to_message_id is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=reply_to_message_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+            elif quote_text is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=None,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+
         file = None
 
         try:
@@ -201,12 +228,22 @@ class SendPhoto:
                             peer=await self.resolve_peer(chat_id),
                             media=media,
                             silent=disable_notification or None,
-                            reply_to=raw.types.InputReplyToMessage(
-                                reply_to_msg_id=reply_to_message_id
-                            ) if reply_to_message_id else None,
+                            reply_to=await utils.get_reply_to(
+                                self,
+                                reply_parameters,
+                                message_thread_id,
+                                direct_messages_topic_id=direct_messages_topic_id
+                            ),
                             random_id=self.rnd_id(),
                             schedule_date=utils.datetime_to_timestamp(schedule_date),
                             noforwards=protect_content,
+                            effect=effect_id,
+                            invert_media=show_caption_above_media or None,
+                            invert_video=view_once or None,
+                            schedule_repeat_period=repeat_period,
+                            allow_paid_floodskip=allow_paid_broadcast,
+                            allow_paid_stars=paid_message_star_count,
+                            suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                             reply_markup=await reply_markup.write(self) if reply_markup else None,
                             **text_params
                         )

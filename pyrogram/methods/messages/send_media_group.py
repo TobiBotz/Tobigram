@@ -20,10 +20,10 @@ import logging
 import os
 import re
 from datetime import datetime
-from typing import Union, List
+from typing import Union, List, Optional
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, enums
 from pyrogram import types
 from pyrogram import utils
 from pyrogram.file_id import FileType
@@ -46,6 +46,16 @@ class SendMediaGroup:
         reply_to_message_id: int = None,
         schedule_date: datetime = None,
         protect_content: bool = None,
+        message_thread_id: int = None,
+        direct_messages_topic_id: int = None,
+        effect_id: int = None,
+        reply_parameters: Optional["types.ReplyParameters"] = None,
+        allow_paid_broadcast: bool = None,
+        paid_message_star_count: int = None,
+        business_connection_id: str = None,
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
     ) -> List["types.Message"]:
         """Send a group of photos or videos as an album.
 
@@ -90,6 +100,20 @@ class SendMediaGroup:
                     ]
                 )
         """
+        if reply_parameters is None:
+            if reply_to_message_id is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=reply_to_message_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+            elif quote_text is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=None,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+
         multi_media = []
 
         for i in media:
@@ -395,11 +419,17 @@ class SendMediaGroup:
                 peer=await self.resolve_peer(chat_id),
                 multi_media=multi_media,
                 silent=disable_notification or None,
-                reply_to=raw.types.InputReplyToMessage(
-                    reply_to_msg_id=reply_to_message_id
-                ) if reply_to_message_id else None,
+                reply_to=await utils.get_reply_to(
+                    self,
+                    reply_parameters,
+                    message_thread_id,
+                    direct_messages_topic_id=direct_messages_topic_id
+                ),
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
-                noforwards=protect_content
+                noforwards=protect_content,
+                effect=effect_id,
+                allow_paid_floodskip=allow_paid_broadcast,
+                allow_paid_stars=paid_message_star_count,
             ),
             sleep_threshold=60
         )
