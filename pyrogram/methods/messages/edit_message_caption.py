@@ -30,6 +30,8 @@ class EditMessageCaption:
         caption: str,
         parse_mode: Optional["enums.ParseMode"] = None,
         caption_entities: List["types.MessageEntity"] = None,
+        rich_text: str = None,
+        rich_text_parse_mode: str = "markdown",
         reply_markup: "types.InlineKeyboardMarkup" = None
     ) -> "types.Message":
         """Edit the caption of media messages.
@@ -55,6 +57,13 @@ class EditMessageCaption:
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
 
+            rich_text (``str``, *optional*):
+                Rich text content with GitHub Flavored Markdown or HTML formatting (server-side rendered).
+                When provided, *caption*/*parse_mode*/*caption_entities* are ignored.
+
+            rich_text_parse_mode (``str``, *optional*):
+                Parse mode for *rich_text*: ``"markdown"`` (default, supports GFM) or ``"html"``.
+
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
 
@@ -72,5 +81,7 @@ class EditMessageCaption:
             text=caption,
             parse_mode=parse_mode,
             entities=caption_entities,
+            rich_text=rich_text,
+            rich_text_parse_mode=rich_text_parse_mode,
             reply_markup=reply_markup
         )

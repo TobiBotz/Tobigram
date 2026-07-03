@@ -1,5 +1,12 @@
 VENV := venv
-PYTHON := $(VENV)/bin/python
+
+ifeq ($(OS),Windows_NT)
+    PYTHON := $(VENV)/Scripts/python
+    SPHINX := $(VENV)/Scripts/sphinx-build
+else
+    PYTHON := $(VENV)/bin/python
+    SPHINX := $(VENV)/bin/sphinx-build
+endif
 PIP := $(PYTHON) -m pip
 TAG = v$(shell grep -E '__version__ = ".*"' pyrogram/__init__.py | cut -d\" -f2)
 
@@ -14,22 +21,18 @@ RESET  := \033[0m
 
 .PHONY: venv venv-docs clean-venv clean-build clean-api clean-docs clean api docs docs-archive build tag dtag
 
-venv:
-	@if [ ! -d "$(VENV)" ]; then \
-		python3 -m venv $(VENV); \
-		$(PIP) install -U pip wheel setuptools; \
-	fi
+PY := $(shell command -v python3 2>/dev/null || command -v python 2>/dev/null || command -v py 2>/dev/null)
 
-	$(PIP) install -U -e .
+venv:
+	$(PY) -m venv $(VENV)
+	$(PYTHON) -m pip install -U pip wheel setuptools
+	$(PYTHON) -m pip install -U -e .[dev]
 	@printf "$(YELLOW)Created venv with %s$(RESET)\n" "$$($(PYTHON) --version)"
 
 venv-docs:
-	@if [ ! -d "$(VENV)" ]; then \
-		python3 -m venv $(VENV); \
-		$(PIP) install -U pip wheel setuptools; \
-	fi
-
-	$(PIP) install -U -e .[docs]
+	$(PY) -m venv $(VENV)
+	$(PYTHON) -m pip install -U pip wheel setuptools
+	$(PYTHON) -m pip install -U -e .[docs]
 	@printf "$(YELLOW)Created docs venv with %s$(RESET)\n" "$$($(PYTHON) --version)"
 
 clean-venv:
@@ -54,10 +57,11 @@ clean: clean-venv clean-build clean-api clean-docs
 api:
 	cd compiler/api && ../../$(PYTHON) compiler.py
 	cd compiler/errors && ../../$(PYTHON) compiler.py
+	# compiler/methods: run manually from project root: python compiler/methods/compiler.py
 
 docs:
 	cd compiler/docs && ../../$(PYTHON) compiler.py
-	$(VENV)/bin/sphinx-build -b dirhtml "docs/source" "docs/build/html" -j auto
+	$(SPHINX) -b dirhtml "docs/source" "docs/build/html" -j auto
 
 docs-archive:
 	cd docs/build/html && zip -r ../docs.zip ./

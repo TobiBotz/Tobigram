@@ -20,19 +20,22 @@ import asyncio
 import bisect
 import logging
 import os
+from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha1
 from io import BytesIO
+from typing import Optional
+
+import warpcrypto
 
 import pyrogram
 from pyrogram import raw
 from pyrogram.connection import Connection
-from pyrogram.crypto import mtproto
 from pyrogram.errors import (
-    RPCError, InternalServerError, AuthKeyDuplicated, FloodWait, ServiceUnavailable, BadMsgNotification,
-    SecurityCheckMismatch
+    RPCError, InternalServerError, AuthKeyDuplicated, FloodWait, FloodPremiumWait, ServiceUnavailable,
+    BadMsgNotification, SecurityCheckMismatch
 )
 from pyrogram.raw.all import layer
-from pyrogram.raw.core import TLObject, MsgContainer, Int, FutureSalts
+from pyrogram.raw.core import TLObject, Message, MsgContainer, Int, FutureSalts
 from .internals import MsgId, MsgFactory
 
 log = logging.getLogger(__name__)
@@ -52,7 +55,6 @@ class Session:
     ACKS_THRESHOLD = 10
     PING_INTERVAL = 5
     STORED_MSG_IDS_MAX_SIZE = 1000 * 2
-    CRYPTO_EXECUTOR_WORKERS = 1
 
     TRANSPORT_ERRORS = {
         404: "auth key not found",
@@ -67,7 +69,10 @@ class Session:
         auth_key: bytes,
         test_mode: bool,
         is_media: bool = False,
-        is_cdn: bool = False
+        is_cdn: bool = False,
+        server_address: Optional[str] = None,
+        port: Optional[int] = None,
+        crypto_executor: Optional[ThreadPoolExecutor] = None
     ):
         self.client = client
         self.dc_id = dc_id
@@ -75,6 +80,9 @@ class Session:
         self.test_mode = test_mode
         self.is_media = is_media
         self.is_cdn = is_cdn
+        self.server_address = server_address
+        self.port = port
+        self.crypto_executor = crypto_executor
 
         self.connection = None
 
@@ -108,7 +116,7 @@ class Session:
                 self.client.ipv6,
                 self.client.proxy,
                 self.is_media,
-                crypto_executor_workers=self.CRYPTO_EXECUTOR_WORKERS,
+                crypto_executor=self.crypto_executor,
                 loop=self.loop
             )
 
@@ -187,22 +195,33 @@ class Session:
         await self.start()
 
     async def handle_packet(self, packet):
-        data = await self.loop.run_in_executor(
+        msg_id, seq_no, length, body_bytes, total_len = await self.loop.run_in_executor(
             self.connection.protocol.crypto_executor,
-            mtproto.unpack,
-            BytesIO(packet),
+            warpcrypto.unpack_message,
+            packet,
             self.session_id,
             self.auth_key,
             self.auth_key_id
         )
 
+        # https://core.telegram.org/mtproto/security_guidelines#checking-message-length
+        padding_len = total_len - 16 - length
+        SecurityCheckMismatch.check(12 <= padding_len <= 1024, "12 <= len(padding) <= 1024")
+        SecurityCheckMismatch.check(total_len % 4 == 0, "len(data) % 4 == 0")
+
+        # https://core.telegram.org/mtproto/security_guidelines#checking-msg-id
+        SecurityCheckMismatch.check(msg_id % 2 != 0, "message.msg_id % 2 != 0")
+
+        body = TLObject.read(BytesIO(body_bytes))
+        message = Message(body, msg_id, seq_no, length)
+
         messages = (
-            data.body.messages
-            if isinstance(data.body, MsgContainer)
-            else [data]
+            message.body.messages
+            if isinstance(message.body, MsgContainer)
+            else [message]
         )
 
-        log.debug("Received: %s", data)
+        log.debug("Received: %s", message)
 
         for msg in messages:
             if msg.seq_no % 2 != 0:
@@ -216,22 +235,28 @@ class Session:
                     del self.stored_msg_ids[:Session.STORED_MSG_IDS_MAX_SIZE // 2]
 
                 if self.stored_msg_ids:
+                    # https://core.telegram.org/mtproto/security_guidelines#checking-msg-id
                     if msg.msg_id < self.stored_msg_ids[0]:
                         raise SecurityCheckMismatch("The msg_id is lower than all the stored values")
 
+                    # https://core.telegram.org/mtproto/security_guidelines#checking-msg-id
                     if msg.msg_id in self.stored_msg_ids:
                         raise SecurityCheckMismatch("The msg_id is equal to any of the stored values")
 
+                    # https://core.telegram.org/mtproto/security_guidelines#checking-msg-id
                     time_diff = (msg.msg_id - MsgId()) / 2 ** 32
 
+                    # https://core.telegram.org/mtproto/security_guidelines#checking-msg-id
                     if time_diff > 30:
                         raise SecurityCheckMismatch("The msg_id belongs to over 30 seconds in the future. "
                                                     "Most likely the client time has to be synchronized.")
 
+                    # https://core.telegram.org/mtproto/security_guidelines#checking-msg-id
                     if time_diff < -300:
                         raise SecurityCheckMismatch("The msg_id belongs to over 300 seconds in the past. "
                                                     "Most likely the client time has to be synchronized.")
             except SecurityCheckMismatch as e:
+                # https://core.telegram.org/mtproto/security_guidelines#behaviour-in-case-of-mismatch
                 log.info("Discarding packet: %s", e)
                 await self.connection.close()
                 return
@@ -317,7 +342,8 @@ class Session:
 
         log.info("NetworkTask stopped")
 
-    async def send(self, data: TLObject, wait_response: bool = True, timeout: float = WAIT_TIMEOUT):
+    async def send(self, data: TLObject, wait_response: bool = True, timeout: float = WAIT_TIMEOUT,
+                   retry: int = 0):
         message = self.msg_factory(data)
         msg_id = message.msg_id
 
@@ -328,8 +354,10 @@ class Session:
 
         payload = await self.loop.run_in_executor(
             self.connection.protocol.crypto_executor,
-            mtproto.pack,
-            message,
+            warpcrypto.pack_message,
+            message.msg_id,
+            message.seq_no,
+            message.body.write(),
             self.salt,
             self.session_id,
             self.auth_key,
@@ -360,13 +388,27 @@ class Session:
                 RPCError.raise_it(result, type(data))
 
             if isinstance(result, raw.types.BadMsgNotification):
-                log.warning("%s: %s", BadMsgNotification.__name__, BadMsgNotification(result.error_code))
+                if retry > 1:
+                    raise BadMsgNotification(result.error_code)
+                self._handle_bad_notification()
+                return await self.send(data, wait_response, timeout, retry + 1)
 
             if isinstance(result, raw.types.BadServerSalt):
                 self.salt = result.new_server_salt
                 return await self.send(data, wait_response, timeout)
 
             return result
+
+    def _handle_bad_notification(self):
+        new_msg_id = MsgId()
+        if self.stored_msg_ids[len(self.stored_msg_ids) - 1] >= new_msg_id:
+            new_msg_id = self.stored_msg_ids[len(self.stored_msg_ids) - 1] + 4
+            log.debug(
+                "Changing msg_id old=%s new=%s",
+                self.stored_msg_ids[len(self.stored_msg_ids) - 1],
+                new_msg_id,
+            )
+        self.stored_msg_ids[len(self.stored_msg_ids) - 1] = new_msg_id
 
     async def invoke(
         self,
@@ -375,22 +417,22 @@ class Session:
         timeout: float = WAIT_TIMEOUT,
         sleep_threshold: float = SLEEP_THRESHOLD
     ):
-        try:
-            await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
-        except asyncio.TimeoutError:
-            pass
+        while retries > 0:
+            try:
+                await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
+            except asyncio.TimeoutError:
+                pass
 
-        if isinstance(query, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)):
-            inner_query = query.query
-        else:
-            inner_query = query
+            if isinstance(query, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)):
+                inner_query = query.query
+            else:
+                inner_query = query
 
-        query_name = ".".join(inner_query.QUALNAME.split(".")[1:])
+            query_name = ".".join(inner_query.QUALNAME.split(".")[1:])
 
-        while True:
             try:
                 return await self.send(query, timeout=timeout)
-            except FloodWait as e:
+            except (FloodWait, FloodPremiumWait) as e:
                 amount = e.value
 
                 if amount > sleep_threshold >= 0:
@@ -400,16 +442,20 @@ class Session:
                             self.client.name, amount, query_name)
 
                 await asyncio.sleep(amount)
-            except (OSError, InternalServerError, ServiceUnavailable) as e:
+            except (OSError, InternalServerError, ServiceUnavailable, TimeoutError) as e:
+                retries -= 1
                 if retries == 0:
-                    raise e from None
+                    raise
 
                 (log.warning if retries < 2 else log.info)(
                     '[%s] Retrying "%s" due to: %s',
-                    Session.MAX_RETRIES - retries + 1,
+                    Session.MAX_RETRIES - retries,
                     query_name, str(e) or repr(e)
                 )
 
-                await asyncio.sleep(0.5)
+                if isinstance(e, (OSError, TimeoutError)):
+                    self.loop.create_task(self.restart())
 
-                return await self.invoke(query, retries - 1, timeout)
+                await asyncio.sleep(1)
+
+        raise TimeoutError("Exceeded maximum number of retries")

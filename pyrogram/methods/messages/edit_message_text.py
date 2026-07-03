@@ -33,6 +33,8 @@ class EditMessageText:
         parse_mode: Optional["enums.ParseMode"] = None,
         entities: List["types.MessageEntity"] = None,
         disable_web_page_preview: bool = None,
+        rich_text: str = None,
+        rich_text_parse_mode: str = "markdown",
         reply_markup: "types.InlineKeyboardMarkup" = None
     ) -> "types.Message":
         """Edit the text of messages.
@@ -58,6 +60,13 @@ class EditMessageText:
             entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in message text, which can be specified instead of *parse_mode*.
 
+            rich_text (``str``, *optional*):
+                Rich text content with GitHub Flavored Markdown or HTML formatting (server-side rendered).
+                When provided, *text*/*parse_mode*/*entities* are ignored.
+
+            rich_text_parse_mode (``str``, *optional*):
+                Parse mode for *rich_text*: ``"markdown"`` (default, supports GFM) or ``"html"``.
+
             disable_web_page_preview (``bool``, *optional*):
                 Disables link previews for links in this message.
 
@@ -79,13 +88,26 @@ class EditMessageText:
                     disable_web_page_preview=True)
         """
 
+        if rich_text:
+            if rich_text_parse_mode == "html":
+                rich_msg = raw.types.InputRichMessageHTML(
+                    html=rich_text,
+                )
+            else:
+                rich_msg = raw.types.InputRichMessageMarkdown(
+                    markdown=rich_text,
+                )
+            text_params = {"message": "", "rich_message": rich_msg}
+        else:
+            text_params = await utils.parse_text_entities(self, text, parse_mode, entities)
+
         r = await self.invoke(
             raw.functions.messages.EditMessage(
                 peer=await self.resolve_peer(chat_id),
                 id=message_id,
                 no_webpage=disable_web_page_preview or None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
-                **await utils.parse_text_entities(self, text, parse_mode, entities)
+                **text_params
             )
         )
 

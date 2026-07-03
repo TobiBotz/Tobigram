@@ -21,6 +21,16 @@ from .get_business_account_gifts import GetBusinessAccountGifts
 from .get_business_account_star_balance import GetBusinessAccountStarBalance
 from .get_business_connection import GetBusinessConnection
 from .transfer_business_account_stars import TransferBusinessAccountStars
+from .update_business_work_hours import UpdateBusinessWorkHours
+from .update_business_location import UpdateBusinessLocation
+from .update_business_greeting_message import UpdateBusinessGreetingMessage
+from .update_business_away_message import UpdateBusinessAwayMessage
+from .update_business_intro import UpdateBusinessIntro
+from .create_business_chat_link import CreateBusinessChatLink
+from .delete_business_chat_link import DeleteBusinessChatLink
+from .resolve_business_chat_link import ResolveBusinessChatLink
+from .get_business_chat_links import GetBusinessChatLinks
+from .get_connected_bots import GetConnectedBots
 
 
 class Business(
@@ -29,6 +39,16 @@ class Business(
     GetBusinessAccountStarBalance,
     GetBusinessConnection,
     TransferBusinessAccountStars,
+    UpdateBusinessWorkHours,
+    UpdateBusinessLocation,
+    UpdateBusinessGreetingMessage,
+    UpdateBusinessAwayMessage,
+    UpdateBusinessIntro,
+    CreateBusinessChatLink,
+    DeleteBusinessChatLink,
+    ResolveBusinessChatLink,
+    GetBusinessChatLinks,
+    GetConnectedBots,
 ):
     pass
 

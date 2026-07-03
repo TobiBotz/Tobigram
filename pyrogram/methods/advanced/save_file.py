@@ -30,9 +30,15 @@ from typing import Union, BinaryIO, Callable
 import pyrogram
 from pyrogram import StopTransmission
 from pyrogram import raw
-from pyrogram.session import Session
 
 log = logging.getLogger(__name__)
+
+PART_SIZE = 512 * 1024
+WORKERS_PER_SESSION = 4
+POOL_SIZE = 4
+MAX_RETRIES = 5
+PROGRESS_PCT = 10
+READ_BUFFER = 4 * 1024 * 1024
 
 
 class SaveFile:
@@ -42,54 +48,32 @@ class SaveFile:
         file_id: int = None,
         file_part: int = 0,
         progress: Callable = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
     ):
-        """Upload a file onto Telegram servers, without actually sending the message to anyone.
-        Useful whenever an InputFile type is required.
+        """Upload a file onto Telegram servers, without sending the message to anyone.
 
-        .. note::
-
-            This is a utility method intended to be used **only** when working with raw
-            :obj:`functions <pyrogram.api.functions>` (i.e: a Telegram API method you wish to use which is not
-            available yet in the Client class as an easy-to-use method).
+        Useful whenever an InputFile type is required for raw API functions.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
             path (``str`` | ``BinaryIO``):
-                The path of the file you want to upload that exists on your local machine or a binary file-like object
-                with its attribute ".name" set for in-memory uploads.
+                File path or binary file-like object.
 
             file_id (``int``, *optional*):
-                In case a file part expired, pass the file_id and the file_part to retry uploading that specific chunk.
+                File ID to resume an interrupted upload.
 
             file_part (``int``, *optional*):
-                In case a file part expired, pass the file_id and the file_part to retry uploading that specific chunk.
+                Part number to resume from.
 
             progress (``Callable``, *optional*):
-                Pass a callback function to view the file transmission progress.
-                The function must take *(current, total)* as positional arguments (look at Other Parameters below for a
-                detailed description) and will be called back each time a new file chunk has been successfully
-                transmitted.
+                Callback — takes *(current, total)* as positional arguments.
 
             progress_args (``tuple``, *optional*):
-                Extra custom arguments for the progress callback function.
-                You can pass anything you need to be available in the progress callback scope; for example, a Message
-                object or a Client instance in order to edit the message with the updated progress status.
-
-        Other Parameters:
-            current (``int``):
-                The amount of bytes transmitted so far.
-
-            total (``int``):
-                The total size of the file.
-
-            *args (``tuple``, *optional*):
-                Extra custom arguments as defined in the ``progress_args`` parameter.
-                You can either keep ``*args`` or add every single extra argument in your function signature.
+                Extra arguments for the progress callback.
 
         Returns:
-            ``InputFile``: On success, the uploaded file is returned in form of an InputFile object.
+            ``InputFile | InputFileBig``: On success.
 
         Raises:
             RPCError: In case of a Telegram RPC error.
@@ -105,19 +89,41 @@ class SaveFile:
                     if data is None:
                         return
 
-                    try:
-                        await session.invoke(data)
-                    except Exception as e:
-                        log.exception(e)
+                    for attempt in range(MAX_RETRIES):
+                        try:
+                            await session.invoke(data)
+                            break
+                        except StopTransmission:
+                            raise
+                        except Exception as e:
+                            if attempt == MAX_RETRIES - 1:
+                                log.error(
+                                    f"Upload part failed after "
+                                    f"{MAX_RETRIES} attempts: {e}"
+                                )
+                                raise
+                            log.warning(
+                                f"Retrying upload part "
+                                f"(attempt {attempt + 1}/{MAX_RETRIES}): {e}"
+                            )
+                            await asyncio.sleep(2**attempt)
 
-            part_size = 512 * 1024
+            async def read_chunk():
+                return await self.loop.run_in_executor(
+                    self.executor, fp.read, PART_SIZE
+                )
+
+            part_size = PART_SIZE
 
             if isinstance(path, (str, PurePath)):
-                fp = open(path, "rb")
+                fp = open(path, "rb", buffering=READ_BUFFER)
             elif isinstance(path, io.IOBase):
                 fp = path
             else:
-                raise ValueError("Invalid file. Expected a file path as string or a binary (not text) file pointer")
+                raise ValueError(
+                    "Invalid file. Expected a file path as string "
+                    "or a binary (not text) file pointer"
+                )
 
             file_name = getattr(fp, "name", "file.jpg")
 
@@ -131,96 +137,126 @@ class SaveFile:
             file_size_limit_mib = 4000 if self.me.is_premium else 2000
 
             if file_size > file_size_limit_mib * 1024 * 1024:
-                raise ValueError(f"Can't upload files bigger than {file_size_limit_mib} MiB")
+                raise ValueError(
+                    f"Can't upload files bigger than {file_size_limit_mib} MiB"
+                )
 
             file_total_parts = int(math.ceil(file_size / part_size))
             is_big = file_size > 10 * 1024 * 1024
-            workers_count = 4 if is_big else 1
+            pool_size = POOL_SIZE if is_big else 1
+            workers_count = WORKERS_PER_SESSION if is_big else 1
             is_missing_part = file_id is not None
             file_id = file_id or self.rnd_id()
             md5_sum = md5() if not is_big and not is_missing_part else None
-            session = Session(
-                self, await self.storage.dc_id(), await self.storage.auth_key(),
-                await self.storage.test_mode(), is_media=True
-            )
-            workers = [self.loop.create_task(worker(session)) for _ in range(workers_count)]
-            queue = asyncio.Queue(1)
+
+            dc_id = await self.storage.dc_id()
+            pool = await self._get_media_session_pool(dc_id, pool_size)
+
+            n_sessions = len(pool)
+            n_workers = n_sessions * workers_count
+            queue = asyncio.Queue(n_workers)
+            workers = [
+                self.loop.create_task(worker(pool[i % n_sessions]))
+                for i in range(n_workers)
+            ]
+            next_chunk_task = None
 
             try:
-                await session.start()
 
                 fp.seek(part_size * file_part)
+                next_chunk_task = self.loop.create_task(read_chunk())
 
                 while True:
-                    chunk = fp.read(part_size)
+                    chunk = await next_chunk_task
+                    next_chunk_task = self.loop.create_task(read_chunk())
 
                     if not chunk:
+                        next_chunk_task.cancel()
                         if not is_big and not is_missing_part:
-                            md5_sum = "".join([hex(i)[2:].zfill(2) for i in md5_sum.digest()])
+                            md5_sum = md5_sum.hexdigest()
                         break
+
+                    if all(t.done() for t in workers):
+                        for t in workers:
+                            exc = t.exception()
+                            if exc is not None:
+                                raise exc
+                        raise RuntimeError("All upload workers exited")
 
                     if is_big:
                         rpc = raw.functions.upload.SaveBigFilePart(
                             file_id=file_id,
                             file_part=file_part,
                             file_total_parts=file_total_parts,
-                            bytes=chunk
+                            bytes=chunk,
                         )
                     else:
                         rpc = raw.functions.upload.SaveFilePart(
-                            file_id=file_id,
-                            file_part=file_part,
-                            bytes=chunk
+                            file_id=file_id, file_part=file_part, bytes=chunk
                         )
 
                     await queue.put(rpc)
 
                     if is_missing_part:
-                        return
+                        next_chunk_task.cancel()
+                        for _ in range(n_workers):
+                            await queue.put(None)
+                        results = await asyncio.gather(*workers, return_exceptions=True)
+                        for r in results:
+                            if isinstance(r, BaseException) and not isinstance(
+                                r, asyncio.CancelledError
+                            ):
+                                raise r
+                        return None
 
                     if not is_big and not is_missing_part:
                         md5_sum.update(chunk)
 
                     file_part += 1
 
-                    if progress:
+                    if (
+                        progress
+                        and file_part % max(1, file_total_parts // PROGRESS_PCT) == 0
+                    ):
                         func = functools.partial(
                             progress,
                             min(file_part * part_size, file_size),
                             file_size,
-                            *progress_args
+                            *progress_args,
                         )
 
                         if inspect.iscoroutinefunction(progress):
                             await func()
                         else:
                             await self.loop.run_in_executor(self.executor, func)
+
             except StopTransmission:
                 raise
             except Exception as e:
                 log.exception(e)
+                raise
             else:
                 if is_big:
                     return raw.types.InputFileBig(
                         id=file_id,
                         parts=file_total_parts,
                         name=file_name,
-
                     )
                 else:
                     return raw.types.InputFile(
                         id=file_id,
                         parts=file_total_parts,
                         name=file_name,
-                        md5_checksum=md5_sum
+                        md5_checksum=md5_sum,
                     )
             finally:
+                if next_chunk_task is not None and not next_chunk_task.done():
+                    next_chunk_task.cancel()
+
                 for _ in workers:
                     await queue.put(None)
 
                 await asyncio.gather(*workers)
-
-                await session.stop()
 
                 if isinstance(path, (str, PurePath)):
                     fp.close()

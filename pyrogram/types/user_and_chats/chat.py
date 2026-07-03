@@ -924,7 +924,7 @@ class Chat(Object):
         if isinstance(channel, raw.types.ChannelForbidden):
             return Chat(
                 id=peer_id,
-                type=enums.ChatType.DIRECT if channel.monoforum else enums.ChatType.SUPERGROUP if channel.megagroup else enums.ChatType.CHANNEL,
+                type=enums.ChatType.PRIVATE if channel.monoforum else enums.ChatType.SUPERGROUP if channel.megagroup else enums.ChatType.CHANNEL,
                 title=channel.title,
                 is_banned=True,
                 banned_until_date=utils.timestamp_to_datetime(getattr(channel, "until_date", None)),
@@ -935,7 +935,7 @@ class Chat(Object):
         chat_type = enums.ChatType.CHANNEL
 
         if channel.monoforum:
-            chat_type = enums.ChatType.DIRECT
+            chat_type = enums.ChatType.PRIVATE
         elif channel.forum:
             chat_type = enums.ChatType.FORUM
         elif channel.megagroup:

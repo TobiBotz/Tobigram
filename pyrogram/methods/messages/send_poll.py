@@ -143,11 +143,12 @@ class SendPoll:
                 media=raw.types.InputMediaPoll(
                     poll=raw.types.Poll(
                         id=self.rnd_id(),
-                        question=question,
+                        question=raw.types.TextWithEntities(text=question, entities=[]),
                         answers=[
-                            raw.types.PollAnswer(text=text, option=bytes([i]))
+                            raw.types.PollAnswer(text=raw.types.TextWithEntities(text=text, entities=[]), option=bytes([i]))
                             for i, text in enumerate(options)
                         ],
+                        hash=self.rnd_id(),
                         closed=is_closed,
                         public_voters=not is_anonymous,
                         multiple_choice=allows_multiple_answers,
@@ -161,7 +162,9 @@ class SendPoll:
                 ),
                 message="",
                 silent=disable_notification,
-                reply_to_msg_id=reply_to_message_id,
+                reply_to=raw.types.InputReplyToMessage(
+                    reply_to_msg_id=reply_to_message_id
+                ) if reply_to_message_id else None,
                 random_id=self.rnd_id(),
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
                 noforwards=protect_content,

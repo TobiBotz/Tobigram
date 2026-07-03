@@ -55,6 +55,17 @@ from .unarchive_chats import UnarchiveChats
 from .unban_chat_member import UnbanChatMember
 from .unpin_all_chat_messages import UnpinAllChatMessages
 from .unpin_chat_message import UnpinChatMessage
+from .toggle_signatures import ToggleSignatures
+from .toggle_slow_mode import ToggleSlowMode
+from .toggle_pre_history_hidden import TogglePreHistoryHidden
+from .update_channel_color import UpdateChannelColor
+from .toggle_join_to_send import ToggleJoinToSend
+from .toggle_forum import ToggleForum
+from .toggle_auto_translation import ToggleAutoTranslation
+from .toggle_participants_hidden import ToggleParticipantsHidden
+from .toggle_view_forum_as_messages import ToggleViewForumAsMessages
+from .toggle_anti_spam import ToggleAntiSpam
+from .restrict_sponsored_messages import RestrictSponsoredMessages
 
 
 class Chats(
@@ -96,6 +107,17 @@ class Chats(
     GetChatOnlineCount,
     GetSendAsChats,
     SetSendAsChat,
-    SetChatProtectedContent
+    SetChatProtectedContent,
+    ToggleSignatures,
+    ToggleSlowMode,
+    TogglePreHistoryHidden,
+    UpdateChannelColor,
+    ToggleJoinToSend,
+    ToggleForum,
+    ToggleAutoTranslation,
+    ToggleParticipantsHidden,
+    ToggleViewForumAsMessages,
+    ToggleAntiSpam,
+    RestrictSponsoredMessages
 ):
     pass

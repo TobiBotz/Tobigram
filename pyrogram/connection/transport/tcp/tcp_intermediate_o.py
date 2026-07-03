@@ -18,6 +18,7 @@
 
 import logging
 import os
+import asyncio
 from struct import pack, unpack
 from typing import Optional
 
@@ -30,8 +31,8 @@ log = logging.getLogger(__name__)
 class TCPIntermediateO(TCP):
     RESERVED = (b"HEAD", b"POST", b"GET ", b"OPTI", b"\xee" * 4)
 
-    def __init__(self, ipv6: bool, proxy: dict, crypto_executor_workers: int = 1, loop: Optional[asyncio.AbstractEventLoop] = None):
-        super().__init__(ipv6, proxy, crypto_executor_workers, loop)
+    def __init__(self, ipv6: bool, proxy: dict, crypto_executor=None, loop: Optional[asyncio.AbstractEventLoop] = None):
+        super().__init__(ipv6, proxy, crypto_executor, loop)
 
         self.encrypt = None
         self.decrypt = None

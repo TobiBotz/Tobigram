@@ -32,6 +32,10 @@ from .set_bot_commands import SetBotCommands
 from .set_bot_default_privileges import SetBotDefaultPrivileges
 from .set_chat_menu_button import SetChatMenuButton
 from .set_game_score import SetGameScore
+from .get_bot_info import GetBotInfo
+from .can_bot_send_message import CanBotSendMessage
+from .allow_bot_send_message import AllowBotSendMessage
+from .get_admined_bots import GetAdminedBots
 
 
 class Bots(
@@ -50,6 +54,10 @@ class Bots(
     GetBotDefaultPrivileges,
     SetChatMenuButton,
     GetChatMenuButton,
-    AnswerWebAppQuery
+    AnswerWebAppQuery,
+    GetBotInfo,
+    CanBotSendMessage,
+    AllowBotSendMessage,
+    GetAdminedBots,
 ):
     pass

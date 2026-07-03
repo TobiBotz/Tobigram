@@ -45,6 +45,8 @@ class SendSticker:
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
         ] = None,
+        rich_text: str = None,
+        rich_text_parse_mode: str = "markdown",
         progress: Callable = None,
         progress_args: tuple = ()
     ) -> Optional["types.Message"]:
@@ -64,6 +66,12 @@ class SendSticker:
                 pass an HTTP URL as a string for Telegram to get a .webp sticker file from the Internet,
                 pass a file path as string to upload a new sticker that exists on your local machine, or
                 pass a binary file-like object with its attribute ".name" set for in-memory uploads.
+
+            rich_text (``str``, *optional*):
+                Rich text content with GitHub Flavored Markdown or HTML formatting (server-side rendered).
+
+            rich_text_parse_mode (``str``, *optional*):
+                Parse mode for *rich_text*: ``"markdown"`` (default, supports GFM) or ``"html"``.
 
             disable_notification (``bool``, *optional*):
                 Sends the message silently.
@@ -149,17 +157,32 @@ class SendSticker:
 
             while True:
                 try:
+                    if rich_text:
+                        if rich_text_parse_mode == "html":
+                            rich_msg = raw.types.InputRichMessageHTML(
+                                html=rich_text,
+                            )
+                        else:
+                            rich_msg = raw.types.InputRichMessageMarkdown(
+                                markdown=rich_text,
+                            )
+                        text_params = {"message": "", "rich_message": rich_msg}
+                    else:
+                        text_params = {"message": ""}
+
                     r = await self.invoke(
                         raw.functions.messages.SendMedia(
                             peer=await self.resolve_peer(chat_id),
                             media=media,
                             silent=disable_notification or None,
-                            reply_to_msg_id=reply_to_message_id,
+                            reply_to=raw.types.InputReplyToMessage(
+                                reply_to_msg_id=reply_to_message_id
+                            ) if reply_to_message_id else None,
                             random_id=self.rnd_id(),
                             schedule_date=utils.datetime_to_timestamp(schedule_date),
                             noforwards=protect_content,
                             reply_markup=await reply_markup.write(self) if reply_markup else None,
-                            message=""
+                            **text_params
                         )
                     )
                 except FilePartMissing as e:

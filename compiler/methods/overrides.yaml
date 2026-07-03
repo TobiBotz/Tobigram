@@ -1,0 +1,820 @@
+# Method generator overrides
+# Maps TL function names to high-level method generation rules.
+# Fields:
+#   category:     subdirectory under pyrogram/methods/
+#   usable_by:    "users-bots" or "users" or "bots"
+#   response_pattern: "updates" | "list" | "single" | "none" | "custom"
+#   peer_param:   which parameter needs resolve_peer() (usually chat_id)
+#   skip_if_exists: true = never overwrite existing handwritten file
+#   template:     "simple" or "complex" (default: "simple")
+#
+# When a TL function has no override, no method is generated.
+
+# ── Messages ──────────────────────────────────────────────────────
+
+send_message:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+  extra_params:
+    - name: text
+      type: str
+      doc: Text of the message to send
+    - name: parse_mode
+      type: Optional["enums.ParseMode"]
+      default: None
+    - name: entities
+      type: List["types.MessageEntity"]
+      default: None
+    - name: disable_web_page_preview
+      type: bool
+      default: None
+    - name: disable_notification
+      type: bool
+      default: None
+    - name: reply_to_message_id
+      type: int
+      default: None
+    - name: schedule_date
+      type: datetime
+      default: None
+    - name: protect_content
+      type: bool
+      default: None
+    - name: reply_markup
+      type: "Union[types.InlineKeyboardMarkup, types.ReplyKeyboardMarkup, types.ReplyKeyboardRemove, types.ForceReply]"
+      default: None
+  raw_function: messages.SendMessage
+
+send_dice:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+  extra_params:
+    - name: emoji
+      type: str
+      default: "\U0001F3B2"
+      doc: "Dice emoji (\U0001F3B2, \U0001F3AF, \U0001F3C0, etc.)"
+    - name: disable_notification
+      type: bool
+      default: None
+    - name: reply_to_message_id
+      type: int
+      default: None
+    - name: schedule_date
+      type: datetime
+      default: None
+    - name: protect_content
+      type: bool
+      default: None
+    - name: reply_markup
+      type: "Union[...]"
+      default: None
+  raw_media_type: InputMediaDice
+  media_mapping:
+    emoticon: emoji
+
+send_poll:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+
+send_location:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+
+send_contact:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+
+send_venue:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+
+send_cached_media:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+
+send_media_group:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+  template: complex
+
+copy_media_group:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+  template: complex
+
+# ── Photos (complex - file upload) ────────────────────────────────
+
+send_photo:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+  template: complex
+  has_file_upload: true
+  supports_caption: true
+  media_type: InputMediaUploadedPhoto
+
+send_video:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+  template: complex
+  has_file_upload: true
+  supports_caption: true
+  media_type: InputMediaUploadedDocument
+
+send_audio:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+  template: complex
+  has_file_upload: true
+  supports_caption: true
+  media_type: InputMediaUploadedDocument
+
+send_animation:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+  template: complex
+  has_file_upload: true
+  supports_caption: true
+  media_type: InputMediaUploadedDocument
+
+send_document:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+  template: complex
+  has_file_upload: true
+  supports_caption: true
+  media_type: InputMediaUploadedDocument
+
+send_voice:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+  template: complex
+  has_file_upload: true
+  supports_caption: true
+  media_type: InputMediaUploadedDocument
+
+send_video_note:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+  template: complex
+  has_file_upload: true
+  media_type: InputMediaUploadedDocument
+
+send_sticker:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+  template: complex
+  has_file_upload: true
+  media_type: InputMediaUploadedDocument
+
+# ── Inline Bots ───────────────────────────────────────────────────
+
+send_inline_bot_result:
+  category: bots
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+
+send_game:
+  category: bots
+  usable_by: bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+
+answer_callback_query:
+  category: bots
+  usable_by: bots
+  response_pattern: none
+  skip_if_exists: true
+  extra_params:
+    - name: callback_query_id
+      type: str
+    - name: text
+      type: str
+      default: None
+    - name: show_alert
+      type: bool
+      default: None
+    - name: url
+      type: str
+      default: None
+    - name: cache_time
+      type: int
+      default: 0
+  raw_function: messages.SetBotCallbackAnswer
+
+answer_inline_query:
+  category: bots
+  usable_by: bots
+  response_pattern: none
+  skip_if_exists: true
+  raw_function: messages.SetInlineBotResults
+
+get_bot_commands:
+  category: bots
+  usable_by: bots
+  response_pattern: list
+  list_type: BotCommand
+  skip_if_exists: true
+  raw_function: bots.GetBotCommands
+
+set_bot_commands:
+  category: bots
+  usable_by: bots
+  response_pattern: none
+  skip_if_exists: true
+  raw_function: bots.SetBotCommands
+
+# ── Chats ─────────────────────────────────────────────────────────
+
+get_chat:
+  category: chats
+  usable_by: users-bots
+  response_pattern: single
+  peer_param: chat_id
+  skip_if_exists: true
+
+leave_chat:
+  category: chats
+  usable_by: users-bots
+  response_pattern: none
+  peer_param: chat_id
+  skip_if_exists: true
+
+join_chat:
+  category: chats
+  usable_by: users
+  response_pattern: single
+  skip_if_exists: true
+  extra_params:
+    - name: invite_link
+      type: str
+  raw_function: messages.ImportChatInvite
+
+delete_messages:
+  category: messages
+  usable_by: users-bots
+  response_pattern: none
+  peer_param: chat_id
+  skip_if_exists: true
+  raw_function: messages.DeleteMessages
+
+# ── Users ─────────────────────────────────────────────────────────
+
+get_users:
+  category: users
+  usable_by: users-bots
+  response_pattern: list
+  list_type: User
+  skip_if_exists: true
+  extra_params:
+    - name: user_ids
+      type: "Union[int, str, Iterable[int, str]]"
+  raw_function: users.GetUsers
+
+# ── Reactions ─────────────────────────────────────────────────────
+
+send_reaction:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  peer_param: chat_id
+  skip_if_exists: true
+  raw_function: messages.SendReaction
+  extra_params:
+    - name: message_id
+      type: int
+    - name: emoji
+      type: str
+      default: None
+    - name: big
+      type: bool
+      default: None
+
+# ── Stickers ──────────────────────────────────────────────────────
+
+get_stickers:
+  category: messages
+  usable_by: users
+  response_pattern: single
+  skip_if_exists: true
+  raw_function: messages.GetStickerSet
+
+# ── Forwarding ────────────────────────────────────────────────────
+
+forward_messages:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  skip_if_exists: true
+  template: complex
+
+# ── Test: function with NO existing wrapper ─────────────────────
+get_poll_results:
+  category: messages
+  usable_by: users
+  response_pattern: updates
+  return_type: types.Message
+  raw_function: messages.getPollResults
+  skip_if_exists: false
+  doc_summary: "Get poll results for a message."
+  extra_params:
+    - name: chat_id
+      type: Union[int, str]
+      doc: Chat where the poll message is
+    - name: msg_id
+      type: int
+      doc: Message identifier (from the poll message)
+
+# ── Business ─────────────────────────────────────────────────
+
+update_business_work_hours:
+  category: business
+  usable_by: users
+  response_pattern: none
+  raw_function: account.updateBusinessWorkHours
+  skip_if_exists: true
+  doc_summary: "Update business work hours for your business account."
+  extra_params:
+    - name: business_work_hours
+      type: "raw.types.BusinessWorkHours"
+      default: None
+      doc: Business work hours (timezone + weekly schedule)
+
+update_business_location:
+  category: business
+  usable_by: users
+  response_pattern: none
+  raw_function: account.updateBusinessLocation
+  skip_if_exists: true
+  doc_summary: "Update the business location shown on your business page."
+  extra_params:
+    - name: geo_point
+      type: "raw.types.InputGeoPoint"
+      default: None
+      doc: Geolocation coordinates for the business
+    - name: address
+      type: str
+      default: None
+      doc: Text address to display
+
+update_business_greeting_message:
+  category: business
+  usable_by: users
+  response_pattern: none
+  raw_function: account.updateBusinessGreetingMessage
+  skip_if_exists: true
+  doc_summary: "Set an automatic greeting message for new conversations."
+  extra_params:
+    - name: message
+      type: "raw.types.InputBusinessGreetingMessage"
+      default: None
+      doc: Greeting message config (shortcut_id + recipients + no_activity_days)
+
+update_business_away_message:
+  category: business
+  usable_by: users
+  response_pattern: none
+  raw_function: account.updateBusinessAwayMessage
+  skip_if_exists: true
+  doc_summary: "Set an automatic away message when you are offline."
+  extra_params:
+    - name: message
+      type: "raw.types.InputBusinessAwayMessage"
+      default: None
+      doc: Away message config (shortcut_id + schedule + recipients)
+
+update_business_intro:
+  category: business
+  usable_by: users
+  response_pattern: none
+  raw_function: account.updateBusinessIntro
+  skip_if_exists: true
+  doc_summary: "Update your business intro (title, description, sticker)."
+  extra_params:
+    - name: intro
+      type: "raw.types.InputBusinessIntro"
+      default: None
+      doc: Business intro with title, description, and optional sticker
+
+create_business_chat_link:
+  category: business
+  usable_by: users
+  response_pattern: custom
+  raw_function: account.createBusinessChatLink
+  skip_if_exists: true
+  doc_summary: "Create a business chat link with a predefined message."
+  return_type: types.BusinessChatLink
+  extra_params:
+    - name: link
+      type: "raw.types.InputBusinessChatLink"
+      doc: The chat link config (message, entities, title)
+
+delete_business_chat_link:
+  category: business
+  usable_by: users
+  response_pattern: none
+  raw_function: account.deleteBusinessChatLink
+  skip_if_exists: true
+  doc_summary: "Delete a business chat link by slug."
+  extra_params:
+    - name: slug
+      type: str
+      doc: Unique slug of the chat link to delete
+
+get_business_chat_links:
+  category: business
+  usable_by: users
+  response_pattern: single
+  raw_function: account.getBusinessChatLinks
+  skip_if_exists: true
+  doc_summary: "Get all business chat links."
+  return_type: types.BusinessChatLinks
+
+resolve_business_chat_link:
+  category: business
+  usable_by: users
+  response_pattern: single
+  raw_function: account.resolveBusinessChatLink
+  skip_if_exists: true
+  doc_summary: "Resolve a business chat link slug to its info."
+  extra_params:
+    - name: slug
+      type: str
+      doc: Slug from the business chat link URL
+
+get_connected_bots:
+  category: business
+  usable_by: users
+  response_pattern: single
+  raw_function: account.getConnectedBots
+  skip_if_exists: true
+  doc_summary: "Get bots connected to your business account."
+  return_type: types.ConnectedBots
+
+# ── Managed Bots ────────────────────────────────────────────
+
+get_bot_info:
+  category: bots
+  usable_by: users-bots
+  response_pattern: single
+  raw_function: bots.getBotInfo
+  skip_if_exists: true
+  doc_summary: "Get bot info (name, about, description)."
+  extra_params:
+    - name: bot
+      type: Union[int, str]
+      doc: Bot username or ID
+    - name: lang_code
+      type: str
+      default: "en"
+      doc: Language code for localized info
+
+get_admined_bots:
+  category: bots
+  usable_by: users
+  response_pattern: list
+  list_type: User
+  raw_function: bots.getAdminedBots
+  skip_if_exists: true
+  doc_summary: "Get a list of bots you administrate."
+  extra_params: []
+
+can_bot_send_message:
+  category: bots
+  usable_by: users
+  response_pattern: none
+  raw_function: bots.canSendMessage
+  skip_if_exists: true
+  doc_summary: "Check if a bot can send messages to the user."
+  extra_params:
+    - name: bot
+      type: Union[int, str]
+      doc: Bot username or ID
+
+allow_bot_send_message:
+  category: bots
+  usable_by: users
+  response_pattern: updates
+  raw_function: bots.allowSendMessage
+  skip_if_exists: true
+  doc_summary: "Allow a bot to send messages to the user."
+  extra_params:
+    - name: bot
+      type: Union[int, str]
+      doc: Bot username or ID
+
+# ── Rich Text / AI ──────────────────────────────────────────
+
+translate_text:
+  category: messages
+  usable_by: users
+  response_pattern: single
+  raw_function: messages.translateText
+  skip_if_exists: true
+  doc_summary: "Translate text or a message to another language."
+  return_type: types.TranslatedText
+  extra_params:
+    - name: peer
+      type: Union[int, str]
+      default: None
+      doc: Chat from which to translate an existing message
+    - name: id
+      type: List[int]
+      default: None
+      doc: Message IDs to translate
+    - name: text
+      type: "Union[str, List[raw.types.TextWithEntities]]"
+      default: None
+      doc: Text to translate (plain string or list of TextWithEntities)
+    - name: to_lang
+      type: str
+      doc: Target language code (e.g. "en", "es")
+    - name: tone
+      type: str
+      default: None
+      doc: AI translation tone preset
+
+edit_fact_check:
+  category: messages
+  usable_by: users
+  response_pattern: updates
+  raw_function: messages.editFactCheck
+  skip_if_exists: true
+  doc_summary: "Edit the fact-check on a message (channel admins only)."
+  extra_params:
+    - name: peer
+      type: Union[int, str]
+      doc: Chat where the message is
+    - name: msg_id
+      type: int
+      doc: Message ID with the fact-check
+    - name: text_with_entities
+      type: "raw.types.TextWithEntities"
+      doc: Fact-check content as TextWithEntities (text + entities)
+
+summarize_text:
+  category: messages
+  usable_by: users
+  response_pattern: custom
+  raw_function: messages.summarizeText
+  skip_if_exists: true
+  doc_summary: "Summarize text content using AI."
+  return_type: raw.types.TextWithEntities
+  extra_params:
+    - name: peer
+      type: Union[int, str]
+      doc: Chat from which to get the source message
+    - name: id
+      type: int
+      doc: Message ID to summarize
+    - name: to_lang
+      type: str
+      default: None
+      doc: Target language for the summary
+    - name: tone
+      type: str
+      default: None
+      doc: AI summary tone preset
+
+# ── Scheduled Messages ──────────────────────────────────────
+
+send_scheduled_messages:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  raw_function: messages.sendScheduledMessages
+  skip_if_exists: true
+  doc_summary: "Send scheduled messages immediately."
+  extra_params:
+    - name: id
+      type: List[int]
+      doc: List of scheduled message IDs to send now
+
+delete_scheduled_messages:
+  category: messages
+  usable_by: users-bots
+  response_pattern: updates
+  raw_function: messages.deleteScheduledMessages
+  skip_if_exists: true
+  doc_summary: "Delete scheduled messages."
+  extra_params:
+    - name: id
+      type: List[int]
+      doc: List of message IDs to delete
+
+send_screenshot_notification:
+  category: messages
+  usable_by: users
+  response_pattern: updates
+  raw_function: messages.sendScreenshotNotification
+  skip_if_exists: true
+  doc_summary: "Notify the other user that you took a screenshot."
+  extra_params:
+    - name: reply_to_message_id
+      type: int
+      default: 0
+      doc: Message ID to reply to
+
+toggle_signatures:
+  category: chats
+  usable_by: users
+  response_pattern: updates
+  raw_function: channels.toggleSignatures
+  skip_if_exists: true
+  doc_summary: "Toggle channel signatures."
+  extra_params:
+    - name: signatures_enabled
+      type: bool
+      default: None
+      doc: Whether signatures are enabled
+    - name: profiles_enabled
+      type: bool
+      default: None
+      doc: Whether profile signatures are enabled
+
+toggle_slow_mode:
+  category: chats
+  usable_by: users
+  response_pattern: updates
+  raw_function: channels.toggleSlowMode
+  skip_if_exists: true
+  doc_summary: "Toggle slow mode in a supergroup."
+  extra_params:
+    - name: seconds
+      type: int
+      default: 0
+      doc: Slow mode interval in seconds (0 to disable)
+
+toggle_pre_history_hidden:
+  category: chats
+  usable_by: users
+  response_pattern: updates
+  raw_function: channels.togglePreHistoryHidden
+  skip_if_exists: true
+  doc_summary: "Toggle pre-history visibility for new members."
+  extra_params:
+    - name: enabled
+      type: bool
+      doc: Whether pre-history is hidden
+
+update_channel_color:
+  category: chats
+  usable_by: users
+  response_pattern: updates
+  raw_function: channels.updateColor
+  skip_if_exists: true
+  doc_summary: "Update the accent color of a channel."
+  extra_params:
+    - name: for_profile
+      type: bool
+      default: None
+      doc: Whether to set the profile color instead
+    - name: color
+      type: int
+      default: None
+      doc: New accent color ID
+    - name: background_emoji_id
+      type: int
+      default: None
+      doc: Custom emoji ID for the background
+
+toggle_join_to_send:
+  category: chats
+  usable_by: users
+  response_pattern: updates
+  raw_function: channels.toggleJoinToSend
+  skip_if_exists: true
+  doc_summary: "Toggle whether users must join before sending messages."
+  extra_params:
+    - name: enabled
+      type: bool
+      doc: Whether join-to-send is enabled
+
+toggle_forum:
+  category: chats
+  usable_by: users
+  response_pattern: updates
+  raw_function: channels.toggleForum
+  skip_if_exists: true
+  doc_summary: "Toggle forum mode in a supergroup."
+  extra_params:
+    - name: enabled
+      type: bool
+      doc: Whether forum mode is enabled
+    - name: tabs
+      type: bool
+      default: None
+      doc: Whether to show topics as tabs
+
+toggle_auto_translation:
+  category: chats
+  usable_by: users
+  response_pattern: updates
+  raw_function: channels.toggleAutotranslation
+  skip_if_exists: true
+  doc_summary: "Toggle automatic message translation for a channel."
+  extra_params:
+    - name: enabled
+      type: bool
+      doc: Whether auto-translation is enabled
+
+toggle_participants_hidden:
+  category: chats
+  usable_by: users
+  response_pattern: updates
+  raw_function: channels.toggleParticipantsHidden
+  skip_if_exists: true
+  doc_summary: "Toggle whether participant list is hidden."
+  extra_params:
+    - name: enabled
+      type: bool
+      doc: Whether participants are hidden
+
+toggle_view_forum_as_messages:
+  category: chats
+  usable_by: users
+  response_pattern: updates
+  raw_function: channels.toggleViewForumAsMessages
+  skip_if_exists: true
+  doc_summary: "Toggle whether forum topics are displayed as messages."
+  extra_params:
+    - name: enabled
+      type: bool
+      doc: Whether to view forum as messages
+
+toggle_anti_spam:
+  category: chats
+  usable_by: users
+  response_pattern: updates
+  raw_function: channels.toggleAntiSpam
+  skip_if_exists: true
+  doc_summary: "Toggle the anti-spam filter in a supergroup."
+  extra_params:
+    - name: enabled
+      type: bool
+      doc: Whether anti-spam is enabled
+
+restrict_sponsored_messages:
+  category: chats
+  usable_by: users
+  response_pattern: updates
+  raw_function: channels.restrictSponsoredMessages
+  skip_if_exists: true
+  doc_summary: "Restrict sponsored messages in a channel."
+  extra_params:
+    - name: restricted
+      type: bool
+      doc: Whether sponsored messages are restricted

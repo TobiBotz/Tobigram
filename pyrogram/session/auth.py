@@ -211,6 +211,7 @@ class Auth:
                 # Security checks
                 #######################
 
+                # https://core.telegram.org/mtproto/security_guidelines#validation-of-dh-parameters
                 SecurityCheckMismatch.check(dh_prime == prime.CURRENT_DH_PRIME, "dh_prime == prime.CURRENT_DH_PRIME")
                 log.debug("DH parameters check: OK")
 

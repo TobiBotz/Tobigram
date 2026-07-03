@@ -40,7 +40,7 @@ identity (bot API alternative) using Python.
 - **Ready**: Install wzgram with pip and start building your applications right away.
 - **Easy**: Makes the Telegram API simple and intuitive, while still allowing advanced usages.
 - **Elegant**: Low-level details are abstracted and re-presented in a more convenient way.
-- **Fast**: Boosted up by [TgCrypto](https://github.com/pyrogram/tgcrypto), a high-performance cryptography library written in C.
+- **Fast**: Boosted up by [WarpCrypto](https://github.com/rjriajul/WarpCrypto), a high-performance cryptography library written in Rust.
 - **Type-hinted**: Types and methods are all type-hinted, enabling excellent editor support.
 - **Async**: Fully asynchronous (also usable synchronously if wanted, for convenience).
 - **Powerful**: Full access to Telegram's API to execute any official client action and more.

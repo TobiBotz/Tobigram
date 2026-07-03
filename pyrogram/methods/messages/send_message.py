@@ -28,7 +28,7 @@ class SendMessage:
     async def send_message(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        text: str,
+        text: str = "",
         parse_mode: Optional["enums.ParseMode"] = None,
         entities: List["types.MessageEntity"] = None,
         disable_web_page_preview: bool = None,
@@ -41,7 +41,9 @@ class SendMessage:
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
-        ] = None
+        ] = None,
+        rich_text: str = None,
+        rich_text_parse_mode: str = "markdown",
     ) -> "types.Message":
         """Send text messages.
 
@@ -79,9 +81,19 @@ class SendMessage:
             protect_content (``bool``, *optional*):
                 Protects the contents of the sent message from forwarding and saving.
 
-            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :types.ReplyKeyboardRemove | :types.ForceReply, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
+
+            rich_text (``str``, *optional*):
+                Rich text using Telegram's native rich formatting (server-side rendered).
+                Supports GitHub Flavored Markdown (tables, task lists, strikethrough, etc.)
+                and HTML tags. When provided, *text* and *parse_mode* are ignored.
+                Uses Telegram's ``InputRichMessage`` for superior formatting.
+
+            rich_text_parse_mode (``str``, *optional*):
+                Parse mode for *rich_text*: ``"markdown"`` (default, supports GFM) or ``"html"``.
+                Only used when *rich_text* is provided.
 
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent text message is returned.
@@ -117,26 +129,68 @@ class SendMessage:
                     reply_markup=InlineKeyboardMarkup(
                         [
                             [InlineKeyboardButton("Data", callback_data="callback_data")],
-                            [InlineKeyboardButton("Docs", url="https://docs.pyrogram.org")]
-                        ]))
+                            [InlineKeyboardButton("Docs", url="https://docs.pyrogram.org")
+                        ]]))
+
+            .. code-block:: python
+
+                # Send a rich text message with GitHub Flavored Markdown (tables, task lists)
+                await app.send_message(
+                    chat_id,
+                    rich_text=\"\"\"
+| Feature | Status |
+|---------|--------|
+| Tables  | ✅     |
+| Tasks   | ✅     |
+| Bold    | ✅     |
+\"\"\")
         """
 
-        message, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
-
-        r = await self.invoke(
-            raw.functions.messages.SendMessage(
-                peer=await self.resolve_peer(chat_id),
-                no_webpage=disable_web_page_preview or None,
-                silent=disable_notification or None,
-                reply_to_msg_id=reply_to_message_id,
-                random_id=self.rnd_id(),
-                schedule_date=utils.datetime_to_timestamp(schedule_date),
-                reply_markup=await reply_markup.write(self) if reply_markup else None,
-                message=message,
-                entities=entities,
-                noforwards=protect_content
+        if rich_text:
+            if rich_text_parse_mode == "html":
+                rich_message = raw.types.InputRichMessageHTML(
+                    html=rich_text,
+                    noautolink=disable_web_page_preview or None,
+                )
+            else:
+                rich_message = raw.types.InputRichMessageMarkdown(
+                    markdown=rich_text,
+                    noautolink=disable_web_page_preview or None,
+                )
+            r = await self.invoke(
+                raw.functions.messages.SendMessage(
+                    peer=await self.resolve_peer(chat_id),
+                    silent=disable_notification or None,
+                    reply_to=raw.types.InputReplyToMessage(
+                        reply_to_msg_id=reply_to_message_id
+                    ) if reply_to_message_id else None,
+                    random_id=self.rnd_id(),
+                    schedule_date=utils.datetime_to_timestamp(schedule_date),
+                    reply_markup=await reply_markup.write(self) if reply_markup else None,
+                    message="",
+                    rich_message=rich_message,
+                    noforwards=protect_content,
+                )
             )
-        )
+            plain_text = rich_text
+        else:
+            plain_text, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
+            r = await self.invoke(
+                raw.functions.messages.SendMessage(
+                    peer=await self.resolve_peer(chat_id),
+                    no_webpage=disable_web_page_preview or None,
+                    silent=disable_notification or None,
+                    reply_to=raw.types.InputReplyToMessage(
+                        reply_to_msg_id=reply_to_message_id
+                    ) if reply_to_message_id else None,
+                    random_id=self.rnd_id(),
+                    schedule_date=utils.datetime_to_timestamp(schedule_date),
+                    reply_markup=await reply_markup.write(self) if reply_markup else None,
+                    message=plain_text,
+                    entities=entities,
+                    noforwards=protect_content
+                )
+            )
 
         if isinstance(r, raw.types.UpdateShortSentMessage):
             peer = await self.resolve_peer(chat_id)
@@ -154,14 +208,14 @@ class SendMessage:
                     type=enums.ChatType.PRIVATE,
                     client=self
                 ),
-                text=message,
+                text=plain_text,
                 date=utils.timestamp_to_datetime(r.date),
                 outgoing=r.out,
                 reply_markup=reply_markup,
                 entities=[
                     types.MessageEntity._parse(None, entity, {})
                     for entity in entities
-                ] if entities else None,
+                ] if not rich_text and entities else None,
                 client=self
             )
 

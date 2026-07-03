@@ -38,6 +38,7 @@ from typing import AsyncGenerator, Callable, List, Optional, Type, Union
 import pyrogram
 from pyrogram import __license__, __version__, enums, raw, utils
 from pyrogram.crypto import aes
+from pyrogram.crypto.executor import get_crypto_executor, create_crypto_executor
 from pyrogram.errors import (
     AuthBytesInvalid,
     BadRequest,
@@ -269,7 +270,7 @@ class Client(Methods):
     # Interval of seconds in which the updates watchdog will kick in
     UPDATES_WATCHDOG_INTERVAL = 15 * 60
 
-    MAX_CONCURRENT_TRANSMISSIONS = 1
+    MAX_CONCURRENT_TRANSMISSIONS = 16
     MAX_MESSAGE_CACHE_SIZE = 1000
     MAX_TOPIC_CACHE_SIZE = 1000
 
@@ -331,6 +332,8 @@ class Client(Methods):
         self.lang_pack = lang_pack.lower()
         self.lang_code = lang_code.lower()
         self.system_lang_code = system_lang_code.lower()
+
+
         self.ipv6 = ipv6
         self.proxy = proxy
         self.test_mode = test_mode
@@ -363,6 +366,7 @@ class Client(Methods):
         self.protocol_factory = protocol_factory
 
         self.executor = ThreadPoolExecutor(self.workers, thread_name_prefix="Handler")
+        self.crypto_executor = get_crypto_executor()
 
         self.storage: Storage
 
@@ -393,7 +397,9 @@ class Client(Methods):
 
         self.sessions = {}
         self.media_sessions = {}
+        self.media_session_pools = {}
         self.sessions_lock = asyncio.Lock()
+        self._media_sessions_locks = {}
 
         self.save_file_semaphore = asyncio.Semaphore(self.max_concurrent_transmissions)
         self.get_file_semaphore = asyncio.Semaphore(self.max_concurrent_transmissions)
@@ -937,8 +943,6 @@ class Client(Methods):
                 await Auth(
                     self,
                     await self.storage.dc_id(),
-                    await self.storage.server_address(),
-                    await self.storage.port(),
                     await self.storage.test_mode()
                 ).create()
             )
@@ -1244,7 +1248,7 @@ class Client(Methods):
 
                             # https://core.telegram.org/cdn#decrypting-files
                             decrypted_chunk = await self.loop.run_in_executor(
-                                self.executor,
+                                self.crypto_executor,
                                 aes.ctr256_decrypt,
                                 chunk,
                                 r.encryption_key,
@@ -1267,7 +1271,7 @@ class Client(Methods):
                                         "h.hash == sha256(cdn_chunk).digest()"
                                     )
 
-                            await self.loop.run_in_executor(self.executor, _check_all_hashes)
+                            await self.loop.run_in_executor(self.crypto_executor, _check_all_hashes)
 
                             yield decrypted_chunk
 
@@ -1386,11 +1390,12 @@ class Client(Methods):
         session = Session(
             self,
             dc_id,
-            server_address,
-            port,
             auth_key,
             await self.storage.test_mode(),
-            is_media=is_media
+            is_media=is_media,
+            server_address=server_address,
+            port=port,
+            crypto_executor=self.crypto_executor
         )
 
         if not temporary:
@@ -1422,6 +1427,48 @@ class Client(Methods):
                 raise AuthBytesInvalid
 
         return session
+
+    async def _make_media_session(self, dc_id: int) -> "Session":
+        auth_key = (
+            await self.storage.auth_key()
+            if dc_id == await self.storage.dc_id()
+            else await Auth(self, dc_id, await self.storage.test_mode()).create()
+        )
+        session = Session(
+            self, dc_id, auth_key, await self.storage.test_mode(), is_media=True,
+            crypto_executor=self.crypto_executor
+        )
+        await session.start()
+        if dc_id != await self.storage.dc_id():
+            for _ in range(3):
+                exported_auth = await self.invoke(
+                    raw.functions.auth.ExportAuthorization(dc_id=dc_id)
+                )
+                try:
+                    await session.invoke(
+                        raw.functions.auth.ImportAuthorization(
+                            id=exported_auth.id, bytes=exported_auth.bytes
+                        )
+                    )
+                except AuthBytesInvalid:
+                    continue
+                else:
+                    break
+            else:
+                await session.stop()
+                raise AuthBytesInvalid
+        return session
+
+    async def _get_media_session_pool(self, dc_id: int, n: int) -> list:
+        lock = self._media_sessions_locks.setdefault(dc_id, asyncio.Lock())
+        async with lock:
+            pool = self.media_session_pools.get(dc_id, [])
+            pool = [s for s in pool if s.is_started.is_set()]
+            while len(pool) < n:
+                session = await self._make_media_session(dc_id)
+                pool.append(session)
+            self.media_session_pools[dc_id] = pool
+            return list(pool)
 
     async def get_dc_option(
         self,

@@ -1,0 +1,79 @@
+#  Pyrogram - Telegram MTProto API Client Library for Python
+#  Copyright (C) 2017-present Dan <https://github.com/delivrance>
+#
+#  This file is part of Pyrogram.
+#
+#  Pyrogram is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Pyrogram is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+
+# ***************************
+# GENERATED FILE - DO NOT EDIT
+# Source: {{ source }}
+# ***************************
+
+from typing import Union{% if needs_list %}, List{% endif %}{% if needs_optional %}, Optional{% endif %}
+{% if needs_datetime %}from datetime import datetime
+{% endif %}
+import pyrogram
+from pyrogram import raw{% if needs_utils %}, utils{% endif %}{% if needs_enums %}, enums{% endif %}
+from pyrogram import types
+
+
+class {{ class_name }}:
+    async def {{ method_name }}(
+        self: "pyrogram.Client",{{ additional_params }}
+    ) -> "{{ return_type }}":
+        """{{ doc_summary }}
+
+        .. include:: /_includes/usable-by/{{ usable_by }}.rst
+{% if doc_params %}
+        Parameters:{% for param in doc_params %}
+            {{ param.name }} ({{ param.type }}): {{ param.doc }}{% endfor %}
+{% endif %}
+        Returns:
+            :obj:`~pyrogram.{{ return_type }}`
+
+        Example:
+            .. code-block:: python
+
+                await app.{{ method_name }}(...)
+        """
+{% if has_text_parsing %}
+        message, entities = (
+            await utils.parse_text_entities(self, text, parse_mode, entities)
+        ).values()
+
+{% endif %}
+        r = await self.invoke(
+            raw.functions.{{ raw_function }}(
+{{ raw_params }}
+            )
+        )
+{% if response_pattern == "updates" %}
+        for i in r.updates:
+            if isinstance(i, (raw.types.UpdateNewMessage,
+                              raw.types.UpdateNewChannelMessage,
+                              raw.types.UpdateNewScheduledMessage)):
+                return await types.Message._parse(
+                    self, i.message,
+                    {i.id: i for i in r.users},
+                    {i.id: i for i in r.chats},
+                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                )
+{% elif response_pattern == "list" %}
+        return types.List(
+            types.{{ list_type }}._parse(self, x) for x in r
+        )
+{% elif response_pattern == "single" %}
+        return {{ return_type }}._parse(self, r)
+{% endif %}

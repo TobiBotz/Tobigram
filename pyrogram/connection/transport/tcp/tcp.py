@@ -19,19 +19,23 @@
 import asyncio
 import ipaddress
 import logging
+import os
 import socket
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional
 
 import socks
 
+from pyrogram.crypto.executor import get_crypto_executor
+
 log = logging.getLogger(__name__)
 
 
 class TCP:
     TIMEOUT = 10
+    _shared_crypto_executor: Optional[ThreadPoolExecutor] = None
 
-    def __init__(self, ipv6: bool, proxy: dict, crypto_executor_workers: int = 1, loop: Optional[asyncio.AbstractEventLoop] = None):
+    def __init__(self, ipv6: bool, proxy: dict, crypto_executor: Optional[ThreadPoolExecutor] = None, loop: Optional[asyncio.AbstractEventLoop] = None):
         self.socket = None
 
         self.reader = None
@@ -42,9 +46,7 @@ class TCP:
 
         self.proxy = proxy
 
-        self.crypto_executor = ThreadPoolExecutor(
-            max_workers=crypto_executor_workers, thread_name_prefix="Crypto"
-        )
+        self.crypto_executor = crypto_executor or get_crypto_executor()
 
         if proxy:
             hostname = proxy.get("hostname")
@@ -89,6 +91,16 @@ class TCP:
                 raise TimeoutError("Connection timed out")
 
         self.reader, self.writer = await asyncio.open_connection(sock=self.socket)
+
+        try:
+            sock = self.writer.get_extra_info("socket")
+            if sock is not None:
+                sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4 * 1024 * 1024)
+                sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4 * 1024 * 1024)
+        except OSError:
+            pass
 
     async def close(self):
         try:

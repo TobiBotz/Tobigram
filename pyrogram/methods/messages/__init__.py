@@ -64,6 +64,13 @@ from .send_voice import SendVoice
 from .stop_poll import StopPoll
 from .stream_media import StreamMedia
 from .vote_poll import VotePoll
+from .get_poll_results import GetPollResults
+from .send_scheduled_messages import SendScheduledMessages
+from .delete_scheduled_messages import DeleteScheduledMessages
+from .send_screenshot_notification import SendScreenshotNotification
+from .translate_text import TranslateText
+from .edit_fact_check import EditFactCheck
+from .summarize_text import SummarizeText
 
 
 class Messages(
@@ -114,6 +121,13 @@ class Messages(
     GetDiscussionReplies,
     GetDiscussionRepliesCount,
     StreamMedia,
-    GetCustomEmojiStickers
+    GetCustomEmojiStickers,
+    GetPollResults,
+    SendScheduledMessages,
+    DeleteScheduledMessages,
+    SendScreenshotNotification,
+    TranslateText,
+    EditFactCheck,
+    SummarizeText
 ):
     pass

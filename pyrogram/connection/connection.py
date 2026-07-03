@@ -18,8 +18,10 @@
 
 import asyncio
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, Type
 
+from pyrogram.crypto.executor import get_crypto_executor
 from .transport import TCP, TCPAbridged
 from ..session.internals import DataCenter
 
@@ -37,7 +39,7 @@ class Connection:
         proxy: dict,
         media: bool = False,
         protocol_factory: Type[TCP] = TCPAbridged,
-        crypto_executor_workers: int = 1,
+        crypto_executor: Optional[ThreadPoolExecutor] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None
     ):
         self.dc_id = dc_id
@@ -46,7 +48,7 @@ class Connection:
         self.proxy = proxy
         self.media = media
         self.protocol_factory = protocol_factory
-        self.crypto_executor_workers = crypto_executor_workers
+        self.crypto_executor = crypto_executor or get_crypto_executor()
 
         self.address = DataCenter(dc_id, test_mode, ipv6, media)
         self.protocol: TCP = None
@@ -58,7 +60,7 @@ class Connection:
 
     async def connect(self):
         for i in range(Connection.MAX_CONNECTION_ATTEMPTS):
-            self.protocol = self.protocol_factory(self.ipv6, self.proxy, self.crypto_executor_workers, self.loop)
+            self.protocol = self.protocol_factory(self.ipv6, self.proxy, self.crypto_executor, self.loop)
 
             try:
                 log.info("Connecting...")

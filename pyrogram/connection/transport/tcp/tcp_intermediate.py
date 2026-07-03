@@ -17,6 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import asyncio
 from struct import pack, unpack
 from typing import Optional
 
@@ -26,8 +27,8 @@ log = logging.getLogger(__name__)
 
 
 class TCPIntermediate(TCP):
-    def __init__(self, ipv6: bool, proxy: dict, crypto_executor_workers: int = 1, loop: Optional[asyncio.AbstractEventLoop] = None):
-        super().__init__(ipv6, proxy, crypto_executor_workers, loop)
+    def __init__(self, ipv6: bool, proxy: dict, crypto_executor=None, loop: Optional[asyncio.AbstractEventLoop] = None):
+        super().__init__(ipv6, proxy, crypto_executor, loop)
 
     async def connect(self, address: tuple):
         await super().connect(address)

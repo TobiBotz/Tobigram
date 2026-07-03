@@ -49,7 +49,12 @@ class Terminate:
         for media_session in self.media_sessions.values():
             await media_session.stop()
 
+        for pool in self.media_session_pools.values():
+            for session in pool:
+                await session.stop()
+
         self.media_sessions.clear()
+        self.media_session_pools.clear()
 
         self.updates_watchdog_event.set()
 

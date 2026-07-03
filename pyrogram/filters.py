@@ -528,7 +528,7 @@ channel = create(channel_filter)
 
 # region direct_filter
 async def direct_filter(_, __, m: Message):
-    return bool(m.chat and m.chat.type == enums.ChatType.DIRECT)
+    return bool(m.chat and m.chat.type == enums.ChatType.PRIVATE)
 
 
 direct = create(direct_filter)

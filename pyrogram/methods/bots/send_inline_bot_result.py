@@ -70,6 +70,8 @@ class SendInlineBotResult:
                 id=result_id,
                 random_id=self.rnd_id(),
                 silent=disable_notification or None,
-                reply_to_msg_id=reply_to_message_id
+                reply_to=raw.types.InputReplyToMessage(
+                    reply_to_msg_id=reply_to_message_id
+                ) if reply_to_message_id else None
             )
         )

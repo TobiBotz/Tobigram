@@ -1323,7 +1323,7 @@ class Message(Object, Update):
             service_type = enums.MessageServiceType.PAID_MESSAGES_REFUNDED
             paid_messages_refunded = types.PaidMessagesRefunded._parse(action)
         elif isinstance(action, raw.types.MessageActionPaidMessagesPrice):
-            if chat.type == enums.ChatType.DIRECT:
+            if chat.type == enums.ChatType.PRIVATE:
                 service_type = enums.MessageServiceType.DIRECT_MESSAGE_PRICE_CHANGED
                 direct_message_price_changed = types.DirectMessagePriceChanged._parse(action)
             else:
@@ -1823,7 +1823,7 @@ class Message(Object, Update):
                 except (ChannelPrivate, ChannelForumMissing):
                     pass
 
-        if chat.type == enums.ChatType.DIRECT:
+        if chat.type == enums.ChatType.PRIVATE:
             parsed_message.direct_messages_topic_id = message.saved_peer_id.user_id
 
             parsed_topic = client.topic_cache[(parsed_message.chat.id, parsed_message.direct_messages_topic_id)]
