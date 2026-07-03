@@ -21,6 +21,7 @@ from typing import Union
 import pyrogram
 from pyrogram import raw
 from pyrogram import types
+from pyrogram.enums import ButtonStyle
 from ..object import Object
 
 
@@ -81,7 +82,8 @@ class InlineKeyboardButton(Object):
         user_id: int = None,
         switch_inline_query: str = None,
         switch_inline_query_current_chat: str = None,
-        callback_game: "types.CallbackGame" = None
+        callback_game: "types.CallbackGame" = None,
+        style: ButtonStyle = ButtonStyle.DEFAULT
     ):
         super().__init__()
 
@@ -94,6 +96,7 @@ class InlineKeyboardButton(Object):
         self.switch_inline_query = switch_inline_query
         self.switch_inline_query_current_chat = switch_inline_query_current_chat
         self.callback_game = callback_game
+        self.style = style
         # self.pay = pay
 
     @staticmethod
