@@ -60,6 +60,10 @@ class Object:
         if isinstance(obj, datetime):
             return str(obj)
 
+        attrs = getattr(obj, "__dict__", None)
+        if attrs is None:
+            attrs = {s: getattr(obj, s, None) for s in getattr(obj, "__slots__", ())}
+
         return {
             "_": obj.__class__.__name__,
             **{
@@ -67,7 +71,7 @@ class Object:
                     "*" * 9 if attr == "phone_number" else
                     getattr(obj, attr)
                 )
-                for attr in filter(lambda x: not x.startswith("_"), obj.__dict__)
+                for attr in filter(lambda x: not x.startswith("_"), attrs)
                 if getattr(obj, attr) is not None
             }
         }
@@ -76,11 +80,15 @@ class Object:
         return dumps(self, indent=4, default=Object.default, ensure_ascii=False)
 
     def __repr__(self) -> str:
+        attrs = getattr(self, "__dict__", None)
+        if attrs is None:
+            attrs = {s: getattr(self, s, None) for s in getattr(self, "__slots__", ())}
+
         return "pyrogram.types.{}({})".format(
             self.__class__.__name__,
             ", ".join(
                 f"{attr}={repr(getattr(self, attr))}"
-                for attr in filter(lambda x: not x.startswith("_"), self.__dict__)
+                for attr in filter(lambda x: not x.startswith("_"), attrs)
                 if getattr(self, attr) is not None
             )
         )

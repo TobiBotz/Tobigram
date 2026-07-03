@@ -366,7 +366,13 @@ class Dispatcher:
                 for lock in self.locks_list:
                     lock.release()
 
-        self.client.loop.create_task(fn())
+        try:
+            asyncio.get_running_loop().create_task(fn())
+        except RuntimeError:
+            if group not in self.groups:
+                self.groups[group] = []
+                self.groups = OrderedDict(sorted(self.groups.items()))
+            self.groups[group].append(handler)
 
     def remove_handler(self, handler: Handler, group: int):
         async def fn():
@@ -387,7 +393,13 @@ class Dispatcher:
                 for lock in self.locks_list:
                     lock.release()
 
-        self.client.loop.create_task(fn())
+        try:
+            asyncio.get_running_loop().create_task(fn())
+        except RuntimeError:
+            if group in self.groups:
+                self.groups[group].remove(handler)
+                if not self.groups[group]:
+                    del self.groups[group]
 
     async def handler_worker(self, lock):
         while True:

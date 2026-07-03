@@ -25,6 +25,7 @@ from .edit_inline_media import EditInlineMedia
 from .edit_inline_reply_markup import EditInlineReplyMarkup
 from .edit_inline_text import EditInlineText
 from .edit_message_caption import EditMessageCaption
+from .edit_message_checklist import EditMessageChecklist
 from .edit_message_media import EditMessageMedia
 from .edit_message_reply_markup import EditMessageReplyMarkup
 from .edit_message_text import EditMessageText
@@ -46,6 +47,7 @@ from .search_messages_count import SearchMessagesCount
 from .send_animation import SendAnimation
 from .send_audio import SendAudio
 from .send_cached_media import SendCachedMedia
+from .send_checklist import SendChecklist
 from .send_chat_action import SendChatAction
 from .send_contact import SendContact
 from .send_dice import SendDice
@@ -76,6 +78,7 @@ from .summarize_text import SummarizeText
 class Messages(
     DeleteMessages,
     EditMessageCaption,
+    EditMessageChecklist,
     EditMessageReplyMarkup,
     EditMessageMedia,
     EditMessageText,
@@ -103,6 +106,7 @@ class Messages(
     DownloadMedia,
     GetChatHistory,
     SendCachedMedia,
+    SendChecklist,
     GetChatHistoryCount,
     ReadChatHistory,
     EditInlineText,

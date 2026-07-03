@@ -1,21 +1,3 @@
-#  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-present Dan <https://github.com/delivrance>
-#
-#  This file is part of Pyrogram.
-#
-#  Pyrogram is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU Lesser General Public License as published
-#  by the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  Pyrogram is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU Lesser General Public License for more details.
-#
-#  You should have received a copy of the GNU Lesser General Public License
-#  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
-
 from datetime import datetime
 from typing import Union, List, Optional
 
@@ -31,11 +13,20 @@ class SendMessage:
         text: str = "",
         parse_mode: Optional["enums.ParseMode"] = None,
         entities: List["types.MessageEntity"] = None,
-        disable_web_page_preview: bool = None,
+        link_preview_options: Optional["types.LinkPreviewOptions"] = None,
         disable_notification: bool = None,
-        reply_to_message_id: int = None,
+        message_thread_id: int = None,
+        direct_messages_topic_id: int = None,
+        effect_id: int = None,
+        show_caption_above_media: bool = None,
+        reply_parameters: Optional["types.ReplyParameters"] = None,
         schedule_date: datetime = None,
+        repeat_period: int = None,
         protect_content: bool = None,
+        business_connection_id: str = None,
+        allow_paid_broadcast: bool = None,
+        paid_message_star_count: int = None,
+        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
@@ -44,108 +35,11 @@ class SendMessage:
         ] = None,
         rich_text: str = None,
         rich_text_parse_mode: str = "markdown",
+        disable_web_page_preview: bool = None,
+        reply_to_message_id: int = None,
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
     ) -> "types.Message":
-        """Send text messages.
-
-        .. include:: /_includes/usable-by/users-bots.rst
-
-        Parameters:
-            chat_id (``int`` | ``str``):
-                Unique identifier (int) or username (str) of the target chat.
-                For your personal cloud (Saved Messages) you can simply use "me" or "self".
-                For a contact that exists in your Telegram address book you can use his phone number (str).
-
-            text (``str``):
-                Text of the message to be sent.
-
-            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
-                By default, texts are parsed using both Markdown and HTML styles.
-                You can combine both syntaxes together.
-
-            entities (List of :obj:`~pyrogram.types.MessageEntity`):
-                List of special entities that appear in message text, which can be specified instead of *parse_mode*.
-
-            disable_web_page_preview (``bool``, *optional*):
-                Disables link previews for links in this message.
-
-            disable_notification (``bool``, *optional*):
-                Sends the message silently.
-                Users will receive a notification with no sound.
-
-            reply_to_message_id (``int``, *optional*):
-                If the message is a reply, ID of the original message.
-
-            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
-                Date when the message will be automatically sent.
-
-            protect_content (``bool``, *optional*):
-                Protects the contents of the sent message from forwarding and saving.
-
-            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :types.ReplyKeyboardRemove | :types.ForceReply, *optional*):
-                Additional interface options. An object for an inline keyboard, custom reply keyboard,
-                instructions to remove reply keyboard or to force a reply from the user.
-
-            rich_text (``str``, *optional*):
-                Rich text using Telegram's native rich formatting (server-side rendered).
-                Supports GitHub Flavored Markdown (tables, task lists, strikethrough, etc.)
-                and HTML tags. When provided, *text* and *parse_mode* are ignored.
-                Uses Telegram's ``InputRichMessage`` for superior formatting.
-
-            rich_text_parse_mode (``str``, *optional*):
-                Parse mode for *rich_text*: ``"markdown"`` (default, supports GFM) or ``"html"``.
-                Only used when *rich_text* is provided.
-
-        Returns:
-            :obj:`~pyrogram.types.Message`: On success, the sent text message is returned.
-
-        Example:
-            .. code-block:: python
-
-                # Simple example
-                await app.send_message("me", "Message sent with **Pyrogram**!")
-
-                # Disable web page previews
-                await app.send_message("me", "https://docs.pyrogram.org",
-                    disable_web_page_preview=True)
-
-                # Reply to a message using its id
-                await app.send_message("me", "this is a reply", reply_to_message_id=123)
-
-            .. code-block:: python
-
-                # For bots only, send messages with keyboards attached
-
-                from pyrogram.types import (
-                    ReplyKeyboardMarkup, InlineKeyboardMarkup, InlineKeyboardButton)
-
-                # Send a normal keyboard
-                await app.send_message(
-                    chat_id, "Look at that button!",
-                    reply_markup=ReplyKeyboardMarkup([["Nice!"]]))
-
-                # Send an inline keyboard
-                await app.send_message(
-                    chat_id, "These are inline buttons",
-                    reply_markup=InlineKeyboardMarkup(
-                        [
-                            [InlineKeyboardButton("Data", callback_data="callback_data")],
-                            [InlineKeyboardButton("Docs", url="https://docs.pyrogram.org")
-                        ]]))
-
-            .. code-block:: python
-
-                # Send a rich text message with GitHub Flavored Markdown (tables, task lists)
-                await app.send_message(
-                    chat_id,
-                    rich_text=\"\"\"
-| Feature | Status |
-|---------|--------|
-| Tables  | ✅     |
-| Tasks   | ✅     |
-| Bold    | ✅     |
-\"\"\")
-        """
-
         if rich_text:
             if rich_text_parse_mode == "html":
                 rich_message = raw.types.InputRichMessageHTML(
@@ -161,35 +55,83 @@ class SendMessage:
                 raw.functions.messages.SendMessage(
                     peer=await self.resolve_peer(chat_id),
                     silent=disable_notification or None,
-                    reply_to=raw.types.InputReplyToMessage(
-                        reply_to_msg_id=reply_to_message_id
-                    ) if reply_to_message_id else None,
+                    reply_to=await utils.get_reply_to(
+                        self,
+                        reply_parameters,
+                        message_thread_id,
+                        direct_messages_topic_id=direct_messages_topic_id
+                    ),
                     random_id=self.rnd_id(),
                     schedule_date=utils.datetime_to_timestamp(schedule_date),
                     reply_markup=await reply_markup.write(self) if reply_markup else None,
                     message="",
                     rich_message=rich_message,
                     noforwards=protect_content,
-                )
+                    effect=effect_id,
+                    invert_media=show_caption_above_media or None,
+                    schedule_repeat_period=repeat_period,
+                    allow_paid_floodskip=allow_paid_broadcast,
+                    allow_paid_stars=paid_message_star_count,
+                    suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+                ),
             )
             plain_text = rich_text
         else:
+            if link_preview_options is None:
+                link_preview_options = self.link_preview_options
+
+            no_webpage = None
+            invert_media = None
+
+            if link_preview_options is not None:
+                if link_preview_options.is_disabled:
+                    no_webpage = True
+
+                if link_preview_options.show_above_text:
+                    invert_media = True
+
+            if disable_web_page_preview is not None:
+                no_webpage = disable_web_page_preview or None
+
+            if reply_parameters is None:
+                if reply_to_message_id is not None:
+                    reply_parameters = types.ReplyParameters(
+                        message_id=reply_to_message_id,
+                        quote=quote_text,
+                        quote_entities=quote_entities,
+                    )
+                elif quote_text is not None:
+                    reply_parameters = types.ReplyParameters(
+                        message_id=None,
+                        quote=quote_text,
+                        quote_entities=quote_entities,
+                    )
+
             plain_text, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
             r = await self.invoke(
                 raw.functions.messages.SendMessage(
                     peer=await self.resolve_peer(chat_id),
-                    no_webpage=disable_web_page_preview or None,
+                    no_webpage=no_webpage,
                     silent=disable_notification or None,
-                    reply_to=raw.types.InputReplyToMessage(
-                        reply_to_msg_id=reply_to_message_id
-                    ) if reply_to_message_id else None,
+                    reply_to=await utils.get_reply_to(
+                        self,
+                        reply_parameters,
+                        message_thread_id,
+                        direct_messages_topic_id=direct_messages_topic_id
+                    ),
                     random_id=self.rnd_id(),
                     schedule_date=utils.datetime_to_timestamp(schedule_date),
                     reply_markup=await reply_markup.write(self) if reply_markup else None,
                     message=plain_text,
                     entities=entities,
-                    noforwards=protect_content
-                )
+                    noforwards=protect_content,
+                    effect=effect_id,
+                    invert_media=invert_media or show_caption_above_media or None,
+                    schedule_repeat_period=repeat_period,
+                    allow_paid_floodskip=allow_paid_broadcast,
+                    allow_paid_stars=paid_message_star_count,
+                    suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+                ),
             )
 
         if isinstance(r, raw.types.UpdateShortSentMessage):

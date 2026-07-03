@@ -435,8 +435,14 @@ class Client(Methods):
 
     @property
     def loop(self) -> asyncio.AbstractEventLoop:
-        if not self._loop:
-            self._loop = utils.get_event_loop()
+        if self._loop and self._loop.is_running():
+            return self._loop
+        try:
+            self._loop = asyncio.get_running_loop()
+        except RuntimeError:
+            if self._loop is None:
+                self._loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(self._loop)
         return self._loop
 
     @loop.setter

@@ -1823,10 +1823,10 @@ class Message(Object, Update):
                 except (ChannelPrivate, ChannelForumMissing):
                     pass
 
-        if chat.type == enums.ChatType.PRIVATE:
+        if chat.type == enums.ChatType.PRIVATE and message.saved_peer_id:
             parsed_message.direct_messages_topic_id = message.saved_peer_id.user_id
 
-            parsed_topic = client.topic_cache[(parsed_message.chat.id, parsed_message.direct_messages_topic_id)]
+            parsed_topic = client.topic_cache.get((parsed_message.chat.id, parsed_message.direct_messages_topic_id))
 
             if parsed_topic:
                 parsed_message.topic = parsed_topic
@@ -1870,7 +1870,7 @@ class Message(Object, Update):
                     reply_to_params = {"chat_id": key[0], 'message_ids': key[1]}
                 else:
                     key = (parsed_message.chat.id, parsed_message.reply_to_message_id)
-                    reply_to_params = {'chat_id': key[0], 'message_ids': message.id, 'reply': True}
+                    reply_to_params = {'chat_id': key[0], 'reply_to_message_ids': message.id}
 
                 parsed_message.reply_to_message = client.message_cache[key]
 

@@ -438,11 +438,11 @@ async def get_reply_to(
             return raw.types.InputReplyToMessage(
                 reply_to_msg_id=reply_parameters.message_id,
                 top_msg_id=message_thread_id,
-                reply_to_peer_id=await client.resolve_peer(reply_parameters.chat_id),
+                reply_to_peer_id=await client.resolve_peer(reply_parameters.chat_id) if reply_parameters.chat_id else None,
                 quote_text=message,
                 quote_entities=entities,
                 quote_offset=reply_parameters.quote_position,
-                monoforum_peer_id=await client.resolve_peer(direct_messages_topic_id),
+                monoforum_peer_id=await client.resolve_peer(direct_messages_topic_id) if direct_messages_topic_id else None,
                 todo_item_id=reply_parameters.checklist_task_id,
                 poll_option=reply_parameters.poll_option_id.encode() if reply_parameters.poll_option_id is not None else None,
             )
