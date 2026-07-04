@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from enum import auto
+
 from pyrogram import raw
 from .auto_name import AutoName
 
@@ -43,3 +45,6 @@ class SentCodeType(AutoName):
 
     EMAIL_CODE = raw.types.auth.SentCodeTypeEmailCode
     "The code was sent via email."
+
+    SETUP_EMAIL_REQUIRED = auto()
+    "Setup email required for authorization."

@@ -68,3 +68,27 @@ class MessageMediaType(AutoName):
 
     GAME = auto()
     "Game media"
+
+    LIVE_PHOTO = auto()
+    "Live photo media"
+
+    GIVEAWAY = auto()
+    "Giveaway media"
+
+    GIVEAWAY_WINNERS = auto()
+    "Giveaway winners media"
+
+    INVOICE = auto()
+    "Invoice media"
+
+    STORY = auto()
+    "Story media"
+
+    PAID_MEDIA = auto()
+    "Paid media"
+
+    CHECKLIST = auto()
+    "Checklist media"
+
+    UNSUPPORTED = auto()
+    "Unsupported media"
