@@ -4,7 +4,6 @@ on: [push, pull_request]
 
 jobs:
   build:
-
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -19,17 +18,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
-        run: |
-          python -m pip install -U pip
-          pip install tox
+      - name: Install uv
+        run: pip install uv
 
-      - name: Generate API
-        run: |
-          make venv
-          make api
+      - name: Sync dependencies
+        run: uv sync --frozen --dev
 
       - name: Run tests
-        run: |
-          tox
-
+        run: uv run pytest --no-header -q

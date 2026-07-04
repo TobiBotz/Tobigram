@@ -16,17 +16,17 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
-        run: |
-          pip install uv hatch
+      - name: Install uv
+        run: pip install uv
 
       - name: Generate API
         run: |
-          make venv
-          make api
+          uv sync --frozen
+          uv run python3 compiler/errors/compiler.py
+          cd compiler/api && uv run python3 compiler.py
 
       - name: Build package
-        run: hatch build
+        run: uv build
 
       - name: Publish to PyPI
         run: uv publish dist/*

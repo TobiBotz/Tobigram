@@ -1,13 +1,5 @@
-VENV := venv
-
-ifeq ($(OS),Windows_NT)
-    PYTHON := $(VENV)/Scripts/python
-    SPHINX := $(VENV)/Scripts/sphinx-build
-else
-    PYTHON := $(VENV)/bin/python
-    SPHINX := $(VENV)/bin/sphinx-build
-endif
-PIP := $(PYTHON) -m pip
+UV := uv
+PYTHON := $(UV) run python3
 TAG = v$(shell grep -E '__version__ = ".*"' pyrogram/__init__.py | cut -d\" -f2)
 
 RM := rm -rf
@@ -19,28 +11,22 @@ BLUE   := \033[0;34m
 BOLD   := \033[1m
 RESET  := \033[0m
 
-.PHONY: venv venv-docs clean-venv clean-build clean-api clean-docs clean api docs docs-archive build tag dtag
-
-PY := $(shell command -v python3 2>/dev/null || command -v python 2>/dev/null || command -v py 2>/dev/null)
+.PHONY: venv clean-venv clean-build clean-api clean-docs clean api docs docs-archive build tag dtag
 
 venv:
-	$(PY) -m venv $(VENV)
-	$(PYTHON) -m pip install -U pip wheel setuptools
-	$(PYTHON) -m pip install -U -e .[dev]
-	@printf "$(YELLOW)Created venv with %s$(RESET)\n" "$$($(PYTHON) --version)"
+	$(UV) sync --frozen
+	@printf "$(YELLOW)Synced environment with %s$(RESET)\n" "$$($(PYTHON) --version)"
 
-venv-docs:
-	$(PY) -m venv $(VENV)
-	$(PYTHON) -m pip install -U pip wheel setuptools
-	$(PYTHON) -m pip install -U -e .[docs]
-	@printf "$(YELLOW)Created docs venv with %s$(RESET)\n" "$$($(PYTHON) --version)"
+venv-dev:
+	$(UV) sync --frozen --dev
+	@printf "$(YELLOW)Synced dev environment with %s$(RESET)\n" "$$($(PYTHON) --version)"
 
 clean-venv:
-	$(RM) $(VENV)
-	@printf "$(YELLOW)Cleaned venv directory$(RESET)\n"
+	$(RM) .venv
+	@printf "$(YELLOW)Cleaned .venv directory$(RESET)\n"
 
 clean-build:
-	$(RM) *.egg-info build dist
+	$(RM) dist *.egg-info build
 	@printf "$(YELLOW)Cleaned build directory$(RESET)\n"
 
 clean-api:
@@ -55,19 +41,24 @@ clean: clean-venv clean-build clean-api clean-docs
 	@printf "$(GREEN)Cleaned all directories$(RESET)\n"
 
 api:
-	cd compiler/api && ../../$(PYTHON) compiler.py
-	cd compiler/errors && ../../$(PYTHON) compiler.py
-	# compiler/methods: run manually from project root: python compiler/methods/compiler.py
+	cd compiler/api && $(UV) run python3 compiler.py
+	cd compiler/errors && $(UV) run python3 compiler.py
 
 docs:
 	cd compiler/docs && ../../$(PYTHON) compiler.py
-	$(SPHINX) -b dirhtml "docs/source" "docs/build/html" -j auto
+	$(UV) run sphinx-build -b dirhtml "docs/source" "docs/build/html" -j auto
 
 docs-archive:
 	cd docs/build/html && zip -r ../docs.zip ./
 
 build:
-	hatch build
+	$(UV) build
+
+publish:
+	$(UV) publish
+
+test:
+	$(UV) run pytest --no-header -q
 
 tag:
 	git tag $(TAG)
