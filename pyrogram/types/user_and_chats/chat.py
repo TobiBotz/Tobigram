@@ -1203,7 +1203,7 @@ class Chat(Object):
         parsed_chat.migrated_from_max_id = channel.migrated_from_max_id
 
         if channel.pinned_msg_id:
-            parsed_chat.pinned_message = await client.get_messages(chat_id=parsed_chat.id, pinned=True)
+            parsed_chat.pinned_message = await client.get_messages(chat_id=parsed_chat.id, message_ids=channel.pinned_msg_id)
 
         # parsed_chat.stickerset
         parsed_chat.available_min_id = channel.available_min_id
