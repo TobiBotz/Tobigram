@@ -20,6 +20,7 @@ import asyncio
 import functools
 import inspect
 import logging
+import math
 import os
 import platform
 import re
@@ -270,6 +271,7 @@ class Client(Methods):
     # Interval of seconds in which the updates watchdog will kick in
     UPDATES_WATCHDOG_INTERVAL = 15 * 60
 
+    DOWNLOAD_POOL_SIZE = 4
     MAX_CONCURRENT_TRANSMISSIONS = 16
     MAX_MESSAGE_CACHE_SIZE = 1000
     MAX_TOPIC_CACHE_SIZE = 1000
@@ -1189,49 +1191,173 @@ class Client(Methods):
                 )
 
                 if isinstance(r, raw.types.upload.File):
-                    while True:
-                        chunk = r.bytes
+                    first_chunk = r.bytes
+                    yield first_chunk
+                    current += 1
+                    offset_bytes += chunk_size
 
-                        yield chunk
+                    if progress:
+                        _now = time.monotonic()
+                        if _now - _last_progress_time >= 0.1:
+                            _last_progress_time = _now
+                            _sent = min(offset_bytes, file_size) if file_size != 0 else offset_bytes
+                            _total = file_size
 
-                        current += 1
-                        offset_bytes += chunk_size
+                            async def report(_sent=_sent, _total=_total):
+                                try:
+                                    if inspect.iscoroutinefunction(progress):
+                                        await progress(_sent, _total, *progress_args)
+                                    else:
+                                        await self.loop.run_in_executor(
+                                            self.executor,
+                                            functools.partial(progress, _sent, _total, *progress_args),
+                                        )
+                                except Exception as e:
+                                    log.warning(f"Download progress callback error: {e}")
 
-                        if progress:
-                            _now = time.monotonic()
-                            if _now - _last_progress_time >= 0.1:
-                                _last_progress_time = _now
+                            asyncio.ensure_future(report())
 
-                                _sent = min(offset_bytes, file_size) if file_size != 0 else offset_bytes
-                                _total = file_size
+                    if (
+                        not first_chunk
+                        or len(first_chunk) < chunk_size
+                        or current >= total
+                    ):
+                        return
 
-                                async def report(_sent=_sent, _total=_total):
-                                    try:
-                                        if inspect.iscoroutinefunction(progress):
-                                            await progress(_sent, _total, *progress_args)
-                                        else:
-                                            await self.loop.run_in_executor(
-                                                self.executor,
-                                                functools.partial(
-                                                    progress, _sent, _total, *progress_args
-                                                ),
-                                            )
-                                    except Exception as e:
-                                        log.warning(f"Download progress callback error: {e}")
+                    # Sequential fallback when file size is unknown
+                    if file_size <= 0:
+                        while current < total:
+                            r = await session.invoke(
+                                raw.functions.upload.GetFile(
+                                    location=location,
+                                    offset=offset_bytes,
+                                    limit=chunk_size,
+                                ),
+                                sleep_threshold=30,
+                            )
+                            chunk = r.bytes
+                            if not chunk:
+                                return
+                            yield chunk
+                            current += 1
+                            offset_bytes += chunk_size
 
-                                asyncio.ensure_future(report())
+                            if len(chunk) < chunk_size or current >= total:
+                                return
 
-                        if len(chunk) < chunk_size or current >= total:
-                            break
+                            if progress:
+                                _now = time.monotonic()
+                                if _now - _last_progress_time >= 0.1:
+                                    _last_progress_time = _now
+                                    _sent = min(offset_bytes, file_size) if file_size != 0 else offset_bytes
+                                    _total = file_size
+                                    async def report(_sent=_sent, _total=_total):
+                                        try:
+                                            if inspect.iscoroutinefunction(progress):
+                                                await progress(_sent, _total, *progress_args)
+                                            else:
+                                                await self.loop.run_in_executor(
+                                                    self.executor,
+                                                    functools.partial(progress, _sent, _total, *progress_args),
+                                                )
+                                        except Exception as e:
+                                            log.warning(f"Download progress callback error: {e}")
+                                    asyncio.ensure_future(report())
+                        return
 
-                        r = await session.invoke(
-                            raw.functions.upload.GetFile(
-                                location=location,
-                                offset=offset_bytes,
-                                limit=chunk_size
-                            ),
-                            sleep_threshold=30
-                        )
+                    # aria2c-style parallel download:
+                    #   a) dynamic work queue — workers pull the next available offset
+                    #   b) event notification — no polling
+                    #   c) clean cancellation — no orphaned tasks on early exit
+                    #   d) respects total (limit) so streaming callers are not over-fetched
+
+                    n_parallel = min(self.DOWNLOAD_POOL_SIZE, math.ceil((file_size - offset_bytes) / chunk_size))
+                    pool = await self._get_media_session_pool(dc_id, n_parallel)
+                    n_sessions = len(pool)
+
+                    work = asyncio.Queue()
+                    chunks_needed = min(
+                        total - current,
+                        math.ceil((file_size - offset_bytes) / chunk_size),
+                    )
+                    for i in range(chunks_needed):
+                        work.put_nowait(offset_bytes + i * chunk_size)
+
+                    received = {}
+                    data_ready = asyncio.Event()
+
+                    async def _worker(session):
+                        while True:
+                            try:
+                                offset = work.get_nowait()
+                            except asyncio.QueueEmpty:
+                                return
+
+                            r = await session.invoke(
+                                raw.functions.upload.GetFile(
+                                    location=location,
+                                    offset=offset,
+                                    limit=chunk_size,
+                                ),
+                                sleep_threshold=30,
+                            )
+                            chunk_data = r.bytes
+                            received[offset] = chunk_data
+                            data_ready.set()
+
+                            if len(chunk_data) < chunk_size:
+                                return
+
+                    tasks = [
+                        asyncio.ensure_future(_worker(pool[i % n_sessions]))
+                        for i in range(n_parallel)
+                    ]
+
+                    try:
+                        while current < total:
+                            while offset_bytes not in received:
+                                for t in tasks:
+                                    if t.done():
+                                        exc = t.exception()
+                                        if exc and not isinstance(exc, asyncio.CancelledError):
+                                            raise exc
+                                if all(t.done() for t in tasks):
+                                    return
+                                await data_ready.wait()
+                                data_ready.clear()
+
+                            chunk = received.pop(offset_bytes)
+                            yield chunk
+                            current += 1
+                            offset_bytes += chunk_size
+
+                            if len(chunk) < chunk_size or current >= total:
+                                return
+
+                            if progress:
+                                _now = time.monotonic()
+                                if _now - _last_progress_time >= 0.1:
+                                    _last_progress_time = _now
+                                    _sent = min(offset_bytes, file_size) if file_size != 0 else offset_bytes
+                                    _total = file_size
+
+                                    async def report(_sent=_sent, _total=_total):
+                                        try:
+                                            if inspect.iscoroutinefunction(progress):
+                                                await progress(_sent, _total, *progress_args)
+                                            else:
+                                                await self.loop.run_in_executor(
+                                                    self.executor,
+                                                    functools.partial(progress, _sent, _total, *progress_args),
+                                                )
+                                        except Exception as e:
+                                            log.warning(f"Download progress callback error: {e}")
+
+                                    asyncio.ensure_future(report())
+                    finally:
+                        for t in tasks:
+                            if not t.done():
+                                t.cancel()
 
                 elif isinstance(r, raw.types.upload.FileCdnRedirect):
 
