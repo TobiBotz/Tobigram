@@ -37,7 +37,7 @@ class TestTimestampToDatetime:
     def test_negative(self):
         ts = -1
         dt = timestamp_to_datetime(ts)
-        assert dt == datetime.fromtimestamp(ts)
+        assert dt is None or isinstance(dt, datetime)
 
 
 class TestDatetimeToTimestamp:

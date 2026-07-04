@@ -597,7 +597,12 @@ def max_datetime() -> datetime:
 
 
 def timestamp_to_datetime(ts: Optional[int]) -> Optional[datetime]:
-    return datetime.fromtimestamp(ts) if ts else None
+    if ts:
+        try:
+            return datetime.fromtimestamp(ts)
+        except (OSError, OverflowError, ValueError):
+            return None
+    return None
 
 
 def datetime_to_timestamp(dt: Optional[Union[datetime, timedelta]]) -> Optional[int]:
