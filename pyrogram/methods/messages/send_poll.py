@@ -45,6 +45,11 @@ class SendPoll:
         reply_to_message_id: int = None,
         reply_to_chat_id: Union[int, str] = None,
         schedule_date: datetime = None,
+        reply_parameters: Optional["types.ReplyParameters"] = None,
+        message_thread_id: Optional[int] = None,
+        allow_paid_broadcast: Optional[bool] = None,
+        paid_message_star_count: Optional[int] = None,
+        business_connection_id: Optional[str] = None,
         quote_text: str = None,
         quote_entities: List["types.MessageEntity"] = None,
         reply_markup: Union[
@@ -184,7 +189,7 @@ class SendPoll:
                 reply_to=await utils.get_reply_to(
                     self,
                     reply_parameters,
-                    None,
+                    message_thread_id,
                 ),
                 random_id=self.rnd_id(),
                 schedule_date=utils.datetime_to_timestamp(schedule_date),

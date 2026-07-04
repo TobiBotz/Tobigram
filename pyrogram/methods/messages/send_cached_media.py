@@ -20,6 +20,7 @@ class SendCachedMedia:
         reply_to_chat_id: Union[int, str] = None,
         schedule_date: datetime = None,
         protect_content: bool = None,
+        has_spoiler: bool = None,
         rich_text: str = None,
         rich_text_parse_mode: str = "markdown",
         quote_text: str = None,
@@ -164,7 +165,7 @@ class SendCachedMedia:
         r = await self.invoke(
             raw.functions.messages.SendMedia(
                 peer=await self.resolve_peer(chat_id),
-                media=utils.get_input_media_from_file_id(file_id),
+                media=utils.get_input_media_from_file_id(file_id, has_spoiler=has_spoiler),
                 silent=disable_notification or None,
                 reply_to=await utils.get_reply_to(
                     self,

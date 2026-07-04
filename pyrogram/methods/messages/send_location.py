@@ -17,7 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from typing import Union, List
+from typing import Union, List, Optional
 
 import pyrogram
 from pyrogram import raw, utils
@@ -35,6 +35,11 @@ class SendLocation:
         reply_to_chat_id: Union[int, str] = None,
         schedule_date: datetime = None,
         protect_content: bool = None,
+        reply_parameters: Optional["types.ReplyParameters"] = None,
+        message_thread_id: Optional[int] = None,
+        allow_paid_broadcast: Optional[bool] = None,
+        paid_message_star_count: Optional[int] = None,
+        business_connection_id: Optional[str] = None,
         quote_text: str = None,
         quote_entities: List["types.MessageEntity"] = None,
         reply_markup: Union[
@@ -115,7 +120,7 @@ class SendLocation:
                 reply_to=await utils.get_reply_to(
                     self,
                     reply_parameters,
-                    None,
+                    message_thread_id,
                 ),
                 random_id=self.rnd_id(),
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
