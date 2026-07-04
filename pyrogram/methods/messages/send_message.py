@@ -37,6 +37,7 @@ class SendMessage:
         rich_text_parse_mode: str = "markdown",
         disable_web_page_preview: bool = None,
         reply_to_message_id: int = None,
+        reply_to_chat_id: Union[int, str] = None,
         quote_text: str = None,
         quote_entities: List["types.MessageEntity"] = None,
     ) -> "types.Message":
@@ -97,12 +98,14 @@ class SendMessage:
                 if reply_to_message_id is not None:
                     reply_parameters = types.ReplyParameters(
                         message_id=reply_to_message_id,
+                        chat_id=reply_to_chat_id,
                         quote=quote_text,
                         quote_entities=quote_entities,
                     )
                 elif quote_text is not None:
                     reply_parameters = types.ReplyParameters(
                         message_id=None,
+                        chat_id=reply_to_chat_id,
                         quote=quote_text,
                         quote_entities=quote_entities,
                     )

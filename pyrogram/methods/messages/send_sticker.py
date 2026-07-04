@@ -37,6 +37,7 @@ class SendSticker:
         sticker: Union[str, BinaryIO],
         disable_notification: bool = None,
         reply_to_message_id: int = None,
+        reply_to_chat_id: Union[int, str] = None,
         schedule_date: datetime = None,
         protect_content: bool = None,
         reply_markup: Union[
@@ -176,7 +177,8 @@ class SendSticker:
                             media=media,
                             silent=disable_notification or None,
                             reply_to=raw.types.InputReplyToMessage(
-                                reply_to_msg_id=reply_to_message_id
+                                reply_to_msg_id=reply_to_message_id,
+                                reply_to_peer_id=await self.resolve_peer(reply_to_chat_id) if reply_to_chat_id else None
                             ) if reply_to_message_id else None,
                             random_id=self.rnd_id(),
                             schedule_date=utils.datetime_to_timestamp(schedule_date),

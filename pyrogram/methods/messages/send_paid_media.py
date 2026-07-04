@@ -53,6 +53,7 @@ class SendPaidMedia:
         business_connection_id: str = None,
 
         reply_to_message_id: int = None,
+        reply_to_chat_id: Union[int, str] = None,
         quote_text: str = None,
         quote_entities: List["types.MessageEntity"] = None,
         quote_offset: int = None,
@@ -158,6 +159,7 @@ class SendPaidMedia:
 
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id,
+                chat_id=reply_to_chat_id,
                 quote=quote_text,
                 quote_parse_mode=parse_mode,
                 quote_entities=quote_entities,
@@ -369,7 +371,8 @@ class SendPaidMedia:
                 reply_to=await utils.get_reply_to(
                     self,
                     reply_parameters,
-                    direct_messages_topic_id
+                    None,
+                    direct_messages_topic_id=direct_messages_topic_id
                 ),
                 random_id=self.rnd_id(),
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
