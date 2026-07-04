@@ -18,7 +18,7 @@ venv:
 	@printf "$(YELLOW)Synced environment with %s$(RESET)\n" "$$($(PYTHON) --version)"
 
 venv-dev:
-	$(UV) sync --frozen --dev
+	$(UV) sync --frozen --extra dev
 	@printf "$(YELLOW)Synced dev environment with %s$(RESET)\n" "$$($(PYTHON) --version)"
 
 clean-venv:

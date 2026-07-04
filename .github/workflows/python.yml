@@ -22,7 +22,7 @@ jobs:
         run: pip install uv
 
       - name: Sync dependencies
-        run: uv sync --frozen --dev
+        run: uv sync --frozen --extra dev
 
       - name: Run tests
         run: uv run pytest --no-header -q
