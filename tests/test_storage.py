@@ -1,0 +1,177 @@
+import pytest
+
+from pyrogram.storage import Storage, SQLiteStorage
+from pyrogram.storage.memory_storage import MemoryStorage
+
+
+class TestStorageABC:
+    def test_storage_is_abstract(self):
+        with pytest.raises(TypeError):
+            Storage()  # abstract – can't instantiate directly
+
+    def test_storage_has_abstract_methods(self):
+        methods = [
+            "open", "save", "close", "delete",
+            "update_peers", "update_usernames", "update_state",
+            "get_peer_by_id", "get_peer_by_username",
+            "get_peer_by_phone_number",
+            "dc_id", "api_id", "server_address", "port",
+            "test_mode", "auth_key", "date", "user_id", "is_bot",
+        ]
+        for m in methods:
+            assert hasattr(Storage, m), f"Storage missing abstract method: {m}"
+
+    def test_storage_constants(self):
+        assert Storage.OLD_SESSION_STRING_FORMAT == ">B?256sI?"
+        assert Storage.OLD_SESSION_STRING_FORMAT_64 == ">B?256sQ?"
+        assert Storage.SESSION_STRING_SIZE == 351
+        assert Storage.SESSION_STRING_SIZE_64 == 356
+        assert Storage.SESSION_STRING_FORMAT == ">BI?256sQ?"
+
+
+class TestMemoryStorage:
+    def test_create_minimal(self):
+        storage = MemoryStorage(":memory:")
+        assert storage.name == ":memory:"
+        assert storage.session_string is None
+
+    def test_create_with_session_string(self):
+        storage = MemoryStorage(":memory:", session_string="dummy")
+        assert storage.session_string == "dummy"
+
+    def test_open_creates_db(self):
+        storage = MemoryStorage(":memory:")
+        # Before open, conn should be None
+        assert storage.conn is None
+
+    @pytest.mark.asyncio
+    async def test_open_and_set_values(self):
+        storage = MemoryStorage(":memory:")
+        await storage.open()
+        assert storage.conn is not None
+
+        # Set values via the property-style setters
+        await storage.dc_id(2)
+        await storage.api_id(12345)
+        await storage.test_mode(True)
+        await storage.user_id(67890)
+        await storage.is_bot(False)
+        await storage.auth_key(b"\x00" * 256)
+        await storage.date(1000)
+
+        # Read them back (SQLite stores bools as 0/1)
+        assert await storage.dc_id() == 2
+        assert await storage.api_id() == 12345
+        assert await storage.test_mode() == 1
+        assert await storage.user_id() == 67890
+        assert await storage.is_bot() == 0
+        assert await storage.auth_key() == b"\x00" * 256
+        assert await storage.date() == 1000
+
+        await storage.save()
+        await storage.close()
+
+    @pytest.mark.asyncio
+    async def test_open_twice(self):
+        storage = MemoryStorage(":memory:")
+        await storage.open()
+        await storage.open()  # should not raise
+        await storage.close()
+
+    @pytest.mark.asyncio
+    async def test_delete_noop(self):
+        storage = MemoryStorage(":memory:")
+        await storage.open()
+        await storage.delete()  # should not raise
+        await storage.close()
+
+    @pytest.mark.asyncio
+    async def test_update_peers(self):
+        storage = MemoryStorage(":memory:")
+        await storage.open()
+        await storage.update_peers([(123, 456, "user", "+1234567890")])
+
+        peer = await storage.get_peer_by_id(123)
+        assert peer is not None
+        assert peer.user_id == 123
+
+        await storage.close()
+
+    @pytest.mark.asyncio
+    async def test_get_peer_by_username(self):
+        storage = MemoryStorage(":memory:")
+        await storage.open()
+        await storage.update_peers([(789, 101112, "user", "")])
+        await storage.update_usernames([(789, ["testuser"])])
+
+        peer = await storage.get_peer_by_username("testuser")
+        assert peer is not None
+        assert peer.user_id == 789
+
+        await storage.close()
+
+    @pytest.mark.asyncio
+    async def test_get_peer_by_phone_number(self):
+        storage = MemoryStorage(":memory:")
+        await storage.open()
+        await storage.update_peers([(111, 222, "user", "+111222333")])
+
+        peer = await storage.get_peer_by_phone_number("+111222333")
+        assert peer is not None
+        assert peer.user_id == 111
+
+        await storage.close()
+
+    @pytest.mark.asyncio
+    async def test_peer_not_found_raises(self):
+        storage = MemoryStorage(":memory:")
+        await storage.open()
+
+        with pytest.raises(KeyError):
+            await storage.get_peer_by_id(999999)
+
+        await storage.close()
+
+    @pytest.mark.asyncio
+    async def test_update_state(self):
+        storage = MemoryStorage(":memory:")
+        await storage.open()
+        state = (0, 1, 2, 3, 4)
+        await storage.update_state(state)
+
+        # read back (returns list of tuples)
+        state2 = await storage.update_state()
+        assert state2 == [state]
+
+        await storage.close()
+
+    @pytest.mark.asyncio
+    async def test_export_session_string(self):
+        storage = MemoryStorage(":memory:")
+        await storage.open()
+        await storage.dc_id(2)
+        await storage.api_id(12345)
+        await storage.test_mode(False)
+        await storage.auth_key(b"\x11" * 256)
+        await storage.user_id(999)
+        await storage.is_bot(False)
+        await storage.date(0)
+
+        s = await storage.export_session_string()
+        assert isinstance(s, str)
+        assert len(s) > 0
+
+        await storage.close()
+
+    @pytest.mark.asyncio
+    async def test_server_address_and_port(self):
+        storage = MemoryStorage(":memory:")
+        await storage.open()
+        await storage.server_address("149.154.167.50")
+        await storage.port(443)
+        assert await storage.server_address() == "149.154.167.50"
+        assert await storage.port() == 443
+        await storage.close()
+
+    def test_is_subclass_of_sqlite_storage(self):
+        assert issubclass(MemoryStorage, SQLiteStorage)

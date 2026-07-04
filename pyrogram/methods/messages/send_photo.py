@@ -239,7 +239,6 @@ class SendPhoto:
                             noforwards=protect_content,
                             effect=effect_id,
                             invert_media=show_caption_above_media or None,
-                            invert_video=view_once or None,
                             schedule_repeat_period=repeat_period,
                             allow_paid_floodskip=allow_paid_broadcast,
                             allow_paid_stars=paid_message_star_count,

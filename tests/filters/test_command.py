@@ -27,9 +27,9 @@ c = Client()
 @pytest.mark.asyncio
 async def test_single():
     f = filters.command("start")
-
     m = Message("/start")
     assert await f(c, m)
+
 
 
 @pytest.mark.asyncio

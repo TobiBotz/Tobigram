@@ -1,32 +1,16 @@
-#  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-present Dan <https://github.com/delivrance>
-#
-#  This file is part of Pyrogram.
-#
-#  Pyrogram is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU Lesser General Public License as published
-#  by the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  Pyrogram is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU Lesser General Public License for more details.
-#
-#  You should have received a copy of the GNU Lesser General Public License
-#  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+from pyrogram.types import User as PyroUser
+
 
 class Client:
     def __init__(self):
-        self.me = User("username")
+        self.me = PyroUser(
+            id=123, is_self=False, is_contact=False, is_mutual_contact=False,
+            is_deleted=False, is_bot=False, is_premium=False, is_support=False,
+            first_name="User", username="username"
+        )
 
     async def get_me(self):
         return self.me
-
-
-class User:
-    def __init__(self, username: str = None):
-        self.username = username
 
 
 class Message:

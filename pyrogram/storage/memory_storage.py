@@ -18,6 +18,7 @@
 
 import base64
 import logging
+from pathlib import Path
 import sqlite3
 import struct
 
@@ -27,14 +28,14 @@ log = logging.getLogger(__name__)
 
 
 class MemoryStorage(SQLiteStorage):
-    def __init__(self, name: str, session_string: str = None):
-        super().__init__(name)
+    def __init__(self, name: str, workdir=None, session_string: str = None):
+        super().__init__(name, workdir=workdir if workdir is not None else Path.cwd())
 
         self.session_string = session_string
 
     async def open(self):
         self.conn = sqlite3.connect(":memory:", check_same_thread=False)
-        self.create()
+        await self.create()
 
         if self.session_string:
             # Old format
