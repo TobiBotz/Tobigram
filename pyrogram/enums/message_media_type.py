@@ -92,3 +92,6 @@ class MessageMediaType(AutoName):
 
     UNSUPPORTED = auto()
     "Unsupported media"
+
+    VIDEO_STREAM = auto()
+    "Video stream media"

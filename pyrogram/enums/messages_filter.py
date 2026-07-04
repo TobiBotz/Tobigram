@@ -50,7 +50,10 @@ class MessagesFilter(AutoName):
     VIDEO_NOTE = raw.types.InputMessagesFilterRoundVideo
     "Video note messages"
 
-    AUDIO_VIDEO_NOTE = raw.types.InputMessagesFilterRoundVideo
+    ROUND_VOICE = raw.types.InputMessagesFilterRoundVoice
+    "Round voice messages"
+
+    AUDIO_VIDEO_NOTE = raw.types.InputMessagesFilterRoundVoice
     "Audio and video note messages"
 
     AUDIO = raw.types.InputMessagesFilterMusic
@@ -73,3 +76,6 @@ class MessagesFilter(AutoName):
 
     PINNED = raw.types.InputMessagesFilterPinned
     "Pinned messages"
+
+    POLL = raw.types.InputMessagesFilterPoll
+    "Poll messages"

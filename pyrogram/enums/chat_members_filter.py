@@ -40,3 +40,9 @@ class ChatMembersFilter(AutoName):
 
     ADMINISTRATORS = raw.types.ChannelParticipantsAdmins
     "Administrators"
+
+    CONTACTS = raw.types.ChannelParticipantsContacts
+    "Contacts"
+
+    MENTIONS = raw.types.ChannelParticipantsMentions
+    "Mentions"

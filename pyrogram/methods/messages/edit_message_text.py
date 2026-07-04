@@ -19,7 +19,7 @@ class EditMessageText:
         disable_web_page_preview: bool = None,
         business_connection_id: str = None,
         rich_text: str = None,
-        rich_text_parse_mode: str = "markdown",
+        rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
         reply_markup: "types.InlineKeyboardMarkup" = None,
     ) -> "types.Message":
         if link_preview_options is None:
@@ -40,7 +40,7 @@ class EditMessageText:
         invert_media = invert_media or show_caption_above_media or None
 
         if rich_text:
-            if rich_text_parse_mode == "html":
+            if rich_text_parse_mode == enums.ParseMode.HTML:
                 rich_msg = raw.types.InputRichMessageHTML(html=rich_text)
             else:
                 rich_msg = raw.types.InputRichMessageMarkdown(markdown=rich_text)

@@ -34,7 +34,7 @@ class SendMessage:
             "types.ForceReply"
         ] = None,
         rich_text: str = None,
-        rich_text_parse_mode: str = "markdown",
+        rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
         disable_web_page_preview: bool = None,
         reply_to_message_id: int = None,
         reply_to_chat_id: Union[int, str] = None,
@@ -47,7 +47,7 @@ class SendMessage:
         quick_reply_shortcut: int = None,
     ) -> "types.Message":
         if rich_text:
-            if rich_text_parse_mode == "html":
+            if rich_text_parse_mode == enums.ParseMode.HTML:
                 rich_message = raw.types.InputRichMessageHTML(
                     html=rich_text,
                     noautolink=disable_web_page_preview or None,

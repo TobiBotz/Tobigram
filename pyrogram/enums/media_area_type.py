@@ -45,3 +45,9 @@ class MediaAreaType(AutoName):
     GIFT = raw.types.MediaAreaStarGift
     "Gift."
 
+    INPUT_POST = raw.types.InputMediaAreaChannelPost
+    "Input channel post area."
+
+    INPUT_VENUE = raw.types.InputMediaAreaVenue
+    "Input venue area."
+

@@ -48,3 +48,12 @@ class SentCodeType(AutoName):
 
     SETUP_EMAIL_REQUIRED = auto()
     "Setup email required for authorization."
+
+    FIREBASE_SMS = raw.types.auth.SentCodeTypeFirebaseSms
+    "The code was sent via Firebase SMS."
+
+    SMS_WORD = raw.types.auth.SentCodeTypeSmsWord
+    "The code was sent via SMS word."
+
+    SMS_PHRASE = raw.types.auth.SentCodeTypeSmsPhrase
+    "The code was sent via SMS phrase."

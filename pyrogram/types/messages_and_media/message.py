@@ -1195,7 +1195,9 @@ class Message(Object, Update):
         elif isinstance(action, raw.types.MessageActionGroupCallScheduled):
             service_type = enums.MessageServiceType.VIDEO_CHAT_SCHEDULED
             video_chat_scheduled = types.VideoChatScheduled._parse(action)
-        if isinstance(action, raw.types.MessageActionHistoryClear):
+        elif isinstance(action, raw.types.MessageActionConferenceCall):
+            service_type = enums.MessageServiceType.CONFERENCE_CALL
+        elif isinstance(action, raw.types.MessageActionHistoryClear):
             service_type = enums.MessageServiceType.HISTORY_CLEARED
             history_cleared = types.HistoryCleared()
         elif isinstance(action, raw.types.MessageActionInviteToGroupCall):
@@ -1271,12 +1273,10 @@ class Message(Object, Update):
         elif isinstance(action, raw.types.MessageActionNoForwardsRequest):
             service_type = enums.MessageServiceType.CHAT_HAS_PROTECTED_CONTENT_DISABLE_REQUESTED
             chat_has_protected_content_disable_requested = types.ChatHasProtectedContentDisableRequested._parse(action)
-        # TODO: elif isinstance(action, raw.types.MessageActionSecureValuesSent):
-            # service_type = enums.MessageServiceType.PASSPORT_DATA_SEND
-            # passport_data_send = ...
-        # TODO: elif isinstance(action, raw.types.MessageActionSecureValuesSentMe):
-            # service_type = enums.MessageServiceType.PASSPORT_DATA_RECEIVED
-            # passport_data_received = ...
+        elif isinstance(action, raw.types.MessageActionSecureValuesSent):
+             service_type = enums.MessageServiceType.PASSPORT_DATA_SEND
+        elif isinstance(action, raw.types.MessageActionSecureValuesSentMe):
+             service_type = enums.MessageServiceType.PASSPORT_DATA_RECEIVED
         elif isinstance(action, raw.types.MessageActionSetChatTheme):
             service_type = enums.MessageServiceType.CHAT_SET_THEME
             chat_set_theme = await types.ChatTheme._parse(client, action.theme)

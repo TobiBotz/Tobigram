@@ -33,3 +33,6 @@ class ChatJoinRequestQueryResult(AutoName):
     QUEUE = raw.types.JoinChatBotResultQueued
     "Leave the decision to other administrators."
 
+    WEB_VIEW = raw.types.JoinChatBotResultWebView
+    "Open a webview for the user."
+

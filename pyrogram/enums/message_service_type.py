@@ -234,5 +234,14 @@ class MessageServiceType(AutoName):
     POLL_OPTION_DELETED = auto()
     "Poll option deleted"
 
+    CONFERENCE_CALL = auto()
+    "Conference call"
+
+    PASSPORT_DATA_SEND = auto()
+    "Passport data sent"
+
+    PASSPORT_DATA_RECEIVED = auto()
+    "Passport data received"
+
     UNSUPPORTED = auto()
     "Unsupported service message"

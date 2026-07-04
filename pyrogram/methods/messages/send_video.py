@@ -72,7 +72,7 @@ class SendVideo:
         paid_message_star_count: int = None,
         suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
         rich_text: str = None,
-        rich_text_parse_mode: str = "markdown",
+        rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
         quote_text: str = None,
         quote_entities: List["types.MessageEntity"] = None,
         background: Optional[bool] = None,
@@ -279,7 +279,7 @@ class SendVideo:
             while True:
                 try:
                     if rich_text:
-                        if rich_text_parse_mode == "html":
+                        if rich_text_parse_mode == enums.ParseMode.HTML:
                             rich_msg = raw.types.InputRichMessageHTML(
                                 html=rich_text,
                             )
