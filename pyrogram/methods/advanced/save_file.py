@@ -23,6 +23,7 @@ import io
 import logging
 import math
 import os
+import time
 from hashlib import md5
 from pathlib import PurePath
 from typing import Union, BinaryIO, Callable
@@ -37,8 +38,8 @@ PART_SIZE = 512 * 1024
 WORKERS_PER_SESSION = 4
 POOL_SIZE = 4
 MAX_RETRIES = 5
-PROGRESS_PCT = 10
 READ_BUFFER = 4 * 1024 * 1024
+PROGRESS_INTERVAL = 0.1
 
 
 class SaveFile:
@@ -160,6 +161,7 @@ class SaveFile:
                 for i in range(n_workers)
             ]
             next_chunk_task = None
+            _last_progress_time = 0.0
 
             try:
 
@@ -214,21 +216,29 @@ class SaveFile:
 
                     file_part += 1
 
-                    if (
-                        progress
-                        and file_part % max(1, file_total_parts // PROGRESS_PCT) == 0
-                    ):
-                        func = functools.partial(
-                            progress,
-                            min(file_part * part_size, file_size),
-                            file_size,
-                            *progress_args,
-                        )
+                    if progress:
+                        _now = time.monotonic()
+                        if _now - _last_progress_time >= PROGRESS_INTERVAL:
+                            _last_progress_time = _now
 
-                        if inspect.iscoroutinefunction(progress):
-                            await func()
-                        else:
-                            await self.loop.run_in_executor(self.executor, func)
+                            _sent = min(file_part * part_size, file_size)
+                            _total = file_size
+
+                            async def report(_sent=_sent, _total=_total):
+                                try:
+                                    if inspect.iscoroutinefunction(progress):
+                                        await progress(_sent, _total, *progress_args)
+                                    else:
+                                        await self.loop.run_in_executor(
+                                            self.executor,
+                                            functools.partial(
+                                                progress, _sent, _total, *progress_args
+                                            ),
+                                        )
+                                except Exception as e:
+                                    log.warning(f"Progress callback error: {e}")
+
+                            asyncio.ensure_future(report())
 
             except StopTransmission:
                 raise

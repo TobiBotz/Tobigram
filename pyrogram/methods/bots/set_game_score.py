@@ -21,6 +21,7 @@ from typing import Union
 import pyrogram
 from pyrogram import raw
 from pyrogram import types
+from pyrogram import utils
 
 
 class SetGameScore:
@@ -31,9 +32,9 @@ class SetGameScore:
         force: bool = None,
         disable_edit_message: bool = None,
         chat_id: Union[int, str] = None,
-        message_id: int = None
+        message_id: int = None,
+        inline_message_id: str = None,
     ) -> Union["types.Message", bool]:
-        # inline_message_id: str = None):  TODO Add inline_message_id
         """Set the score of the specified user in a game.
 
         .. include:: /_includes/usable-by/bots.rst
@@ -64,6 +65,10 @@ class SetGameScore:
                 Identifier of the sent message.
                 Required if inline_message_id is not specified.
 
+            inline_message_id (``str``, *optional*):
+                Identifier of the inline message.
+                Required if chat_id and message_id are not specified.
+
         Returns:
             :obj:`~pyrogram.types.Message` | ``bool``: On success, if the message was sent by the bot, the edited
             message is returned, True otherwise.
@@ -77,16 +82,27 @@ class SetGameScore:
                 # Force set new score
                 await app.set_game_score(user_id, 25, force=True)
         """
-        r = await self.invoke(
-            raw.functions.messages.SetGameScore(
-                peer=await self.resolve_peer(chat_id),
-                score=score,
-                id=message_id,
-                user_id=await self.resolve_peer(user_id),
-                force=force or None,
-                edit_message=not disable_edit_message or None
+        if inline_message_id is not None:
+            r = await self.invoke(
+                raw.functions.messages.SetInlineGameScore(
+                    id=utils.unpack_inline_message_id(inline_message_id),
+                    user_id=await self.resolve_peer(user_id),
+                    score=score,
+                    force=force or None,
+                    edit_message=not disable_edit_message or None
+                )
             )
-        )
+        else:
+            r = await self.invoke(
+                raw.functions.messages.SetGameScore(
+                    peer=await self.resolve_peer(chat_id),
+                    score=score,
+                    id=message_id,
+                    user_id=await self.resolve_peer(user_id),
+                    force=force or None,
+                    edit_message=not disable_edit_message or None
+                )
+            )
 
         for i in r.updates:
             if isinstance(i, (raw.types.UpdateEditMessage,

@@ -21,14 +21,16 @@ from typing import Union, List
 import pyrogram
 from pyrogram import raw
 from pyrogram import types
+from pyrogram import utils
 
 
 class GetGameHighScores:
     async def get_game_high_scores(
         self: "pyrogram.Client",
         user_id: Union[int, str],
-        chat_id: Union[int, str],
-        message_id: int = None
+        chat_id: Union[int, str] = None,
+        message_id: int = None,
+        inline_message_id: str = None,
     ) -> List["types.GameHighScore"]:
         """Get data for high score tables.
 
@@ -50,6 +52,10 @@ class GetGameHighScores:
                 Identifier of the sent message.
                 Required if inline_message_id is not specified.
 
+            inline_message_id (``str``, *optional*):
+                Identifier of the inline message.
+                Required if chat_id and message_id are not specified.
+
         Returns:
             List of :obj:`~pyrogram.types.GameHighScore`: On success.
 
@@ -59,14 +65,21 @@ class GetGameHighScores:
                 scores = await app.get_game_high_scores(user_id, chat_id, message_id)
                 print(scores)
         """
-        # TODO: inline_message_id
 
-        r = await self.invoke(
-            raw.functions.messages.GetGameHighScores(
-                peer=await self.resolve_peer(chat_id),
-                id=message_id,
-                user_id=await self.resolve_peer(user_id)
+        if inline_message_id is not None:
+            r = await self.invoke(
+                raw.functions.messages.GetInlineGameHighScores(
+                    id=utils.unpack_inline_message_id(inline_message_id),
+                    user_id=await self.resolve_peer(user_id)
+                )
             )
-        )
+        else:
+            r = await self.invoke(
+                raw.functions.messages.GetGameHighScores(
+                    peer=await self.resolve_peer(chat_id),
+                    id=message_id,
+                    user_id=await self.resolve_peer(user_id)
+                )
+            )
 
         return types.List(types.GameHighScore._parse(self, score, r.users) for score in r.scores)

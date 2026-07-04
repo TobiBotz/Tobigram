@@ -41,7 +41,7 @@ class MessageReactions(Object):
             True, if the list of added reactions is available using :meth:`~pyrogram.Client.get_message_added_reactions`.
     """
 
-    # TODO: Add get_message_added_reactions method
+    # TODO: Add get_message_added_reactions method in Client when needed
 
     def __init__(
         self,

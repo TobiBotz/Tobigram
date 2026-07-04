@@ -556,7 +556,7 @@ class Client(Methods):
 
                     if isinstance(email_sent_code, raw.types.account.EmailVerifiedLogin):
                         if isinstance(email_sent_code.sent_code, raw.types.auth.SentCodePaymentRequired):
-                            # TODO: raw.functions.auth.CheckPaidAuth
+                            # TODO: Call raw.functions.auth.CheckPaidAuth (requires premium payment support)
                             raise Unauthorized(
                                 f"You need to pay {email_sent_code.sent_code.amount}{email_sent_code.sent_code.currency} or purchase premium to continue authorization "
                                 "process, which is currently not supported by Pyrogram."
@@ -1172,6 +1172,7 @@ class Client(Methods):
             total = abs(limit) or (1 << 31) - 1
             chunk_size = 1024 * 1024
             offset_bytes = abs(offset) * chunk_size
+            _last_progress_time = 0.0
 
             dc_id = file_id.dc_id
 
@@ -1197,19 +1198,28 @@ class Client(Methods):
                         offset_bytes += chunk_size
 
                         if progress:
-                            func = functools.partial(
-                                progress,
-                                min(offset_bytes, file_size)
-                                if file_size != 0
-                                else offset_bytes,
-                                file_size,
-                                *progress_args
-                            )
+                            _now = time.monotonic()
+                            if _now - _last_progress_time >= 0.1:
+                                _last_progress_time = _now
 
-                            if inspect.iscoroutinefunction(progress):
-                                await func()
-                            else:
-                                await self.loop.run_in_executor(self.executor, func)
+                                _sent = min(offset_bytes, file_size) if file_size != 0 else offset_bytes
+                                _total = file_size
+
+                                async def report(_sent=_sent, _total=_total):
+                                    try:
+                                        if inspect.iscoroutinefunction(progress):
+                                            await progress(_sent, _total, *progress_args)
+                                        else:
+                                            await self.loop.run_in_executor(
+                                                self.executor,
+                                                functools.partial(
+                                                    progress, _sent, _total, *progress_args
+                                                ),
+                                            )
+                                    except Exception as e:
+                                        log.warning(f"Download progress callback error: {e}")
+
+                                asyncio.ensure_future(report())
 
                         if len(chunk) < chunk_size or current >= total:
                             break
@@ -1285,17 +1295,28 @@ class Client(Methods):
                             offset_bytes += chunk_size
 
                             if progress:
-                                func = functools.partial(
-                                    progress,
-                                    min(offset_bytes, file_size) if file_size != 0 else offset_bytes,
-                                    file_size,
-                                    *progress_args
-                                )
+                                _now = time.monotonic()
+                                if _now - _last_progress_time >= 0.1:
+                                    _last_progress_time = _now
 
-                                if inspect.iscoroutinefunction(progress):
-                                    await func()
-                                else:
-                                    await self.loop.run_in_executor(self.executor, func)
+                                    _sent = min(offset_bytes, file_size) if file_size != 0 else offset_bytes
+                                    _total = file_size
+
+                                    async def report(_sent=_sent, _total=_total):
+                                        try:
+                                            if inspect.iscoroutinefunction(progress):
+                                                await progress(_sent, _total, *progress_args)
+                                            else:
+                                                await self.loop.run_in_executor(
+                                                    self.executor,
+                                                    functools.partial(
+                                                        progress, _sent, _total, *progress_args
+                                                    ),
+                                                )
+                                        except Exception as e:
+                                            log.warning(f"CDN download progress callback error: {e}")
+
+                                    asyncio.ensure_future(report())
 
                             if len(chunk) < chunk_size or current >= total:
                                 break

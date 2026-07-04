@@ -130,7 +130,6 @@ class Auth:
 
                 log.debug("Done encrypt data with RSA")
 
-                # Step 5. TODO: Handle "server_DH_params_fail". Code assumes response is ok
                 log.debug("Send req_DH_params")
                 server_dh_params = await self.invoke(
                     raw.functions.ReqDHParams(
@@ -142,6 +141,9 @@ class Auth:
                         encrypted_data=encrypted_data
                     )
                 )
+
+                if isinstance(server_dh_params, raw.types.ServerDHParamsFail):
+                    raise SecurityCheckMismatch("Server DH params fail")
 
                 encrypted_answer = server_dh_params.encrypted_answer
 
@@ -200,14 +202,19 @@ class Auth:
                     )
                 )
 
-                # TODO: Handle "auth_key_aux_hash" if the previous step fails
+                if not isinstance(set_client_dh_params_answer, raw.types.DhGenOk):
+                    if isinstance(set_client_dh_params_answer, raw.types.DhGenRetry):
+                        log.warning("DH gen retry required")
+                    elif isinstance(set_client_dh_params_answer, raw.types.DhGenFail):
+                        log.warning("DH gen failed")
+                    raise SecurityCheckMismatch(
+                        f"Unexpected DH gen response: {type(set_client_dh_params_answer).__name__}"
+                    )
 
                 # Step 7; Step 8
                 g_a = int.from_bytes(server_dh_inner_data.g_a, "big")
                 auth_key = pow(g_a, b, dh_prime).to_bytes(256, "big")
                 server_nonce = server_nonce.to_bytes(16, "little", signed=True)
-
-                # TODO: Handle errors
 
                 #######################
                 # Security checks

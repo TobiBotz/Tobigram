@@ -34,7 +34,7 @@ class InputChatPhoto(Object):
     - :obj:`~pyrogram.types.InputChatPhotoStatic`
     - :obj:`~pyrogram.types.InputChatPhotoAnimation`
     """
-    # TODO: - :obj:`~pyrogram.types.InputChatPhotoSticker`
+    # TODO: Add InputChatPhotoSticker variant
 
     def __init__(
         self,

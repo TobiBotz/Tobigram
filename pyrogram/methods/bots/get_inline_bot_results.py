@@ -69,7 +69,7 @@ class GetInlineBotResults:
                 results = await app.get_inline_bot_results("pyrogrambot")
                 print(results)
         """
-        # TODO: Don't return the raw type
+        # TODO: Parse the raw response into a proper types.BotResults object instead of returning raw
 
         try:
             return await self.invoke(

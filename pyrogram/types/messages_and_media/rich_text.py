@@ -69,7 +69,6 @@ class RichText(Object):
         users: Dict[int, "raw.base.User"] = {},
         chats: Dict[int, "raw.base.Chat"] = {},
     ) -> Optional[Union[str, List["RichText"], "RichText"]]:
-        # TODO: fix anchors and references
         if isinstance(rich_text, raw.types.TextPlain):
             return rich_text.text
 
@@ -148,12 +147,10 @@ class RichText(Object):
             if rich_text.url.startswith("#"):
                 anchor = rich_text.url[1:]
 
-                return RichTextReferenceLink(
+                return RichTextAnchorLink(
                     text=content,
-                    reference_name=anchor,
+                    anchor_name=anchor,
                 )
-
-                # TODO: RichTextAnchorLink
 
             return RichTextUrl(text=content, url=rich_text.url)
 
@@ -233,7 +230,8 @@ class RichText(Object):
                 text=await RichText._parse(client, rich_text.text), name=rich_text.name
             )
 
-        # TODO: if isinstance(rich_text, raw.types.TextImage):
+        # TODO: Add RichTextImage class and parse raw.types.TextImage
+        # Fields: document_id (long), w (int), h (int)
 
 
 class RichTextBold(RichText):

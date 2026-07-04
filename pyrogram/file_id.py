@@ -461,7 +461,7 @@ class FileUniqueId:
                 media_id=media_id
             )
 
-        # TODO: Missing decoder for SECURE, ENCRYPTED and TEMP
+        # TODO: Add decoder for SECURE, ENCRYPTED and TEMP (FileUniqueType values 4, 5, 6)
         raise ValueError(f"Unknown decoder for file_unique_type {file_unique_type} of file_unique_id {file_unique_id}")
 
     def encode(self):
@@ -472,7 +472,7 @@ class FileUniqueId:
         elif self.file_unique_type == FileUniqueType.DOCUMENT:
             string = struct.pack("<iq", self.file_unique_type, self.media_id)
         else:
-            # TODO: Missing encoder for SECURE, ENCRYPTED and TEMP
+            # TODO: Add encoder for SECURE, ENCRYPTED and TEMP (FileUniqueType values 4, 5, 6)
             raise ValueError(f"Unknown encoder for file_unique_type {self.file_unique_type}")
 
         return b64_encode(rle_encode(string))

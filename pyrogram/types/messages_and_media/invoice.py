@@ -158,6 +158,6 @@ class Invoice(Object):
             terms_url=getattr(invoice, "terms_url", None),
             raw=invoice,
             client=client
-            # TODO: Add photo and extended media
+            # TODO: Add photo (raw.types.WebDocument) and extended_media fields
         )
 

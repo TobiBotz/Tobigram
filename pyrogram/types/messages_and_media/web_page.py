@@ -25,7 +25,7 @@ from ..object import Object
 
 
 class WebPage(Object):
-    # TODO: hash, cached_page
+    # TODO: Add hash and cached_page fields when Photo._parse supports them
     """A webpage preview
 
     Parameters:

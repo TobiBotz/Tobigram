@@ -615,7 +615,7 @@ class Message(Object, Update):
         content (``str``, *property*):
             The text or caption content of the message.
     """
-    # TODO: replace media params to MessageContent class
+    # TODO: Migrate media-related params into a MessageContent class (breaking change)
     def __init__(
         self,
         *,
@@ -1131,7 +1131,6 @@ class Message(Object, Update):
         elif isinstance(action, raw.types.MessageActionCustomAction):
             service_type = enums.MessageServiceType.CUSTOM_ACTION
             text = action.message
-        # TODO: elif isinstance(action, raw.types.MessageActionEmpty):
         elif isinstance(action, raw.types.MessageActionGeoProximityReached):
             service_type = enums.MessageServiceType.PROXIMITY_ALERT_TRIGGERED
             proximity_alert_triggered = types.ProximityAlertTriggered._parse(client, action, users, chats)
@@ -2004,7 +2003,6 @@ class Message(Object, Update):
     @property
     def is_topic_message(self) -> Optional[bool]:
         return self.topic_message
-    # TODO: Remove later
 
     @property
     def forward_from(self) -> Optional["types.User"]:

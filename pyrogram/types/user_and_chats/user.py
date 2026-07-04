@@ -624,7 +624,6 @@ class User(Object, Update):
         )
 
     # region Deprecated
-    # TODO: Remove later
 
     @property
     def is_verified(self) -> Optional[bool]:

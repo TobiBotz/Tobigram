@@ -27,7 +27,7 @@ from pyrogram import utils
 log = logging.getLogger(__name__)
 
 
-# TODO: Rewrite using a flag for replied messages and have message_ids non-optional
+# TODO: Rewrite signature: use a flag for replied messages, make message_ids non-optional when not replying
 
 
 class GetMessages:

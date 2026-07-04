@@ -139,7 +139,7 @@ class Story(Object, Update):
         raw (:obj:`~pyrogram.raw.types.StoryItem`, *optional*):
             The raw story object, as received from the Telegram API.
     """
-    # TODO: Refactor
+    # TODO: Refactor __init__ to use _parse pattern matching all raw.types.StoryItem variants
     def __init__(
         self,
         *,

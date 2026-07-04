@@ -819,7 +819,6 @@ class Chat(Object):
         self.raw = raw
 
     # region Deprecated
-    # TODO: Remove later
 
     @property
     def is_verified(self) -> Optional[bool]:

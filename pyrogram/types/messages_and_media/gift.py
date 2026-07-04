@@ -277,7 +277,7 @@ class Gift(Object):
         owned_gift_id (``str``, *property*):
             Unique identifier of the gift.
     """
-    # TODO: background, colors
+    # TODO: Add background_emoji_id and pattern_color fields from raw.types.StarGiftAttributeModel
 
     def __init__(
         self,
@@ -645,7 +645,7 @@ class Gift(Object):
         users: Dict[int, "raw.base.User"] = {},
         chats: Dict[int, "raw.base.Chat"] = {}
     ) -> "Gift":
-        # TODO: fix receiver
+        # TODO: receiver is always the action.peer but sender needs from_id; verify correctness for all gift types
         if isinstance(action_gift, raw.types.MessageActionStarGift):
             # auction_acquired
             # upgrade_msg_id

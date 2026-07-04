@@ -20,7 +20,7 @@ import logging
 import os
 import re
 from datetime import datetime
-from typing import List, Optional, Union
+from typing import Callable, List, Optional, Union
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
@@ -30,7 +30,6 @@ log = logging.getLogger(__name__)
 
 
 class SendPaidMedia:
-    # TODO: Add progress parameter
     async def send_paid_media(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
@@ -56,6 +55,8 @@ class SendPaidMedia:
         protect_content: bool = None,
         show_caption_above_media: bool = None,
         business_connection_id: str = None,
+        progress: Callable = None,
+        progress_args: tuple = (),
         background: Optional[bool] = None,
         clear_draft: Optional[bool] = None,
         update_stickersets_order: Optional[bool] = None,
@@ -126,6 +127,13 @@ class SendPaidMedia:
             business_connection_id (``str``, *optional*):
                 Unique identifier of the business connection on behalf of which the message will be sent.
 
+            progress (``Callable``, *optional*):
+                Pass a callback function to view the file transmission progress.
+                The function must take ``(current, total)`` as positional arguments.
+
+            progress_args (``tuple``, *optional*):
+                Arguments to pass to the progress callback function.
+
         Returns:
             List of :obj:`~pyrogram.types.Message`: On success, a list of messages is returned.
 
@@ -193,7 +201,7 @@ class SendPaidMedia:
                             raw.functions.messages.UploadMedia(
                                 peer=peer,
                                 media=raw.types.InputMediaUploadedPhoto(
-                                    file=await self.save_file(i.media),
+                                    file=await self.save_file(i.media, progress=progress, progress_args=progress_args),
                                     spoiler=i.has_spoiler
                                 ),
                             )
@@ -223,7 +231,7 @@ class SendPaidMedia:
                         raw.functions.messages.UploadMedia(
                             peer=peer,
                             media=raw.types.InputMediaUploadedPhoto(
-                                file=await self.save_file(i.media),
+                                file=await self.save_file(i.media, progress=progress, progress_args=progress_args),
                                 spoiler=i.has_spoiler
                             ),
                         )
@@ -248,7 +256,7 @@ class SendPaidMedia:
                                 raw.functions.messages.UploadMedia(
                                     peer=peer,
                                     media=raw.types.InputMediaUploadedPhoto(
-                                        file=await self.save_file(i.video_cover)
+                                        file=await self.save_file(i.video_cover, progress=progress, progress_args=progress_args)
                                     )
                                 )
                             )
@@ -268,7 +276,7 @@ class SendPaidMedia:
                             raw.functions.messages.UploadMedia(
                                 peer=peer,
                                 media=raw.types.InputMediaUploadedPhoto(
-                                    file=await self.save_file(i.video_cover)
+                                    file=await self.save_file(i.video_cover, progress=progress, progress_args=progress_args)
                                 )
                             )
                         )
@@ -286,8 +294,8 @@ class SendPaidMedia:
                             raw.functions.messages.UploadMedia(
                                 peer=peer,
                                 media=raw.types.InputMediaUploadedDocument(
-                                    file=await self.save_file(i.media),
-                                    thumb=await self.save_file(i.thumb),
+                                    file=await self.save_file(i.media, progress=progress, progress_args=progress_args),
+                                    thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
                                     spoiler=i.has_spoiler,
                                     mime_type=self.guess_mime_type(i.media) or "video/mp4",
                                     nosound_video=True,
@@ -340,8 +348,8 @@ class SendPaidMedia:
                         raw.functions.messages.UploadMedia(
                             peer=peer,
                             media=raw.types.InputMediaUploadedDocument(
-                                file=await self.save_file(i.media),
-                                thumb=await self.save_file(i.thumb),
+                                file=await self.save_file(i.media, progress=progress, progress_args=progress_args),
+                                thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
                                 spoiler=i.has_spoiler,
                                 mime_type=self.guess_mime_type(getattr(i.media, "name", "video.mp4")) or "video/mp4",
                                 nosound_video=True,
