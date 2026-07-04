@@ -26,6 +26,11 @@ jobs:
       - name: Sync docs dependencies
         run: uv sync --frozen --extra docs
 
+      - name: Generate API
+        run: |
+          uv run python3 compiler/errors/compiler.py
+          cd compiler/api && uv run python3 compiler.py
+
       - name: Generate error definitions
         run: uv run python compiler/errors/compiler.py
 
