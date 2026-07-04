@@ -61,6 +61,7 @@ dev = [
     "twine>=5",
     "pyyaml>=6",
     "jinja2>=3",
+    "poethepoet>=0.32",
 ]
 fast = [
     "uvloop<=0.22.1; sys_platform == 'darwin' or sys_platform == 'linux'",
@@ -87,6 +88,33 @@ exclude = [
 [tool.hatch.build.targets.wheel]
 ignore-vcs = true
 packages = ["pyrogram"]
+
+[tool.poe.tasks]
+test = "pytest --no-header -q"
+venv = "uv sync --frozen"
+venv-dev = "uv sync --frozen --extra dev"
+api = { shell = "uv run python3 compiler/errors/compiler.py && cd compiler/api && uv run python3 compiler.py" }
+docs = { shell = "uv run python3 compiler/docs/compiler.py && uv run sphinx-build -b dirhtml docs/source docs/build -j auto" }
+docs-archive = { shell = "cd docs/build && zip -r docs.zip html/" }
+build = "uv build"
+publish = "uv publish"
+tag = { shell = "git tag v$(uv run python3 -c 'from pyrogram import __version__; print(__version__)') && git push origin --tags" }
+dtag = { shell = "git tag -d v$(uv run python3 -c 'from pyrogram import __version__; print(__version__)') && git push origin -d --tags" }
+
+[tool.poe.tasks.clean]
+sequence = ["clean-venv", "clean-build", "clean-api", "clean-docs"]
+
+[tool.poe.tasks.clean-venv]
+shell = "rm -rf .venv"
+
+[tool.poe.tasks.clean-build]
+shell = "rm -rf dist *.egg-info build"
+
+[tool.poe.tasks.clean-api]
+shell = "rm -rf pyrogram/errors/exceptions pyrogram/raw/all.py pyrogram/raw/base pyrogram/raw/functions pyrogram/raw/types"
+
+[tool.poe.tasks.clean-docs]
+shell = "rm -rf docs/build docs/source/api/bound-methods docs/source/api/methods docs/source/api/types docs/source/api/enums docs/source/telegram"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

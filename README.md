@@ -57,6 +57,26 @@ For better performance:
 pip install wzgram[fast]
 ```
 
+### Development
+
+```bash
+# Clone the repo
+git clone https://github.com/rjriajul/wzgram
+cd wzgram
+
+# Install uv (if not already)
+pip install uv
+
+# Create virtual environment with dev dependencies
+uv sync --frozen --extra dev
+
+# Generate TL API types
+uv run poe api
+
+# Run tests
+uv run poe test
+```
+
 ### Documentation
 
 Full documentation is available at **[https://rjriajul.github.io/wzgram](https://rjriajul.github.io/wzgram)**
