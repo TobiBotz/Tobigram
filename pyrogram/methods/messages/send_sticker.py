@@ -19,7 +19,7 @@
 import os
 import re
 from datetime import datetime
-from typing import Union, BinaryIO, Optional, Callable
+from typing import Union, BinaryIO, List, Optional, Callable
 
 import pyrogram
 from pyrogram import StopTransmission
@@ -48,6 +48,8 @@ class SendSticker:
         ] = None,
         rich_text: str = None,
         rich_text_parse_mode: str = "markdown",
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
         progress: Callable = None,
         progress_args: tuple = ()
     ) -> Optional["types.Message"]:
@@ -127,6 +129,22 @@ class SendSticker:
                 # Send sticker using file_id
                 await app.send_sticker("me", file_id)
         """
+        if reply_parameters is None:
+            if reply_to_message_id is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=reply_to_message_id,
+                    chat_id=reply_to_chat_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+            elif quote_text is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=None,
+                    chat_id=reply_to_chat_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+
         file = None
 
         try:
@@ -176,10 +194,11 @@ class SendSticker:
                             peer=await self.resolve_peer(chat_id),
                             media=media,
                             silent=disable_notification or None,
-                            reply_to=raw.types.InputReplyToMessage(
-                                reply_to_msg_id=reply_to_message_id,
-                                reply_to_peer_id=await self.resolve_peer(reply_to_chat_id) if reply_to_chat_id else None
-                            ) if reply_to_message_id else None,
+                            reply_to=await utils.get_reply_to(
+                                self,
+                                reply_parameters,
+                                None,
+                            ),
                             random_id=self.rnd_id(),
                             schedule_date=utils.datetime_to_timestamp(schedule_date),
                             noforwards=protect_content,

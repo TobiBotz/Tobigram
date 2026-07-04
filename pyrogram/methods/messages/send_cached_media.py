@@ -22,6 +22,8 @@ class SendCachedMedia:
         protect_content: bool = None,
         rich_text: str = None,
         rich_text_parse_mode: str = "markdown",
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
@@ -130,6 +132,22 @@ class SendCachedMedia:
                 await app.send_cached_media("me", file_id)
         """
 
+        if reply_parameters is None:
+            if reply_to_message_id is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=reply_to_message_id,
+                    chat_id=reply_to_chat_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+            elif quote_text is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=None,
+                    chat_id=reply_to_chat_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+
         if rich_text:
             if rich_text_parse_mode == "html":
                 rich_msg = raw.types.InputRichMessageHTML(
@@ -153,11 +171,6 @@ class SendCachedMedia:
                     reply_parameters,
                     message_thread_id,
                     direct_messages_topic_id=direct_messages_topic_id
-                ) if reply_parameters or message_thread_id or direct_messages_topic_id else (
-                    raw.types.InputReplyToMessage(
-                        reply_to_msg_id=reply_to_message_id,
-                        reply_to_peer_id=await self.resolve_peer(reply_to_chat_id) if reply_to_chat_id else None
-                    ) if reply_to_message_id else None
                 ),
                 random_id=self.rnd_id(),
                 schedule_date=utils.datetime_to_timestamp(schedule_date),

@@ -17,7 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from typing import Union
+from typing import Union, List
 
 import pyrogram
 from pyrogram import raw, utils
@@ -35,6 +35,8 @@ class SendLocation:
         reply_to_chat_id: Union[int, str] = None,
         schedule_date: datetime = None,
         protect_content: bool = None,
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
@@ -42,6 +44,22 @@ class SendLocation:
             "types.ForceReply"
         ] = None
     ) -> "types.Message":
+        if reply_parameters is None:
+            if reply_to_message_id is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=reply_to_message_id,
+                    chat_id=reply_to_chat_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+            elif quote_text is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=None,
+                    chat_id=reply_to_chat_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+
         """Send points on the map.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -94,10 +112,11 @@ class SendLocation:
                 ),
                 message="",
                 silent=disable_notification or None,
-                reply_to=raw.types.InputReplyToMessage(
-                    reply_to_msg_id=reply_to_message_id,
-                    reply_to_peer_id=await self.resolve_peer(reply_to_chat_id) if reply_to_chat_id else None
-                ) if reply_to_message_id else None,
+                reply_to=await utils.get_reply_to(
+                    self,
+                    reply_parameters,
+                    None,
+                ),
                 random_id=self.rnd_id(),
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
                 noforwards=protect_content,
