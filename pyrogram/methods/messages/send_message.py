@@ -40,6 +40,11 @@ class SendMessage:
         reply_to_chat_id: Union[int, str] = None,
         quote_text: str = None,
         quote_entities: List["types.MessageEntity"] = None,
+        background: bool = None,
+        clear_draft: bool = None,
+        update_stickersets_order: bool = None,
+        send_as: Union[int, str] = None,
+        quick_reply_shortcut: int = None,
     ) -> "types.Message":
         if rich_text:
             if rich_text_parse_mode == "html":
@@ -74,7 +79,14 @@ class SendMessage:
                     allow_paid_floodskip=allow_paid_broadcast,
                     allow_paid_stars=paid_message_star_count,
                     suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+                    background=background,
+                    clear_draft=clear_draft,
+                    update_stickersets_order=update_stickersets_order,
+                    send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                    quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                 ),
+                sleep_threshold=60,
+                business_connection_id=business_connection_id
             )
             plain_text = rich_text
         else:
@@ -134,7 +146,14 @@ class SendMessage:
                     allow_paid_floodskip=allow_paid_broadcast,
                     allow_paid_stars=paid_message_star_count,
                     suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+                    background=background,
+                    clear_draft=clear_draft,
+                    update_stickersets_order=update_stickersets_order,
+                    send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                    quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                 ),
+                sleep_threshold=60,
+                business_connection_id=business_connection_id
             )
 
         if isinstance(r, raw.types.UpdateShortSentMessage):

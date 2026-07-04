@@ -46,6 +46,16 @@ class SendVenue:
         business_connection_id: Optional[str] = None,
         quote_text: str = None,
         quote_entities: List["types.MessageEntity"] = None,
+        effect_id: Optional[int] = None,
+        show_caption_above_media: Optional[bool] = None,
+        repeat_period: Optional[int] = None,
+        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
+        direct_messages_topic_id: Optional[int] = None,
+        background: Optional[bool] = None,
+        clear_draft: Optional[bool] = None,
+        update_stickersets_order: Optional[bool] = None,
+        send_as: Union[int, str] = None,
+        quick_reply_shortcut: int = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
@@ -145,12 +155,26 @@ class SendVenue:
                     self,
                     reply_parameters,
                     message_thread_id,
+                    direct_messages_topic_id=direct_messages_topic_id,
                 ),
                 random_id=self.rnd_id(),
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
                 noforwards=protect_content,
+                allow_paid_floodskip=allow_paid_broadcast,
+                allow_paid_stars=paid_message_star_count,
+                effect=effect_id,
+                invert_media=show_caption_above_media or None,
+                schedule_repeat_period=repeat_period,
+                suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+                background=background,
+                clear_draft=clear_draft,
+                update_stickersets_order=update_stickersets_order,
+                send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None
-            )
+            ),
+            sleep_threshold=60,
+            business_connection_id=business_connection_id
         )
 
         for i in r.updates:

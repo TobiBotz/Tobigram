@@ -65,6 +65,11 @@ class SendPhoto:
         rich_text_parse_mode: str = "markdown",
         quote_text: str = None,
         quote_entities: List["types.MessageEntity"] = None,
+        background: Optional[bool] = None,
+        clear_draft: Optional[bool] = None,
+        update_stickersets_order: Optional[bool] = None,
+        send_as: Union[int, str] = None,
+        quick_reply_shortcut: int = None,
         progress: Callable = None,
         progress_args: tuple = ()
     ) -> Optional["types.Message"]:
@@ -246,9 +251,16 @@ class SendPhoto:
                             allow_paid_floodskip=allow_paid_broadcast,
                             allow_paid_stars=paid_message_star_count,
                             suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+                            background=background,
+                            clear_draft=clear_draft,
+                            update_stickersets_order=update_stickersets_order,
+                            send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                            quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                             reply_markup=await reply_markup.write(self) if reply_markup else None,
                             **text_params
-                        )
+                        ),
+                        sleep_threshold=60,
+                        business_connection_id=business_connection_id
                     )
                 except FilePartMissing as e:
                     await self.save_file(photo, file_id=file.id, file_part=e.value)

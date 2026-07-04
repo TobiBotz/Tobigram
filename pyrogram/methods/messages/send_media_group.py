@@ -57,6 +57,12 @@ class SendMediaGroup:
         quote_text: str = None,
         quote_entities: List["types.MessageEntity"] = None,
         parse_mode: Optional["enums.ParseMode"] = None,
+        show_caption_above_media: bool = None,
+        background: bool = None,
+        clear_draft: bool = None,
+        update_stickersets_order: bool = None,
+        send_as: Union[int, str] = None,
+        quick_reply_shortcut: int = None,
     ) -> List["types.Message"]:
         """Send a group of photos or videos as an album.
 
@@ -433,8 +439,15 @@ class SendMediaGroup:
                 effect=effect_id,
                 allow_paid_floodskip=allow_paid_broadcast,
                 allow_paid_stars=paid_message_star_count,
+                invert_media=show_caption_above_media or None,
+                background=background,
+                clear_draft=clear_draft,
+                update_stickersets_order=update_stickersets_order,
+                send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
             ),
-            sleep_threshold=60
+            sleep_threshold=60,
+            business_connection_id=business_connection_id
         )
 
         return await utils.parse_messages(

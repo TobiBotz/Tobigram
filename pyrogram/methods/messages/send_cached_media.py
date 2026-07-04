@@ -41,6 +41,11 @@ class SendCachedMedia:
         paid_message_star_count: int = None,
         suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
         direct_messages_topic_id: int = None,
+        background: Optional[bool] = None,
+        clear_draft: Optional[bool] = None,
+        update_stickersets_order: Optional[bool] = None,
+        send_as: Union[int, str] = None,
+        quick_reply_shortcut: int = None,
     ) -> Optional["types.Message"]:
         """Send any media stored on the Telegram servers using a file_id.
 
@@ -183,8 +188,15 @@ class SendCachedMedia:
                 allow_paid_stars=paid_message_star_count,
                 suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
+                background=background,
+                clear_draft=clear_draft,
+                update_stickersets_order=update_stickersets_order,
+                send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                 **text_params
-            )
+            ),
+            sleep_threshold=60,
+            business_connection_id=business_connection_id
         )
 
         for i in r.updates:
