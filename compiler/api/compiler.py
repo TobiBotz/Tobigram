@@ -689,9 +689,11 @@ def start(format: bool = False):
 
 
 if "__main__" == __name__:
-    HOME_PATH = Path(".")
-    DESTINATION_PATH = Path("../../pyrogram/raw")
-    NOTICE_PATH = Path("../../NOTICE")
+    _script_dir = Path(__file__).parent
+    _root = _script_dir.parent.parent
+    HOME_PATH = _script_dir
+    DESTINATION_PATH = _root / "pyrogram" / "raw"
+    NOTICE_PATH = _root / "NOTICE"
 
     start(format=False)
 

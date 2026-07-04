@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "pyyaml", "jinja2"]
 build-backend = "hatchling.build"
 
 [project]
@@ -77,6 +77,9 @@ path = "pyrogram/__init__.py"
 [tool.hatch.metadata]
 allow-direct-references = true
 
+[tool.hatch.build.hooks.custom]
+path = "hatch_build.py"
+
 [tool.hatch.build.targets.sdist]
 exclude = [
     ".github/",
@@ -93,7 +96,7 @@ packages = ["pyrogram"]
 test = "pytest --no-header -q"
 venv = "uv sync --frozen"
 venv-dev = "uv sync --frozen --extra dev"
-api = { shell = "uv run python3 compiler/errors/compiler.py && cd compiler/api && uv run python3 compiler.py" }
+api = { shell = "uv run python3 compiler/api/compiler.py && uv run python3 compiler/errors/compiler.py && uv run python3 compiler/methods/compiler.py" }
 docs = { shell = "uv run python3 compiler/docs/compiler.py && uv run sphinx-build -b dirhtml docs/source docs/build -j auto" }
 docs-archive = { shell = "cd docs/build && zip -r docs.zip html/" }
 build = "uv build"
