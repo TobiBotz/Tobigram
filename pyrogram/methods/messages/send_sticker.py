@@ -50,6 +50,15 @@ class SendSticker:
         rich_text_parse_mode: str = "markdown",
         quote_text: str = None,
         quote_entities: List["types.MessageEntity"] = None,
+        reply_parameters: Optional["types.ReplyParameters"] = None,
+        message_thread_id: Optional[int] = None,
+        effect_id: Optional[int] = None,
+        repeat_period: Optional[int] = None,
+        business_connection_id: Optional[str] = None,
+        allow_paid_broadcast: Optional[bool] = None,
+        paid_message_star_count: Optional[int] = None,
+        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
+        direct_messages_topic_id: Optional[int] = None,
         progress: Callable = None,
         progress_args: tuple = ()
     ) -> Optional["types.Message"]:
@@ -197,11 +206,17 @@ class SendSticker:
                             reply_to=await utils.get_reply_to(
                                 self,
                                 reply_parameters,
-                                None,
+                                message_thread_id,
+                                direct_messages_topic_id=direct_messages_topic_id
                             ),
                             random_id=self.rnd_id(),
                             schedule_date=utils.datetime_to_timestamp(schedule_date),
                             noforwards=protect_content,
+                            effect=effect_id,
+                            schedule_repeat_period=repeat_period,
+                            allow_paid_floodskip=allow_paid_broadcast,
+                            allow_paid_stars=paid_message_star_count,
+                            suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                             reply_markup=await reply_markup.write(self) if reply_markup else None,
                             **text_params
                         )

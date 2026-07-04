@@ -44,6 +44,7 @@ class SendPaidMedia:
         parse_mode: Optional["enums.ParseMode"] = None,
         caption_entities: List["types.MessageEntity"] = None,
         disable_notification: bool = None,
+        message_thread_id: Optional[int] = None,
         direct_messages_topic_id: int = None,
         reply_parameters: "types.ReplyParameters" = None,
         suggested_post_parameters: "types.SuggestedPostParameters" = None,
@@ -371,7 +372,7 @@ class SendPaidMedia:
                 reply_to=await utils.get_reply_to(
                     self,
                     reply_parameters,
-                    None,
+                    message_thread_id,
                     direct_messages_topic_id=direct_messages_topic_id
                 ),
                 random_id=self.rnd_id(),
