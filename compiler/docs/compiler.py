@@ -938,6 +938,52 @@ def pyrogram_api():
             List
             FirebaseAuthenticationSettingsAndroid
             FirebaseAuthenticationSettingsIos
+        """,
+        enums="""
+        Enums
+            BlockList
+            BusinessSchedule
+            ButtonStyle
+            ChatAction
+            ChatEventAction
+            ChatJoinRequestQueryResult
+            ChatJoinType
+            ChatMemberStatus
+            ChatMembersFilter
+            ChatType
+            ClientPlatform
+            FolderColor
+            GiftAttributeType
+            GiftForResaleOrder
+            GiftPurchaseOfferState
+            GiftType
+            MaskPointType
+            MediaAreaType
+            MessageEntityType
+            MessageMediaType
+            MessageOriginType
+            MessageServiceType
+            MessagesFilter
+            NextCodeType
+            PaidReactionPrivacy
+            ParseMode
+            PaymentFormType
+            PhoneCallDiscardReason
+            PhoneNumberCodeType
+            PollType
+            PrivacyKey
+            PrivacyRuleType
+            ProfileColor
+            ProfileTab
+            ReplyColor
+            SentCodeType
+            StickerType
+            StoriesPrivacyRules
+            SuggestedPostRefundReason
+            SuggestedPostState
+            TopChatCategory
+            UpgradedGiftOrigin
+            UserStatus
         """
     )
 
@@ -963,7 +1009,13 @@ def pyrogram_api():
                     title = "{}".format(type)
 
                     f2.write(title + "\n" + "=" * len(title) + "\n\n")
-                    f2.write(".. autoclass:: pyrogram.types.{}()\n".format(type))
+
+                    if k == "enums":
+                        f2.write(".. autoclass:: pyrogram.enums.{}()\n".format(type))
+                        f2.write("    :members:\n")
+                        f2.write("    :undoc-members:\n")
+                    else:
+                        f2.write(".. autoclass:: pyrogram.types.{}()\n".format(type))
 
         f.write(template.format(**fmt_keys))
 

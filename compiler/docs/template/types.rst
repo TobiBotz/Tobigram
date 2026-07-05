@@ -98,3 +98,26 @@ Authorization
     :hidden:
 
     {authorization}
+
+-----
+
+Enums
+=====
+
+This page lists all available enums from the ``pyrogram.enums`` package.
+
+.. code-block:: python
+
+    from pyrogram.enums import ParseMode, ChatAction, ...
+
+.. currentmodule:: pyrogram.enums
+
+.. autosummary::
+    :nosignatures:
+
+    {enums}
+
+.. toctree::
+    :hidden:
+
+    {enums}
