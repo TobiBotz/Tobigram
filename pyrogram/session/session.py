@@ -104,6 +104,10 @@ class Session:
 
         self.recv_task = None
 
+        self._restart_lock = asyncio.Lock()
+        self._restart_done = asyncio.Event()
+        self._restart_done.set()
+
         self.is_started = asyncio.Event()
 
         self.loop = asyncio.get_event_loop()
@@ -195,8 +199,14 @@ class Session:
         log.info("Session stopped")
 
     async def restart(self):
-        await self.stop()
-        await self.start()
+        if self._restart_lock.locked():
+            await self._restart_done.wait()
+            return
+        async with self._restart_lock:
+            self._restart_done.clear()
+            await self.stop()
+            await self.start()
+            self._restart_done.set()
 
     async def handle_packet(self, packet):
         msg_id, seq_no, length, body_bytes, total_len = await self.loop.run_in_executor(
@@ -458,8 +468,8 @@ class Session:
                 )
 
                 if isinstance(e, (OSError, TimeoutError)):
-                    self.loop.create_task(self.restart())
-
-                await asyncio.sleep(1)
+                    await self.restart()
+                else:
+                    await asyncio.sleep(1)
 
         raise TimeoutError("Exceeded maximum number of retries")
