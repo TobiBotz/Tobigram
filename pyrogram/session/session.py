@@ -177,10 +177,14 @@ class Session:
 
         self.ping_task_event.clear()
 
-        await self.connection.close()
-
         if self.recv_task:
-            await self.recv_task
+            self.recv_task.cancel()
+            try:
+                await self.recv_task
+            except (asyncio.CancelledError, RuntimeError):
+                pass
+
+        await self.connection.close()
 
         if not self.is_media and callable(self.client.disconnect_handler):
             try:
