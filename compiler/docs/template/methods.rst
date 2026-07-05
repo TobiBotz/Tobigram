@@ -229,6 +229,19 @@ Premium
 
     {premium}
 
+Decorators
+-----------
+
+.. autosummary::
+    :nosignatures:
+
+    {decorators}
+
+.. toctree::
+    :hidden:
+
+    {decorators}
+
 Authorization
 --------------
 

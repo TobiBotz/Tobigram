@@ -472,7 +472,39 @@ def pyrogram_api():
             start
             stop
             stop_transmission
-        """
+        """,
+        decorators="""
+        Decorators
+            on_business_connection
+            on_business_message
+            on_callback_query
+            on_chat_boost
+            on_chat_join_request
+            on_chat_member_updated
+            on_chosen_inline_result
+            on_connect
+            on_deleted_business_messages
+            on_deleted_messages
+            on_disconnect
+            on_edited_business_message
+            on_edited_message
+            on_error
+            on_guest_message
+            on_inline_query
+            on_managed_bot
+            on_message
+            on_message_reaction
+            on_message_reaction_count
+            on_poll
+            on_pre_checkout_query
+            on_purchased_paid_media
+            on_raw_update
+            on_shipping_query
+            on_start
+            on_stop
+            on_story
+            on_user_status
+        """,
     )
 
     root = PYROGRAM_API_DEST
@@ -519,7 +551,6 @@ def pyrogram_api():
             ChatPhoto
             ChatMember
             ChatPermissions
-            ChatPrivileges
             ChatInviteLink
             ChatAdminWithInviteLinks
             ChatEvent
@@ -553,6 +584,16 @@ def pyrogram_api():
             PrivacyRule
             StoriesStealthMode
             UserRating
+            AcceptedGiftTypes
+            BotVerification
+            BusinessBotRights
+            ChatFolderInviteLinkInfo
+            ChatJoinResultDeclined
+            ChatJoinResultGuardBotApprovalRequired
+            ChatJoinResultRequestSent
+            ChatJoinResultSuccess
+            FailedToAddMember
+            Link
             Username
             VerificationStatus
             VideoChatEnded
@@ -679,6 +720,90 @@ def pyrogram_api():
             UpgradedGiftPurchaseOffer
             UpgradedGiftValueInfo
             WriteAccessAllowed
+            AuctionBid
+            AuctionRound
+            AuctionState
+            AuctionStateActive
+            AuctionStateFinished
+            ChatHasProtectedContentDisableRequested
+            ChatHasProtectedContentToggled
+            ChatOwnerChanged
+            ChatOwnerLeft
+            ChatTheme
+            CheckedGiftCode
+            CraftGiftResult
+            CraftGiftResultFail
+            CraftGiftResultSuccess
+            GiftPurchaseLimit
+            GiftResaleParameters
+            GiftResalePrice
+            GiftResalePriceStar
+            GiftResalePriceTon
+            GiftUpgradePreview
+            GiftUpgradePrice
+            GiftUpgradeVariants
+            PaymentResult
+            RichBlockAnchor
+            RichBlockAnimation
+            RichBlockAudio
+            RichBlockBlockQuotation
+            RichBlockCaption
+            RichBlockCollage
+            RichBlockDetails
+            RichBlockDivider
+            RichBlockFooter
+            RichBlockList
+            RichBlockListItem
+            RichBlockMap
+            RichBlockMathematicalExpression
+            RichBlockParagraph
+            RichBlockPhoto
+            RichBlockPreformatted
+            RichBlockPullQuotation
+            RichBlockSectionHeading
+            RichBlockSlideshow
+            RichBlockTable
+            RichBlockTableCell
+            RichBlockThinking
+            RichBlockUnsupported
+            RichBlockVideo
+            RichBlockVoiceNote
+            RichTextAnchor
+            RichTextAnchorLink
+            RichTextBankCardNumber
+            RichTextBold
+            RichTextBotCommand
+            RichTextCashtag
+            RichTextCode
+            RichTextCustomEmoji
+            RichTextDateTime
+            RichTextEmailAddress
+            RichTextHashtag
+            RichTextItalic
+            RichTextMarked
+            RichTextMathematicalExpression
+            RichTextMention
+            RichTextPhoneNumber
+            RichTextReference
+            RichTextReferenceLink
+            RichTextSpoiler
+            RichTextStrikethrough
+            RichTextSubscript
+            RichTextSuperscript
+            RichTextTextMention
+            RichTextUnderline
+            RichTextUrl
+            SavedCredentials
+            Str
+            SuccessfulPayment
+            SuggestedPostPriceStar
+            SuggestedPostPriceTon
+            UpgradedGiftAttributeRarityEpic
+            UpgradedGiftAttributeRarityLegendary
+            UpgradedGiftAttributeRarityPerMille
+            UpgradedGiftAttributeRarityRare
+            UpgradedGiftAttributeRarityUncommon
+            UpgradedGiftPurchaseOfferRejected
         """,
         bots_and_keyboards="""
         Bot keyboards
@@ -798,6 +923,9 @@ def pyrogram_api():
             InputContactMessageContent
             InputLocationMessageContent
             InputVenueMessageContent
+            InputChatPhotoAnimation
+            InputChatPhotoPrevious
+            InputChatPhotoStatic
         """,
         authorization="""
         Authorization
@@ -807,6 +935,9 @@ def pyrogram_api():
             ActiveSessions
             FirebaseAuthenticationSettings
             PhoneNumberAuthenticationSettings
+            List
+            FirebaseAuthenticationSettingsAndroid
+            FirebaseAuthenticationSettingsIos
         """
     )
 
