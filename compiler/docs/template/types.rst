@@ -27,12 +27,12 @@ Users & Chats
 .. autosummary::
     :nosignatures:
 
-    {users_chats}
+    {user_and_chats}
 
 .. toctree::
     :hidden:
 
-    {users_chats}
+    {user_and_chats}
 
 Messages & Media
 ----------------
@@ -47,47 +47,21 @@ Messages & Media
 
     {messages_media}
 
-Bot keyboards
--------------
+Bot keyboards & Commands
+-------------------------
 
 .. autosummary::
     :nosignatures:
 
-    {bot_keyboards}
+    {bots_and_keyboards}
 
 .. toctree::
     :hidden:
 
-    {bot_keyboards}
-
-Bot commands
--------------
-
-.. autosummary::
-    :nosignatures:
-
-    {bot_commands}
-
-.. toctree::
-    :hidden:
-
-    {bot_commands}
-
-Input Media
------------
-
-.. autosummary::
-    :nosignatures:
-
-    {input_media}
-
-.. toctree::
-    :hidden:
-
-    {input_media}
+    {bots_and_keyboards}
 
 Inline Mode
------------
+------------
 
 .. autosummary::
     :nosignatures:
@@ -99,18 +73,18 @@ Inline Mode
 
     {inline_mode}
 
-InputMessageContent
--------------------
+Input Content
+--------------
 
 .. autosummary::
     :nosignatures:
 
-    {input_message_content}
+    {input_content}
 
 .. toctree::
     :hidden:
 
-    {input_message_content}
+    {input_content}
 
 Authorization
 -------------

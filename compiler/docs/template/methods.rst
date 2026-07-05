@@ -47,6 +47,19 @@ Utilities
 
 .. currentmodule:: pyrogram.Client
 
+Account
+--------
+
+.. autosummary::
+    :nosignatures:
+
+    {account}
+
+.. toctree::
+    :hidden:
+
+    {account}
+
 Messages
 --------
 
@@ -112,6 +125,19 @@ Contacts
 
     {contacts}
 
+Folders
+-------
+
+.. autosummary::
+    :nosignatures:
+
+    {folders}
+
+.. toctree::
+    :hidden:
+
+    {folders}
+
 Password
 --------
 
@@ -138,18 +164,83 @@ Bots
 
     {bots}
 
-Authorization
--------------
+Business
+---------
 
 .. autosummary::
     :nosignatures:
 
-    {authorization}
+    {business}
 
 .. toctree::
     :hidden:
 
-    {authorization}
+    {business}
+
+Payments
+---------
+
+.. autosummary::
+    :nosignatures:
+
+    {payments}
+
+.. toctree::
+    :hidden:
+
+    {payments}
+
+Stories
+--------
+
+.. autosummary::
+    :nosignatures:
+
+    {stories}
+
+.. toctree::
+    :hidden:
+
+    {stories}
+
+Phone
+------
+
+.. autosummary::
+    :nosignatures:
+
+    {phone}
+
+.. toctree::
+    :hidden:
+
+    {phone}
+
+Premium
+--------
+
+.. autosummary::
+    :nosignatures:
+
+    {premium}
+
+.. toctree::
+    :hidden:
+
+    {premium}
+
+Authorization
+--------------
+
+.. autosummary::
+    :nosignatures:
+
+    {auth}
+
+.. toctree::
+    :hidden:
+
+    {auth}
 
 Advanced
 --------

@@ -46,6 +46,119 @@ class SendMessage:
         send_as: Union[int, str] = None,
         quick_reply_shortcut: int = None,
     ) -> "types.Message":
+        """Send text messages.
+
+        .. include:: /_includes/usable-by/users-bots.rst
+
+        Parameters:
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
+            text (``str``, *optional*):
+                Text of the message to be sent. If ``rich_text`` is provided, this is ignored.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes.
+
+            entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
+                List of special entities that appear in message text, which can be specified
+                instead of *parse_mode*.
+
+            link_preview_options (:obj:`~pyrogram.types.LinkPreviewOptions`, *optional*):
+                Link preview generation options for the message.
+
+            disable_notification (``bool``, *optional*):
+                Sends the message silently. Users will receive a notification with no sound.
+
+            message_thread_id (``int``, *optional*):
+                Unique identifier for a message thread in a forum topic.
+
+            direct_messages_topic_id (``int``, *optional*):
+                Topic ID for direct messages in channel admin logs.
+
+            effect_id (``int``, *optional*):
+                Unique identifier of the effect to apply to the message.
+
+            show_caption_above_media (``bool``, *optional*):
+                Pass True to show the caption above the media.
+
+            reply_parameters (:obj:`~pyrogram.types.ReplyParameters`, *optional*):
+                Description of the reply-to message.
+
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                Date when the message will be automatically sent.
+
+            repeat_period (``int``, *optional*):
+                Period in seconds after which the message will be automatically repeated.
+
+            protect_content (``bool``, *optional*):
+                Pass True to protect the message content from being forwarded.
+
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection.
+
+            allow_paid_broadcast (``bool``, *optional*):
+                Pass True to allow sending paid broadcast messages.
+
+            paid_message_star_count (``int``, *optional*):
+                Number of Telegram Stars to require for access to the paid message.
+
+            suggested_post_parameters (:obj:`~pyrogram.types.SuggestedPostParameters`, *optional*):
+                Parameters for creating a suggested channel post.
+
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
+                Additional interface options. An object for an inline keyboard, custom reply keyboard,
+                instructions to remove reply keyboard or to force a reply from the user.
+
+            rich_text (``str``, *optional*):
+                Rich text (Markdown or HTML) to render a styled message. Overrides ``text``.
+
+            rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                Parse mode for ``rich_text``. Defaults to Markdown.
+
+            disable_web_page_preview (``bool``, *optional*):
+                Disables link previews for links in this message.
+
+            reply_to_message_id (``int``, *optional*):
+                Message identifier to reply to. Deprecated, use ``reply_parameters`` instead.
+
+            reply_to_chat_id (``int`` | ``str``, *optional*):
+                Unique identifier for the origin chat of the replied message.
+
+            quote_text (``str``, *optional*):
+                Text to quote from the replied message.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
+                Entities for the quoted text.
+
+            background (``bool``, *optional*):
+                Pass True to send the message as a background message.
+
+            clear_draft (``bool``, *optional*):
+                Pass True to clear the draft in the chat.
+
+            update_stickersets_order (``bool``, *optional*):
+                Pass True to update the stickersets order.
+
+            send_as (``int`` | ``str``, *optional*):
+                Unique identifier of the chat or user to send the message on behalf of.
+
+            quick_reply_shortcut (``int``, *optional*):
+                Shortcut ID for quick reply.
+
+        Returns:
+            :obj:`~pyrogram.types.Message`: On success, the sent message is returned.
+
+        Example:
+            .. code-block:: python
+
+                # Send a simple text message
+                await app.send_message("me", "Hello from wzgram!")
+
+                # Send a message with a link preview
+                await app.send_message("me", "Check this out: https://example.com")
+        """
         if rich_text:
             if rich_text_parse_mode == enums.ParseMode.HTML:
                 rich_message = raw.types.InputRichMessageHTML(

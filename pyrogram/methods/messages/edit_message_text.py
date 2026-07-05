@@ -22,6 +22,58 @@ class EditMessageText:
         rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
         reply_markup: "types.InlineKeyboardMarkup" = None,
     ) -> "types.Message":
+        """Edit the text of a message.
+
+        .. include:: /_includes/usable-by/users-bots.rst
+
+        Parameters:
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
+            message_id (``int``):
+                Unique identifier of the message to edit.
+
+            text (``str``):
+                New text of the message. If ``rich_text`` is provided, this is ignored.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes.
+
+            entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
+                List of special entities that appear in message text, which can be specified
+                instead of *parse_mode*.
+
+            link_preview_options (:obj:`~pyrogram.types.LinkPreviewOptions`, *optional*):
+                Link preview generation options for the message.
+
+            show_caption_above_media (``bool``, *optional*):
+                Pass True to show the caption above the media.
+
+            disable_web_page_preview (``bool``, *optional*):
+                Disables link previews for links in this message.
+
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection.
+
+            rich_text (``str``, *optional*):
+                Rich text (Markdown or HTML) to render a styled message. Overrides ``text``.
+
+            rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                Parse mode for ``rich_text``. Defaults to Markdown.
+
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
+                An inline keyboard for the message.
+
+        Returns:
+            :obj:`~pyrogram.types.Message`: On success, the edited message is returned.
+
+        Example:
+            .. code-block:: python
+
+                # Edit a message text
+                await app.edit_message_text(chat_id, message_id, "New text")
+        """
         if link_preview_options is None:
             link_preview_options = self.link_preview_options
 

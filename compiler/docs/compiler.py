@@ -135,203 +135,343 @@ def pyrogram_api():
     # Methods
 
     categories = dict(
-        utilities="""
-        Utilities
-            start
-            stop
-            run
-            restart
-            add_handler
-            remove_handler
-            stop_transmission
-            export_session_string
-            set_parse_mode
+        account="""
+        Account
+            add_profile_audio
+            get_account_ttl
+            get_global_privacy_settings
+            get_privacy
+            remove_profile_audio
+            set_account_ttl
+            set_global_privacy_settings
+            set_inactive_session_ttl
+            set_privacy
+            set_profile_audio_position
         """,
-        messages="""
-        Messages
-            send_message
-            forward_messages
-            copy_message
-            copy_media_group
-            send_photo
-            send_audio
-            send_document
-            send_sticker
-            send_video
-            send_animation
-            send_voice
-            send_video_note
-            send_media_group
-            send_location
-            send_venue
-            send_contact
-            send_cached_media
-            send_reaction
-            edit_message_text
-            edit_message_caption
-            edit_message_media
-            edit_message_reply_markup
-            edit_inline_text
-            edit_inline_caption
-            edit_inline_media
-            edit_inline_reply_markup
-            send_chat_action
-            delete_messages
-            get_messages
-            get_media_group
-            get_chat_history
-            get_chat_history_count
-            read_chat_history
-            send_poll
-            vote_poll
-            stop_poll
-            retract_vote
-            send_dice
-            search_messages
-            search_messages_count
-            search_global
-            search_global_count
-            download_media
-            stream_media
-            get_discussion_message
-            get_discussion_replies
-            get_discussion_replies_count
-            get_custom_emoji_stickers
+        advanced="""
+        Advanced
+            invoke
+            recover_gaps
+            resolve_peer
+            save_file
+        """,
+        auth="""
+        Authorization
+            accept_terms_of_service
+            check_password
+            connect
+            disconnect
+            get_password_hint
+            initialize
+            log_out
+            recover_password
+            resend_code
+            send_code
+            send_recovery_code
+            sign_in
+            sign_in_bot
+            sign_up
+            terminate
+        """,
+        bots="""
+        Bots
+            allow_bot_send_message
+            answer_callback_query
+            answer_inline_query
+            answer_web_app_query
+            can_bot_send_message
+            delete_bot_commands
+            get_admined_bots
+            get_bot_commands
+            get_bot_default_privileges
+            get_bot_info
+            get_chat_menu_button
+            get_game_high_scores
+            get_inline_bot_results
+            request_callback_answer
+            send_game
+            send_inline_bot_result
+            set_bot_commands
+            set_bot_default_privileges
+            set_chat_menu_button
+            set_game_score
+        """,
+        business="""
+        Business
+            create_business_chat_link
+            delete_business_chat_link
+            delete_business_messages
+            get_business_account_gifts
+            get_business_account_star_balance
+            get_business_chat_links
+            get_business_connection
+            get_connected_bots
+            resolve_business_chat_link
+            transfer_business_account_stars
+            update_business_away_message
+            update_business_greeting_message
+            update_business_intro
+            update_business_location
+            update_business_work_hours
         """,
         chats="""
         Chats
-            join_chat
-            leave_chat
-            ban_chat_member
-            unban_chat_member
-            restrict_chat_member
-            promote_chat_member
-            set_administrator_title
-            set_chat_photo
-            delete_chat_photo
-            set_chat_title
-            set_chat_description
-            set_chat_permissions
-            pin_chat_message
-            unpin_chat_message
-            unpin_all_chat_messages
-            get_chat
-            get_chat_member
-            get_chat_members
-            get_chat_members_count
-            get_dialogs
-            get_dialogs_count
-            set_chat_username
-            get_nearby_chats
-            archive_chats
-            unarchive_chats
             add_chat_members
+            archive_chats
+            ban_chat_member
             create_channel
             create_group
             create_supergroup
             delete_channel
+            delete_chat_photo
             delete_supergroup
             delete_user_history
-            set_slow_mode
-            mark_chat_unread
+            get_chat
             get_chat_event_log
+            get_chat_member
+            get_chat_members
+            get_chat_members_count
             get_chat_online_count
+            get_dialogs
+            get_dialogs_count
+            get_nearby_chats
             get_send_as_chats
-            set_send_as_chat
+            join_chat
+            leave_chat
+            mark_chat_unread
+            pin_chat_message
+            promote_chat_member
+            restrict_chat_member
+            restrict_sponsored_messages
+            set_administrator_title
+            set_chat_description
+            set_chat_permissions
+            set_chat_photo
             set_chat_protected_content
-        """,
-        users="""
-        Users
-            get_me
-            get_users
-            get_chat_photos
-            get_chat_photos_count
-            set_profile_photo
-            delete_profile_photos
-            set_username
-            update_profile
-            block_user
-            unblock_user
-            get_common_chats
-            get_default_emoji_statuses
-            set_emoji_status
-        """,
-        invite_links="""
-        Invite Links
-            get_chat_invite_link
-            export_chat_invite_link
-            create_chat_invite_link
-            edit_chat_invite_link
-            revoke_chat_invite_link
-            delete_chat_invite_link
-            get_chat_invite_link_joiners
-            get_chat_invite_link_joiners_count
-            get_chat_admin_invite_links
-            get_chat_admin_invite_links_count
-            get_chat_admins_with_invite_links
-            get_chat_join_requests
-            delete_chat_admin_invite_links
-            approve_chat_join_request
-            approve_all_chat_join_requests
-            decline_chat_join_request
-            decline_all_chat_join_requests
+            set_chat_title
+            set_chat_username
+            set_send_as_chat
+            set_slow_mode
+            toggle_anti_spam
+            toggle_auto_translation
+            toggle_forum
+            toggle_join_to_send
+            toggle_participants_hidden
+            toggle_pre_history_hidden
+            toggle_signatures
+            toggle_slow_mode
+            toggle_view_forum_as_messages
+            unarchive_chats
+            unban_chat_member
+            unpin_all_chat_messages
+            unpin_chat_message
+            update_channel_color
         """,
         contacts="""
         Contacts
             add_contact
             delete_contacts
-            import_contacts
             get_contacts
             get_contacts_count
+            import_contacts
+        """,
+        folders="""
+        Folders
+            check_chat_folder_invite_link
+        """,
+        invite_links="""
+        Invite Links
+            approve_all_chat_join_requests
+            approve_chat_join_request
+            create_chat_invite_link
+            decline_all_chat_join_requests
+            decline_chat_join_request
+            delete_chat_admin_invite_links
+            delete_chat_invite_link
+            edit_chat_invite_link
+            export_chat_invite_link
+            get_chat_admin_invite_links
+            get_chat_admin_invite_links_count
+            get_chat_admins_with_invite_links
+            get_chat_invite_link
+            get_chat_invite_link_joiners
+            get_chat_invite_link_joiners_count
+            get_chat_join_requests
+            revoke_chat_invite_link
+        """,
+        messages="""
+        Messages
+            copy_media_group
+            copy_message
+            delete_messages
+            delete_scheduled_messages
+            download_media
+            edit_fact_check
+            edit_inline_caption
+            edit_inline_media
+            edit_inline_reply_markup
+            edit_inline_text
+            edit_message_caption
+            edit_message_checklist
+            edit_message_media
+            edit_message_reply_markup
+            edit_message_text
+            forward_messages
+            get_chat_history
+            get_chat_history_count
+            get_custom_emoji_stickers
+            get_discussion_message
+            get_discussion_replies
+            get_discussion_replies_count
+            get_media_group
+            get_messages
+            get_poll_results
+            read_chat_history
+            retract_vote
+            search_global
+            search_global_count
+            search_messages
+            search_messages_count
+            send_animation
+            send_audio
+            send_cached_media
+            send_checklist
+            send_chat_action
+            send_contact
+            send_dice
+            send_document
+            send_location
+            send_media_group
+            send_message
+            send_photo
+            send_poll
+            send_reaction
+            send_scheduled_messages
+            send_screenshot_notification
+            send_sticker
+            send_venue
+            send_video
+            send_video_note
+            send_voice
+            stop_poll
+            stream_media
+            summarize_text
+            translate_text
+            vote_poll
         """,
         password="""
         Password
-            enable_cloud_password
             change_cloud_password
+            enable_cloud_password
             remove_cloud_password
         """,
-        bots="""
-        Bots
-            get_inline_bot_results
-            send_inline_bot_result
-            answer_callback_query
-            answer_inline_query
-            request_callback_answer
-            send_game
-            set_game_score
-            get_game_high_scores
-            set_bot_commands
-            get_bot_commands
-            delete_bot_commands
-            set_bot_default_privileges
-            get_bot_default_privileges
-            set_chat_menu_button
-            get_chat_menu_button
-            answer_web_app_query
+        payments="""
+        Payments
+            add_collection_gifts
+            apply_gift_code
+            buy_gift_upgrade
+            check_gift_code
+            convert_gift_to_stars
+            craft_gift
+            create_gift_collection
+            delete_gift_collection
+            drop_gift_original_details
+            edit_star_subscription
+            get_available_gifts
+            get_chat_gifts
+            get_chat_gifts_count
+            get_gift_auction_state
+            get_gift_collections
+            get_gift_upgrade_preview
+            get_gift_upgrade_variants
+            get_gifts_for_crafting
+            get_payment_form
+            get_stars_balance
+            get_ton_balance
+            get_upgraded_gift
+            get_upgraded_gift_value_info
+            gift_premium_with_stars
+            hide_gift
+            increase_gift_auction_bid
+            place_gift_auction_bid
+            process_gift_purchase_offer
+            remove_collection_gifts
+            reorder_collection_gifts
+            reorder_gift_collections
+            reuse_star_subscription
+            search_gifts_for_resale
+            send_gift
+            send_gift_purchase_offer
+            send_payment_form
+            send_resold_gift
+            set_gift_collection_name
+            set_gift_resale_price
+            set_pinned_gifts
+            show_gift
+            suggest_birthday
+            transfer_gift
+            upgrade_gift
         """,
-        authorization="""
-        Authorization
-            connect
-            disconnect
-            initialize
-            terminate
-            send_code
-            resend_code
-            sign_in
-            sign_in_bot
-            sign_up
-            get_password_hint
-            check_password
-            send_recovery_code
-            recover_password
-            accept_terms_of_service
-            log_out
+        phone="""
+        Phone
+            get_call_members
         """,
-        advanced="""
-        Advanced
-            invoke
-            resolve_peer
-            save_file
+        premium="""
+        Premium
+            apply_boost
+            get_boosts
+            get_boosts_status
+        """,
+        stories="""
+        Stories
+            can_post_stories
+            copy_story
+            delete_stories
+            edit_story_caption
+            edit_story_media
+            edit_story_privacy
+            enable_stealth_mode
+            forward_story
+            get_all_stories
+            get_archived_stories
+            get_chat_stories
+            get_pinned_stories
+            get_stories
+            get_story_views
+            hide_chat_stories
+            pin_chat_stories
+            read_chat_stories
+            send_story
+            show_chat_stories
+            unpin_chat_stories
+            view_stories
+        """,
+        users="""
+        Users
+            block_user
+            delete_profile_photos
+            get_chat_photos
+            get_chat_photos_count
+            get_common_chats
+            get_default_emoji_statuses
+            get_me
+            get_users
+            set_emoji_status
+            set_profile_photo
+            set_username
+            unblock_user
+            update_profile
+        """,
+        utilities="""
+        Utilities
+            add_handler
+            export_session_string
+            remove_handler
+            restart
+            run
+            start
+            stop
+            stop_transmission
         """
     )
 
@@ -371,7 +511,7 @@ def pyrogram_api():
     # Types
 
     categories = dict(
-        users_chats="""
+        user_and_chats="""
         Users & Chats
             User
             Chat
@@ -390,6 +530,35 @@ def pyrogram_api():
             Dialog
             Restriction
             EmojiStatus
+            Birthday
+            BusinessConnection
+            BusinessIntro
+            BusinessRecipients
+            BusinessWorkingHours
+            BusinessWeeklyOpen
+            ChatAdministratorRights
+            ChatColor
+            ChatJoinResult
+            ChatReactions
+            ChatSettings
+            Folder
+            FolderInviteLink
+            FoundContacts
+            GlobalPrivacySettings
+            GroupCallMember
+            HistoryCleared
+            InviteLinkImporter
+            PhoneCallEnded
+            PhoneCallStarted
+            PrivacyRule
+            StoriesStealthMode
+            UserRating
+            Username
+            VerificationStatus
+            VideoChatEnded
+            VideoChatMembersInvited
+            VideoChatScheduled
+            VideoChatStarted
         """,
         messages_media="""
         Messages & Media
@@ -420,8 +589,98 @@ def pyrogram_api():
             WebAppData
             MessageReactions
             ChatReactions
+            AvailableEffect
+            BoostsStatus
+            BusinessMessage
+            ChatBackground
+            ChatBoost
+            Checklist
+            ChecklistTask
+            ChecklistTasksAdded
+            ChecklistTasksDone
+            ContactRegistered
+            DirectMessagePriceChanged
+            DirectMessagesTopic
+            ExternalReplyInfo
+            FactCheck
+            FormattedText
+            ForumTopic
+            ForumTopicClosed
+            ForumTopicCreated
+            ForumTopicEdited
+            ForumTopicReopened
+            GeneralForumTopicHidden
+            GeneralForumTopicUnhidden
+            Gift
+            GiftAttribute
+            GiftAuction
+            GiftAuctionState
+            GiftCollection
+            GiftedPremium
+            GiftedStars
+            GiftedTon
+            Giveaway
+            GiveawayCompleted
+            GiveawayCreated
+            GiveawayPrizeStars
+            GiveawayWinners
+            InputChecklistTask
+            Invoice
+            LinkPreviewOptions
+            LivePhoto
+            ManagedBotCreated
+            MaskPosition
+            MediaArea
+            MessageContent
+            MessageOrigin
+            MessageOriginChannel
+            MessageOriginChat
+            MessageOriginHiddenUser
+            MessageOriginImport
+            MessageOriginUser
+            MyBoost
+            PaidMediaInfo
+            PaidMediaPreview
+            PaidMessagesPriceChanged
+            PaidMessagesRefunded
+            PaidReactor
+            PaymentForm
+            PaymentOption
+            PollOptionAdded
+            PollOptionDeleted
+            PremiumGiftCode
+            ProximityAlertTriggered
+            RefundedPayment
+            ReplyParameters
+            RestrictionReason
+            RichBlock
+            RichMessage
+            RichText
+            ScreenshotTaken
+            StarAmount
+            Story
+            StoryView
+            StrippedThumbnail
+            SuggestedPostApprovalFailed
+            SuggestedPostApproved
+            SuggestedPostDeclined
+            SuggestedPostInfo
+            SuggestedPostPaid
+            SuggestedPostParameters
+            SuggestedPostPrice
+            SuggestedPostRefunded
+            TextQuote
+            UpgradedGiftAttributeId
+            UpgradedGiftAttributeIdBackdrop
+            UpgradedGiftAttributeIdModel
+            UpgradedGiftAttributeIdSymbol
+            UpgradedGiftAttributeRarity
+            UpgradedGiftOriginalDetails
+            UpgradedGiftPurchaseOffer
+            UpgradedGiftValueInfo
+            WriteAccessAllowed
         """,
-        bot_keyboards="""
+        bots_and_keyboards="""
         Bot keyboards
             ReplyKeyboardMarkup
             KeyboardButton
@@ -439,9 +698,6 @@ def pyrogram_api():
             MenuButtonWebApp
             MenuButtonDefault
             SentWebAppMessage
-        """,
-        bot_commands="""
-        Bot commands
             BotCommand
             BotCommandScope
             BotCommandScopeDefault
@@ -451,16 +707,25 @@ def pyrogram_api():
             BotCommandScopeChat
             BotCommandScopeChatAdministrators
             BotCommandScopeChatMember
-        """,
-        input_media="""
-        Input Media
-            InputMedia
-            InputMediaPhoto
-            InputMediaVideo
-            InputMediaAudio
-            InputMediaAnimation
-            InputMediaDocument
-            InputPhoneContact
+            BotAccessSettings
+            ChatBoostUpdated
+            ChatShared
+            KeyboardButtonPollType
+            KeyboardButtonRequestChat
+            KeyboardButtonRequestManagedBot
+            KeyboardButtonRequestUsers
+            LabeledPrice
+            ManagedBotUpdated
+            MessageReactionCountUpdated
+            MessageReactionUpdated
+            OrderInfo
+            PreCheckoutQuery
+            PurchasedPaidMedia
+            SentGuestMessage
+            ShippingAddress
+            ShippingOption
+            ShippingQuery
+            UsersShared
         """,
         inline_mode="""
         Inline Mode
@@ -485,15 +750,63 @@ def pyrogram_api():
             InlineQueryResultVoice
             ChosenInlineResult
         """,
-        input_message_content="""
-        InputMessageContent
+        input_content="""
+        Input Content
+            InputMedia
+            InputMediaPhoto
+            InputMediaVideo
+            InputMediaAudio
+            InputMediaAnimation
+            InputMediaDocument
+            InputPhoneContact
+            InputChatPhoto
+            InputChecklist
+            InputCredentials
+            InputCredentialsApplePay
+            InputCredentialsGooglePay
+            InputCredentialsNew
+            InputCredentialsSaved
+            InputInvoice
+            InputInvoiceMessage
+            InputInvoiceMessageContent
+            InputInvoiceName
+            InputMediaLink
+            InputMediaLivePhoto
+            InputMediaLocation
+            InputMediaSticker
+            InputMediaVenue
             InputMessageContent
+            InputPollMedia
+            InputPollOption
+            InputPollOptionMedia
+            InputPrivacyRule
+            InputPrivacyRuleAllowAll
+            InputPrivacyRuleAllowBots
+            InputPrivacyRuleAllowChats
+            InputPrivacyRuleAllowCloseFriends
+            InputPrivacyRuleAllowContacts
+            InputPrivacyRuleAllowPremium
+            InputPrivacyRuleAllowUsers
+            InputPrivacyRuleDisallowAll
+            InputPrivacyRuleDisallowBots
+            InputPrivacyRuleDisallowChats
+            InputPrivacyRuleDisallowContacts
+            InputPrivacyRuleDisallowUsers
+            InputRichMessage
+            InputRichMessageContent
             InputTextMessageContent
+            InputContactMessageContent
+            InputLocationMessageContent
+            InputVenueMessageContent
         """,
         authorization="""
         Authorization
             SentCode
             TermsOfService
+            ActiveSession
+            ActiveSessions
+            FirebaseAuthenticationSettings
+            PhoneNumberAuthenticationSettings
         """
     )
 
@@ -533,6 +846,7 @@ def pyrogram_api():
             Message.download
             Message.forward
             Message.copy
+            Message.copy_media_group
             Message.pin
             Message.unpin
             Message.edit
@@ -546,12 +860,16 @@ def pyrogram_api():
             Message.reply_audio
             Message.reply_cached_media
             Message.reply_chat_action
+            Message.reply_checklist
             Message.reply_contact
+            Message.reply_dice
             Message.reply_document
             Message.reply_game
             Message.reply_inline_bot_result
+            Message.reply_invoice
             Message.reply_location
             Message.reply_media_group
+            Message.reply_paid_media
             Message.reply_photo
             Message.reply_poll
             Message.reply_sticker
@@ -559,8 +877,49 @@ def pyrogram_api():
             Message.reply_video
             Message.reply_video_note
             Message.reply_voice
+            Message.answer
+            Message.answer_animation
+            Message.answer_audio
+            Message.answer_cached_media
+            Message.answer_checklist
+            Message.answer_contact
+            Message.answer_dice
+            Message.answer_document
+            Message.answer_game
+            Message.answer_inline_bot_result
+            Message.answer_invoice
+            Message.answer_location
+            Message.answer_media_group
+            Message.answer_paid_media
+            Message.answer_photo
+            Message.answer_poll
+            Message.answer_sticker
+            Message.answer_venue
+            Message.answer_video
+            Message.answer_video_note
+            Message.answer_voice
             Message.get_media_group
             Message.react
+            Message.read
+            Message.view
+            Message.vote
+            Message.pay
+            Message.retract_vote
+            Message.edit_checklist
+            Message.edit_live_location
+            Message.stop_live_location
+            Message.summarize
+            Message.content
+            Message.link
+            Message.html_text
+            Message.md_text
+            Message.forward_date
+            Message.forward_from
+            Message.forward_from_chat
+            Message.forward_from_message_id
+            Message.forward_sender_name
+            Message.forward_signature
+            Message.is_topic_message
         """,
         chat="""
         Chat
@@ -581,6 +940,14 @@ def pyrogram_api():
             Chat.mark_unread
             Chat.set_protected_content
             Chat.unpin_all_messages
+            Chat.mute
+            Chat.unmute
+            Chat.set_ttl
+            Chat.export_invite_link
+            Chat.full_name
+            Chat.is_fake
+            Chat.is_scam
+            Chat.is_verified
         """,
         user="""
         User
@@ -588,6 +955,12 @@ def pyrogram_api():
             User.unarchive
             User.block
             User.unblock
+            User.full_name
+            User.is_fake
+            User.is_scam
+            User.is_verified
+            User.mention
+            User.get_common_chats
         """,
         callback_query="""
         Callback Query
@@ -605,6 +978,68 @@ def pyrogram_api():
         ChatJoinRequest
             ChatJoinRequest.approve
             ChatJoinRequest.decline
+        """,
+        story="""
+        Story
+            Story.copy
+            Story.delete
+            Story.download
+            Story.edit_caption
+            Story.edit_media
+            Story.edit_privacy
+            Story.forward
+            Story.link
+            Story.react
+            Story.read
+            Story.view
+            Story.reply_text
+            Story.reply_animation
+            Story.reply_audio
+            Story.reply_cached_media
+            Story.reply_media_group
+            Story.reply_photo
+            Story.reply_sticker
+            Story.reply_video
+            Story.reply_video_note
+            Story.reply_voice
+        """,
+        gift="""
+        Gift
+            Gift.buy
+            Gift.send
+            Gift.transfer
+            Gift.upgrade
+            Gift.convert
+            Gift.hide
+            Gift.show
+            Gift.link
+            Gift.wear
+            Gift.owned_gift_id
+            Gift.send_purchase_offer
+            Gift.get_auction_state
+        """,
+        poll="""
+        Poll
+            Poll.get_vote_percentage
+        """,
+        pre_checkout_query="""
+        PreCheckoutQuery
+            PreCheckoutQuery.answer
+        """,
+        shipping_query="""
+        ShippingQuery
+            ShippingQuery.answer
+        """,
+        folder="""
+        Folder
+            Folder.create_invite_link
+            Folder.delete
+            Folder.edit
+            Folder.exclude_chat
+            Folder.include_chat
+            Folder.pin_chat
+            Folder.remove_chat
+            Folder.update_color
         """
     )
 

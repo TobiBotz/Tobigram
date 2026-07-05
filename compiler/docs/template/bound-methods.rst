@@ -63,7 +63,7 @@ User
     {user_toctree}
 
 CallbackQuery
--------------
+--------------
 
 .. hlist::
     :columns: 3
@@ -76,7 +76,7 @@ CallbackQuery
     {callback_query_toctree}
 
 InlineQuery
------------
+------------
 
 .. hlist::
     :columns: 2
@@ -89,7 +89,7 @@ InlineQuery
     {inline_query_toctree}
 
 ChatJoinRequest
----------------
+----------------
 
 .. hlist::
     :columns: 2
@@ -101,3 +101,80 @@ ChatJoinRequest
 
     {chat_join_request_toctree}
 
+Story
+------
+
+.. hlist::
+    :columns: 3
+
+    {story_hlist}
+
+.. toctree::
+    :hidden:
+
+    {story_toctree}
+
+Gift
+-----
+
+.. hlist::
+    :columns: 3
+
+    {gift_hlist}
+
+.. toctree::
+    :hidden:
+
+    {gift_toctree}
+
+Poll
+-----
+
+.. hlist::
+    :columns: 1
+
+    {poll_hlist}
+
+.. toctree::
+    :hidden:
+
+    {poll_toctree}
+
+PreCheckoutQuery
+-----------------
+
+.. hlist::
+    :columns: 1
+
+    {pre_checkout_query_hlist}
+
+.. toctree::
+    :hidden:
+
+    {pre_checkout_query_toctree}
+
+ShippingQuery
+--------------
+
+.. hlist::
+    :columns: 1
+
+    {shipping_query_hlist}
+
+.. toctree::
+    :hidden:
+
+    {shipping_query_toctree}
+
+Folder
+-------
+
+.. hlist::
+    :columns: 3
+
+    {folder_hlist}
+
+.. toctree::
+    :hidden:
+
+    {folder_toctree}

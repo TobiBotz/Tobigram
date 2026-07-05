@@ -35,6 +35,89 @@ class SendChecklist:
             "types.ForceReply"
         ] = None,
     ) -> "types.Message":
+        """Send a checklist (todo list).
+
+        .. include:: /_includes/usable-by/users-bots.rst
+
+        Parameters:
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
+            checklist (:obj:`~pyrogram.types.InputChecklist`):
+                The checklist to send, containing a title and list of tasks.
+
+            disable_notification (``bool``, *optional*):
+                Sends the message silently. Users will receive a notification with no sound.
+
+            protect_content (``bool``, *optional*):
+                Pass True to protect the message content from being forwarded.
+
+            message_thread_id (``int``, *optional*):
+                Unique identifier for a message thread in a forum topic.
+
+            effect_id (``int``, *optional*):
+                Unique identifier of the effect to apply to the message.
+
+            reply_parameters (:obj:`~pyrogram.types.ReplyParameters`, *optional*):
+                Description of the reply-to message.
+
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                Date when the message will be automatically sent.
+
+            repeat_period (``int``, *optional*):
+                Period in seconds after which the message will be automatically repeated.
+
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection.
+
+            paid_message_star_count (``int``, *optional*):
+                Number of Telegram Stars to require for access to the paid message.
+
+            show_caption_above_media (``bool``, *optional*):
+                Pass True to show the caption above the media.
+
+            allow_paid_broadcast (``bool``, *optional*):
+                Pass True to allow sending paid broadcast messages.
+
+            suggested_post_parameters (:obj:`~pyrogram.types.SuggestedPostParameters`, *optional*):
+                Parameters for creating a suggested channel post.
+
+            background (``bool``, *optional*):
+                Pass True to send the message as a background message.
+
+            clear_draft (``bool``, *optional*):
+                Pass True to clear the draft in the chat.
+
+            update_stickersets_order (``bool``, *optional*):
+                Pass True to update the stickersets order.
+
+            send_as (``int`` | ``str``, *optional*):
+                Unique identifier of the chat or user to send the message on behalf of.
+
+            quick_reply_shortcut (``int``, *optional*):
+                Shortcut ID for quick reply.
+
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
+                Additional interface options. An object for an inline keyboard, custom reply keyboard,
+                instructions to remove reply keyboard or to force a reply from the user.
+
+        Returns:
+            :obj:`~pyrogram.types.Message`: On success, the sent checklist message is returned.
+
+        Example:
+            .. code-block:: python
+
+                from pyrogram.types import InputChecklist, InputChecklistTask
+
+                checklist = InputChecklist(
+                    title="Shopping List",
+                    tasks=[
+                        InputChecklistTask(text="Milk", checked=False),
+                        InputChecklistTask(text="Eggs", checked=True),
+                    ]
+                )
+                await app.send_checklist(chat_id, checklist)
+        """
         title, entities = (await utils.parse_text_entities(
             self, checklist.title, checklist.parse_mode, checklist.entities
         )).values()
