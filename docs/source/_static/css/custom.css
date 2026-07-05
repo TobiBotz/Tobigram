@@ -1,71 +1,81 @@
 @import url('https://fonts.googleapis.com/css2?family=Elms+Sans:ital,wght@0,100..900;1,100..900&display=swap');
 
+* {
+    font-family: "Elms Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
 :root {
     --border-radius: 0;
     --color-brand-primary: #1a1a1a;
     --color-brand-content: #2d2d2d;
     --color-foreground-primary: #1a1a1a;
     --color-background-primary: #ffffff;
-    --color-background-secondary: #f5f5f5;
-    --color-admonition-background: #f0f0f0;
-    --color-table-border: #1a1a1a;
-    --color-background-border: #1a1a1a;
-    --color-guilabel-background: #f0f0f0;
-    --color-guilabel-border: #1a1a1a;
+    --color-background-secondary: #f8f8f8;
+    --color-admonition-background: #f4f4f4;
+    --color-table-border: #d0d0d0;
+    --color-background-border: #d0d0d0;
+    --color-guilabel-background: #f4f4f4;
+    --color-guilabel-border: #d0d0d0;
     --color-admonition-title--note: #1a1a1a;
-    --color-admonition-title-background--note: #e0e0e0;
+    --color-admonition-title-background--note: #ebebeb;
     --color-admonition-title--seealso: #1a1a1a;
-    --color-admonition-title-background--seealso: #e0e0e0;
+    --color-admonition-title-background--seealso: #ebebeb;
     --color-admonition-title: #1a1a1a;
-    --color-admonition-title-background: #e0e0e0;
-    --color-border: #1a1a1a;
-    --color-button: #f0f0f0;
-    --color-background-highlight: #f0f0f0;
+    --color-admonition-title-background: #ebebeb;
+    --color-border: #d0d0d0;
+    --color-button: #f4f4f4;
+    --color-background-highlight: #f4f4f4;
     --color-title: #000000;
-    --color-link-hover: #555555;
+    --color-link: #1a1a1a;
+    --color-link-hover: #666666;
     --color-strong: #000000;
-    font-size: 15px;
+    font-size: 16px;
+    line-height: 1.7;
 }
 
 @media (prefers-color-scheme: dark) {
     body:not([data-theme=light]) {
         --color-brand-primary: #cccccc;
-        --color-brand-content: #aaaaaa;
+        --color-brand-content: #999999;
         --color-foreground-primary: #cccccc;
         --color-background-primary: #0d0d0d;
         --color-background-secondary: #141414;
-        --color-admonition-background: #1a1a1a;
-        --color-table-border: #555555;
-        --color-guilabel-background: #1a1a1a;
-        --color-guilabel-border: #555555;
+        --color-admonition-background: #181818;
+        --color-table-border: #333333;
+        --color-guilabel-background: #181818;
+        --color-guilabel-border: #333333;
         --color-admonition-title--note: #cccccc;
         --color-admonition-title-background--note: #1a1a1a;
         --color-admonition-title--seealso: #cccccc;
         --color-admonition-title-background--seealso: #1a1a1a;
         --color-admonition-title: #cccccc;
         --color-admonition-title-background: #1a1a1a;
-        --color-border: #555555;
+        --color-border: #333333;
         --color-button: #1a1a1a;
-        --color-background-highlight: #1a1a1a;
+        --color-background-highlight: #181818;
         --color-title: #e0e0e0;
+        --color-link: #cccccc;
         --color-link-hover: #999999;
         --color-strong: #e0e0e0;
     }
 }
 
+/* --- Layout --- */
+
 body {
-    font-family: "Elms Sans", sans-serif;
+    font-family: "Elms Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: var(--color-background-primary);
 }
 
-/* Full-width desktop layout */
 .page {
-    grid-template-columns: 18em minmax(0, 1fr) 18em;
+    grid-template-columns: 16em minmax(0, 1fr) 16em;
 }
 
 @media (max-width: 82em) {
     .page {
-        grid-template-columns: 18em minmax(0, 1fr) 0;
+        grid-template-columns: 16em minmax(0, 1fr) 0;
     }
 }
 
@@ -75,130 +85,402 @@ body {
     }
 }
 
-h1, h2, h3, h4, h5, h6 {
-    font-weight: 700;
-    color: var(--color-title);
-    border-bottom: 2px solid var(--color-border);
-    padding-bottom: 0.2em;
+.main-content {
+    padding: 0;
+    background-color: var(--color-background-primary);
 }
 
-h1 { font-size: 170%; }
-h2 { font-size: 145%; }
-h3 { font-size: 120%; }
+.content {
+    max-width: 56em;
+    margin: 0 auto;
+    padding: 3rem 3rem 4rem;
+}
+
+@media (max-width: 67em) {
+    .content {
+        padding: 2rem 1.5rem 3rem;
+    }
+}
+
+/* --- Sidebar --- */
+
+.sidebar-drawer {
+    background-color: var(--color-background-secondary);
+}
+
+.sidebar-container {
+    width: 16em;
+    border-right: 1px solid var(--color-border);
+    background-color: var(--color-background-secondary);
+    padding: 1.5rem 0;
+}
+
+.sidebar-brand {
+    padding: 0 1.5rem 1rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-logo-container {
+    margin: 0 0 0.5rem;
+}
+
+.sidebar-logo {
+    width: 40px;
+}
+
+.sidebar-brand-text {
+    font-family: "Elms Sans", sans-serif;
+    font-weight: 700;
+    font-size: 1.3rem;
+    letter-spacing: -0.01em;
+}
+
+.sidebar-tree {
+    padding: 0 0.75rem;
+}
+
+.sidebar-tree li {
+    margin: 0.15rem 0;
+}
+
+.sidebar-tree .reference {
+    font-family: "Elms Sans", sans-serif;
+    font-size: 0.875rem;
+    font-weight: 400;
+    padding: 0.3rem 0.5rem;
+    display: block;
+    border-left: 2px solid transparent;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-tree .current > .reference {
+    border-left: 2px solid var(--color-title);
+    font-weight: 600;
+}
+
+.sidebar-tree .toctree-l1 > .reference:hover {
+    border-left: 2px solid var(--color-border);
+}
+
+.sidebar-tree li.toctree-l1 > .reference,
+.sidebar-tree li.toctree-l2 > .reference {
+    padding: 0.3rem 0.5rem 0.3rem 1rem;
+}
+
+/* --- TOC drawer --- */
+
+.toc-drawer {
+    border-left: 1px solid var(--color-border);
+    background-color: var(--color-background-secondary);
+    padding-top: 1.5rem;
+}
+
+.toc-tree {
+    padding: 0 1rem;
+}
+
+.toc-tree .reference {
+    font-family: "Elms Sans", sans-serif;
+    font-size: 0.8125rem;
+    font-weight: 400;
+    color: var(--color-foreground-primary);
+    padding: 0.2rem 0.5rem;
+    display: block;
+    border-left: 2px solid transparent;
+    transition: border-left-color 0.15s ease;
+}
+
+.toc-tree .reference:hover {
+    border-left-color: var(--color-border);
+}
+
+.toc-tree li.scroll-current > .reference {
+    border-left-color: var(--color-title);
+    font-weight: 600;
+}
+
+/* --- Headings --- */
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Elms Sans", sans-serif;
+    font-weight: 650;
+    color: var(--color-title);
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+    padding-bottom: 0.3rem;
+    margin-top: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+h1:first-child, h2:first-child, h3:first-child {
+    margin-top: 0;
+}
+
+h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: 0.4rem;
+    letter-spacing: -0.03em;
+}
+
+h2 {
+    font-size: 1.5rem;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.3rem;
+}
+
+h3 {
+    font-size: 1.2rem;
+}
+
+h4 {
+    font-size: 1.05rem;
+}
+
+h5, h6 {
+    font-size: 1rem;
+}
+
+/* --- Paragraphs & text --- */
+
+p {
+    margin: 0 0 1.2rem;
+    line-height: 1.7;
+}
+
+article[role=main] p {
+    max-width: 50em;
+}
+
+article p code.literal,
+li p code.literal {
+    font-family: "Elms Sans", sans-serif;
+    background-color: var(--color-background-highlight);
+    border: 1px solid var(--color-border);
+    border-radius: 2px;
+    padding: 0.1em 0.4em;
+    font-size: 0.875em;
+    font-weight: 500;
+}
 
 article[role=main] .highlight pre {
+    font-family: "Elms Sans", sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.5;
     border: 1px solid var(--color-border);
     border-radius: 0;
     background-color: var(--color-background-highlight);
+    padding: 1.2rem;
 }
 
-p code.literal {
-    background-color: var(--color-background-highlight);
-    border: 1px solid var(--color-border);
-    border-radius: 0;
+div[class*="highlight-"] {
+    margin: 1.5rem 0;
 }
+
+/* --- Links --- */
+
+a {
+    text-decoration: none;
+    color: var(--color-link);
+    transition: color 0.15s ease;
+}
+
+a:hover {
+    color: var(--color-link-hover);
+    text-decoration: underline;
+}
+
+a.reference {
+    border-bottom: 1px solid transparent;
+}
+
+a.reference:hover {
+    border-bottom-color: var(--color-link-hover);
+}
+
+/* --- Admonitions --- */
 
 .admonition {
     border-radius: 0;
     border: 1px solid var(--color-border);
-    border-left: 3px solid var(--color-border);
+    border-left: 3px solid var(--color-title);
+    padding: 1rem 1.5rem;
+    margin: 1.5rem 0;
 }
 
-.related-pages a {
-    background-color: var(--color-button);
-    border: 1px solid var(--color-border);
-    border-radius: 0;
+p.admonition-title {
+    font-family: "Elms Sans", sans-serif;
+    font-weight: 650;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
 }
 
-.sidebar-container {
-    width: 18em;
-    border-right: 1px solid var(--color-border);
-}
-
-.toc-drawer {
-    border-left: 1px solid var(--color-border);
-}
+/* --- Tables --- */
 
 table.docutils {
-    border: 2px solid var(--color-table-border);
+    border: 1px solid var(--color-table-border);
     border-radius: 0;
     border-collapse: collapse;
+    margin: 1.5rem 0;
+    width: 100%;
 }
 
 table.docutils th {
     background-color: var(--color-background-highlight);
     border: 1px solid var(--color-table-border);
+    padding: 0.6rem 0.8rem;
+    font-family: "Elms Sans", sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
 table.docutils td {
     border: 1px solid var(--color-table-border);
+    padding: 0.5rem 0.8rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
 }
 
 table.docutils:not(.field-list) tr:nth-child(2n-1) td {
     background-color: var(--color-background-highlight);
 }
 
+/* --- Code signatures (function defs, class defs) --- */
+
 dt {
+    font-family: "Elms Sans", sans-serif !important;
     background-color: var(--color-background-highlight) !important;
     border-radius: 0 !important;
-    border-left: 3px solid var(--color-border) !important;
+    border-left: 3px solid var(--color-title) !important;
+    padding: 0.4rem 0.8rem !important;
+    margin: 0.5rem 0 !important;
+    font-size: 0.9rem;
 }
 
-.sidebar-brand {
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: 0.5em;
+.sig-prename,
+.sig-name {
+    font-family: "Elms Sans", sans-serif;
+    color: var(--color-foreground-primary);
 }
 
-.sidebar-tree .reference {
-    border-left: 2px solid transparent;
-    padding-left: 0.5em;
+/* --- Lists --- */
+
+article[role=main] ul,
+article[role=main] ol {
+    margin: 0 0 1.2rem;
+    padding-left: 1.5rem;
+    line-height: 1.7;
 }
 
-.sidebar-tree .current > .reference {
-    border-left: 2px solid var(--color-border);
-    font-weight: 700;
+article[role=main] li {
+    margin-bottom: 0.3rem;
 }
 
-.sidebar-tree .toctree-l1 > .reference:hover {
-    border-left: 2px solid var(--color-brand-content);
+/* --- Navigation buttons --- */
+
+.related-pages {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
 }
 
-a {
-    text-decoration: none;
+.related-pages a {
+    background-color: var(--color-button);
+    border: 1px solid var(--color-border);
+    border-radius: 0;
+    padding: 0.6rem 1rem;
+    font-family: "Elms Sans", sans-serif;
+    font-size: 0.9rem;
+    transition: background-color 0.15s ease;
 }
 
-a:hover {
-    text-decoration: underline;
+.related-pages a:hover {
+    background-color: var(--color-background-highlight);
 }
+
+/* --- Bottom of page --- */
+
+.bottom-of-page {
+    border-top: 1px solid var(--color-border);
+    padding: 1.5rem 0;
+    margin-top: 3rem;
+    font-size: 0.85rem;
+    color: var(--color-foreground-primary);
+}
+
+/* --- Blockquotes --- */
+
+blockquote {
+    border-left: 3px solid var(--color-border);
+    border-radius: 0;
+    padding: 0.5rem 1rem;
+    margin: 1.5rem 0;
+    color: var(--color-foreground-primary);
+}
+
+/* --- Misc --- */
 
 .content-icon-container {
     margin-top: 1.5rem;
     margin-bottom: 0;
 }
 
-.bottom-of-page {
-    border-top: 1px solid var(--color-border);
-    padding-top: 1em;
-    margin-top: 2em;
-}
-
-blockquote {
-    border-left: 3px solid var(--color-border);
-    border-radius: 0;
-}
-
 .highlight button.copybtn svg {
     color: var(--color-foreground-primary);
+    transition: color 0.15s ease;
 }
 
-.toc-tree .reference {
-    color: var(--color-brand-primary);
+.highlight button.copybtn:hover svg {
+    color: var(--color-title);
 }
 
-.toc-tree li.scroll-current > .reference:before {
-    content: "▸ ";
+.field-list {
+    margin: 1.5rem 0;
 }
 
-.sidebar-tree .current > .reference::before {
-    content: "▸ ";
+.field-list dt {
+    border-left: none !important;
+    background: none !important;
+    padding: 0 !important;
+    font-weight: 600;
+}
+
+.field-list dd {
+    margin: 0 0 0.5rem 1.5rem;
+}
+
+/* --- Buttons and inline elements --- */
+
+kbd, .guilabel {
+    font-family: "Elms Sans", sans-serif;
+    background-color: var(--color-guilabel-background);
+    border: 1px solid var(--color-guilabel-border);
+    border-radius: 2px;
+    padding: 0.1em 0.4em;
+    font-size: 0.875em;
+}
+
+/* --- Version and toctree captions --- */
+
+.toctree-wrapper {
+    margin: 1.5rem 0;
+}
+
+.toctree-wrapper .caption-text {
+    font-family: "Elms Sans", sans-serif;
+    font-weight: 650;
+    font-size: 1rem;
+}
+
+/* --- Homepage specific --- */
+
+article[role=main] .code-block-caption {
+    font-family: "Elms Sans", sans-serif;
+    font-size: 0.85rem;
+    padding: 0.4rem 1.2rem;
+    border: 1px solid var(--color-border);
+    border-bottom: none;
+    background-color: var(--color-background-highlight);
 }
