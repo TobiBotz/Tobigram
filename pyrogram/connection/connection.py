@@ -86,7 +86,10 @@ class Connection:
             raise ConnectionError
 
     async def close(self):
-        await self.protocol.close()
+        if self.protocol is None:
+            return
+        async with self.protocol.lock:
+            await self.protocol.close()
         log.info("Disconnected")
 
     async def send(self, data: bytes):
