@@ -322,6 +322,7 @@ class SQLiteStorage(Storage):
 
     async def close(self):
         self.conn.close()
+        self.conn = None
 
     async def delete(self):
         if not self.in_memory:
@@ -392,6 +393,8 @@ class SQLiteStorage(Storage):
         return get_input_peer(*r)
 
     async def _get(self, table: str, attr: str):
+        if self.conn is None:
+            raise ConnectionError("Database is not open")
         return self.conn.execute(f"SELECT {attr} FROM {table}").fetchone()[0]
 
     async def _set(self, table: str, attr: str, value: Any):

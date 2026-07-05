@@ -205,6 +205,8 @@ class Session:
         async with self._restart_lock:
             self._restart_done.clear()
             await self.stop()
+            if self.client.storage.conn is None:
+                await self.client.storage.open()
             await self.start()
             self._restart_done.set()
 
