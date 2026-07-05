@@ -16,14 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-import base64
 import logging
 from pathlib import Path
-import struct
 
 import aiosqlite
 
-from .sqlite_storage import SQLiteStorage
+from .sqlite_storage import SQLiteStorage, TEST, PROD
 
 log = logging.getLogger(__name__)
 
@@ -39,36 +37,27 @@ class MemoryStorage(SQLiteStorage):
         await self.create()
 
         if self.session_string:
-            if len(self.session_string) in [self.SESSION_STRING_SIZE, self.SESSION_STRING_SIZE_64]:
-                dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
-                    (self.OLD_SESSION_STRING_FORMAT
-                     if len(self.session_string) == self.SESSION_STRING_SIZE else
-                     self.OLD_SESSION_STRING_FORMAT_64),
-                    base64.urlsafe_b64decode(self.session_string + "=" * (-len(self.session_string) % 4))
-                )
-
-                await self.dc_id(dc_id)
-                await self.test_mode(test_mode)
-                await self.auth_key(auth_key)
-                await self.user_id(user_id)
-                await self.is_bot(is_bot)
-                await self.date(0)
-
-                log.warning("You are using an old session string format. Use export_session_string to update")
-                return
-
-            dc_id, api_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
-                self.SESSION_STRING_FORMAT,
-                base64.urlsafe_b64decode(self.session_string + "=" * (-len(self.session_string) % 4))
-            )
-
-            await self.dc_id(dc_id)
-            await self.api_id(api_id)
-            await self.test_mode(test_mode)
-            await self.auth_key(auth_key)
-            await self.user_id(user_id)
-            await self.is_bot(is_bot)
+            data = self._decode_session_string(self.session_string)
+            await self.dc_id(data["dc_id"])
+            await self.test_mode(data["test_mode"])
+            await self.auth_key(data["auth_key"])
+            await self.user_id(data["user_id"])
+            await self.is_bot(data["is_bot"])
             await self.date(0)
+
+            if data["api_id"] is not None:
+                if data["server_address"] is not None:
+                    await self.server_address(data["server_address"])
+                    await self.port(data["port"])
+                else:
+                    if data["test_mode"]:
+                        await self.server_address(TEST[data["dc_id"]])
+                        await self.port(80)
+                    else:
+                        await self.server_address(PROD[data["dc_id"]])
+                        await self.port(443)
+
+                await self.api_id(data["api_id"])
 
     async def delete(self):
         pass

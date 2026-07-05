@@ -16,27 +16,28 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from abc import ABC, abstractmethod
 import base64
+import logging
 import struct
-from typing import List, Tuple
+from abc import ABC, abstractmethod
+from typing import List, Optional, Tuple
 
 from pyrogram import raw
 
-class Storage(ABC):
-    """
-    Abstract class for storage engines.
+log = logging.getLogger(__name__)
 
-    Parameters:
-        name (``str``):
-            The name of the session.
-    """
+
+class Storage(ABC):
     OLD_SESSION_STRING_FORMAT = ">B?256sI?"
     OLD_SESSION_STRING_FORMAT_64 = ">B?256sQ?"
     SESSION_STRING_SIZE = 351
     SESSION_STRING_SIZE_64 = 356
 
     SESSION_STRING_FORMAT = ">BI?256sQ?"
+    SESSION_STRING_SIZE_CURRENT = 362
+
+    SESSION_STRING_FORMAT_V2 = ">BBI?256sQ?H16s"
+    SESSION_STRING_SIZE_V2 = 387
 
     def __init__(self, name: str):
         self.name = name
@@ -230,20 +231,90 @@ class Storage(ABC):
         raise NotImplementedError
 
     async def export_session_string(self) -> str:
-        """Exports the session string for the current session.
+        dc_id = await self.dc_id()
+        api_id = await self.api_id()
+        test_mode = await self.test_mode()
+        auth_key = await self.auth_key()
+        user_id = await self.user_id()
+        is_bot = await self.is_bot()
+        port = await self.port()
+        server_address = await self.server_address()
 
-        Returns:
-            ``str``: The session string for the current session.
-        """
+        if any(v is None for v in (dc_id, api_id, test_mode, auth_key, user_id, is_bot, port, server_address)):
+            raise ValueError(
+                "Cannot export session string: some required fields are missing. "
+                "Make sure the client is fully initialized."
+            )
+
+        addr_bytes = server_address.encode("ascii").ljust(16, b"\x00")[:16]
+
         packed = struct.pack(
-            self.SESSION_STRING_FORMAT,
-            await self.dc_id(),
-            await self.api_id(),
-            await self.test_mode(),
-            await self.auth_key(),
-            await self.user_id(),
-            await self.is_bot()
+            self.SESSION_STRING_FORMAT_V2,
+            2,              # version
+            dc_id,
+            api_id,
+            test_mode,
+            auth_key,
+            user_id,
+            is_bot,
+            port,
+            addr_bytes,
         )
 
         return base64.urlsafe_b64encode(packed).decode().rstrip("=")
+
+    @staticmethod
+    def _decode_session_string(
+        session_string: str,
+    ) -> dict:
+        raw = base64.urlsafe_b64decode(session_string + "=" * (-len(session_string) % 4))
+        length = len(raw)
+
+        if length == 263:
+            dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
+                Storage.OLD_SESSION_STRING_FORMAT, raw
+            )
+            log.warning("Old session string format without api_id; upgrade by re-exporting")
+            return dict(
+                dc_id=dc_id, api_id=None, test_mode=test_mode,
+                auth_key=auth_key, user_id=user_id, is_bot=is_bot,
+                port=None, server_address=None,
+            )
+
+        if length == 267:
+            dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
+                Storage.OLD_SESSION_STRING_FORMAT_64, raw
+            )
+            log.warning("Old session string format without api_id; upgrade by re-exporting")
+            return dict(
+                dc_id=dc_id, api_id=None, test_mode=test_mode,
+                auth_key=auth_key, user_id=user_id, is_bot=is_bot,
+                port=None, server_address=None,
+            )
+
+        if length == 271:
+            dc_id, api_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
+                Storage.SESSION_STRING_FORMAT, raw
+            )
+            return dict(
+                dc_id=dc_id, api_id=api_id, test_mode=test_mode,
+                auth_key=auth_key, user_id=user_id, is_bot=is_bot,
+                port=None, server_address=None,
+            )
+
+        if length == 290:
+            _, dc_id, api_id, test_mode, auth_key, user_id, is_bot, port, addr_bytes = struct.unpack(
+                Storage.SESSION_STRING_FORMAT_V2, raw
+            )
+            server_address = addr_bytes.rstrip(b"\x00").decode("ascii")
+            return dict(
+                dc_id=dc_id, api_id=api_id, test_mode=test_mode,
+                auth_key=auth_key, user_id=user_id, is_bot=is_bot,
+                port=port, server_address=server_address,
+            )
+
+        raise ValueError(
+            f"Invalid session string: unexpected length {length} bytes. "
+            "The session string may be corrupted or from an incompatible version."
+        )
 
