@@ -33,7 +33,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
 ]
-dependencies = ["pysocks==1.7.1", "warpcrypto>=2.0.4"]
+dependencies = ["pysocks==1.7.1", "warpcrypto>=2.0.4", "aiosqlite>=0.20.0"]
 license = "LGPL-3.0-or-later"
 license-files = ["COPYING", "COPYING.lesser"]
 keywords = [

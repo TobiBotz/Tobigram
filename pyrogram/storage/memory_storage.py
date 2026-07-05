@@ -19,8 +19,9 @@
 import base64
 import logging
 from pathlib import Path
-import sqlite3
 import struct
+
+import aiosqlite
 
 from .sqlite_storage import SQLiteStorage
 
@@ -34,11 +35,10 @@ class MemoryStorage(SQLiteStorage):
         self.session_string = session_string
 
     async def open(self):
-        self.conn = sqlite3.connect(":memory:", check_same_thread=False)
+        self.conn = await aiosqlite.connect(":memory:")
         await self.create()
 
         if self.session_string:
-            # Old format
             if len(self.session_string) in [self.SESSION_STRING_SIZE, self.SESSION_STRING_SIZE_64]:
                 dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
                     (self.OLD_SESSION_STRING_FORMAT
