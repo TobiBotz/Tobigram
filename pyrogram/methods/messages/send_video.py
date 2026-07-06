@@ -227,6 +227,7 @@ class SendVideo:
             if is_uploaded_file:
                 r = await self.invoke(
                     raw.functions.messages.UploadMedia(
+                        business_connection_id=business_connection_id,
                         peer=await self.resolve_peer(chat_id),
                         media=raw.types.InputMediaUploadedPhoto(
                             file=await self.save_file(cover)
@@ -241,6 +242,7 @@ class SendVideo:
             elif is_external_url:
                 r = await self.invoke(
                     raw.functions.messages.UploadMedia(
+                        business_connection_id=business_connection_id,
                         peer=await self.resolve_peer(chat_id),
                         media=raw.types.InputMediaPhotoExternal(
                             url=cover
