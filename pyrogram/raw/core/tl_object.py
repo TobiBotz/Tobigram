@@ -16,11 +16,17 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+import importlib
 from io import BytesIO
 from json import dumps
 from typing import cast, List, Any, Union, Dict
 
 from ..all import objects
+
+_legacy_objects: Dict[int, str] = {
+    0xf2355507: "pyrogram.raw.types.ChannelFull",
+    0xc9d31138: "pyrogram.raw.types.ChatFull",
+}
 
 
 class TLObject:
@@ -30,7 +36,20 @@ class TLObject:
 
     @classmethod
     def read(cls, b: BytesIO, *args: Any) -> Any:
-        return cast(TLObject, objects[int.from_bytes(b.read(4), "little")]).read(b, *args)
+        constructor_id = int.from_bytes(b.read(4), "little")
+
+        try:
+            obj_class = objects[constructor_id]
+        except KeyError as e:
+            path = _legacy_objects.get(constructor_id)
+
+            if path is None:
+                raise KeyError(constructor_id) from e
+
+            module_path, class_name = path.rsplit(".", 1)
+            obj_class = getattr(importlib.import_module(module_path), class_name)
+
+        return cast(TLObject, obj_class).read(b, *args)
 
     def write(self, *args: Any) -> bytes:
         pass
