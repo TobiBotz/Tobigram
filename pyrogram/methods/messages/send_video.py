@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+import io
 import os
 import re
 from datetime import datetime
@@ -63,7 +64,6 @@ class SendVideo:
         show_caption_above_media: bool = None,
         view_once: bool = None,
         video_start_timestamp: int = None,
-        video_cover: Union[str, BinaryIO] = None,
         cover: Union[str, BinaryIO] = None,
         no_sound: bool = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
@@ -144,7 +144,7 @@ class SendVideo:
             cover (``str`` | ``BinaryIO``, *optional*):
                 Cover for the video in the message.
                 Pass a file_path, BinaryIO, file_id, or HTTP URL.
-                When provided without *thumb*, it is used as the video thumbnail.
+                The cover is uploaded as a photo and used as the video thumbnail.
 
             file_name (``str``, *optional*):
                 File name of the video sent.
@@ -215,11 +215,45 @@ class SendVideo:
 
                 await app.send_video("me", "video.mp4", progress=progress)
         """
-        if cover is not None:
-            if video_cover is None:
-                video_cover = cover
-            if thumb is None:
-                thumb = cover
+        coverfile = None
+        if cover:
+            is_bytes_io = isinstance(cover, io.BytesIO)
+            is_uploaded_file = is_bytes_io or os.path.isfile(cover)
+            is_external_url = not is_uploaded_file and re.match("^https?://", cover)
+
+            if is_bytes_io and not hasattr(cover, "name"):
+                cover.name = "cover.jpg"
+
+            if is_uploaded_file:
+                r = await self.invoke(
+                    raw.functions.messages.UploadMedia(
+                        peer=await self.resolve_peer(chat_id),
+                        media=raw.types.InputMediaUploadedPhoto(
+                            file=await self.save_file(cover)
+                        )
+                    )
+                )
+                coverfile = raw.types.InputPhoto(
+                    id=r.photo.id,
+                    access_hash=r.photo.access_hash,
+                    file_reference=r.photo.file_reference
+                )
+            elif is_external_url:
+                r = await self.invoke(
+                    raw.functions.messages.UploadMedia(
+                        peer=await self.resolve_peer(chat_id),
+                        media=raw.types.InputMediaPhotoExternal(
+                            url=cover
+                        )
+                    )
+                )
+                coverfile = raw.types.InputPhoto(
+                    id=r.photo.id,
+                    access_hash=r.photo.access_hash,
+                    file_reference=r.photo.file_reference
+                )
+            else:
+                coverfile = (utils.get_input_media_from_file_id(cover, FileType.PHOTO)).id
 
         if reply_parameters is None:
             if reply_to_message_id is not None:
@@ -245,25 +279,13 @@ class SendVideo:
                     thumb = await self.save_file(thumb)
                     file = await self.save_file(video, progress=progress, progress_args=progress_args)
 
-                    video_cover_input = None
-                    if isinstance(video_cover, str) and not os.path.isfile(video_cover) and not re.match("^https?://", video_cover):
-                        try:
-                            decoded = utils.FileId.decode(video_cover)
-                            video_cover_input = raw.types.InputPhoto(
-                                id=decoded.media_id,
-                                access_hash=decoded.access_hash,
-                                file_reference=decoded.file_reference
-                            )
-                        except Exception:
-                            pass
-
                     media = raw.types.InputMediaUploadedDocument(
                         mime_type=self.guess_mime_type(video) or "video/mp4",
                         file=file,
                         ttl_seconds=ttl_seconds,
                         spoiler=has_spoiler,
                         thumb=thumb,
-                        video_cover=video_cover_input,
+                        video_cover=coverfile,
                         video_timestamp=video_start_timestamp,
                         attributes=[
                             raw.types.DocumentAttributeVideo(
@@ -277,56 +299,22 @@ class SendVideo:
                         ]
                     )
                 elif re.match("^https?://", video):
-                    video_cover_input = None
-                    if isinstance(video_cover, str):
-                        try:
-                            decoded = utils.FileId.decode(video_cover)
-                            video_cover_input = raw.types.InputPhoto(
-                                id=decoded.media_id,
-                                access_hash=decoded.access_hash,
-                                file_reference=decoded.file_reference
-                            )
-                        except Exception:
-                            pass
                     media = raw.types.InputMediaDocumentExternal(
                         url=video,
                         ttl_seconds=ttl_seconds,
                         spoiler=has_spoiler,
-                        video_cover=video_cover_input,
+                        video_cover=coverfile,
                         video_timestamp=video_start_timestamp
                     )
                 else:
-                    video_cover_input = None
-                    if isinstance(video_cover, str):
-                        try:
-                            decoded = utils.FileId.decode(video_cover)
-                            video_cover_input = raw.types.InputPhoto(
-                                id=decoded.media_id,
-                                access_hash=decoded.access_hash,
-                                file_reference=decoded.file_reference
-                            )
-                        except Exception:
-                            pass
                     media = utils.get_input_media_from_file_id(
                         video, FileType.VIDEO, ttl_seconds=ttl_seconds,
-                        video_cover=video_cover_input,
+                        video_cover=coverfile,
                         video_start_timestamp=video_start_timestamp
                     )
             else:
                 thumb = await self.save_file(thumb)
                 file = await self.save_file(video, progress=progress, progress_args=progress_args)
-
-                video_cover_input = None
-                if isinstance(video_cover, str) and not os.path.isfile(video_cover) and not re.match("^https?://", video_cover):
-                    try:
-                        decoded = utils.FileId.decode(video_cover)
-                        video_cover_input = raw.types.InputPhoto(
-                            id=decoded.media_id,
-                            access_hash=decoded.access_hash,
-                            file_reference=decoded.file_reference
-                        )
-                    except Exception:
-                        pass
 
                 media = raw.types.InputMediaUploadedDocument(
                     mime_type=self.guess_mime_type(file_name or video.name) or "video/mp4",
@@ -334,7 +322,7 @@ class SendVideo:
                     ttl_seconds=ttl_seconds,
                     spoiler=has_spoiler,
                     thumb=thumb,
-                    video_cover=video_cover_input,
+                    video_cover=coverfile,
                     video_timestamp=video_start_timestamp,
                     attributes=[
                         raw.types.DocumentAttributeVideo(
