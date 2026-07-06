@@ -3,8 +3,8 @@ Quick Start
 
 The next few steps serve as a quick start to see Pyrogram in action as fast as possible.
 
-Get Pyrogram Real Fast
-----------------------
+Get wzgram Real Fast
+---------------------
 
 .. admonition :: Cloud Credits
     :class: tip
@@ -16,7 +16,7 @@ Get Pyrogram Real Fast
 
 0. Activate the Virtual Environment with ``source ./venv/bin/activate``.
 
-1. Install Pyrogram with ``pip uninstall -y pyrogram && pip install pyrotgfork``.
+1. Install wzgram with ``pip install git+https://github.com/rjriajul/wzgram.git``.
 
 2. Get your own Telegram API key from https://my.telegram.org/apps.
 
@@ -57,4 +57,4 @@ we have just done above.
 If you are feeling eager to continue you can take a shortcut to :doc:`../start/invoking` and come back
 later to learn some more details.
 
-.. _community: https://PyroTGFork.t.me/2
+.. _community: https://t.me/wzgram

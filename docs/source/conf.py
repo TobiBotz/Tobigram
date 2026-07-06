@@ -19,6 +19,7 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",
 ]
 
 autosummary_generate = True
