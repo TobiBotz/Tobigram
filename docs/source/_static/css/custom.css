@@ -104,6 +104,15 @@ body::-webkit-scrollbar {
     }
 }
 
+@media (min-width: 82em) {
+    .main {
+        justify-content: space-between;
+    }
+    .main::before {
+        content: '';
+    }
+}
+
 @media (max-width: 67em) {
     .content {
         padding: 2rem 1.5rem 3rem;
@@ -278,7 +287,16 @@ body::-webkit-scrollbar {
 
 @media (max-width: 63em) {
     .toc-drawer {
-        display: none;
+        position: fixed;
+        right: -15em;
+        top: 0;
+        width: 15em;
+        height: 100vh;
+        z-index: 65;
+        background-color: var(--color-background-secondary);
+        border-left: 1px solid var(--color-border);
+        display: block;
+        transition: right 0.2s ease;
     }
 }
 
@@ -347,6 +365,17 @@ h4 {
 
 h5, h6 {
     font-size: 1rem;
+}
+
+/* --- Rubric (Parameters, Returns, Raises, Examples) --- */
+
+p.rubric {
+    border: 1px solid var(--color-border);
+    padding: 0.35rem 0.75rem;
+    margin: 1.5rem 0 0.75rem;
+    font-weight: 650;
+    font-size: 0.95rem;
+    background-color: var(--color-background-highlight);
 }
 
 /* --- Paragraphs & text --- */
@@ -502,8 +531,11 @@ dl.py dd {
 .sig-return,
 .sig-return-typehint,
 .sig-param .pre,
-.property .pre {
+.property .pre,
+em.property {
     white-space: normal !important;
+    overflow-wrap: break-word !important;
+    word-break: break-word !important;
 }
 
 .sig-prename,
@@ -598,7 +630,7 @@ blockquote {
 }
 
 .usable-by-badge.badge-no {
-    color: #999;
+    color: #c33;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -606,7 +638,7 @@ blockquote {
         color: #4c4;
     }
     body:not([data-theme=light]) .usable-by-badge.badge-no {
-        color: #666;
+        color: #c66;
     }
 }
 
