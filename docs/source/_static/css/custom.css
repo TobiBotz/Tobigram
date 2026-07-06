@@ -78,8 +78,15 @@ body::-webkit-scrollbar {
 }
 
 .page {
+    display: grid;
     min-height: 100vh;
     grid-template-columns: 16em minmax(0, 1fr) 16em;
+}
+
+.sidebar-drawer {
+    width: auto;
+    min-width: 0;
+    justify-content: initial;
 }
 
 @media (max-width: 82em) {
@@ -433,8 +440,19 @@ dl.py dt {
     padding: 0.5rem 1rem !important;
     margin: 0.5rem 0 !important;
     font-size: 0.9rem;
-    overflow-x: auto;
+    overflow: hidden;
     width: 100%;
+    word-break: break-word;
+}
+
+.sig-prename,
+.sig-name,
+.sig-param,
+.sig-paren,
+.sig-return,
+.sig-return-typehint,
+.sig-param .pre {
+    white-space: normal !important;
 }
 
 .sig-prename,
