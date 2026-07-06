@@ -22,6 +22,14 @@ extensions = [
     "sphinx.ext.napoleon",
 ]
 
+autodoc_mock_imports = [
+    "warpcrypto",
+    "tgcrypto",
+    "cryptg",
+    "pysocks",
+    "uvloop",
+]
+
 autosummary_generate = True
 
 napoleon_use_rtype = False
