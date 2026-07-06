@@ -81,7 +81,7 @@ from .location import Location
 from .managed_bot_created import ManagedBotCreated
 from .mask_position import MaskPosition
 from .media_area import MediaArea
-from .message import Message
+from .message import Message, Str
 from .message_content import MessageContent
 from .message_entity import MessageEntity
 from .message_origin import MessageOrigin
@@ -285,6 +285,7 @@ __all__ = [
     "MaskPosition",
     "MediaArea",
     "Message",
+    "Str",
     "MessageContent",
     "MessageEntity",
     "MessageOrigin",

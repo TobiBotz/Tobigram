@@ -58,7 +58,7 @@ from .phone_call_started import PhoneCallStarted
 from .privacy_rule import PrivacyRule
 from .restriction import Restriction
 from .stories_stealth_mode import StoriesStealthMode
-from .user import User
+from .user import Link, User
 from .user_rating import UserRating
 from .username import Username
 from .verification_status import VerificationStatus
@@ -115,6 +115,7 @@ __all__ = [
     "PrivacyRule",
     "Restriction",
     "StoriesStealthMode",
+    "Link",
     "User",
     "UserRating",
     "Username",
