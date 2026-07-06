@@ -12,7 +12,7 @@ Defining Updates
 
 Updates are events that happen in your Telegram account (incoming messages, new members join,
 bot button presses, etc.), which are meant to notify you about a new specific state that has changed. These updates are
-handled by registering one or more callback functions in your app using :doc:`Handlers <../api/handlers>`.
+handled by registering one or more callback functions in your app using :class:`Handler <pyrogram.handlers.Handler>` subclasses.
 
 Each handler deals with a specific event and once a matching update arrives from Telegram, your registered callback
 function will be called back by the framework and its body executed.

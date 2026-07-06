@@ -26,6 +26,9 @@ class Stop:
     ):
         """Stop the Client.
 
+        .. include:: /_includes/usable-by/users-bots.rst
+
+
         This method disconnects the client from Telegram and stops the underlying tasks.
 
         Parameters:

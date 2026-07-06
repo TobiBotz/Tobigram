@@ -1,8 +1,7 @@
 .. raw:: html
 
-    <strong>Usable by</strong>
-    <span class="iv-fallback">❌ </span>
-    <span class="usable-by badge-no">Users</span>
-    <span class="iv-fallback">✅ </span>
-    <span class="usable-by badge-yes">Bots</span>
-    <br>
+    <div class="usable-by-container">
+      <span class="usable-by-label">Usable by</span>
+      <span class="usable-by-badge badge-no">Users</span>
+      <span class="usable-by-badge badge-yes">Bots</span>
+    </div>

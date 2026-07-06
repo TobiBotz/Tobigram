@@ -30,6 +30,9 @@ class OnDeletedMessages:
     ) -> Callable:
         """Decorator for handling deleted messages.
 
+        .. include:: /_includes/usable-by/users-bots.rst
+
+
         This does the same thing as :meth:`~pyrogram.Client.add_handler` using the
         :obj:`~pyrogram.handlers.DeletedMessagesHandler`.
 

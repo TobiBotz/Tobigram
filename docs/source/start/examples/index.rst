@@ -29,6 +29,7 @@ to give you a basic idea.
     :doc:`bot_keyboards`, "Send normal and inline keyboards using regular bots"
     :doc:`send_voice`, "Download audio file and reupload as Voice Message with waveforms"
     :doc:`raw_updates`, "Handle raw updates (old, should be avoided)"
+    :doc:`tg_guest_message_echo_bot`, "Reply to guest messages (e.g., Telegram guest users)"
 
 For more advanced examples, see https://github.com/ColinShark/Pyrogram-Snippets.
 
@@ -48,3 +49,4 @@ For more advanced examples, see https://github.com/ColinShark/Pyrogram-Snippets.
     bot_keyboards
     send_voice
     raw_updates
+    tg_guest_message_echo_bot

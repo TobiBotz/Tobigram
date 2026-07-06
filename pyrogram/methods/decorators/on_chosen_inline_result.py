@@ -30,6 +30,9 @@ class OnChosenInlineResult:
     ) -> Callable:
         """Decorator for handling chosen inline results.
 
+        .. include:: /_includes/usable-by/bots.rst
+
+
         This does the same thing as :meth:`~pyrogram.Client.add_handler` using the
         :obj:`~pyrogram.handlers.ChosenInlineResultHandler`.
 

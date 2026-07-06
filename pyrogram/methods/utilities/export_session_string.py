@@ -25,6 +25,9 @@ class ExportSessionString:
     ):
         """Export the current authorized session as a serialized string.
 
+        .. include:: /_includes/usable-by/users-bots.rst
+
+
         Session strings are useful for storing in-memory authorized sessions in a portable, serialized string.
         More detailed information about session strings can be found at the dedicated page of
         :doc:`Storage Engines <../../topics/storage-engines>`.

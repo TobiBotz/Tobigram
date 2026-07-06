@@ -30,6 +30,9 @@ class Start:
     ):
         """Start the client.
 
+        .. include:: /_includes/usable-by/users-bots.rst
+
+
         This method connects the client to Telegram and, in case of new sessions, automatically manages the
         authorization process using an interactive prompt.
 

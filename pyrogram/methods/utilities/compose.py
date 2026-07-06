@@ -29,6 +29,9 @@ async def compose(
 ):
     """Run multiple clients at once.
 
+        .. include:: /_includes/usable-by/users-bots.rst
+
+
     This method can be used to run multiple clients at once and can be found directly in the ``pyrogram`` package.
 
     If you want to run a single client, you can use Client's bound method :meth:`~pyrogram.Client.run`.

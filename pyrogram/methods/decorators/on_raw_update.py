@@ -28,6 +28,9 @@ class OnRawUpdate:
     ) -> Callable:
         """Decorator for handling raw updates.
 
+        .. include:: /_includes/usable-by/users-bots.rst
+
+
         This does the same thing as :meth:`~pyrogram.Client.add_handler` using the
         :obj:`~pyrogram.handlers.RawUpdateHandler`.
 

@@ -33,6 +33,9 @@ signals = {
 async def idle():
     """Block the main script execution until a signal is received.
 
+        .. include:: /_includes/usable-by/users-bots.rst
+
+
     This function will run indefinitely in order to block the main script execution and prevent it from
     exiting while having client(s) that are still running in the background.
 

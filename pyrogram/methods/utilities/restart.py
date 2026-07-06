@@ -26,6 +26,9 @@ class Restart:
     ):
         """Restart the Client.
 
+        .. include:: /_includes/usable-by/users-bots.rst
+
+
         This method will first call :meth:`~pyrogram.Client.stop` and then :meth:`~pyrogram.Client.start` in a row in
         order to restart a client using a single method.
 

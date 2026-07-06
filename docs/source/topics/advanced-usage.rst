@@ -29,7 +29,7 @@ Invoking Functions
 Unlike the :doc:`methods <../api/methods/index>` found in Pyrogram's API, which can be called in the usual simple way,
 functions to be invoked from the raw Telegram API have a different way of usage.
 
-First of all, both :doc:`raw functions <../telegram/functions/index>` and :doc:`raw types <../telegram/types/index>`
+First of all, both :mod:`raw functions <pyrogram.raw.functions>` and :mod:`raw types <pyrogram.raw.types>`
 live in their respective packages (and sub-packages): ``pyrogram.raw.functions``, ``pyrogram.raw.types``. They all exist
 as Python classes, meaning you need to create an instance of each every time you need them and fill them in with the
 correct values using named arguments.

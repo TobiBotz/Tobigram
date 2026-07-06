@@ -30,6 +30,9 @@ class OnInlineQuery:
     ) -> Callable:
         """Decorator for handling inline queries.
 
+        .. include:: /_includes/usable-by/bots.rst
+
+
         This does the same thing as :meth:`~pyrogram.Client.add_handler` using the
         :obj:`~pyrogram.handlers.InlineQueryHandler`.
 

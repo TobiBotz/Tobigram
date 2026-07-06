@@ -30,6 +30,9 @@ class Run:
     ):
         """Start the client, idle the main script and finally stop the client.
 
+        .. include:: /_includes/usable-by/users-bots.rst
+
+
         When calling this method without any argument it acts as a convenience method that calls
         :meth:`~pyrogram.Client.start`, :meth:`~pyrogram.idle` and :meth:`~pyrogram.Client.stop` in sequence.
         It makes running a single client less verbose.

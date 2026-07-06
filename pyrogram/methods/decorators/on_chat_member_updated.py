@@ -30,6 +30,9 @@ class OnChatMemberUpdated:
     ) -> Callable:
         """Decorator for handling event changes on chat members.
 
+        .. include:: /_includes/usable-by/bots.rst
+
+
         This does the same thing as :meth:`~pyrogram.Client.add_handler` using the
         :obj:`~pyrogram.handlers.ChatMemberUpdatedHandler`.
 

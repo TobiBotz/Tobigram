@@ -30,6 +30,9 @@ class OnChatJoinRequest:
     ) -> Callable:
         """Decorator for handling chat join requests.
 
+        .. include:: /_includes/usable-by/bots.rst
+
+
         This does the same thing as :meth:`~pyrogram.Client.add_handler` using the
         :obj:`~pyrogram.handlers.ChatJoinRequestHandler`.
 

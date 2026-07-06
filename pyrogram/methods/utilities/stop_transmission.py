@@ -23,6 +23,9 @@ class StopTransmission:
     def stop_transmission(self):
         """Stop downloading or uploading a file.
 
+        .. include:: /_includes/usable-by/users-bots.rst
+
+
         This method must be called inside a progress callback function in order to stop the transmission at the
         desired time. The progress callback is called every time a file chunk is uploaded/downloaded.
 

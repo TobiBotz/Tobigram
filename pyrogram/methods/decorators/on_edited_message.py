@@ -30,6 +30,9 @@ class OnEditedMessage:
     ) -> Callable:
         """Decorator for handling edited messages.
 
+        .. include:: /_includes/usable-by/users-bots.rst
+
+
         This does the same thing as :meth:`~pyrogram.Client.add_handler` using the
         :obj:`~pyrogram.handlers.EditedMessageHandler`.
 

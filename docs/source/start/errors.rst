@@ -36,13 +36,13 @@ provides categories of errors, which are named after the common HTTP errors and 
 
     from pyrogram.errors import BadRequest, Forbidden, ...
 
--   :doc:`303 - SeeOther <../api/errors/see-other>`
--   :doc:`400 - BadRequest <../api/errors/bad-request>`
--   :doc:`401 - Unauthorized <../api/errors/unauthorized>`
--   :doc:`403 - Forbidden <../api/errors/forbidden>`
--   :doc:`406 - NotAcceptable <../api/errors/not-acceptable>`
--   :doc:`420 - Flood <../api/errors/flood>`
--   :doc:`500 - InternalServerError <../api/errors/internal-server-error>`
+-   ``303 - SeeOther``
+-   ``400 - BadRequest``
+-   ``401 - Unauthorized``
+-   ``403 - Forbidden``
+-   ``406 - NotAcceptable``
+-   ``420 - Flood``
+-   ``500 - InternalServerError``
 
 Single Errors
 -------------

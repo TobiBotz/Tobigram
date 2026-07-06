@@ -29,6 +29,9 @@ class RemoveHandler:
     ):
         """Remove a previously-registered update handler.
 
+        .. include:: /_includes/usable-by/users-bots.rst
+
+
         Make sure to provide the right group where the handler was added in. You can use the return value of the
         :meth:`~pyrogram.Client.add_handler` method, a tuple of *(handler, group)*, and pass it directly.
 
