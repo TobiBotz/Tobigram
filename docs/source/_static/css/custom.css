@@ -90,9 +90,18 @@ body::-webkit-scrollbar {
 }
 
 .content {
+    flex: 0 1 56em;
     max-width: 56em;
-    margin: 0;
     padding: 3rem 3rem 4rem;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+    min-width: 0;
+}
+
+@media (max-width: 82em) {
+    .main {
+        justify-content: flex-start;
+    }
 }
 
 @media (max-width: 67em) {
@@ -126,11 +135,12 @@ body::-webkit-scrollbar {
     .sidebar-drawer {
         width: auto;
         justify-content: initial;
+        flex: 0 0 18em;
     }
 }
 
 .sidebar-container {
-    width: 15em;
+    width: 18em;
     background-color: var(--color-background-secondary);
     padding: 1.5rem 0;
     position: sticky;
@@ -209,7 +219,7 @@ body::-webkit-scrollbar {
 .brand-char:nth-child(6) { animation-delay: 0.25s; }
 
 .sidebar-tree {
-    padding: 0 0.75rem;
+    padding: 0 1rem;
 }
 
 .sidebar-tree li {
@@ -264,13 +274,6 @@ body::-webkit-scrollbar {
 
 .toc-drawer::-webkit-scrollbar {
     display: none;
-}
-
-@media (max-width: 82em) and (min-width: 63em) {
-    .toc-drawer {
-        display: block;
-        width: 15em;
-    }
 }
 
 @media (max-width: 63em) {
@@ -353,8 +356,15 @@ p {
     line-height: 1.7;
 }
 
-article[role=main] p {
-    max-width: 50em;
+
+article[role="main"] {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+article[role="main"] img {
+    max-width: 100%;
+    height: auto;
 }
 
 article p code.literal,
@@ -380,6 +390,12 @@ article[role=main] .highlight pre {
 
 div[class*="highlight-"] {
     margin: 1.5rem 0;
+    overflow-x: auto;
+    max-width: 100%;
+}
+.highlight pre {
+    overflow-x: auto;
+    max-width: 100%;
 }
 
 /* --- Links --- */
@@ -428,6 +444,7 @@ table.docutils {
     border-collapse: collapse;
     margin: 1.5rem 0;
     width: 100%;
+    max-width: 100%;
 }
 
 table.docutils th {
@@ -450,6 +467,11 @@ table.docutils:not(.field-list) tr:nth-child(2n-1) td {
     background-color: var(--color-background-highlight);
 }
 
+.table-wrapper {
+    overflow-x: auto;
+    max-width: 100%;
+}
+
 /* --- Code signatures (function defs, class defs) --- */
 
 dl.py {
@@ -463,10 +485,14 @@ dl.py dt {
     border-radius: 0 !important;
     border-left: 3px solid var(--color-title) !important;
     padding: 0.5rem 1rem !important;
-    margin: 0.5rem 0 !important;
+    margin: 0.75rem 0 !important;
     font-size: 0.9rem;
     width: 100%;
     word-break: break-word;
+}
+
+dl.py dd {
+    margin: 0.5rem 0 0.75rem 1.5rem;
 }
 
 .sig-prename,
