@@ -1825,7 +1825,7 @@ class Message(Object, Update):
         if chat.type == enums.ChatType.PRIVATE and message.saved_peer_id:
             parsed_message.direct_messages_topic_id = message.saved_peer_id.user_id
 
-            parsed_topic = client.topic_cache.get((parsed_message.chat.id, parsed_message.direct_messages_topic_id))
+            parsed_topic = client.topic_cache[(parsed_message.chat.id, parsed_message.direct_messages_topic_id)]
 
             if parsed_topic:
                 parsed_message.topic = parsed_topic
