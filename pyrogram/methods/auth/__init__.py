@@ -26,6 +26,7 @@ from .log_out import LogOut
 from .recover_password import RecoverPassword
 from .resend_code import ResendCode
 from .send_code import SendCode
+from .send_phone_number_code import SendPhoneNumberCode
 from .send_recovery_code import SendRecoveryCode
 from .sign_in import SignIn
 from .sign_in_bot import SignInBot
@@ -44,6 +45,7 @@ class Auth(
     RecoverPassword,
     ResendCode,
     SendCode,
+    SendPhoneNumberCode,
     SendRecoveryCode,
     SignIn,
     SignInBot,
