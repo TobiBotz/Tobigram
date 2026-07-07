@@ -84,7 +84,7 @@ class DirectMessagesTopic(Object):
     @staticmethod
     def _parse(
         client: "pyrogram.Client",
-        topic: "raw.types.MonoForumDialog",
+        topic: "raw.base.SavedDialog",
         messages: dict = {},
         users: Dict[int, "raw.base.User"] = {},
         chats: Dict[int, "raw.base.Chat"] = {}
@@ -95,12 +95,12 @@ class DirectMessagesTopic(Object):
         return DirectMessagesTopic(
             id=topic.peer.user_id,
             user=types.User._parse(client, users.get(topic.peer.user_id)),
-            can_send_unpaid_messages=topic.nopaid_messages_exception,
-            is_marked_as_unread=topic.unread_mark,
-            unread_count=topic.unread_count,
-            last_read_inbox_message_id=topic.read_inbox_max_id,
-            last_read_outbox_message_id=topic.read_outbox_max_id,
-            unread_reactions_count=topic.unread_reactions_count,
+            can_send_unpaid_messages=getattr(topic, "nopaid_messages_exception", None),
+            is_marked_as_unread=getattr(topic, "unread_mark", None),
+            unread_count=getattr(topic, "unread_count", None),
+            last_read_inbox_message_id=getattr(topic, "read_inbox_max_id", None),
+            last_read_outbox_message_id=getattr(topic, "read_outbox_max_id", None),
+            unread_reactions_count=getattr(topic, "unread_reactions_count", None),
             last_message=messages.get(topic.top_message)
         )
 
