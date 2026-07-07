@@ -61,8 +61,7 @@ class GetDirectMessagesTopicsByID:
 
         r = await self.invoke(
             raw.functions.messages.GetSavedDialogsByID(
-                ids=[await self.resolve_peer(i) for i in ids],
-                parent_peer=await self.resolve_peer(chat_id)
+                ids=[await self.resolve_peer(i) for i in ids]
             )
         )
 
