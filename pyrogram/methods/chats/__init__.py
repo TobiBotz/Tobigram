@@ -66,6 +66,8 @@ from .toggle_participants_hidden import ToggleParticipantsHidden
 from .toggle_view_forum_as_messages import ToggleViewForumAsMessages
 from .toggle_anti_spam import ToggleAntiSpam
 from .restrict_sponsored_messages import RestrictSponsoredMessages
+from .get_direct_messages_topics_by_id import GetDirectMessagesTopicsByID
+from .get_forum_topics_by_id import GetForumTopicsByID
 
 
 class Chats(
@@ -118,6 +120,8 @@ class Chats(
     ToggleParticipantsHidden,
     ToggleViewForumAsMessages,
     ToggleAntiSpam,
-    RestrictSponsoredMessages
+    RestrictSponsoredMessages,
+    GetDirectMessagesTopicsByID,
+    GetForumTopicsByID
 ):
     pass
