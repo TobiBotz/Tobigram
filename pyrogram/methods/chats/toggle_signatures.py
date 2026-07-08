@@ -32,8 +32,8 @@ class ToggleSignatures:
     async def toggle_signatures(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        signatures_enabled: bool = None,
-        profiles_enabled: bool = None,
+        signatures_enabled: Optional[bool] = None,
+        profiles_enabled: Optional[bool] = None,
     ) -> "types.Message":
         """Toggle channel signatures.
 

@@ -32,7 +32,7 @@ class DeleteScheduledMessages:
     async def delete_scheduled_messages(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        id: List[int] = None,
+        id: Optional[List[int]] = None,
     ) -> "types.Message":
         """Delete scheduled messages.
 

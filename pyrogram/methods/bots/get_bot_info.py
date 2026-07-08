@@ -31,7 +31,7 @@ from pyrogram import types
 class GetBotInfo:
     async def get_bot_info(
         self: "pyrogram.Client",
-        bot: Union[int, str] = None,
+        bot: Optional[Union[int, str]] = None,
         lang_code: str = "en",
     ) -> "types.Message":
         """Get bot info (name, about, description).

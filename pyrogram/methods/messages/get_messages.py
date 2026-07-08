@@ -17,7 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Union, List, Iterable
+from typing import Union, List, Iterable, Optional
 
 import pyrogram
 from pyrogram import raw
@@ -34,8 +34,8 @@ class GetMessages:
     async def get_messages(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        message_ids: Union[int, Iterable[int]] = None,
-        reply_to_message_ids: Union[int, Iterable[int]] = None,
+        message_ids: Optional[Union[int, Iterable[int]]] = None,
+        reply_to_message_ids: Optional[Union[int, Iterable[int]]] = None,
         replies: int = 1
     ) -> Union["types.Message", List["types.Message"]]:
         """Get one or more messages from a chat by using message identifiers.

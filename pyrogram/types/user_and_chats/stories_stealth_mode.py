@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
 from datetime import datetime
 
 from pyrogram import raw, utils
@@ -33,7 +34,7 @@ class StoriesStealthMode(Object):
             The date starting from which the user will be allowed to re-enable stealth mode again.
     """
 
-    def __init__(self, *, active_until_date: datetime = None, cooldown_until_date: datetime = None):
+    def __init__(self, *, active_until_date: Optional[datetime] = None, cooldown_until_date: Optional[datetime] = None):
         super().__init__(None)
 
         self.active_until_date = active_until_date

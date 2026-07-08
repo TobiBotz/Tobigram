@@ -31,11 +31,11 @@ from pyrogram import types
 class TranslateText:
     async def translate_text(
         self: "pyrogram.Client",
-        peer: Union[int, str] = None,
-        id: List[int] = None,
-        text: Union[str, List[raw.types.TextWithEntities]] = None,
-        to_lang: str = None,
-        tone: str = None,
+        peer: Optional[Union[int, str]] = None,
+        id: Optional[List[int]] = None,
+        text: Optional[Union[str, List[raw.types.TextWithEntities]]] = None,
+        to_lang: Optional[str] = None,
+        tone: Optional[str] = None,
     ) -> "types.TranslatedText":
         """Translate text or a message to another language.
 

@@ -21,7 +21,7 @@
 # Source: tl:account.deleteBusinessChatLink
 # ***************************
 
-from typing import Union
+from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw
@@ -31,7 +31,7 @@ from pyrogram import types
 class DeleteBusinessChatLink:
     async def delete_business_chat_link(
         self: "pyrogram.Client",
-        slug: str = None,
+        slug: Optional[str] = None,
     ) -> "types.Message":
         """Delete a business chat link by slug.
 

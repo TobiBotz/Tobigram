@@ -32,9 +32,9 @@ class UpdateChannelColor:
     async def update_channel_color(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        for_profile: bool = None,
-        color: int = None,
-        background_emoji_id: int = None,
+        for_profile: Optional[bool] = None,
+        color: Optional[int] = None,
+        background_emoji_id: Optional[int] = None,
     ) -> "types.Message":
         """Update the accent color of a channel.
 

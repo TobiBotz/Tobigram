@@ -31,10 +31,10 @@ from pyrogram import types
 class SummarizeText:
     async def summarize_text(
         self: "pyrogram.Client",
-        peer: Union[int, str] = None,
-        id: int = None,
-        to_lang: str = None,
-        tone: str = None,
+        peer: Optional[Union[int, str]] = None,
+        id: Optional[int] = None,
+        to_lang: Optional[str] = None,
+        tone: Optional[str] = None,
     ) -> "raw.types.TextWithEntities":
         """Summarize text content using AI.
 

@@ -32,7 +32,7 @@ class ToggleParticipantsHidden:
     async def toggle_participants_hidden(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        enabled: bool = None,
+        enabled: Optional[bool] = None,
     ) -> "types.Message":
         """Toggle whether participant list is hidden.
 

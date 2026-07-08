@@ -619,7 +619,7 @@ class Message(Object, Update):
     def __init__(
         self,
         *,
-        client: "pyrogram.Client" = None,
+        client: Optional["pyrogram.Client"] = None,
         id: int,
         from_user: Optional["types.User"] = None,
         sender_chat: Optional["types.Chat"] = None,
@@ -966,8 +966,8 @@ class Message(Object, Update):
         users: Dict[int, "raw.base.User"],
         chats: Dict[int, "raw.base.Chat"],
         replies: int = 1,
-        business_connection_id: str = None,
-        raw_reply_to_message: "raw.base.Message" = None
+        business_connection_id: Optional[str] = None,
+        raw_reply_to_message: Optional["raw.base.Message"] = None
     ) -> "Message":
         from_id = utils.get_raw_peer_id(message.from_id)
         peer_id = utils.get_raw_peer_id(message.peer_id)
@@ -1456,7 +1456,7 @@ class Message(Object, Update):
         replies: int = 1,
         business_connection_id: Optional[str] = None,
         guest_query_id: Optional[str] = None,
-        raw_reply_to_message: "raw.base.Message" = None
+        raw_reply_to_message: Optional["raw.base.Message"] = None
     ) -> "Message":
         from_id = utils.get_raw_peer_id(message.from_id)
         peer_id = utils.get_raw_peer_id(message.peer_id)
@@ -6504,6 +6504,20 @@ class Message(Object, Update):
                 You can pass anything you need to be available in the progress callback scope; for example, a Message
                 object or a Client instance in order to edit the message with the updated progress status.
 
+            quote (``bool``, *optional*):
+                If ``True``, the message will be sent as a reply to this message.
+                If ``False``, the message will be sent without reply.
+                If unspecified, the message will be sent as a reply only if the replied message is in a private chat.
+
+            reply_to_message_id (``int``, *optional*):
+                If the message is a reply, ID of the original message.
+
+            quote_text (``str``, *optional*):
+                Text of the quote to be sent.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                Special entities like usernames, URLs, bot commands, etc. that appear in the quote text.
+
         Other Parameters:
             current (``int``):
                 The amount of bytes transmitted so far.
@@ -6519,6 +6533,11 @@ class Message(Object, Update):
             On success, the sent :obj:`~pyrogram.types.Message` is returned.
             In case the upload is deliberately stopped with :meth:`~pyrogram.Client.stop_transmission`, None is returned
             instead.
+
+        Example:
+            .. code-block:: python
+
+                await message.reply_video("video.mp4", caption="video caption")
 
         Raises:
             RPCError: In case of a Telegram RPC error.
@@ -6758,6 +6777,11 @@ class Message(Object, Update):
             On success, the sent :obj:`~pyrogram.types.Message` is returned.
             In case the upload is deliberately stopped with :meth:`~pyrogram.Client.stop_transmission`, None is returned
             instead.
+
+        Example:
+            .. code-block:: python
+
+                await message.answer_video("video.mp4", caption="video caption")
 
         Raises:
             RPCError: In case of a Telegram RPC error.
@@ -8500,7 +8524,7 @@ class Message(Object, Update):
             reply_markup=reply_markup
         )
 
-    async def edit_reply_markup(self, reply_markup: "types.InlineKeyboardMarkup" = None) -> "Message":
+    async def edit_reply_markup(self, reply_markup: Optional["types.InlineKeyboardMarkup"] = None) -> "Message":
         """Shortcut for method :obj:`~pyrogram.Client.edit_message_reply_markup` will automatically fill method attributes:
 
         * chat_id
@@ -8670,6 +8694,11 @@ class Message(Object, Update):
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the forwarded message is returned.
 
+        Example:
+            .. code-block:: python
+
+                await message.forward(chat_id)
+
         Raises:
             RPCError: In case of a Telegram RPC error.
         """
@@ -8787,8 +8816,28 @@ class Message(Object, Update):
                 If not specified, the original reply markup is kept.
                 Pass None to remove the reply markup.
 
+            has_spoiler (``bool``, *optional*):
+                Pass True if the copied media needs to be covered with a spoiler animation.
+
+            reply_to_chat_id (``int`` | ``str``, *optional*):
+                Unique identifier of the original message chat for reply.
+
+            reply_to_message_id (``int``, *optional*):
+                If the message is a reply, ID of the original message.
+
+            quote_text (``str``, *optional*):
+                Text of the quote to be sent.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                Special entities like usernames, URLs, bot commands, etc. that appear in the quote text.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the copied message is returned.
+
+        Example:
+            .. code-block:: python
+
+                await message.copy(chat_id)
 
         Raises:
             RPCError: In case of a Telegram RPC error.
@@ -8981,23 +9030,23 @@ class Message(Object, Update):
     async def copy_media_group(
         self,
         chat_id: Union[int, str],
-        captions: Union[List[str], str] = None,
-        has_spoilers: Union[List[bool], bool] = None,
-        disable_notification: bool = None,
-        message_thread_id: int = None,
-        reply_parameters: "types.ReplyParameters" = None,
-        schedule_date: datetime = None,
-        show_caption_above_media: bool = None,
-        allow_paid_broadcast: bool = None,
-        paid_message_star_count: int = None,
+        captions: Optional[Union[List[str], str]] = None,
+        has_spoilers: Optional[Union[List[bool], bool]] = None,
+        disable_notification: Optional[bool] = None,
+        message_thread_id: Optional[int] = None,
+        reply_parameters: Optional["types.ReplyParameters"] = None,
+        schedule_date: Optional[datetime] = None,
+        show_caption_above_media: Optional[bool] = None,
+        allow_paid_broadcast: Optional[bool] = None,
+        paid_message_star_count: Optional[int] = None,
 
-        reply_to_message_id: int = None,
-        reply_to_chat_id: Union[int, str] = None,
-        reply_to_story_id: int = None,
-        quote_text: str = None,
+        reply_to_message_id: Optional[int] = None,
+        reply_to_chat_id: Optional[Union[int, str]] = None,
+        reply_to_story_id: Optional[int] = None,
+        quote_text: Optional[str] = None,
         parse_mode: Optional["enums.ParseMode"] = None,
-        quote_entities: List["types.MessageEntity"] = None,
-        quote_offset: int = None,
+        quote_entities: Optional[List["types.MessageEntity"]] = None,
+        quote_offset: Optional[int] = None,
     ) -> List["types.Message"]:
         """Shortcut for method :obj:`~pyrogram.Client.copy_media_group` will automatically fill method attributes:
 
@@ -9101,10 +9150,10 @@ class Message(Object, Update):
     async def click(
         self,
         x: Union[int, str] = 0,
-        y: int = None,
-        quote: bool = None,
+        y: Optional[int] = None,
+        quote: Optional[bool] = None,
         timeout: int = 10,
-        password: str = None
+        password: Optional[str] = None
     ):
         """Bound method *click* of :obj:`~pyrogram.types.Message`.
 
@@ -9344,7 +9393,7 @@ class Message(Object, Update):
         file_name: str = "",
         in_memory: bool = False,
         block: bool = True,
-        progress: Callable = None,
+        progress: Optional[Callable] = None,
         progress_args: tuple = ()
     ) -> str:
         """Shortcut for method :obj:`~pyrogram.Client.download_media` will automatically fill method attributes:

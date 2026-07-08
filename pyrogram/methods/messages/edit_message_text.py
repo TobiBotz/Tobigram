@@ -13,14 +13,14 @@ class EditMessageText:
         message_id: int,
         text: str,
         parse_mode: Optional["enums.ParseMode"] = None,
-        entities: List["types.MessageEntity"] = None,
+        entities: Optional[List["types.MessageEntity"]] = None,
         link_preview_options: Optional["types.LinkPreviewOptions"] = None,
-        show_caption_above_media: bool = None,
-        disable_web_page_preview: bool = None,
-        business_connection_id: str = None,
-        rich_text: str = None,
+        show_caption_above_media: Optional[bool] = None,
+        disable_web_page_preview: Optional[bool] = None,
+        business_connection_id: Optional[str] = None,
+        rich_text: Optional[str] = None,
         rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
-        reply_markup: "types.InlineKeyboardMarkup" = None,
+        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
     ) -> "types.Message":
         """Edit the text of a message.
 

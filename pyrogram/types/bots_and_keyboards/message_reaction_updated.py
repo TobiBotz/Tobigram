@@ -58,7 +58,7 @@ class MessageReactionUpdated(Object, Update):
     def __init__(
         self,
         *,
-        client: "pyrogram.Client" = None,
+        client: Optional["pyrogram.Client"] = None,
         chat: "types.Chat",
         message_id: int,
         user: "types.User",

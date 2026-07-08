@@ -28,18 +28,18 @@ class EditStoryMedia:
         self: "pyrogram.Client",
         chat_id: Union[int, str],
         story_id: int,
-        media: Union[str, BinaryIO] = None,
-        media_areas: List["types.MediaArea"] = None,
+        media: Optional[Union[str, BinaryIO]] = None,
+        media_areas: Optional[List["types.MediaArea"]] = None,
         duration: int = 0,
         width: int = 0,
         height: int = 0,
-        thumb: Union[str, BinaryIO] = None,
+        thumb: Optional[Union[str, BinaryIO]] = None,
         supports_streaming: bool = True,
-        file_name: str = None,
-        caption: str = None,
+        file_name: Optional[str] = None,
+        caption: Optional[str] = None,
         parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: List["types.MessageEntity"] = None,
-        progress: Callable = None,
+        caption_entities: Optional[List["types.MessageEntity"]] = None,
+        progress: Optional[Callable] = None,
         progress_args: tuple = ()
     ) -> "types.Story":
         """Edit story media.
@@ -77,6 +77,22 @@ class EditStoryMedia:
                 The thumbnail should be in JPEG format and less than 200 KB in size.
                 A thumbnail's width and height should not exceed 320 pixels.
                 Thumbnails can't be reused and can be only uploaded as a new file.
+
+            supports_streaming (``bool``, *optional*):
+                Pass True, if the uploaded video is suitable for streaming.
+
+            file_name (``str``, *optional*):
+                File name of the story sent.
+
+            caption (``str``, *optional*):
+                Story caption, 0-1024 characters.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
 
             progress (``Callable``, *optional*):
                 Pass a callback function to view the file transmission progress.

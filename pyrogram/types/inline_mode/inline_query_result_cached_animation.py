@@ -62,13 +62,13 @@ class InlineQueryResultCachedAnimation(InlineQueryResult):
     def __init__(
         self,
         animation_file_id: str,
-        id: str = None,
-        title: str = None,
+        id: Optional[str] = None,
+        title: Optional[str] = None,
         caption: str = "",
         parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: List["types.MessageEntity"] = None,
-        reply_markup: "types.InlineKeyboardMarkup" = None,
-        input_message_content: "types.InputMessageContent" = None
+        caption_entities: Optional[List["types.MessageEntity"]] = None,
+        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
+        input_message_content: Optional["types.InputMessageContent"] = None
     ):
         super().__init__("gif", id, input_message_content, reply_markup)
 

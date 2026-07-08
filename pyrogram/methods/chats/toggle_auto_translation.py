@@ -32,7 +32,7 @@ class ToggleAutoTranslation:
     async def toggle_auto_translation(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        enabled: bool = None,
+        enabled: Optional[bool] = None,
     ) -> "types.Message":
         """Toggle automatic message translation for a channel.
 

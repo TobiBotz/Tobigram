@@ -29,13 +29,13 @@ class SendDice:
         self: "pyrogram.Client",
         chat_id: Union[int, str],
         emoji: str = "🎲",
-        disable_notification: bool = None,
-        reply_to_message_id: int = None,
-        reply_to_chat_id: Union[int, str] = None,
-        schedule_date: datetime = None,
-        protect_content: bool = None,
-        quote_text: str = None,
-        quote_entities: List["types.MessageEntity"] = None,
+        disable_notification: Optional[bool] = None,
+        reply_to_message_id: Optional[int] = None,
+        reply_to_chat_id: Optional[Union[int, str]] = None,
+        schedule_date: Optional[datetime] = None,
+        protect_content: Optional[bool] = None,
+        quote_text: Optional[str] = None,
+        quote_entities: Optional[List["types.MessageEntity"]] = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
         message_thread_id: Optional[int] = None,
         effect_id: Optional[int] = None,
@@ -49,14 +49,14 @@ class SendDice:
         background: Optional[bool] = None,
         clear_draft: Optional[bool] = None,
         update_stickersets_order: Optional[bool] = None,
-        send_as: Union[int, str] = None,
-        quick_reply_shortcut: int = None,
-        reply_markup: Union[
+        send_as: Optional[Union[int, str]] = None,
+        quick_reply_shortcut: Optional[int] = None,
+        reply_markup: Optional[Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
-        ] = None
+        ]] = None
     ) -> Optional["types.Message"]:
         """Send a dice with a random value from 1 to 6.
 

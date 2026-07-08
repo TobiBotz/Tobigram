@@ -31,7 +31,7 @@ from pyrogram import types
 class ResolveBusinessChatLink:
     async def resolve_business_chat_link(
         self: "pyrogram.Client",
-        slug: str = None,
+        slug: Optional[str] = None,
     ) -> "types.Message":
         """Resolve a business chat link slug to its info.
 

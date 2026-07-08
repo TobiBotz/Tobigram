@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
 import asyncio
 import io
 import os
@@ -37,7 +38,7 @@ class EditInlineMedia:
         self: "pyrogram.Client",
         inline_message_id: str,
         media: "types.InputMedia",
-        reply_markup: "types.InlineKeyboardMarkup" = None
+        reply_markup: Optional["types.InlineKeyboardMarkup"] = None
     ) -> bool:
         """Edit inline animation, audio, document, photo or video messages.
 

@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
 from pyrogram.raw.core import Message, MsgContainer, TLObject
 from pyrogram.raw.functions import Ping
 from pyrogram.raw.types import MsgsAck, HttpWait
@@ -26,7 +27,7 @@ not_content_related = (Ping, HttpWait, MsgsAck, MsgContainer)
 
 
 class MsgFactory:
-    def __init__(self, msg_id_generator: _MsgIdGenerator = None):
+    def __init__(self, msg_id_generator: Optional[_MsgIdGenerator] = None):
         self.seq_no = SeqNo()
         self.msg_id_gen = msg_id_generator or _MsgIdGenerator()
 

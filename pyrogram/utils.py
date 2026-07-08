@@ -61,14 +61,45 @@ async def ainput(prompt: str = "", *, hide: bool = False, loop: Optional[asyncio
 
 def get_input_media_from_file_id(
     file_id: str,
-    expected_file_type: FileType = None,
-    ttl_seconds: int = None,
-    has_spoiler: bool = None,
-    video_cover: "raw.types.InputPhoto" = None,
-    video_start_timestamp: int = None,
-    live_photo: bool = None,
-    live_photo_video_file_id: str = None
+    expected_file_type: Optional[FileType] = None,
+    ttl_seconds: Optional[int] = None,
+    has_spoiler: Optional[bool] = None,
+    video_cover: Optional["raw.types.InputPhoto"] = None,
+    video_start_timestamp: Optional[int] = None,
+    live_photo: Optional[bool] = None,
+    live_photo_video_file_id: Optional[str] = None
 ) -> Union["raw.types.InputMediaPhoto", "raw.types.InputMediaDocument"]:
+    """Construct an InputMedia object from a file_id.
+
+    Parameters:
+        file_id (``str``):
+            File identifier to decode and convert.
+
+        expected_file_type (:obj:`~pyrogram.file_id.FileType`, *optional*):
+            Expected file type for validation.
+
+        ttl_seconds (``int``, *optional*):
+            Self-destruct timer for the media.
+
+        has_spoiler (``bool``, *optional*):
+            Pass True if the media needs to be covered with a spoiler animation.
+
+        video_cover (:obj:`~pyrogram.raw.types.InputPhoto`, *optional*):
+            Cover for a video message.
+
+        video_start_timestamp (``int``, *optional*):
+            Start timestamp for the video in seconds.
+
+        live_photo (``bool``, *optional*):
+            Pass True if the photo is a live photo.
+
+        live_photo_video_file_id (``str``, *optional*):
+            File identifier of the live photo video counterpart.
+
+    Returns:
+        :obj:`~pyrogram.raw.types.InputMediaPhoto` | :obj:`~pyrogram.raw.types.InputMediaDocument`:
+            The constructed input media object.
+    """
     try:
         decoded = FileId.decode(file_id)
     except Exception:
@@ -725,7 +756,7 @@ def expand_inline_bytes(bytes_data: bytes):
     return header + bytes_data[3:] + footer
 
 
-def from_inline_bytes(data: bytes, file_name: str = None) -> BytesIO:
+def from_inline_bytes(data: bytes, file_name: Optional[str] = None) -> BytesIO:
     b = BytesIO()
 
     b.write(data)

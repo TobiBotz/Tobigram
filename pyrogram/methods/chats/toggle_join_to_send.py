@@ -32,7 +32,7 @@ class ToggleJoinToSend:
     async def toggle_join_to_send(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        enabled: bool = None,
+        enabled: Optional[bool] = None,
     ) -> "types.Message":
         """Toggle whether users must join before sending messages.
 

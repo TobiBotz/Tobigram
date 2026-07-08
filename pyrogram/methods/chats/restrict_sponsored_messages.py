@@ -32,7 +32,7 @@ class RestrictSponsoredMessages:
     async def restrict_sponsored_messages(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        restricted: bool = None,
+        restricted: Optional[bool] = None,
     ) -> "types.Message":
         """Restrict sponsored messages in a channel.
 

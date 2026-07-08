@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
 from datetime import datetime
 
 from pyrogram import enums, types
@@ -46,10 +47,10 @@ class MessageOriginChannel(MessageOrigin):
         self,
         *,
         type: "enums.MessageOriginType" = enums.MessageOriginType.CHANNEL,
-        date: datetime = None,
-        chat: "types.Chat" = None,
-        message_id: int = None,
-        author_signature: str = None
+        date: Optional[datetime] = None,
+        chat: Optional["types.Chat"] = None,
+        message_id: Optional[int] = None,
+        author_signature: Optional[str] = None
     ):
         super().__init__(
             type=type,

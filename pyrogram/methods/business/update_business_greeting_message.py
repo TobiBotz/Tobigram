@@ -31,7 +31,7 @@ from pyrogram import types
 class UpdateBusinessGreetingMessage:
     async def update_business_greeting_message(
         self: "pyrogram.Client",
-        message: raw.types.InputBusinessGreetingMessage = None,
+        message: Optional[raw.types.InputBusinessGreetingMessage] = None,
     ) -> "types.Message":
         """Set an automatic greeting message for new conversations.
 

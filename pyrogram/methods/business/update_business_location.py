@@ -31,8 +31,8 @@ from pyrogram import types
 class UpdateBusinessLocation:
     async def update_business_location(
         self: "pyrogram.Client",
-        geo_point: raw.types.InputGeoPoint = None,
-        address: str = None,
+        geo_point: Optional[raw.types.InputGeoPoint] = None,
+        address: Optional[str] = None,
     ) -> "types.Message":
         """Update the business location shown on your business page.
 

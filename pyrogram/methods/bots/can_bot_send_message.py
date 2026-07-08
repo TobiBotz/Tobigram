@@ -21,7 +21,7 @@
 # Source: tl:bots.canSendMessage
 # ***************************
 
-from typing import Union
+from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw
@@ -31,7 +31,7 @@ from pyrogram import types
 class CanBotSendMessage:
     async def can_bot_send_message(
         self: "pyrogram.Client",
-        bot: Union[int, str] = None,
+        bot: Optional[Union[int, str]] = None,
     ) -> "types.Message":
         """Check if a bot can send messages to the user.
 

@@ -32,7 +32,7 @@ class TogglePreHistoryHidden:
     async def toggle_pre_history_hidden(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        enabled: bool = None,
+        enabled: Optional[bool] = None,
     ) -> "types.Message":
         """Toggle pre-history visibility for new members.
 

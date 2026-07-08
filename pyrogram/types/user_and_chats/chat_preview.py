@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List
+from typing import List, Optional
 
 import pyrogram
 from pyrogram import raw
@@ -47,12 +47,12 @@ class ChatPreview(Object):
     def __init__(
         self,
         *,
-        client: "pyrogram.Client" = None,
+        client: Optional["pyrogram.Client"] = None,
         title: str,
         type: str,
         members_count: int,
-        photo: "types.Photo" = None,
-        members: List["types.User"] = None
+        photo: Optional["types.Photo"] = None,
+        members: Optional[List["types.User"]] = None
     ):
         super().__init__(client)
 

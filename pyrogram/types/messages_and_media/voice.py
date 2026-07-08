@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
 from datetime import datetime
 
 import pyrogram
@@ -57,15 +58,15 @@ class Voice(Object):
     def __init__(
         self,
         *,
-        client: "pyrogram.Client" = None,
+        client: Optional["pyrogram.Client"] = None,
         file_id: str,
         file_unique_id: str,
         duration: int,
-        waveform: bytes = None,
-        mime_type: str = None,
-        file_size: int = None,
-        date: datetime = None,
-        ttl_seconds: int = None
+        waveform: Optional[bytes] = None,
+        mime_type: Optional[str] = None,
+        file_size: Optional[int] = None,
+        date: Optional[datetime] = None,
+        ttl_seconds: Optional[int] = None
     ):
         super().__init__(client)
 
@@ -79,7 +80,7 @@ class Voice(Object):
         self.ttl_seconds = ttl_seconds
 
     @staticmethod
-    def _parse(client, voice: "raw.types.Document", attributes: "raw.types.DocumentAttributeAudio", ttl_seconds: int = None) -> "Voice":
+    def _parse(client, voice: "raw.types.Document", attributes: "raw.types.DocumentAttributeAudio", ttl_seconds: Optional[int] = None) -> "Voice":
         return Voice(
             file_id=FileId(
                 file_type=FileType.VOICE,

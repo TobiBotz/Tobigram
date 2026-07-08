@@ -31,9 +31,9 @@ from pyrogram import types
 class EditFactCheck:
     async def edit_fact_check(
         self: "pyrogram.Client",
-        peer: Union[int, str] = None,
-        msg_id: int = None,
-        text_with_entities: raw.types.TextWithEntities = None,
+        peer: Optional[Union[int, str]] = None,
+        msg_id: Optional[int] = None,
+        text_with_entities: Optional[raw.types.TextWithEntities] = None,
     ) -> "types.Message":
         """Edit the fact-check on a message (channel admins only).
 

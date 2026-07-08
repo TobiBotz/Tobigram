@@ -31,7 +31,7 @@ from pyrogram import types
 class CreateBusinessChatLink:
     async def create_business_chat_link(
         self: "pyrogram.Client",
-        link: raw.types.InputBusinessChatLink = None,
+        link: Optional[raw.types.InputBusinessChatLink] = None,
     ) -> "types.BusinessChatLink":
         """Create a business chat link with a predefined message.
 

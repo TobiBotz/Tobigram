@@ -17,7 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from typing import Union, List
+from typing import Union, List, Optional
 
 import pyrogram
 from pyrogram import types, utils, raw
@@ -29,10 +29,10 @@ class CopyMediaGroup:
         chat_id: Union[int, str],
         from_chat_id: Union[int, str],
         message_id: int,
-        captions: Union[List[str], str] = None,
-        disable_notification: bool = None,
-        reply_to_message_id: int = None,
-        schedule_date: datetime = None,
+        captions: Optional[Union[List[str], str]] = None,
+        disable_notification: Optional[bool] = None,
+        reply_to_message_id: Optional[int] = None,
+        schedule_date: Optional[datetime] = None,
     ) -> List["types.Message"]:
         """Copy a media group by providing one of the message ids.
 

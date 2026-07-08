@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
 import os
 
 import pyrogram
@@ -28,7 +29,7 @@ class EnableCloudPassword:
         self: "pyrogram.Client",
         password: str,
         hint: str = "",
-        email: str = None
+        email: Optional[str] = None
     ) -> bool:
         """Enable the Two-Step Verification security feature (Cloud Password) on your account.
 

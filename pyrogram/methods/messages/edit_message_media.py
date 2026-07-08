@@ -19,7 +19,7 @@
 import io
 import os
 import re
-from typing import Union
+from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw
@@ -34,8 +34,8 @@ class EditMessageMedia:
         chat_id: Union[int, str],
         message_id: int,
         media: "types.InputMedia",
-        reply_markup: "types.InlineKeyboardMarkup" = None,
-        file_name: str = None
+        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
+        file_name: Optional[str] = None
     ) -> "types.Message":
         """Edit animation, audio, document, photo or video messages.
 

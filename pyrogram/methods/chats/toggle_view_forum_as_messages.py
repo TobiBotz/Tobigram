@@ -32,7 +32,7 @@ class ToggleViewForumAsMessages:
     async def toggle_view_forum_as_messages(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        enabled: bool = None,
+        enabled: Optional[bool] = None,
     ) -> "types.Message":
         """Toggle whether forum topics are displayed as messages.
 

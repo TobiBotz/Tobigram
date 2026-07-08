@@ -31,8 +31,8 @@ from pyrogram import types
 class GetPollResults:
     async def get_poll_results(
         self: "pyrogram.Client",
-        chat_id: Union[int, str] = None,
-        msg_id: int = None,
+        chat_id: Optional[Union[int, str]] = None,
+        msg_id: Optional[int] = None,
     ) -> "types.Message":
         """Get poll results for a message.
 

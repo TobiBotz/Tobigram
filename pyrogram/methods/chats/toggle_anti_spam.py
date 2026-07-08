@@ -21,7 +21,7 @@
 # Source: tl:channels.toggleAntiSpam
 # ***************************
 
-from typing import Union
+from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw
@@ -32,7 +32,7 @@ class ToggleAntiSpam:
     async def toggle_anti_spam(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        enabled: bool = None,
+        enabled: Optional[bool] = None,
     ) -> "types.Message":
         """Toggle the anti-spam filter in a supergroup.
 

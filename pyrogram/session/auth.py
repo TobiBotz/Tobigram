@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
 import asyncio
 import logging
 import time
@@ -37,7 +38,7 @@ log = logging.getLogger(__name__)
 class Auth:
     MAX_RETRIES = 5
 
-    def __init__(self, client: "pyrogram.Client", dc_id: int, test_mode: bool, server_address: str = None, port: int = None):
+    def __init__(self, client: "pyrogram.Client", dc_id: int, test_mode: bool, server_address: Optional[str] = None, port: Optional[int] = None):
         self.dc_id = dc_id
         self.test_mode = test_mode
         self.ipv6 = client.ipv6

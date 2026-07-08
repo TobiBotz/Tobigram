@@ -35,7 +35,7 @@ class DownloadMedia:
         file_name: str = DEFAULT_DOWNLOAD_DIR,
         in_memory: bool = False,
         block: bool = True,
-        progress: Callable = None,
+        progress: Optional[Callable] = None,
         progress_args: tuple = ()
     ) -> Optional[Union[str, BinaryIO]]:
         """Download the media from a message.

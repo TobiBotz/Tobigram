@@ -41,8 +41,8 @@ class Connection:
         protocol_factory: Type[TCP] = TCPAbridged,
         crypto_executor: Optional[ThreadPoolExecutor] = None,
         loop: Optional[asyncio.AbstractEventLoop] = None,
-        server_address: str = None,
-        port: int = None
+        server_address: Optional[str] = None,
+        port: Optional[int] = None
     ):
         self.dc_id = dc_id
         self.test_mode = test_mode

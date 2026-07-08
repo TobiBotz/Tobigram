@@ -31,7 +31,7 @@ from pyrogram import types
 class UpdateBusinessAwayMessage:
     async def update_business_away_message(
         self: "pyrogram.Client",
-        message: raw.types.InputBusinessAwayMessage = None,
+        message: Optional[raw.types.InputBusinessAwayMessage] = None,
     ) -> "types.Message":
         """Set an automatic away message when you are offline.
 

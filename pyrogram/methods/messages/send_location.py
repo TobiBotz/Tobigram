@@ -30,18 +30,18 @@ class SendLocation:
         chat_id: Union[int, str],
         latitude: float,
         longitude: float,
-        disable_notification: bool = None,
-        reply_to_message_id: int = None,
-        reply_to_chat_id: Union[int, str] = None,
-        schedule_date: datetime = None,
-        protect_content: bool = None,
+        disable_notification: Optional[bool] = None,
+        reply_to_message_id: Optional[int] = None,
+        reply_to_chat_id: Optional[Union[int, str]] = None,
+        schedule_date: Optional[datetime] = None,
+        protect_content: Optional[bool] = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
         message_thread_id: Optional[int] = None,
         allow_paid_broadcast: Optional[bool] = None,
         paid_message_star_count: Optional[int] = None,
         business_connection_id: Optional[str] = None,
-        quote_text: str = None,
-        quote_entities: List["types.MessageEntity"] = None,
+        quote_text: Optional[str] = None,
+        quote_entities: Optional[List["types.MessageEntity"]] = None,
         effect_id: Optional[int] = None,
         show_caption_above_media: Optional[bool] = None,
         repeat_period: Optional[int] = None,
@@ -50,14 +50,14 @@ class SendLocation:
         background: Optional[bool] = None,
         clear_draft: Optional[bool] = None,
         update_stickersets_order: Optional[bool] = None,
-        send_as: Union[int, str] = None,
-        quick_reply_shortcut: int = None,
-        reply_markup: Union[
+        send_as: Optional[Union[int, str]] = None,
+        quick_reply_shortcut: Optional[int] = None,
+        reply_markup: Optional[Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
-        ] = None
+        ]] = None
     ) -> "types.Message":
         if reply_parameters is None:
             if reply_to_message_id is not None:

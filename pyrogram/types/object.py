@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
 import typing
 from datetime import datetime
 from enum import Enum
@@ -25,7 +26,7 @@ import pyrogram
 
 
 class Object:
-    def __init__(self, client: "pyrogram.Client" = None):
+    def __init__(self, client: Optional["pyrogram.Client"] = None):
         self._client = client
 
     def bind(self, client: "pyrogram.Client"):

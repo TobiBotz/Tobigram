@@ -31,7 +31,7 @@ from pyrogram import types
 class UpdateBusinessWorkHours:
     async def update_business_work_hours(
         self: "pyrogram.Client",
-        business_work_hours: raw.types.BusinessWorkHours = None,
+        business_work_hours: Optional[raw.types.BusinessWorkHours] = None,
     ) -> "types.Message":
         """Update business work hours for your business account.
 

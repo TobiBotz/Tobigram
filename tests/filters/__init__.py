@@ -1,3 +1,4 @@
+from typing import Optional
 from pyrogram.types import User as PyroUser
 
 
@@ -14,7 +15,7 @@ class Client:
 
 
 class Message:
-    def __init__(self, text: str = None, caption: str = None):
+    def __init__(self, text: Optional[str] = None, caption: Optional[str] = None):
         self.text = text
         self.caption = caption
         self.command = None

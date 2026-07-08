@@ -31,7 +31,7 @@ from pyrogram import types
 class UpdateBusinessIntro:
     async def update_business_intro(
         self: "pyrogram.Client",
-        intro: raw.types.InputBusinessIntro = None,
+        intro: Optional[raw.types.InputBusinessIntro] = None,
     ) -> "types.Message":
         """Update your business intro (title, description, sticker).
 

@@ -32,8 +32,8 @@ class ToggleForum:
     async def toggle_forum(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        enabled: bool = None,
-        tabs: bool = None,
+        enabled: Optional[bool] = None,
+        tabs: Optional[bool] = None,
     ) -> "types.Message":
         """Toggle forum mode in a supergroup.
 
