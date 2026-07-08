@@ -96,6 +96,10 @@ class EditInlineMedia:
         else:
             filename_attribute = []
 
+        is_video = isinstance(media, types.InputMediaVideo)
+        _vcover = None
+        _vtimestamp = None
+
         if isinstance(media, types.InputMediaPhoto):
             if is_uploaded_file:
                 media = raw.types.InputMediaUploadedPhoto(
@@ -109,13 +113,60 @@ class EditInlineMedia:
                 )
             else:
                 media = utils.get_input_media_from_file_id(media.media, FileType.PHOTO)
-        elif isinstance(media, types.InputMediaVideo):
+        elif is_video:
+            vcover_file = None
+            vcover_media = None
+
+            if media.video_cover is not None:
+                if isinstance(media.video_cover, str):
+                    if os.path.isfile(media.video_cover):
+                        vcover_media = await self.invoke(
+                            raw.functions.messages.UploadMedia(
+                                peer=raw.types.InputPeerSelf(),
+                                media=raw.types.InputMediaUploadedPhoto(
+                                    file=await self.save_file(media.video_cover)
+                                )
+                            )
+                        )
+                    elif re.match("^https?://", media.video_cover):
+                        vcover_media = await self.invoke(
+                            raw.functions.messages.UploadMedia(
+                                peer=raw.types.InputPeerSelf(),
+                                media=raw.types.InputMediaPhotoExternal(
+                                    url=media.video_cover
+                                )
+                            )
+                        )
+                    else:
+                        vcover_file = utils.get_input_media_from_file_id(media.video_cover, FileType.PHOTO).id
+                else:
+                    vcover_media = await self.invoke(
+                        raw.functions.messages.UploadMedia(
+                            peer=raw.types.InputPeerSelf(),
+                            media=raw.types.InputMediaUploadedPhoto(
+                                file=await self.save_file(media.video_cover)
+                            )
+                        )
+                    )
+
+                if vcover_media:
+                    vcover_file = raw.types.InputPhoto(
+                        id=vcover_media.photo.id,
+                        access_hash=vcover_media.photo.access_hash,
+                        file_reference=vcover_media.photo.file_reference
+                    )
+
+            _vcover = vcover_file
+            _vtimestamp = media.video_start_timestamp
+
             if is_uploaded_file:
                 media = raw.types.InputMediaUploadedDocument(
                     mime_type=(None if is_bytes_io else self.guess_mime_type(media.media)) or "video/mp4",
                     thumb=await self.save_file(media.thumb),
                     file=await self.save_file(media.media),
                     spoiler=media.has_spoiler,
+                    video_cover=_vcover,
+                    video_timestamp=_vtimestamp,
                     attributes=[
                                    raw.types.DocumentAttributeVideo(
                                        supports_streaming=media.supports_streaming or None,
@@ -128,10 +179,16 @@ class EditInlineMedia:
             elif is_external_url:
                 media = raw.types.InputMediaDocumentExternal(
                     url=media.media,
-                    spoiler=media.has_spoiler
+                    spoiler=media.has_spoiler,
+                    video_cover=_vcover,
+                    video_timestamp=_vtimestamp
                 )
             else:
-                media = utils.get_input_media_from_file_id(media.media, FileType.VIDEO)
+                media = utils.get_input_media_from_file_id(
+                    media.media, FileType.VIDEO,
+                    video_cover=_vcover,
+                    video_start_timestamp=_vtimestamp
+                )
         elif isinstance(media, types.InputMediaAudio):
             if is_uploaded_file:
                 media = raw.types.InputMediaUploadedDocument(
@@ -219,7 +276,11 @@ class EditInlineMedia:
                     access_hash=uploaded_media.document.access_hash,
                     file_reference=uploaded_media.document.file_reference
                 ),
-                spoiler=getattr(media, "has_spoiler", None)
+                spoiler=getattr(media, "has_spoiler", None),
+                **(
+                    {"video_cover": _vcover, "video_timestamp": _vtimestamp}
+                    if is_video else {}
+                )
             )
         else:
             actual_media = media

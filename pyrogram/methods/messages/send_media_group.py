@@ -196,6 +196,48 @@ class SendMediaGroup:
                         spoiler=i.has_spoiler
                     )
             elif isinstance(i, types.InputMediaVideo):
+                vcover_file = None
+                vcover_media = None
+
+                if i.video_cover is not None:
+                    if isinstance(i.video_cover, str):
+                        if os.path.isfile(i.video_cover):
+                            vcover_media = await self.invoke(
+                                raw.functions.messages.UploadMedia(
+                                    peer=await self.resolve_peer(chat_id),
+                                    media=raw.types.InputMediaUploadedPhoto(
+                                        file=await self.save_file(i.video_cover, progress=progress, progress_args=progress_args)
+                                    )
+                                )
+                            )
+                        elif re.match("^https?://", i.video_cover):
+                            vcover_media = await self.invoke(
+                                raw.functions.messages.UploadMedia(
+                                    peer=await self.resolve_peer(chat_id),
+                                    media=raw.types.InputMediaPhotoExternal(
+                                        url=i.video_cover
+                                    )
+                                )
+                            )
+                        else:
+                            vcover_file = utils.get_input_media_from_file_id(i.video_cover, FileType.PHOTO).id
+                    else:
+                        vcover_media = await self.invoke(
+                            raw.functions.messages.UploadMedia(
+                                peer=await self.resolve_peer(chat_id),
+                                media=raw.types.InputMediaUploadedPhoto(
+                                    file=await self.save_file(i.video_cover, progress=progress, progress_args=progress_args)
+                                )
+                            )
+                        )
+
+                    if vcover_media:
+                        vcover_file = raw.types.InputPhoto(
+                            id=vcover_media.photo.id,
+                            access_hash=vcover_media.photo.access_hash,
+                            file_reference=vcover_media.photo.file_reference
+                        )
+
                 if isinstance(i.media, str):
                     if os.path.isfile(i.media):
                         media = await self.invoke(
@@ -206,6 +248,8 @@ class SendMediaGroup:
                                     thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
                                     spoiler=i.has_spoiler,
                                     mime_type=self.guess_mime_type(i.media) or "video/mp4",
+                                    video_cover=vcover_file,
+                                    video_timestamp=i.video_start_timestamp,
                                     attributes=[
                                         raw.types.DocumentAttributeVideo(
                                             supports_streaming=i.supports_streaming or None,
@@ -225,7 +269,9 @@ class SendMediaGroup:
                                 access_hash=media.document.access_hash,
                                 file_reference=media.document.file_reference
                             ),
-                            spoiler=i.has_spoiler
+                            spoiler=i.has_spoiler,
+                            video_cover=vcover_file,
+                            video_timestamp=i.video_start_timestamp
                         )
                     elif re.match("^https?://", i.media):
                         media = await self.invoke(
@@ -233,7 +279,9 @@ class SendMediaGroup:
                                 peer=await self.resolve_peer(chat_id),
                                 media=raw.types.InputMediaDocumentExternal(
                                     url=i.media,
-                                    spoiler=i.has_spoiler
+                                    spoiler=i.has_spoiler,
+                                    video_cover=vcover_file,
+                                    video_timestamp=i.video_start_timestamp
                                 )
                             )
                         )
@@ -244,10 +292,16 @@ class SendMediaGroup:
                                 access_hash=media.document.access_hash,
                                 file_reference=media.document.file_reference
                             ),
-                            spoiler=i.has_spoiler
+                            spoiler=i.has_spoiler,
+                            video_cover=vcover_file,
+                            video_timestamp=i.video_start_timestamp
                         )
                     else:
-                        media = utils.get_input_media_from_file_id(i.media, FileType.VIDEO)
+                        media = utils.get_input_media_from_file_id(
+                            i.media, FileType.VIDEO,
+                            video_cover=vcover_file,
+                            video_start_timestamp=i.video_start_timestamp
+                        )
                 else:
                     media = await self.invoke(
                         raw.functions.messages.UploadMedia(
@@ -257,6 +311,8 @@ class SendMediaGroup:
                                 thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
                                 spoiler=i.has_spoiler,
                                 mime_type=self.guess_mime_type(getattr(i.media, "name", "video.mp4")) or "video/mp4",
+                                video_cover=vcover_file,
+                                video_timestamp=i.video_start_timestamp,
                                 attributes=[
                                     raw.types.DocumentAttributeVideo(
                                         supports_streaming=i.supports_streaming or None,
@@ -276,7 +332,9 @@ class SendMediaGroup:
                             access_hash=media.document.access_hash,
                             file_reference=media.document.file_reference
                         ),
-                        spoiler=i.has_spoiler
+                        spoiler=i.has_spoiler,
+                        video_cover=vcover_file,
+                        video_timestamp=i.video_start_timestamp
                     )
             elif isinstance(i, types.InputMediaAudio):
                 if isinstance(i.media, str):

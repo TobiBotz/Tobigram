@@ -119,6 +119,48 @@ class EditMessageMedia:
             else:
                 media = utils.get_input_media_from_file_id(media.media, FileType.PHOTO)
         elif isinstance(media, types.InputMediaVideo):
+            vcover_file = None
+            vcover_media = None
+
+            if media.video_cover is not None:
+                if isinstance(media.video_cover, str):
+                    if os.path.isfile(media.video_cover):
+                        vcover_media = await self.invoke(
+                            raw.functions.messages.UploadMedia(
+                                peer=await self.resolve_peer(chat_id),
+                                media=raw.types.InputMediaUploadedPhoto(
+                                    file=await self.save_file(media.video_cover)
+                                )
+                            )
+                        )
+                    elif re.match("^https?://", media.video_cover):
+                        vcover_media = await self.invoke(
+                            raw.functions.messages.UploadMedia(
+                                peer=await self.resolve_peer(chat_id),
+                                media=raw.types.InputMediaPhotoExternal(
+                                    url=media.video_cover
+                                )
+                            )
+                        )
+                    else:
+                        vcover_file = utils.get_input_media_from_file_id(media.video_cover, FileType.PHOTO).id
+                else:
+                    vcover_media = await self.invoke(
+                        raw.functions.messages.UploadMedia(
+                            peer=await self.resolve_peer(chat_id),
+                            media=raw.types.InputMediaUploadedPhoto(
+                                file=await self.save_file(media.video_cover)
+                            )
+                        )
+                    )
+
+                if vcover_media:
+                    vcover_file = raw.types.InputPhoto(
+                        id=vcover_media.photo.id,
+                        access_hash=vcover_media.photo.access_hash,
+                        file_reference=vcover_media.photo.file_reference
+                    )
+
             if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
                 uploaded_media = await self.invoke(
                     raw.functions.messages.UploadMedia(
@@ -128,6 +170,8 @@ class EditMessageMedia:
                             thumb=await self.save_file(media.thumb),
                             spoiler=media.has_spoiler,
                             file=await self.save_file(media.media),
+                            video_cover=vcover_file,
+                            video_timestamp=media.video_start_timestamp,
                             attributes=[
                                 raw.types.DocumentAttributeVideo(
                                     supports_streaming=media.supports_streaming or None,
@@ -149,15 +193,23 @@ class EditMessageMedia:
                         access_hash=uploaded_media.document.access_hash,
                         file_reference=uploaded_media.document.file_reference
                     ),
-                    spoiler=media.has_spoiler
+                    spoiler=media.has_spoiler,
+                    video_cover=vcover_file,
+                    video_timestamp=media.video_start_timestamp
                 )
             elif re.match("^https?://", media.media):
                 media = raw.types.InputMediaDocumentExternal(
                     url=media.media,
-                    spoiler=media.has_spoiler
+                    spoiler=media.has_spoiler,
+                    video_cover=vcover_file,
+                    video_timestamp=media.video_start_timestamp
                 )
             else:
-                media = utils.get_input_media_from_file_id(media.media, FileType.VIDEO)
+                media = utils.get_input_media_from_file_id(
+                    media.media, FileType.VIDEO,
+                    video_cover=vcover_file,
+                    video_start_timestamp=media.video_start_timestamp
+                )
         elif isinstance(media, types.InputMediaAudio):
             if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
                 media = await self.invoke(

@@ -17,7 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from datetime import datetime
-from typing import Union, List, Iterable
+from typing import Union, List, Iterable, Optional
 
 import pyrogram
 from pyrogram import raw, utils
@@ -32,7 +32,8 @@ class ForwardMessages:
         message_ids: Union[int, Iterable[int]],
         disable_notification: bool = None,
         schedule_date: datetime = None,
-        protect_content: bool = None
+        protect_content: bool = None,
+        video_start_timestamp: Optional[int] = None
     ) -> Union["types.Message", List["types.Message"]]:
         """Forward messages of any kind.
 
@@ -62,6 +63,9 @@ class ForwardMessages:
             protect_content (``bool``, *optional*):
                 Protects the contents of the sent message from forwarding and saving.
 
+            video_start_timestamp (``int``, *optional*):
+                Video startpoint, in seconds.
+
         Returns:
             :obj:`~pyrogram.types.Message` | List of :obj:`~pyrogram.types.Message`: In case *message_ids* was not
             a list, a single message is returned, otherwise a list of messages is returned.
@@ -87,7 +91,8 @@ class ForwardMessages:
                 silent=disable_notification or None,
                 random_id=[self.rnd_id() for _ in message_ids],
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
-                noforwards=protect_content
+                noforwards=protect_content,
+                video_timestamp=video_start_timestamp
             )
         )
 
