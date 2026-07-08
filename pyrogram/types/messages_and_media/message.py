@@ -1605,7 +1605,7 @@ class Message(Object, Update):
                             video_note = types.VideoNote._parse(client, doc, video_attributes, media.ttl_seconds)
                             media_type = enums.MessageMediaType.VIDEO_NOTE
                         else:
-                            video = types.Video._parse(client, doc, video_attributes, file_name, media.ttl_seconds, media.video_cover, media.video_timestamp, media.alt_documents)
+                            video = types.Video._parse(client, doc, video_attributes, file_name, media.ttl_seconds, media.video_cover, media.video_timestamp, media.alt_documents or [])
                             media_type = enums.MessageMediaType.VIDEO
                     elif raw.types.DocumentAttributeAudio in attributes:
                         audio_attributes = attributes[raw.types.DocumentAttributeAudio]
@@ -8611,10 +8611,12 @@ class Message(Object, Update):
         hide_sender_name: Optional[bool] = None,
         hide_captions: Optional[bool] = None,
         schedule_date: Optional[datetime] = None,
+        protect_content: Optional[bool] = None,
         repeat_period: Optional[int] = None,
         allow_paid_broadcast: Optional[bool] = None,
         video_start_timestamp: Optional[int] = None,
-        paid_message_star_count: Optional[int] = None
+        paid_message_star_count: Optional[int] = None,
+        effect_id: Optional[int] = None
     ) -> Union["types.Message", List["types.Message"]]:
         """Shortcut for method :obj:`~pyrogram.Client.forward_messages` will automatically fill method attributes:
 
@@ -8659,6 +8661,12 @@ class Message(Object, Update):
             paid_message_star_count (``int``, *optional*):
                 The number of Telegram Stars the user agreed to pay to send the messages.
 
+            protect_content (``bool``, *optional*):
+                Protects the contents of the sent message from forwarding and saving.
+
+            effect_id (``int``, *optional*):
+                Unique identifier of the effect to apply to the message.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the forwarded message is returned.
 
@@ -8672,12 +8680,14 @@ class Message(Object, Update):
             message_thread_id=message_thread_id,
             disable_notification=disable_notification,
             schedule_date=schedule_date,
-            repeat_period=repeat_period,
+            protect_content=protect_content,
+            schedule_repeat_period=repeat_period,
             hide_sender_name=hide_sender_name,
             hide_captions=hide_captions,
             allow_paid_broadcast=allow_paid_broadcast,
             video_start_timestamp=video_start_timestamp,
-            paid_message_star_count=paid_message_star_count
+            paid_message_star_count=paid_message_star_count,
+            effect=effect_id
         )
 
     async def copy(
@@ -8825,6 +8835,7 @@ class Message(Object, Update):
                 quote_entities=quote_entities,
                 schedule_date=schedule_date,
                 protect_content=protect_content,
+                effect_id=self.effect_id,
                 has_spoiler=self.has_media_spoiler if has_spoiler is None else has_spoiler,
                 show_caption_above_media=self.show_caption_above_media if show_caption_above_media is None else show_caption_above_media,
                 business_connection_id=business_connection_id,

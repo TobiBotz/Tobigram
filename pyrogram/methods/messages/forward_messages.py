@@ -33,6 +33,15 @@ class ForwardMessages:
         disable_notification: bool = None,
         schedule_date: datetime = None,
         protect_content: bool = None,
+        message_thread_id: Optional[int] = None,
+        hide_sender_name: Optional[bool] = None,
+        hide_captions: Optional[bool] = None,
+        background: Optional[bool] = None,
+        effect: Optional[int] = None,
+        send_as: Union[int, str] = None,
+        schedule_repeat_period: Optional[int] = None,
+        allow_paid_broadcast: Optional[bool] = None,
+        paid_message_star_count: Optional[int] = None,
         video_start_timestamp: Optional[int] = None
     ) -> Union["types.Message", List["types.Message"]]:
         """Forward messages of any kind.
@@ -66,6 +75,37 @@ class ForwardMessages:
             video_start_timestamp (``int``, *optional*):
                 Video startpoint, in seconds.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+                For supergroups only.
+
+            hide_sender_name (``bool``, *optional*):
+                If True, the original author of the message will not be shown.
+
+            hide_captions (``bool``, *optional*):
+                If True, the original media captions will be removed.
+
+            background (``bool``, *optional*):
+                If True, the message will be sent in background.
+
+            effect (``int``, *optional*):
+                Unique identifier of the effect to apply to the message.
+
+            send_as (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the chat or user to send the message on behalf of.
+
+            schedule_repeat_period (``int``, *optional*):
+                Period in seconds after which the message will be automatically resent.
+
+            allow_paid_broadcast (``bool``, *optional*):
+                If True, you will be allowed to send up to 1000 messages per second.
+                Ignoring broadcasting limits for a fee of 0.1 Telegram Stars per message.
+                The relevant Stars will be withdrawn from the bot's balance.
+                For bots only.
+
+            paid_message_star_count (``int``, *optional*):
+                The number of Telegram Stars the user agreed to pay to send the messages.
+
         Returns:
             :obj:`~pyrogram.types.Message` | List of :obj:`~pyrogram.types.Message`: In case *message_ids* was not
             a list, a single message is returned, otherwise a list of messages is returned.
@@ -92,7 +132,16 @@ class ForwardMessages:
                 random_id=[self.rnd_id() for _ in message_ids],
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
                 noforwards=protect_content,
-                video_timestamp=video_start_timestamp
+                video_timestamp=video_start_timestamp,
+                top_msg_id=message_thread_id,
+                drop_author=hide_sender_name or None,
+                drop_media_captions=hide_captions or None,
+                background=background or None,
+                effect=effect,
+                send_as=await self.resolve_peer(send_as) if send_as else None,
+                schedule_repeat_period=schedule_repeat_period,
+                allow_paid_floodskip=allow_paid_broadcast or None,
+                allow_paid_stars=paid_message_star_count
             )
         )
 

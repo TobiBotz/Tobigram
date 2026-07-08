@@ -38,9 +38,18 @@ class CopyMessage:
         video_cover: Optional[Union[str, BinaryIO]] = None,
         video_start_timestamp: int = None,
         disable_notification: bool = None,
+        message_thread_id: int = None,
         reply_to_message_id: int = None,
+        reply_to_chat_id: Union[int, str] = None,
+        quote_text: str = None,
+        quote_entities: List["types.MessageEntity"] = None,
         schedule_date: datetime = None,
         protect_content: bool = None,
+        has_spoiler: bool = None,
+        show_caption_above_media: bool = None,
+        business_connection_id: str = None,
+        allow_paid_broadcast: bool = None,
+        paid_message_star_count: int = None,
         reply_markup: Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
@@ -104,6 +113,50 @@ class CopyMessage:
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
+            message_thread_id (``int``, *optional*):
+                Unique identifier for the target message thread (topic) of the forum.
+                For supergroups only.
+
+            reply_to_message_id (``int``, *optional*):
+                If the message is a reply, ID of the original message.
+
+            reply_to_chat_id (``int`` | ``str``, *optional*):
+                Unique identifier for the chat to which the replied message belongs.
+                Only applicable in combination with *reply_to_message_id*.
+
+            quote_text (``str``, *optional*):
+                Text of the quote to reply to.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in *quote_text*, which can be specified instead of *parse_mode*.
+
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                Date when the message will be automatically sent.
+
+            protect_content (``bool``, *optional*):
+                Protects the contents of the sent message from forwarding and saving.
+
+            has_spoiler (``bool``, *optional*):
+                Pass True if the message needs to be covered with a spoiler animation.
+
+            show_caption_above_media (``bool``, *optional*):
+                Pass True, if the caption must be shown above the message media.
+
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection on behalf of which the message will be sent.
+
+            allow_paid_broadcast (``bool``, *optional*):
+                If True, you will be allowed to send up to 1000 messages per second.
+                Ignoring broadcasting limits for a fee of 0.1 Telegram Stars per message.
+                For bots only.
+
+            paid_message_star_count (``int``, *optional*):
+                The number of Telegram Stars the user agreed to pay to send the messages.
+
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
+                Additional interface options. An object for an inline keyboard, custom reply keyboard,
+                instructions to remove reply keyboard or to force a reply from the user.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the copied message is returned.
 
@@ -116,6 +169,16 @@ class CopyMessage:
         """
         message: types.Message = await self.get_messages(from_chat_id, message_id)
 
+        reply_parameters = None
+
+        if reply_to_message_id is not None:
+            reply_parameters = types.ReplyParameters(
+                message_id=reply_to_message_id,
+                chat_id=reply_to_chat_id,
+                quote=quote_text,
+                quote_entities=quote_entities,
+            )
+
         return await message.copy(
             chat_id=chat_id,
             caption=caption,
@@ -124,8 +187,14 @@ class CopyMessage:
             video_cover=video_cover,
             video_start_timestamp=video_start_timestamp,
             disable_notification=disable_notification,
-            reply_to_message_id=reply_to_message_id,
+            message_thread_id=message_thread_id,
+            reply_parameters=reply_parameters,
             schedule_date=schedule_date,
             protect_content=protect_content,
+            has_spoiler=has_spoiler,
+            show_caption_above_media=show_caption_above_media,
+            business_connection_id=business_connection_id,
+            allow_paid_broadcast=allow_paid_broadcast,
+            paid_message_star_count=paid_message_star_count,
             reply_markup=reply_markup
         )

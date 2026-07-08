@@ -132,7 +132,7 @@ class Video(Object):
     ) -> "Video":
         _alt_videos = types.List()
 
-        for alt_doc in alternative_videos:
+        for alt_doc in alternative_videos or []:
             alt_attrs = {type(i): i for i in alt_doc.attributes}
             alt_file_name = getattr(
                 alt_attrs.get(raw.types.DocumentAttributeFilename), "file_name", None

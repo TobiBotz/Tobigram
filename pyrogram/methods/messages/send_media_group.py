@@ -248,6 +248,7 @@ class SendMediaGroup:
                                     thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
                                     spoiler=i.has_spoiler,
                                     mime_type=self.guess_mime_type(i.media) or "video/mp4",
+                                    nosound_video=i.no_sound,
                                     video_cover=vcover_file,
                                     video_timestamp=i.video_start_timestamp,
                                     attributes=[
@@ -257,7 +258,7 @@ class SendMediaGroup:
                                             w=i.width,
                                             h=i.height
                                         ),
-                                        raw.types.DocumentAttributeFilename(file_name=os.path.basename(i.media))
+                                        raw.types.DocumentAttributeFilename(file_name=i.file_name or os.path.basename(i.media))
                                     ]
                                 )
                             )
@@ -306,23 +307,24 @@ class SendMediaGroup:
                     media = await self.invoke(
                         raw.functions.messages.UploadMedia(
                             peer=await self.resolve_peer(chat_id),
-                            media=raw.types.InputMediaUploadedDocument(
-                                file=await self.save_file(i.media, progress=progress, progress_args=progress_args),
-                                thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
-                                spoiler=i.has_spoiler,
-                                mime_type=self.guess_mime_type(getattr(i.media, "name", "video.mp4")) or "video/mp4",
-                                video_cover=vcover_file,
-                                video_timestamp=i.video_start_timestamp,
-                                attributes=[
-                                    raw.types.DocumentAttributeVideo(
-                                        supports_streaming=i.supports_streaming or None,
-                                        duration=i.duration,
-                                        w=i.width,
-                                        h=i.height
-                                    ),
-                                    raw.types.DocumentAttributeFilename(file_name=getattr(i.media, "name", "video.mp4"))
-                                ]
-                            )
+                                media=raw.types.InputMediaUploadedDocument(
+                                    file=await self.save_file(i.media, progress=progress, progress_args=progress_args),
+                                    thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
+                                    spoiler=i.has_spoiler,
+                                    mime_type=self.guess_mime_type(getattr(i.media, "name", "video.mp4")) or "video/mp4",
+                                    nosound_video=i.no_sound,
+                                    video_cover=vcover_file,
+                                    video_timestamp=i.video_start_timestamp,
+                                    attributes=[
+                                        raw.types.DocumentAttributeVideo(
+                                            supports_streaming=i.supports_streaming or None,
+                                            duration=i.duration,
+                                            w=i.width,
+                                            h=i.height
+                                        ),
+                                        raw.types.DocumentAttributeFilename(file_name=i.file_name or getattr(i.media, "name", "video.mp4"))
+                                    ]
+                                )
                         )
                     )
 

@@ -216,7 +216,7 @@ class SendVideo:
                 await app.send_video("me", "video.mp4", progress=progress)
         """
         coverfile = None
-        if video_cover:
+        if video_cover is not None:
             is_bytes_io = isinstance(video_cover, io.BytesIO)
             is_uploaded_file = is_bytes_io or os.path.isfile(video_cover)
             is_external_url = not is_uploaded_file and re.match("^https?://", video_cover)
@@ -340,7 +340,7 @@ class SendVideo:
 
             while True:
                 try:
-                    if rich_text:
+                    if rich_text is not None:
                         if rich_text_parse_mode == enums.ParseMode.HTML:
                             rich_msg = raw.types.InputRichMessageHTML(
                                 html=rich_text,

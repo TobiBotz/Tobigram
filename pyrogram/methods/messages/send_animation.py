@@ -268,7 +268,7 @@ class SendAnimation:
 
             while True:
                 try:
-                    if rich_text:
+                    if rich_text is not None:
                         if rich_text_parse_mode == enums.ParseMode.HTML:
                             rich_msg = raw.types.InputRichMessageHTML(
                                 html=rich_text,

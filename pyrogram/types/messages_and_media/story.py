@@ -364,7 +364,11 @@ class Story(Object, Update):
                 doc = media.document
                 attributes = {type(i): i for i in doc.attributes}
                 video_attributes = attributes.get(raw.types.DocumentAttributeVideo, None)
-                video = types.Video._parse(client, doc, video_attributes, alternative_videos=getattr(story.media, "alt_documents", []))
+                video = types.Video._parse(client, doc, video_attributes,
+                    ttl_seconds=media.ttl_seconds,
+                    video_cover=media.video_cover,
+                    video_start_timestamp=media.video_timestamp,
+                    alternative_videos=getattr(story.media, "alt_documents", []))
                 media_type = enums.MessageMediaType.VIDEO
             else:
                 media_type = enums.MessageMediaType.UNSUPPORTED

@@ -159,7 +159,7 @@ class SendMessage:
                 # Send a message with a link preview
                 await app.send_message("me", "Check this out: https://example.com")
         """
-        if rich_text:
+        if rich_text is not None:
             if rich_text_parse_mode == enums.ParseMode.HTML:
                 rich_message = raw.types.InputRichMessageHTML(
                     html=rich_text,

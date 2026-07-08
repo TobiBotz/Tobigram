@@ -298,7 +298,7 @@ class SendPaidMedia:
                                     thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
                                     spoiler=i.has_spoiler,
                                     mime_type=self.guess_mime_type(i.media) or "video/mp4",
-                                    nosound_video=True,
+                                    nosound_video=i.no_sound,
                                     video_cover=vcover_file,
                                     video_timestamp=i.video_start_timestamp,
                                     attributes=[
@@ -347,12 +347,12 @@ class SendPaidMedia:
                     media = await self.invoke(
                         raw.functions.messages.UploadMedia(
                             peer=peer,
-                            media=raw.types.InputMediaUploadedDocument(
-                                file=await self.save_file(i.media, progress=progress, progress_args=progress_args),
-                                thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
-                                spoiler=i.has_spoiler,
-                                mime_type=self.guess_mime_type(getattr(i.media, "name", "video.mp4")) or "video/mp4",
-                                nosound_video=True,
+                                media=raw.types.InputMediaUploadedDocument(
+                                    file=await self.save_file(i.media, progress=progress, progress_args=progress_args),
+                                    thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
+                                    spoiler=i.has_spoiler,
+                                    mime_type=self.guess_mime_type(getattr(i.media, "name", "video.mp4")) or "video/mp4",
+                                    nosound_video=i.no_sound,
                                 video_cover=vcover_file,
                                 video_timestamp=i.video_start_timestamp,
                                 attributes=[

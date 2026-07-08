@@ -301,29 +301,29 @@ class Folder(Object):
         Returns:
             True on success.
         """
-        if name:
+        if name is not None:
             name, entities = (await utils.parse_text_entities(self, name, parse_mode, entities)).values()
             entities = entities or []
 
         return await self._client.edit_folder(
             folder_id=self.id,
-            name=name or self.name,
+            name=name if name is not None else self.name,
             parse_mode=parse_mode,
-            entities=entities or self.entities,
-            animate_custom_emoji=animate_custom_emoji or self.animate_custom_emoji,
-            icon=icon or self.icon,
-            color=color or self.color,
+            entities=entities if entities is not None else self.entities,
+            animate_custom_emoji=animate_custom_emoji if animate_custom_emoji is not None else self.animate_custom_emoji,
+            icon=icon if icon is not None else self.icon,
+            color=color if color is not None else self.color,
             pinned_chats=[i.id for i in self.included_chats or []] if pinned_chats is None else pinned_chats,
             included_chats=[i.id for i in self.included_chats or []] if included_chats is None else included_chats,
             excluded_chats=[i.id for i in self.excluded_chats or []] if excluded_chats is None else excluded_chats,
-            exclude_muted=exclude_muted or self.exclude_muted,
-            exclude_read=exclude_read or self.exclude_read,
-            exclude_archived=exclude_archived or self.exclude_archived,
-            include_contacts=include_contacts or self.include_contacts,
-            include_non_contacts=include_non_contacts or self.include_non_contacts,
-            include_bots=include_bots or self.include_bots,
-            include_groups=include_groups or self.include_groups,
-            include_channels=include_channels or self.include_channels
+            exclude_muted=exclude_muted if exclude_muted is not None else self.exclude_muted,
+            exclude_read=exclude_read if exclude_read is not None else self.exclude_read,
+            exclude_archived=exclude_archived if exclude_archived is not None else self.exclude_archived,
+            include_contacts=include_contacts if include_contacts is not None else self.include_contacts,
+            include_non_contacts=include_non_contacts if include_non_contacts is not None else self.include_non_contacts,
+            include_bots=include_bots if include_bots is not None else self.include_bots,
+            include_groups=include_groups if include_groups is not None else self.include_groups,
+            include_channels=include_channels if include_channels is not None else self.include_channels
         )
 
     async def include_chat(self, chat_id: Union[int, str]) -> bool:
