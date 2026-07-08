@@ -26,7 +26,7 @@ class ReadReactions:
     async def read_reactions(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        topic_id: bool = None
+        topic_id: int = None
     ) -> bool:
         """Mark a reaction in the chat as read.
 

@@ -17,10 +17,10 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-from typing import List, Union, BinaryIO, Callable
+from typing import List, Optional, Union, BinaryIO, Callable
 
 import pyrogram
-from pyrogram import raw, types, utils, StopTransmission
+from pyrogram import enums, raw, types, utils, StopTransmission
 from pyrogram.errors import FilePartMissing
 
 class EditStoryMedia:
@@ -36,6 +36,9 @@ class EditStoryMedia:
         thumb: Union[str, BinaryIO] = None,
         supports_streaming: bool = True,
         file_name: str = None,
+        caption: str = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        caption_entities: List["types.MessageEntity"] = None,
         progress: Callable = None,
         progress_args: tuple = ()
     ) -> "types.Story":
@@ -111,6 +114,7 @@ class EditStoryMedia:
                             thumb=thumb,
                             attributes=[
                                 raw.types.DocumentAttributeVideo(
+                                    supports_streaming=supports_streaming or None,
                                     duration=duration,
                                     w=width,
                                     h=height,
@@ -148,6 +152,8 @@ class EditStoryMedia:
                         file=file,
                     )
 
+            message, entities = (await utils.parse_text_entities(self, caption, parse_mode, caption_entities)).values()
+
             while True:
                 try:
                     r = await self.invoke(
@@ -156,6 +162,8 @@ class EditStoryMedia:
                             id=story_id,
                             media=media,
                             media_areas=[await area.write(self) for area in (media_areas or [])] or None,
+                            caption=message,
+                            entities=entities,
                         )
                     )
                 except FilePartMissing as e:

@@ -7538,8 +7538,8 @@ class Message(Object, Update):
             caption (``str``, *optional*):
                 Media caption, 0-1024 characters after entities parsing.
 
-            invoice_payload (``str``):
-                Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use for your internal processes.
+            payload (``str``):
+                Bot-defined payload, 1-128 bytes. This will not be displayed to the user, use for your internal processes.
 
             parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
@@ -7635,8 +7635,8 @@ class Message(Object, Update):
             caption (``str``, *optional*):
                 Media caption, 0-1024 characters after entities parsing.
 
-            invoice_payload (``str``):
-                Bot-defined invoice payload, 1-128 bytes. This will not be displayed to the user, use for your internal processes.
+            payload (``str``):
+                Bot-defined payload, 1-128 bytes. This will not be displayed to the user, use for your internal processes.
 
             parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
@@ -9155,11 +9155,6 @@ class Message(Object, Update):
 
             timeout (``int``, *optional*):
                 Timeout in seconds.
-
-            request_write_access (``bool``, *optional*):
-                Only used in case of :obj:`~pyrogram.types.LoginUrl` button.
-                True, if the bot can send messages to the user.
-                Defaults to ``True``.
 
             password (``str``, *optional*):
                 When clicking certain buttons (such as BotFather's confirmation button to transfer ownership), if your account has 2FA enabled, you need to provide your account's password.

@@ -1935,10 +1935,7 @@ class Chat(Object):
             client.update_chat_notifications(chat_id, mute=True, mute_until=mute_until)
 
         Parameters:
-            mute (``bool``, *optional*):
-                Pass True if you want to mute chat.
-
-            until_date (:py:obj:`~datetime.datetime`, *optional*):
+            mute_until (:py:obj:`~datetime.datetime`, *optional*):
                 Date when the user will be unmuted. Defaults to forever.
 
         Example:

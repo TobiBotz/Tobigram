@@ -75,6 +75,9 @@ class PaidMediaInfo(Object):
                 elif isinstance(media, raw.types.MessageMediaDocument):
                     doc = media.document
 
+                    if doc is None:
+                        continue
+
                     attributes = {type(i): i for i in doc.attributes}
 
                     file_name = getattr(
@@ -83,9 +86,10 @@ class PaidMediaInfo(Object):
                         ), "file_name", None
                     )
 
-                    video_attributes = attributes[raw.types.DocumentAttributeVideo]
+                    video_attributes = attributes.get(raw.types.DocumentAttributeVideo, None)
 
-                    medias.append(types.Video._parse(client, doc, video_attributes, file_name, media.ttl_seconds))
+                    if video_attributes is not None:
+                        medias.append(types.Video._parse(client, doc, video_attributes, file_name, media.ttl_seconds))
 
         return PaidMediaInfo(
             stars_amount=message_paid_media.stars_amount,

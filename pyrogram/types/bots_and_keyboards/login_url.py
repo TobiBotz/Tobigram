@@ -61,7 +61,7 @@ class LoginUrl(Object):
         url: str,
         forward_text: str = None,
         bot_username: str = None,
-        request_write_access: str = None,
+        request_write_access: bool = None,
         button_id: int = None
     ):
         super().__init__()

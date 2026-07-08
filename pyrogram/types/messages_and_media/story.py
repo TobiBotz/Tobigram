@@ -362,14 +362,15 @@ class Story(Object, Update):
                 media_type = enums.MessageMediaType.PHOTO
             elif isinstance(media, raw.types.MessageMediaDocument):
                 doc = media.document
-                attributes = {type(i): i for i in doc.attributes}
-                video_attributes = attributes.get(raw.types.DocumentAttributeVideo, None)
-                video = types.Video._parse(client, doc, video_attributes,
-                    ttl_seconds=media.ttl_seconds,
-                    video_cover=media.video_cover,
-                    video_start_timestamp=media.video_timestamp,
-                    alternative_videos=getattr(story.media, "alt_documents", []))
-                media_type = enums.MessageMediaType.VIDEO
+                if doc is not None:
+                    attributes = {type(i): i for i in doc.attributes}
+                    video_attributes = attributes.get(raw.types.DocumentAttributeVideo, None)
+                    video = types.Video._parse(client, doc, video_attributes,
+                        ttl_seconds=media.ttl_seconds,
+                        video_cover=media.video_cover,
+                        video_start_timestamp=media.video_timestamp,
+                        alternative_videos=getattr(story.media, "alt_documents", []))
+                    media_type = enums.MessageMediaType.VIDEO
             else:
                 media_type = enums.MessageMediaType.UNSUPPORTED
                 media = None
@@ -1709,6 +1710,7 @@ class Story(Object, Update):
         privacy: Optional["enums.StoriesPrivacyRules"] = None,
         allowed_users: Optional[List[int]] = None,
         disallowed_users: Optional[List[int]] = None,
+        pinned: Optional[bool] = None,
         protect_content: Optional[bool] = None
     ) -> "types.Story":
         """Bound method *copy* of :obj:`~pyrogram.types.Story`.
@@ -1767,6 +1769,9 @@ class Story(Object, Update):
                 Note: Works with :obj:`~pyrogram.enums.StoriesPrivacyRules.PUBLIC`
                 and :obj:`~pyrogram.enums.StoriesPrivacyRules.CONTACTS` only
 
+            pinned (``bool``, *optional*):
+                If True, the story will be pinned.
+
             protect_content (``bool``, *optional*):
                 Protects the contents of the sent story from forwarding and saving.
 
@@ -1790,6 +1795,7 @@ class Story(Object, Update):
             period=period,
             media_areas=media_areas,
             protect_content=protect_content,
+            pinned=pinned,
             parse_mode=parse_mode,
             caption_entities=caption_entities,
             privacy=privacy,
@@ -2002,6 +2008,7 @@ class Story(Object, Update):
         disable_notification: bool = None,
         schedule_date: datetime = None,
         repeat_period: int = None,
+        protect_content: bool = None,
         paid_message_star_count: int = None,
     ) -> Optional["types.Message"]:
         """Bound method *forward* of :obj:`~pyrogram.types.Story`.
@@ -2041,6 +2048,9 @@ class Story(Object, Update):
             repeat_period (``int``, *optional*):
                 Period after which the message will be sent again in seconds.
 
+            protect_content (``bool``, *optional*):
+                Protects the contents of the forwarded message from forwarding and saving.
+
             paid_message_star_count (``int``, *optional*):
                 The number of Telegram Stars the user agreed to pay to send the messages.
 
@@ -2058,6 +2068,7 @@ class Story(Object, Update):
             disable_notification=disable_notification,
             schedule_date=schedule_date,
             repeat_period=repeat_period,
+            protect_content=protect_content,
             paid_message_star_count=paid_message_star_count,
         )
 

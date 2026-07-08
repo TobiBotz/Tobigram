@@ -30,7 +30,7 @@ class GetBusinessConnection:
         .. include:: /_includes/usable-by/bots.rst
 
         Parameters:
-            connection_id (``str``):
+            business_connection_id (``str``):
                 Unique identifier of the business connection.
 
         Returns:

@@ -241,6 +241,8 @@ class RichBlock(Object):
             )
         if isinstance(rich_block, raw.types.PageBlockVideo):
             doc = documents.get(rich_block.video_id)
+            if doc is None:
+                return RichBlockUnsupported()
             attributes = {type(i): i for i in doc.attributes}
 
             file_name = getattr(
@@ -278,13 +280,17 @@ class RichBlock(Object):
                     )
         if isinstance(rich_block, raw.types.PageBlockAudio):
             doc = documents.get(rich_block.audio_id)
+            if doc is None:
+                return RichBlockUnsupported()
             attributes = {type(i): i for i in doc.attributes}
 
             file_name = getattr(
                 attributes.get(raw.types.DocumentAttributeFilename, None), "file_name", None
             )
 
-            audio_attributes = attributes[raw.types.DocumentAttributeAudio]
+            audio_attributes = attributes.get(raw.types.DocumentAttributeAudio, None)
+            if audio_attributes is None:
+                return RichBlockUnsupported()
 
             return RichBlockAudio(
                 audio=types.Audio._parse(client, doc, audio_attributes, file_name),
