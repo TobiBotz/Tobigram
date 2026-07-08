@@ -48,7 +48,7 @@ class InlineKeyboardButton(Object):
 
         login_url (:obj:`~pyrogram.types.LoginUrl`, *optional*):
              An HTTP URL used to automatically authorize the user. Can be used as a replacement for
-             the `Telegram Login Widget <https://core.telegram.org/widgets/login>`_.
+             the `Telegram Login Widget <https://telegram.org/widgets/login>`_.
 
         user_id (``int``, *optional*):
             User id, for links to the user profile.
@@ -70,6 +70,13 @@ class InlineKeyboardButton(Object):
         callback_game (:obj:`~pyrogram.types.CallbackGame`, *optional*):
             Description of the game that will be launched when the user presses the button.
             **NOTE**: This type of button **must** always be the first button in the first row.
+
+        icon_custom_emoji_id (``str``, *optional*):
+            Custom emoji ID to use as the button icon, shown in place of the colored background
+            on PRIMARY/DANGER/SUCCESS style buttons.
+
+        style (:obj:`~pyrogram.enums.ButtonStyle`, *optional*):
+            Style of the button. Defaults to :attr:`~pyrogram.enums.ButtonStyle.DEFAULT`.
     """
 
     def __init__(
@@ -83,6 +90,7 @@ class InlineKeyboardButton(Object):
         switch_inline_query: str = None,
         switch_inline_query_current_chat: str = None,
         callback_game: "types.CallbackGame" = None,
+        icon_custom_emoji_id: str = None,
         style: ButtonStyle = ButtonStyle.DEFAULT
     ):
         super().__init__()
@@ -96,8 +104,27 @@ class InlineKeyboardButton(Object):
         self.switch_inline_query = switch_inline_query
         self.switch_inline_query_current_chat = switch_inline_query_current_chat
         self.callback_game = callback_game
+        self.icon_custom_emoji_id = icon_custom_emoji_id
         self.style = style
         # self.pay = pay
+
+    @staticmethod
+    def _parse_raw_style(style: "raw.base.KeyboardButtonStyle"):
+        if style is None:
+            return ButtonStyle.DEFAULT, None
+        icon = str(style.icon) if style.icon is not None else None
+        if style.bg_primary:
+            return ButtonStyle.PRIMARY, icon
+        if style.bg_danger:
+            return ButtonStyle.DANGER, icon
+        if style.bg_success:
+            return ButtonStyle.SUCCESS, icon
+        return ButtonStyle.DEFAULT, icon
+
+    @staticmethod
+    def _with_style(b):
+        style, icon = InlineKeyboardButton._parse_raw_style(getattr(b, "style", None))
+        return {"style": style, "icon_custom_emoji_id": icon}
 
     @staticmethod
     def read(b: "raw.base.KeyboardButton"):
@@ -111,43 +138,51 @@ class InlineKeyboardButton(Object):
 
             return InlineKeyboardButton(
                 text=b.text,
-                callback_data=data
+                callback_data=data,
+                **InlineKeyboardButton._with_style(b)
             )
 
         if isinstance(b, raw.types.KeyboardButtonUrl):
             return InlineKeyboardButton(
                 text=b.text,
-                url=b.url
+                url=b.url,
+                **InlineKeyboardButton._with_style(b)
             )
 
         if isinstance(b, raw.types.KeyboardButtonUrlAuth):
             return InlineKeyboardButton(
                 text=b.text,
-                login_url=types.LoginUrl.read(b)
+                login_url=types.LoginUrl.read(b),
+                **InlineKeyboardButton._with_style(b)
             )
 
         if isinstance(b, raw.types.KeyboardButtonUserProfile):
             return InlineKeyboardButton(
                 text=b.text,
-                user_id=b.user_id
+                user_id=b.user_id,
+                **InlineKeyboardButton._with_style(b)
             )
 
         if isinstance(b, raw.types.KeyboardButtonSwitchInline):
+            kwargs = InlineKeyboardButton._with_style(b)
             if b.same_peer:
                 return InlineKeyboardButton(
                     text=b.text,
-                    switch_inline_query_current_chat=b.query
+                    switch_inline_query_current_chat=b.query,
+                    **kwargs
                 )
             else:
                 return InlineKeyboardButton(
                     text=b.text,
-                    switch_inline_query=b.query
+                    switch_inline_query=b.query,
+                    **kwargs
                 )
 
         if isinstance(b, raw.types.KeyboardButtonGame):
             return InlineKeyboardButton(
                 text=b.text,
-                callback_game=types.CallbackGame()
+                callback_game=types.CallbackGame(),
+                **InlineKeyboardButton._with_style(b)
             )
 
         if isinstance(b, raw.types.KeyboardButtonWebView):
@@ -155,16 +190,20 @@ class InlineKeyboardButton(Object):
                 text=b.text,
                 web_app=types.WebAppInfo(
                     url=b.url
-                )
+                ),
+                **InlineKeyboardButton._with_style(b)
             )
 
     def _to_raw_style(self) -> "raw.base.KeyboardButtonStyle":
+        icon = int(self.icon_custom_emoji_id) if self.icon_custom_emoji_id is not None else None
         if self.style == ButtonStyle.PRIMARY:
-            return raw.types.KeyboardButtonStyle(bg_primary=True)
+            return raw.types.KeyboardButtonStyle(bg_primary=True, icon=icon)
         if self.style == ButtonStyle.DANGER:
-            return raw.types.KeyboardButtonStyle(bg_danger=True)
+            return raw.types.KeyboardButtonStyle(bg_danger=True, icon=icon)
         if self.style == ButtonStyle.SUCCESS:
-            return raw.types.KeyboardButtonStyle(bg_success=True)
+            return raw.types.KeyboardButtonStyle(bg_success=True, icon=icon)
+        if icon is not None:
+            return raw.types.KeyboardButtonStyle(icon=icon)
         return None
 
     async def write(self, client: "pyrogram.Client"):
