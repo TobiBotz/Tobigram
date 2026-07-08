@@ -64,7 +64,7 @@ class SendVideo:
         show_caption_above_media: bool = None,
         view_once: bool = None,
         video_start_timestamp: int = None,
-        cover: Union[str, BinaryIO] = None,
+        video_cover: Union[str, BinaryIO] = None,
         no_sound: bool = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
         repeat_period: int = None,
@@ -141,7 +141,7 @@ class SendVideo:
                 A thumbnail's width and height should not exceed 320 pixels.
                 Thumbnails can't be reused and can be only uploaded as a new file.
 
-            cover (``str`` | ``BinaryIO``, *optional*):
+            video_cover (``str`` | ``BinaryIO``, *optional*):
                 Cover for the video in the message.
                 Pass a file_path, BinaryIO, file_id, or HTTP URL.
                 The cover is uploaded as a photo and used as the video thumbnail.
@@ -216,13 +216,13 @@ class SendVideo:
                 await app.send_video("me", "video.mp4", progress=progress)
         """
         coverfile = None
-        if cover:
-            is_bytes_io = isinstance(cover, io.BytesIO)
-            is_uploaded_file = is_bytes_io or os.path.isfile(cover)
-            is_external_url = not is_uploaded_file and re.match("^https?://", cover)
+        if video_cover:
+            is_bytes_io = isinstance(video_cover, io.BytesIO)
+            is_uploaded_file = is_bytes_io or os.path.isfile(video_cover)
+            is_external_url = not is_uploaded_file and re.match("^https?://", video_cover)
 
-            if is_bytes_io and not hasattr(cover, "name"):
-                cover.name = "cover.jpg"
+            if is_bytes_io and not hasattr(video_cover, "name"):
+                video_cover.name = "cover.jpg"
 
             if is_uploaded_file:
                 r = await self.invoke(
@@ -230,7 +230,7 @@ class SendVideo:
                         business_connection_id=business_connection_id,
                         peer=await self.resolve_peer(chat_id),
                         media=raw.types.InputMediaUploadedPhoto(
-                            file=await self.save_file(cover)
+                            file=await self.save_file(video_cover)
                         )
                     )
                 )
@@ -245,7 +245,7 @@ class SendVideo:
                         business_connection_id=business_connection_id,
                         peer=await self.resolve_peer(chat_id),
                         media=raw.types.InputMediaPhotoExternal(
-                            url=cover
+                            url=video_cover
                         )
                     )
                 )
@@ -255,7 +255,7 @@ class SendVideo:
                     file_reference=r.photo.file_reference
                 )
             else:
-                coverfile = (utils.get_input_media_from_file_id(cover, FileType.PHOTO)).id
+                coverfile = (utils.get_input_media_from_file_id(video_cover, FileType.PHOTO)).id
 
         if reply_parameters is None:
             if reply_to_message_id is not None:

@@ -6557,7 +6557,7 @@ class Message(Object, Update):
             width=width,
             height=height,
             video_start_timestamp=video_start_timestamp,
-            cover=video_cover,
+            video_cover=video_cover,
             thumb=thumb,
             supports_streaming=supports_streaming,
             disable_notification=disable_notification,
@@ -6782,7 +6782,7 @@ class Message(Object, Update):
             width=width,
             height=height,
             video_start_timestamp=video_start_timestamp,
-            cover=video_cover,
+            video_cover=video_cover,
             thumb=thumb,
             supports_streaming=supports_streaming,
             disable_notification=disable_notification,
@@ -8861,7 +8861,7 @@ class Message(Object, Update):
                     paid_message_star_count=paid_message_star_count,
                     reply_parameters=reply_parameters,
                     reply_markup=self.reply_markup if reply_markup is object else reply_markup,
-                    cover=video_cover if video_cover is not None else self.video.video_cover.sizes[-1].file_id if self.video.video_cover and self.video.video_cover.sizes else None,
+                    video_cover=video_cover if video_cover is not None else self.video.video_cover.sizes[-1].file_id if self.video.video_cover and self.video.video_cover.sizes else None,
                     video_start_timestamp=video_start_timestamp if video_start_timestamp is not None else self.video.video_start_timestamp,
                     effect_id=self.effect_id
                 )

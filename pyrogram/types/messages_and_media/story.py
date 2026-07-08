@@ -1417,7 +1417,7 @@ class Story(Object, Update):
             width=width,
             height=height,
             video_start_timestamp=video_start_timestamp,
-            cover=video_cover,
+            video_cover=video_cover,
             thumb=thumb,
             file_name=file_name,
             supports_streaming=supports_streaming,
