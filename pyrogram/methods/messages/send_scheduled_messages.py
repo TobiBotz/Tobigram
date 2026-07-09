@@ -40,7 +40,7 @@ class SendScheduledMessages:
 
         Parameters:
 
-            id (List[int]): List of scheduled message IDs to send now
+            id (List[int], *optional*): List of scheduled message IDs to send now
 
 
 

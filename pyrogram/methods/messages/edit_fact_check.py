@@ -40,8 +40,8 @@ class EditFactCheck:
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            peer (Union[int, str]): Chat where the message is
-            msg_id (int): Message ID with the fact-check
+            peer (Union[int, str], *optional*): Chat where the message is
+            msg_id (int, *optional*): Message ID with the fact-check
             text_with_entities (raw.types.TextWithEntities): Fact-check content as TextWithEntities (text + entities)
 
         Returns:
@@ -57,6 +57,7 @@ class EditFactCheck:
             raw.functions.messages.editFactCheck(
                 peer=await self.resolve_peer(peer),
                 msg_id=msg_id,
+                text=text_with_entities
             )
         )
 

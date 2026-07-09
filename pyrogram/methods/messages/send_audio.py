@@ -38,6 +38,8 @@ class SendAudio:
         caption: str = "",
         parse_mode: Optional["enums.ParseMode"] = None,
         caption_entities: Optional[List["types.MessageEntity"]] = None,
+        ttl_seconds: Optional[int] = None,
+        has_spoiler: Optional[bool] = None,
         duration: int = 0,
         performer: Optional[str] = None,
         title: Optional[str] = None,
@@ -220,6 +222,8 @@ class SendAudio:
                     media = raw.types.InputMediaUploadedDocument(
                         mime_type=self.guess_mime_type(audio) or "audio/mpeg",
                         file=file,
+                        ttl_seconds=ttl_seconds,
+                        spoiler=has_spoiler,
                         thumb=thumb,
                         attributes=[
                             raw.types.DocumentAttributeAudio(
@@ -232,7 +236,9 @@ class SendAudio:
                     )
                 elif re.match("^https?://", audio):
                     media = raw.types.InputMediaDocumentExternal(
-                        url=audio
+                        url=audio,
+                        ttl_seconds=ttl_seconds,
+                        spoiler=has_spoiler
                     )
                 else:
                     media = utils.get_input_media_from_file_id(audio, FileType.AUDIO)
@@ -242,6 +248,8 @@ class SendAudio:
                 media = raw.types.InputMediaUploadedDocument(
                     mime_type=self.guess_mime_type(file_name or audio.name) or "audio/mpeg",
                     file=file,
+                    ttl_seconds=ttl_seconds,
+                    spoiler=has_spoiler,
                     thumb=thumb,
                     attributes=[
                         raw.types.DocumentAttributeAudio(
@@ -284,15 +292,15 @@ class SendAudio:
                             noforwards=protect_content,
                             effect=effect_id,
                             schedule_repeat_period=repeat_period,
-                            allow_paid_floodskip=allow_paid_broadcast,
-                            allow_paid_stars=paid_message_star_count,
+                            allow_paid_floodskip=allow_paid_broadcast or None,
+                            allow_paid_stars=paid_message_star_count or None,
                             suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                             invert_media=show_caption_above_media or None,
                             background=background,
                             clear_draft=clear_draft,
                             update_stickersets_order=update_stickersets_order,
                             send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                            quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                            quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                             reply_markup=await reply_markup.write(self) if reply_markup else None,
                             **text_params
                         ),

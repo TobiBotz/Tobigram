@@ -40,7 +40,7 @@ class SendScreenshotNotification:
 
         Parameters:
 
-            reply_to_message_id (int): Message ID to reply to
+            reply_to_message_id (int, *optional*): Message ID to reply to
 
 
 

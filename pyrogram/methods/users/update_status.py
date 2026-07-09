@@ -30,7 +30,7 @@ class UpdateStatus:
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            offline (``bool``):
+            offline (``bool``, *optional*):
                 The new status. Pass True to appear offline.
 
         Returns:

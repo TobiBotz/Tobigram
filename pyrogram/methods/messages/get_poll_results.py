@@ -39,8 +39,8 @@ class GetPollResults:
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            chat_id (Union[int, str]): Chat where the poll message is
-            msg_id (int): Message identifier (from the poll message)
+            chat_id (Union[int, str], *optional*): Chat where the poll message is
+            msg_id (int, *optional*): Message identifier (from the poll message)
 
         Returns:
             :obj:`~pyrogram.types.Message`

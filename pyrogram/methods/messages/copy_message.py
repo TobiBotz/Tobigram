@@ -117,9 +117,6 @@ class CopyMessage:
                 Unique identifier for the target message thread (topic) of the forum.
                 For supergroups only.
 
-            reply_to_message_id (``int``, *optional*):
-                If the message is a reply, ID of the original message.
-
             reply_to_chat_id (``int`` | ``str``, *optional*):
                 Unique identifier for the chat to which the replied message belongs.
                 Only applicable in combination with *reply_to_message_id*.
@@ -129,12 +126,6 @@ class CopyMessage:
 
             quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in *quote_text*, which can be specified instead of *parse_mode*.
-
-            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
-                Date when the message will be automatically sent.
-
-            protect_content (``bool``, *optional*):
-                Protects the contents of the sent message from forwarding and saving.
 
             has_spoiler (``bool``, *optional*):
                 Pass True if the message needs to be covered with a spoiler animation.
@@ -152,10 +143,6 @@ class CopyMessage:
 
             paid_message_star_count (``int``, *optional*):
                 The number of Telegram Stars the user agreed to pay to send the messages.
-
-            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
-                Additional interface options. An object for an inline keyboard, custom reply keyboard,
-                instructions to remove reply keyboard or to force a reply from the user.
 
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the copied message is returned.

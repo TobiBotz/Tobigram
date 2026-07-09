@@ -40,7 +40,7 @@ class ToggleViewForumAsMessages:
 
         Parameters:
 
-            enabled (bool): Whether to view forum as messages
+            enabled (bool, *optional*): Whether to view forum as messages
 
 
 

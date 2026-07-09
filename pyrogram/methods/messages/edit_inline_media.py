@@ -38,7 +38,8 @@ class EditInlineMedia:
         self: "pyrogram.Client",
         inline_message_id: str,
         media: "types.InputMedia",
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None
+        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
+        business_connection_id: Optional[str] = None,
     ) -> bool:
         """Edit inline animation, audio, document, photo or video messages.
 
@@ -295,7 +296,8 @@ class EditInlineMedia:
                         reply_markup=await reply_markup.write(self) if reply_markup else None,
                         **await self.parser.parse(caption, parse_mode)
                     ),
-                    sleep_threshold=self.sleep_threshold
+                    sleep_threshold=self.sleep_threshold,
+                    business_connection_id=business_connection_id
                 )
             except RPCError as e:
                 if i == self.MAX_RETRIES - 1:

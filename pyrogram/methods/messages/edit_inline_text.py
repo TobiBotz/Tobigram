@@ -32,7 +32,9 @@ class EditInlineText:
         text: str,
         parse_mode: Optional["enums.ParseMode"] = None,
         disable_web_page_preview: Optional[bool] = None,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None
+        show_caption_above_media: Optional[bool] = None,
+        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
+        business_connection_id: Optional[str] = None,
     ) -> bool:
         """Edit the text of inline messages.
 
@@ -81,8 +83,10 @@ class EditInlineText:
             raw.functions.messages.EditInlineBotMessage(
                 id=unpacked,
                 no_webpage=disable_web_page_preview or None,
+                invert_media=show_caption_above_media or None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 **await self.parser.parse(text, parse_mode)
             ),
-            sleep_threshold=self.sleep_threshold
+            sleep_threshold=self.sleep_threshold,
+            business_connection_id=business_connection_id
         )

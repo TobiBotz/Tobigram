@@ -40,7 +40,7 @@ class DeleteScheduledMessages:
 
         Parameters:
 
-            id (List[int]): List of message IDs to delete
+            id (List[int], *optional*): List of message IDs to delete
 
 
 

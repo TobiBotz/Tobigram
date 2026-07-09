@@ -35,7 +35,7 @@ class SetBotDefaultPrivileges:
         .. include:: /_includes/usable-by/bots.rst
 
         Parameters:
-            privileges (:obj:`~pyrogram.types.ChatPrivileges`):
+            privileges (:obj:`~pyrogram.types.ChatPrivileges`, *optional*):
                 New default privileges. None to clear.
                 Defaults to None.
 

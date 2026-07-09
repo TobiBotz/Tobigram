@@ -39,8 +39,8 @@ class GetBotInfo:
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            bot (Union[int, str]): Bot username or ID
-            lang_code (str): Language code for localized info
+            bot (Union[int, str], *optional*): Bot username or ID
+            lang_code (str, *optional*): Language code for localized info
 
         Returns:
             :obj:`~pyrogram.types.Message`

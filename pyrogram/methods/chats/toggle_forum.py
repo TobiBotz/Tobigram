@@ -41,7 +41,7 @@ class ToggleForum:
 
         Parameters:
 
-            enabled (bool): Whether forum mode is enabled
+            enabled (bool, *optional*): Whether forum mode is enabled
 
 
             tabs (bool): Whether to show topics as tabs

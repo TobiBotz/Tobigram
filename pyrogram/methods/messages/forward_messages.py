@@ -42,7 +42,10 @@ class ForwardMessages:
         schedule_repeat_period: Optional[int] = None,
         allow_paid_broadcast: Optional[bool] = None,
         paid_message_star_count: Optional[int] = None,
-        video_start_timestamp: Optional[int] = None
+        video_start_timestamp: Optional[int] = None,
+        reply_parameters: Optional["types.ReplyParameters"] = None,
+        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
+        business_connection_id: Optional[str] = None,
     ) -> Union["types.Message", List["types.Message"]]:
         """Forward messages of any kind.
 
@@ -138,11 +141,19 @@ class ForwardMessages:
                 drop_media_captions=hide_captions or None,
                 background=background or None,
                 effect=effect,
-                send_as=await self.resolve_peer(send_as) if send_as else None,
+                send_as=await self.resolve_peer(send_as) if send_as is not None else None,
                 schedule_repeat_period=schedule_repeat_period,
                 allow_paid_floodskip=allow_paid_broadcast or None,
-                allow_paid_stars=paid_message_star_count
-            )
+                allow_paid_stars=paid_message_star_count or None,
+                reply_to=await utils.get_reply_to(
+                    self,
+                    reply_parameters,
+                    message_thread_id
+                ),
+                suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+            ),
+            sleep_threshold=60,
+            business_connection_id=business_connection_id
         )
 
         forwarded_messages = []

@@ -40,7 +40,7 @@ class ToggleJoinToSend:
 
         Parameters:
 
-            enabled (bool): Whether join-to-send is enabled
+            enabled (bool, *optional*): Whether join-to-send is enabled
 
 
 

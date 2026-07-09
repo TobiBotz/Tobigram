@@ -21,6 +21,7 @@ from typing import Union, Optional
 import pyrogram
 from pyrogram import raw
 from pyrogram import types
+from pyrogram import utils
 
 
 class SendGame:
@@ -36,7 +37,10 @@ class SendGame:
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
-        ]] = None
+        ]] = None,
+        reply_parameters: Optional["types.ReplyParameters"] = None,
+        message_thread_id: Optional[int] = None,
+        business_connection_id: Optional[str] = None,
     ) -> "types.Message":
         """Send a game.
 
@@ -73,6 +77,12 @@ class SendGame:
 
                 await app.send_game(chat_id, "gamename")
         """
+        if reply_parameters is None:
+            if reply_to_message_id is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=reply_to_message_id,
+                )
+
         r = await self.invoke(
             raw.functions.messages.SendMedia(
                 peer=await self.resolve_peer(chat_id),
@@ -84,13 +94,17 @@ class SendGame:
                 ),
                 message="",
                 silent=disable_notification or None,
-                reply_to=raw.types.InputReplyToMessage(
-                    reply_to_msg_id=reply_to_message_id
-                ) if reply_to_message_id else None,
+                reply_to=await utils.get_reply_to(
+                    self,
+                    reply_parameters,
+                    message_thread_id
+                ),
                 random_id=self.rnd_id(),
                 noforwards=protect_content,
                 reply_markup=await reply_markup.write(self) if reply_markup else None
-            )
+            ),
+            sleep_threshold=60,
+            business_connection_id=business_connection_id
         )
 
         for i in r.updates:

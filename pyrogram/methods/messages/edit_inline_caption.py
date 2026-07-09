@@ -28,7 +28,8 @@ class EditInlineCaption:
         inline_message_id: str,
         caption: str,
         parse_mode: Optional["enums.ParseMode"] = None,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None
+        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
+        business_connection_id: Optional[str] = None,
     ) -> bool:
         """Edit the caption of inline media messages.
 
@@ -61,5 +62,6 @@ class EditInlineCaption:
             inline_message_id=inline_message_id,
             text=caption,
             parse_mode=parse_mode,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
+            business_connection_id=business_connection_id
         )

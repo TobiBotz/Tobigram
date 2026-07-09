@@ -41,10 +41,10 @@ class SummarizeText:
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            peer (Union[int, str]): Chat from which to get the source message
-            id (int): Message ID to summarize
-            to_lang (str): Target language for the summary
-            tone (str): AI summary tone preset
+            peer (Union[int, str], *optional*): Chat from which to get the source message
+            id (int, *optional*): Message ID to summarize
+            to_lang (str, *optional*): Target language for the summary
+            tone (str, *optional*): AI summary tone preset
 
         Returns:
             :obj:`~pyrogram.raw.types.TextWithEntities`

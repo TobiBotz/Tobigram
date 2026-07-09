@@ -56,9 +56,11 @@ class SendInvoice:
         message_effect_id: Optional[int] = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
         allow_paid_broadcast: Optional[bool] = None,
+        paid_message_star_count: Optional[int] = None,
         direct_messages_topic_id: Optional[int] = None,
         suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        subscription_expiration_date: Optional[int] = None,
+        subscription_period: Optional[int] = None,
+        terms_url: Optional[str] = None,
         reply_markup: Optional[
             Union[
                 "types.InlineKeyboardMarkup",
@@ -70,6 +72,7 @@ class SendInvoice:
         caption: str = "",
         parse_mode: Optional["enums.ParseMode"] = None,
         caption_entities: Optional[List["types.MessageEntity"]] = None,
+        business_connection_id: Optional[str] = None,
 
         reply_to_message_id: Optional[int] = None,
     ) -> "types.Message":
@@ -172,9 +175,8 @@ class SendInvoice:
             suggested_post_parameters (:obj:`~pyrogram.types.SuggestedPostParameters`, *optional*):
                 Information about the suggested post.
 
-            subscription_expiration_date (``int``, *optional*):
-                Expiration date of the subscription, in Unix time.
-                Currently the only allowed subscription period is 30*24*60*60 (1 month).
+            subscription_period (``int``, *optional*):
+                Period of the subscription in seconds (e.g. 30*24*60*60 = 2592000 for 1 month).
                 For recurring payments only.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
@@ -195,14 +197,15 @@ class SendInvoice:
             :obj:`~pyrogram.types.Message`: On success, the sent invoice message is returned.
 
         """
-        if reply_to_message_id is not None:
-            log.warning(
-                "`reply_to_message_id` is deprecated and will be removed in future updates. Use `reply_parameters` instead."
-            )
+        if reply_parameters is None:
+            if reply_to_message_id is not None:
+                log.warning(
+                    "`reply_to_message_id` is deprecated and will be removed in future updates. Use `reply_parameters` instead."
+                )
 
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id
-            )
+                reply_parameters = types.ReplyParameters(
+                    message_id=reply_to_message_id
+                )
 
         media = raw.types.InputMediaInvoice(
             title=title,
@@ -231,8 +234,9 @@ class SendInvoice:
                 email_to_provider=send_email_to_provider,
                 max_tip_amount=max_tip_amount,
                 suggested_tip_amounts=suggested_tip_amounts,
-                recurring=True if subscription_expiration_date is not None else None,
-                subscription_period=subscription_expiration_date
+                recurring=True if subscription_period is not None else None,
+                subscription_period=subscription_period,
+                terms_url=terms_url
             ),
             payload=payload.encode() if isinstance(payload, str) else payload,
             provider=provider_token,
@@ -254,14 +258,15 @@ class SendInvoice:
             ),
             random_id=self.rnd_id(),
             noforwards=protect_content,
-            allow_paid_floodskip=allow_paid_broadcast,
+            allow_paid_floodskip=allow_paid_broadcast or None,
+            allow_paid_stars=paid_message_star_count or None,
             reply_markup=await reply_markup.write(self) if reply_markup else None,
             effect=message_effect_id,
             suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
             **await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
         )
 
-        r = await self.invoke(rpc)
+        r = await self.invoke(rpc, sleep_threshold=60, business_connection_id=business_connection_id)
 
         messages = await utils.parse_messages(client=self, messages=r)
 

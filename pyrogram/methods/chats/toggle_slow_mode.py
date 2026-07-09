@@ -40,7 +40,7 @@ class ToggleSlowMode:
 
         Parameters:
 
-            seconds (int): Slow mode interval in seconds (0 to disable)
+            seconds (int, *optional*): Slow mode interval in seconds (0 to disable)
 
 
 

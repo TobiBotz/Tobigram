@@ -109,8 +109,8 @@ class SendVideoNote:
             rich_text (``str``, *optional*):
                 Rich text content with GitHub Flavored Markdown or HTML formatting (server-side rendered).
 
-            rich_text_parse_mode (``str``, *optional*):
-                Parse mode for *rich_text*: ``"markdown"`` (default, supports GFM) or ``"html"``.
+            rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                Parse mode for *rich_text*: :obj:`~pyrogram.enums.ParseMode.MARKDOWN` (default, supports GFM) or :obj:`~pyrogram.enums.ParseMode.HTML`.
 
             schedule_date (:py:obj:`~datetime.datetime`, *optional*):
                 Date when the message will be automatically sent.
@@ -244,15 +244,15 @@ class SendVideoNote:
                             noforwards=protect_content,
                             effect=effect_id,
                             schedule_repeat_period=repeat_period,
-                            allow_paid_floodskip=allow_paid_broadcast,
-                            allow_paid_stars=paid_message_star_count,
+                            allow_paid_floodskip=allow_paid_broadcast or None,
+                            allow_paid_stars=paid_message_star_count or None,
                             suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                             invert_media=show_caption_above_media or None,
                             background=background,
                             clear_draft=clear_draft,
                             update_stickersets_order=update_stickersets_order,
                             send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                            quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                            quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                             reply_markup=await reply_markup.write(self) if reply_markup else None,
                             **text_params
                         ),

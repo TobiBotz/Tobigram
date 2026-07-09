@@ -62,7 +62,6 @@ class SendVideo:
         direct_messages_topic_id: Optional[int] = None,
         effect_id: Optional[int] = None,
         show_caption_above_media: Optional[bool] = None,
-        view_once: Optional[bool] = None,
         video_start_timestamp: Optional[int] = None,
         video_cover: Optional[Union[str, BinaryIO]] = None,
         no_sound: Optional[bool] = None,
@@ -289,6 +288,7 @@ class SendVideo:
                         file=file,
                         ttl_seconds=ttl_seconds,
                         spoiler=has_spoiler,
+                        nosound_video=no_sound,
                         thumb=thumb,
                         video_cover=coverfile,
                         video_timestamp=video_start_timestamp,
@@ -298,6 +298,7 @@ class SendVideo:
                                 duration=duration,
                                 w=width,
                                 h=height,
+                                nosound=no_sound,
                                 video_start_ts=video_start_timestamp
                             ),
                             raw.types.DocumentAttributeFilename(file_name=file_name or os.path.basename(video))
@@ -326,6 +327,7 @@ class SendVideo:
                     file=file,
                     ttl_seconds=ttl_seconds,
                     spoiler=has_spoiler,
+                    nosound_video=no_sound,
                     thumb=thumb,
                     video_cover=coverfile,
                     video_timestamp=video_start_timestamp,
@@ -335,6 +337,7 @@ class SendVideo:
                             duration=duration,
                             w=width,
                             h=height,
+                            nosound=no_sound,
                             video_start_ts=video_start_timestamp
                         ),
                         raw.types.DocumentAttributeFilename(file_name=file_name or video.name)
@@ -373,14 +376,14 @@ class SendVideo:
                             effect=effect_id,
                             invert_media=show_caption_above_media or None,
                             schedule_repeat_period=repeat_period,
-                            allow_paid_floodskip=allow_paid_broadcast,
-                            allow_paid_stars=paid_message_star_count,
+                            allow_paid_floodskip=allow_paid_broadcast or None,
+                            allow_paid_stars=paid_message_star_count or None,
                             suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                             background=background,
                             clear_draft=clear_draft,
                             update_stickersets_order=update_stickersets_order,
                             send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                            quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                            quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                             reply_markup=await reply_markup.write(self) if reply_markup else None,
                             **text_params
                         ),

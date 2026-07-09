@@ -38,7 +38,7 @@ class CanBotSendMessage:
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            bot (Union[int, str]): Bot username or ID
+            bot (Union[int, str], *optional*): Bot username or ID
 
         Returns:
             :obj:`~pyrogram.types.Message`

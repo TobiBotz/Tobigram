@@ -41,7 +41,7 @@ class ToggleSignatures:
 
         Parameters:
 
-            signatures_enabled (bool): Whether signatures are enabled
+            signatures_enabled (bool, *optional*): Whether signatures are enabled
 
 
             profiles_enabled (bool): Whether profile signatures are enabled

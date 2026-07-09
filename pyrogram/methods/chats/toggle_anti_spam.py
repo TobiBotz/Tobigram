@@ -40,7 +40,7 @@ class ToggleAntiSpam:
 
         Parameters:
 
-            enabled (bool): Whether anti-spam is enabled
+            enabled (bool, *optional*): Whether anti-spam is enabled
 
 
 

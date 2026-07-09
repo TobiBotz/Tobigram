@@ -92,7 +92,6 @@ class EditMessageChecklist:
                     )
                 ),
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
-                entities=entities
             ),
             business_connection_id=business_connection_id
         )

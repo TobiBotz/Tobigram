@@ -29,6 +29,7 @@ class EditMessageReplyMarkup:
         chat_id: Union[int, str],
         message_id: int,
         reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
+        business_connection_id: Optional[str] = None,
     ) -> "types.Message":
         """Edit only the reply markup of messages sent by the bot.
 
@@ -65,7 +66,9 @@ class EditMessageReplyMarkup:
                 peer=await self.resolve_peer(chat_id),
                 id=message_id,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
-            )
+            ),
+            sleep_threshold=60,
+            business_connection_id=business_connection_id
         )
 
         for i in r.updates:

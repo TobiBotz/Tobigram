@@ -35,6 +35,8 @@ class SendSticker:
         self: "pyrogram.Client",
         chat_id: Union[int, str],
         sticker: Union[str, BinaryIO],
+        ttl_seconds: Optional[int] = None,
+        has_spoiler: Optional[bool] = None,
         disable_notification: Optional[bool] = None,
         reply_to_message_id: Optional[int] = None,
         reply_to_chat_id: Optional[Union[int, str]] = None,
@@ -169,13 +171,17 @@ class SendSticker:
                     media = raw.types.InputMediaUploadedDocument(
                         mime_type=self.guess_mime_type(sticker) or "image/webp",
                         file=file,
+                        ttl_seconds=ttl_seconds,
+                        spoiler=has_spoiler,
                         attributes=[
                             raw.types.DocumentAttributeFilename(file_name=os.path.basename(sticker))
                         ]
                     )
                 elif re.match("^https?://", sticker):
                     media = raw.types.InputMediaDocumentExternal(
-                        url=sticker
+                        url=sticker,
+                        ttl_seconds=ttl_seconds,
+                        spoiler=has_spoiler
                     )
                 else:
                     media = utils.get_input_media_from_file_id(sticker, FileType.STICKER)
@@ -184,6 +190,8 @@ class SendSticker:
                 media = raw.types.InputMediaUploadedDocument(
                     mime_type=self.guess_mime_type(sticker.name) or "image/webp",
                     file=file,
+                    ttl_seconds=ttl_seconds,
+                    spoiler=has_spoiler,
                     attributes=[
                         raw.types.DocumentAttributeFilename(file_name=sticker.name)
                     ]
@@ -220,15 +228,15 @@ class SendSticker:
                             noforwards=protect_content,
                             effect=effect_id,
                             schedule_repeat_period=repeat_period,
-                            allow_paid_floodskip=allow_paid_broadcast,
-                            allow_paid_stars=paid_message_star_count,
+                            allow_paid_floodskip=allow_paid_broadcast or None,
+                            allow_paid_stars=paid_message_star_count or None,
                             suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                             invert_media=show_caption_above_media or None,
                             background=background,
                             clear_draft=clear_draft,
                             update_stickersets_order=update_stickersets_order,
                             send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                            quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                            quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                             reply_markup=await reply_markup.write(self) if reply_markup else None,
                             **text_params
                         ),

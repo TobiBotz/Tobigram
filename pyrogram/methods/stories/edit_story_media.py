@@ -180,6 +180,7 @@ class EditStoryMedia:
                             media_areas=[await area.write(self) for area in (media_areas or [])] or None,
                             caption=message,
                             entities=entities,
+                            privacy_rules=None,
                         )
                     )
                 except FilePartMissing as e:

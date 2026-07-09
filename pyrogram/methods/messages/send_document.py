@@ -225,6 +225,7 @@ class SendDocument:
                 media = raw.types.InputMediaUploadedDocument(
                     mime_type=self.guess_mime_type(file_name or document.name) or "application/zip",
                     file=file,
+                    force_file=force_document or None,
                     thumb=thumb,
                     attributes=[
                         raw.types.DocumentAttributeFilename(file_name=file_name or document.name)
@@ -263,14 +264,14 @@ class SendDocument:
                             effect=effect_id,
                             invert_media=show_caption_above_media or None,
                             schedule_repeat_period=repeat_period,
-                            allow_paid_floodskip=allow_paid_broadcast,
-                            allow_paid_stars=paid_message_star_count,
+                            allow_paid_floodskip=allow_paid_broadcast or None,
+                            allow_paid_stars=paid_message_star_count or None,
                             suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                             background=background,
                             clear_draft=clear_draft,
                             update_stickersets_order=update_stickersets_order,
                             send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                            quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                            quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                             reply_markup=await reply_markup.write(self) if reply_markup else None,
                             **text_params
                         ),

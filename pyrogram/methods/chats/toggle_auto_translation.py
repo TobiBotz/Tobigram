@@ -40,7 +40,7 @@ class ToggleAutoTranslation:
 
         Parameters:
 
-            enabled (bool): Whether auto-translation is enabled
+            enabled (bool, *optional*): Whether auto-translation is enabled
 
 
 

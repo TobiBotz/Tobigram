@@ -40,7 +40,7 @@ class TogglePreHistoryHidden:
 
         Parameters:
 
-            enabled (bool): Whether pre-history is hidden
+            enabled (bool, *optional*): Whether pre-history is hidden
 
 
 

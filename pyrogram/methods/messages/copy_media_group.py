@@ -33,6 +33,20 @@ class CopyMediaGroup:
         disable_notification: Optional[bool] = None,
         reply_to_message_id: Optional[int] = None,
         schedule_date: Optional[datetime] = None,
+        protect_content: Optional[bool] = None,
+        effect_id: Optional[int] = None,
+        show_caption_above_media: Optional[bool] = None,
+        reply_parameters: Optional["types.ReplyParameters"] = None,
+        message_thread_id: Optional[int] = None,
+        direct_messages_topic_id: Optional[int] = None,
+        allow_paid_broadcast: Optional[bool] = None,
+        paid_message_star_count: Optional[int] = None,
+        background: Optional[bool] = None,
+        clear_draft: Optional[bool] = None,
+        update_stickersets_order: Optional[bool] = None,
+        send_as: Optional[Union[int, str]] = None,
+        quick_reply_shortcut: Optional[int] = None,
+        business_connection_id: Optional[str] = None,
     ) -> List["types.Message"]:
         """Copy a media group by providing one of the message ids.
 
@@ -71,6 +85,45 @@ class CopyMediaGroup:
             schedule_date (:py:obj:`~datetime.datetime`, *optional*):
                 Date when the message will be automatically sent.
 
+            protect_content (``bool``, *optional*):
+                Protects the contents of the sent message from forwarding and saving.
+
+            effect_id (``int`` ``64-bit``, *optional*):
+                Unique identifier of the message effect to be added to the message; for private chats only.
+
+            show_caption_above_media (``bool``, *optional*):
+                Pass True, if the caption must be shown above the message media.
+
+            reply_parameters (:obj:`~pyrogram.types.ReplyParameters`, *optional*):
+                Describes reply parameters for the message that is being sent.
+
+            message_thread_id (``int``, *optional*):
+                Unique identifier of a message thread to which the message belongs.
+
+            direct_messages_topic_id (``int``, *optional*):
+                Unique identifier of the topic in a channel direct messages chat administered by the current user.
+
+            allow_paid_broadcast (``bool``, *optional*):
+                If True, you will be allowed to send up to 1000 messages per second.
+
+            paid_message_star_count (``int``, *optional*):
+                The number of Telegram Stars the user agreed to pay to send the messages.
+
+            background (``bool``, *optional*):
+                Pass True if the message is a background message.
+
+            clear_draft (``bool``, *optional*):
+                Pass True if the message draft should be cleared.
+
+            update_stickersets_order (``bool``, *optional*):
+                Pass True if the stickersets order should be updated.
+
+            send_as (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the chat to send the message as.
+
+            quick_reply_shortcut (``int``, *optional*):
+                Unique identifier of the quick reply shortcut.
+
         Returns:
             List of :obj:`~pyrogram.types.Message`: On success, a list of copied messages is returned.
 
@@ -85,6 +138,11 @@ class CopyMediaGroup:
                 await app.copy_media_group(to_chat, from_chat, 123,
                     captions=["caption 1", None, ""])
         """
+
+        if reply_parameters is None and reply_to_message_id is not None:
+            reply_parameters = types.ReplyParameters(
+                message_id=reply_to_message_id
+            )
 
         media_group = await self.get_media_group(from_chat_id, message_id)
         multi_media = []
@@ -102,15 +160,20 @@ class CopyMediaGroup:
                 raise ValueError("Message with this type can't be copied.")
 
             media = utils.get_input_media_from_file_id(file_id=file_id)
+
+            text, entities = (await self.parser.parse(
+                captions[i] if isinstance(captions, list) and i < len(captions) and captions[i] else
+                captions if isinstance(captions, str) and i == 0 else
+                message.caption if message.caption and message.caption != "None" and not type(
+                    captions) is str else ""
+            )).values()
+
             multi_media.append(
                 raw.types.InputSingleMedia(
                     media=media,
                     random_id=self.rnd_id(),
-                    **await self.parser.parse(
-                        captions[i] if isinstance(captions, list) and i < len(captions) and captions[i] else
-                        captions if isinstance(captions, str) and i == 0 else
-                        message.caption if message.caption and message.caption != "None" and not type(
-                            captions) is str else "")
+                    message=text,
+                    entities=entities or None
                 )
             )
 
@@ -119,12 +182,26 @@ class CopyMediaGroup:
                 peer=await self.resolve_peer(chat_id),
                 multi_media=multi_media,
                 silent=disable_notification or None,
-                reply_to=raw.types.InputReplyToMessage(
-                    reply_to_msg_id=reply_to_message_id
-                ) if reply_to_message_id else None,
-                schedule_date=utils.datetime_to_timestamp(schedule_date)
+                reply_to=await utils.get_reply_to(
+                    self,
+                    reply_parameters,
+                    message_thread_id,
+                    direct_messages_topic_id=direct_messages_topic_id
+                ),
+                schedule_date=utils.datetime_to_timestamp(schedule_date),
+                noforwards=protect_content,
+                effect=effect_id,
+                invert_media=show_caption_above_media or None,
+                allow_paid_floodskip=allow_paid_broadcast or None,
+                allow_paid_stars=paid_message_star_count or None,
+                background=background or None,
+                clear_draft=clear_draft or None,
+                update_stickersets_order=update_stickersets_order or None,
+                send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
             ),
-            sleep_threshold=60
+            sleep_threshold=60,
+            business_connection_id=business_connection_id
         )
 
         return await utils.parse_messages(

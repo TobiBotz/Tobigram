@@ -159,6 +159,22 @@ class SendMessage:
                 # Send a message with a link preview
                 await app.send_message("me", "Check this out: https://example.com")
         """
+        if reply_parameters is None:
+            if reply_to_message_id is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=reply_to_message_id,
+                    chat_id=reply_to_chat_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+            elif quote_text is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=None,
+                    chat_id=reply_to_chat_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+
         if rich_text is not None:
             if rich_text_parse_mode == enums.ParseMode.HTML:
                 rich_message = raw.types.InputRichMessageHTML(
@@ -189,14 +205,14 @@ class SendMessage:
                     effect=effect_id,
                     invert_media=show_caption_above_media or None,
                     schedule_repeat_period=repeat_period,
-                    allow_paid_floodskip=allow_paid_broadcast,
-                    allow_paid_stars=paid_message_star_count,
+                    allow_paid_floodskip=allow_paid_broadcast or None,
+                    allow_paid_stars=paid_message_star_count or None,
                     suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                     background=background,
                     clear_draft=clear_draft,
                     update_stickersets_order=update_stickersets_order,
                     send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                    quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                    quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                 ),
                 sleep_threshold=60,
                 business_connection_id=business_connection_id
@@ -219,22 +235,6 @@ class SendMessage:
             if disable_web_page_preview is not None:
                 no_webpage = disable_web_page_preview or None
 
-            if reply_parameters is None:
-                if reply_to_message_id is not None:
-                    reply_parameters = types.ReplyParameters(
-                        message_id=reply_to_message_id,
-                        chat_id=reply_to_chat_id,
-                        quote=quote_text,
-                        quote_entities=quote_entities,
-                    )
-                elif quote_text is not None:
-                    reply_parameters = types.ReplyParameters(
-                        message_id=None,
-                        chat_id=reply_to_chat_id,
-                        quote=quote_text,
-                        quote_entities=quote_entities,
-                    )
-
             plain_text, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
             r = await self.invoke(
                 raw.functions.messages.SendMessage(
@@ -256,14 +256,14 @@ class SendMessage:
                     effect=effect_id,
                     invert_media=invert_media or show_caption_above_media or None,
                     schedule_repeat_period=repeat_period,
-                    allow_paid_floodskip=allow_paid_broadcast,
-                    allow_paid_stars=paid_message_star_count,
+                    allow_paid_floodskip=allow_paid_broadcast or None,
+                    allow_paid_stars=paid_message_star_count or None,
                     suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                     background=background,
                     clear_draft=clear_draft,
                     update_stickersets_order=update_stickersets_order,
                     send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                    quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                    quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                 ),
                 sleep_threshold=60,
                 business_connection_id=business_connection_id

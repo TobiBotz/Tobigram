@@ -42,11 +42,11 @@ class TranslateText:
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            peer (Union[int, str]): Chat from which to translate an existing message
-            id (List[int]): Message IDs to translate
-            text (Union[str, List[raw.types.TextWithEntities]]): Text to translate (plain string or list of TextWithEntities)
-            to_lang (str): Target language code (e.g. "en", "es")
-            tone (str): AI translation tone preset
+            peer (Union[int, str], *optional*): Chat from which to translate an existing message
+            id (List[int], *optional*): Message IDs to translate
+            text (Union[str, List[raw.types.TextWithEntities]], *optional*): Text to translate (plain string or list of TextWithEntities)
+            to_lang (str, *optional*): Target language code (e.g. "en", "es")
+            tone (str, *optional*): AI translation tone preset
 
         Returns:
             :obj:`~pyrogram.types.TranslatedText`

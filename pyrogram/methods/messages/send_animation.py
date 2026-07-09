@@ -40,6 +40,7 @@ class SendAnimation:
         parse_mode: Optional["enums.ParseMode"] = None,
         caption_entities: Optional[List["types.MessageEntity"]] = None,
         has_spoiler: Optional[bool] = None,
+        ttl_seconds: Optional[int] = None,
         duration: int = 0,
         width: int = 0,
         height: int = 0,
@@ -226,6 +227,7 @@ class SendAnimation:
                     media = raw.types.InputMediaUploadedDocument(
                         mime_type=self.guess_mime_type(animation) or "video/mp4",
                         file=file,
+                        ttl_seconds=ttl_seconds,
                         thumb=thumb,
                         spoiler=has_spoiler,
                         attributes=[
@@ -242,6 +244,7 @@ class SendAnimation:
                 elif re.match("^https?://", animation):
                     media = raw.types.InputMediaDocumentExternal(
                         url=animation,
+                        ttl_seconds=ttl_seconds,
                         spoiler=has_spoiler
                     )
                 else:
@@ -252,6 +255,7 @@ class SendAnimation:
                 media = raw.types.InputMediaUploadedDocument(
                     mime_type=self.guess_mime_type(file_name or animation.name) or "video/mp4",
                     file=file,
+                    ttl_seconds=ttl_seconds,
                     thumb=thumb,
                     spoiler=has_spoiler,
                     attributes=[
@@ -298,15 +302,15 @@ class SendAnimation:
                             effect=effect_id,
                             invert_media=show_caption_above_media or None,
                             schedule_repeat_period=repeat_period,
-                            allow_paid_floodskip=allow_paid_broadcast,
-                            allow_paid_stars=paid_message_star_count,
+                            allow_paid_floodskip=allow_paid_broadcast or None,
+                            allow_paid_stars=paid_message_star_count or None,
                             suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                             reply_markup=await reply_markup.write(self) if reply_markup else None,
                             background=background,
                             clear_draft=clear_draft,
                             update_stickersets_order=update_stickersets_order,
                             send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                            quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                            quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                             **text_params
                         ),
                         sleep_threshold=60,

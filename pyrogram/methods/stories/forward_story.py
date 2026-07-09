@@ -43,7 +43,14 @@ class ForwardStory:
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
         ]] = None,
-        message_effect_id: Optional[int] = None
+        message_effect_id: Optional[int] = None,
+        show_caption_above_media: Optional[bool] = None,
+        background: Optional[bool] = None,
+        clear_draft: Optional[bool] = None,
+        update_stickersets_order: Optional[bool] = None,
+        send_as: Optional[Union[int, str]] = None,
+        quick_reply_shortcut: Optional[int] = None,
+        business_connection_id: Optional[str] = None,
     ) -> Optional["types.Message"]:
         """Forward story.
 
@@ -122,12 +129,20 @@ class ForwardStory:
                     reply_parameters,
                     message_thread_id
                 ),
-                allow_paid_stars=paid_message_star_count,
-                allow_paid_floodskip=allow_paid_broadcast,
+                allow_paid_stars=paid_message_star_count or None,
+                allow_paid_floodskip=allow_paid_broadcast or None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 noforwards=protect_content,
                 effect=message_effect_id,
-            )
+                invert_media=show_caption_above_media or None,
+                background=background or None,
+                clear_draft=clear_draft or None,
+                update_stickersets_order=update_stickersets_order or None,
+                send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+            ),
+            sleep_threshold=60,
+            business_connection_id=business_connection_id
         )
 
         messages = await utils.parse_messages(client=self, messages=r)

@@ -32,7 +32,11 @@ class EditMessageCaption:
         caption_entities: Optional[List["types.MessageEntity"]] = None,
         rich_text: Optional[str] = None,
         rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None
+        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
+        link_preview_options: Optional["types.LinkPreviewOptions"] = None,
+        show_caption_above_media: Optional[bool] = None,
+        disable_web_page_preview: Optional[bool] = None,
+        business_connection_id: Optional[str] = None,
     ) -> "types.Message":
         """Edit the caption of media messages.
 
@@ -54,18 +58,30 @@ class EditMessageCaption:
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
 
-            caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+            caption_entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
                 List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
 
             rich_text (``str``, *optional*):
                 Rich text content with GitHub Flavored Markdown or HTML formatting (server-side rendered).
                 When provided, *caption*/*parse_mode*/*caption_entities* are ignored.
 
-            rich_text_parse_mode (``str``, *optional*):
-                Parse mode for *rich_text*: ``"markdown"`` (default, supports GFM) or ``"html"``.
+            rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                Parse mode for *rich_text*: :obj:`~pyrogram.enums.ParseMode.MARKDOWN` (default, supports GFM) or :obj:`~pyrogram.enums.ParseMode.HTML`.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+
+            link_preview_options (:obj:`~pyrogram.types.LinkPreviewOptions`, *optional*):
+                Link preview options.
+
+            show_caption_above_media (``bool``, *optional*):
+                Pass True, if the caption must be shown above the message media.
+
+            disable_web_page_preview (``bool``, *optional*):
+                Disables link previews for links in this message.
+
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection on behalf of which the message will be edited.
 
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the edited message is returned.
@@ -83,5 +99,9 @@ class EditMessageCaption:
             entities=caption_entities,
             rich_text=rich_text,
             rich_text_parse_mode=rich_text_parse_mode,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
+            link_preview_options=link_preview_options,
+            show_caption_above_media=show_caption_above_media,
+            disable_web_page_preview=disable_web_page_preview,
+            business_connection_id=business_connection_id,
         )

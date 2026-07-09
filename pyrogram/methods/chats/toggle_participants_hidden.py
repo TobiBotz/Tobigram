@@ -40,7 +40,7 @@ class ToggleParticipantsHidden:
 
         Parameters:
 
-            enabled (bool): Whether participants are hidden
+            enabled (bool, *optional*): Whether participants are hidden
 
 
 

@@ -42,7 +42,7 @@ class UpdateChannelColor:
 
         Parameters:
 
-            for_profile (bool): Whether to set the profile color instead
+            for_profile (bool, *optional*): Whether to set the profile color instead
 
 
             color (int): New accent color ID

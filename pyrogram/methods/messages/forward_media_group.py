@@ -37,7 +37,13 @@ class ForwardMediaGroup:
         protect_content: Optional[bool] = None,
         allow_paid_broadcast: Optional[bool] = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
-        paid_message_star_count: Optional[int] = None
+        paid_message_star_count: Optional[int] = None,
+        effect_id: Optional[int] = None,
+        repeat_period: Optional[int] = None,
+        background: Optional[bool] = None,
+        send_as: Optional[Union[int, str]] = None,
+        quick_reply_shortcut: Optional[int] = None,
+        business_connection_id: Optional[str] = None,
     ) -> List["types.Message"]:
         """Forward a media group by providing one of the message ids.
 
@@ -89,6 +95,21 @@ class ForwardMediaGroup:
             paid_message_star_count (``int``, *optional*):
                 The number of Telegram Stars the user agreed to pay to send the messages.
 
+            effect_id (``int`` ``64-bit``, *optional*):
+                Unique identifier of the message effect to be added to the message; for private chats only.
+
+            repeat_period (``int``, *optional*):
+                Period after which the message will be sent again in seconds.
+
+            background (``bool``, *optional*):
+                Pass True if the message is a background message.
+
+            send_as (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the chat to send the message as.
+
+            quick_reply_shortcut (``int``, *optional*):
+                Unique identifier of the quick reply shortcut.
+
         Returns:
             List of :obj:`~pyrogram.types.Message`: On success, a list of forwarded messages is returned.
 
@@ -108,18 +129,24 @@ class ForwardMediaGroup:
                 silent=disable_notification or None,
                 random_id=[self.rnd_id() for _ in message_ids],
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
-                drop_author=hide_sender_name,
-                drop_media_captions=hide_captions,
+                drop_author=hide_sender_name or None,
+                drop_media_captions=hide_captions or None,
                 noforwards=protect_content,
-                allow_paid_floodskip=allow_paid_broadcast,
+                allow_paid_floodskip=allow_paid_broadcast or None,
                 reply_to=await utils.get_reply_to(
                     client=self,
                     reply_parameters=reply_parameters,
                     message_thread_id=message_thread_id
                 ),
-                allow_paid_stars=paid_message_star_count
-            )
+                allow_paid_stars=paid_message_star_count or None,
+                effect=effect_id,
+                schedule_repeat_period=repeat_period,
+                background=background or None,
+                send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+            ),
+            sleep_threshold=60,
+            business_connection_id=business_connection_id
         )
 
         return await utils.parse_messages(client=self, messages=r)
-

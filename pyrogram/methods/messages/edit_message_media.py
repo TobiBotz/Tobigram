@@ -35,7 +35,8 @@ class EditMessageMedia:
         message_id: int,
         media: "types.InputMedia",
         reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        file_name: Optional[str] = None
+        file_name: Optional[str] = None,
+        business_connection_id: Optional[str] = None,
     ) -> "types.Message":
         """Edit animation, audio, document, photo or video messages.
 
@@ -327,7 +328,9 @@ class EditMessageMedia:
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 message=message,
                 entities=entities
-            )
+            ),
+            sleep_threshold=60,
+            business_connection_id=business_connection_id
         )
 
         for i in r.updates:

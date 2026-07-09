@@ -40,7 +40,7 @@ class RestrictSponsoredMessages:
 
         Parameters:
 
-            restricted (bool): Whether sponsored messages are restricted
+            restricted (bool, *optional*): Whether sponsored messages are restricted
 
 
 

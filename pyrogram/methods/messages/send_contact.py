@@ -61,22 +61,6 @@ class SendContact:
             "types.ForceReply"
         ]] = None
     ) -> "types.Message":
-        if reply_parameters is None:
-            if reply_to_message_id is not None:
-                reply_parameters = types.ReplyParameters(
-                    message_id=reply_to_message_id,
-                    chat_id=reply_to_chat_id,
-                    quote=quote_text,
-                    quote_entities=quote_entities,
-                )
-            elif quote_text is not None:
-                reply_parameters = types.ReplyParameters(
-                    message_id=None,
-                    chat_id=reply_to_chat_id,
-                    quote=quote_text,
-                    quote_entities=quote_entities,
-                )
-
         """Send phone contacts.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -124,6 +108,22 @@ class SendContact:
 
                 await app.send_contact("me", "+1-123-456-7890", "Name")
         """
+        if reply_parameters is None:
+            if reply_to_message_id is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=reply_to_message_id,
+                    chat_id=reply_to_chat_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+            elif quote_text is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=None,
+                    chat_id=reply_to_chat_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+
         r = await self.invoke(
             raw.functions.messages.SendMedia(
                 peer=await self.resolve_peer(chat_id),
@@ -144,8 +144,8 @@ class SendContact:
                 random_id=self.rnd_id(),
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
                 noforwards=protect_content,
-                allow_paid_floodskip=allow_paid_broadcast,
-                allow_paid_stars=paid_message_star_count,
+                allow_paid_floodskip=allow_paid_broadcast or None,
+                allow_paid_stars=paid_message_star_count or None,
                 effect=effect_id,
                 invert_media=show_caption_above_media or None,
                 schedule_repeat_period=repeat_period,
@@ -154,7 +154,7 @@ class SendContact:
                 clear_draft=clear_draft,
                 update_stickersets_order=update_stickersets_order,
                 send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                quick_reply_shortcut=raw.types.InputQuickReplyShortcut(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None
             ),
             sleep_threshold=60,

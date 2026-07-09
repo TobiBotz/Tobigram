@@ -93,9 +93,9 @@ class EditMessageText:
 
         if rich_text is not None:
             if rich_text_parse_mode == enums.ParseMode.HTML:
-                rich_msg = raw.types.InputRichMessageHTML(html=rich_text)
+                rich_msg = raw.types.InputRichMessageHTML(html=rich_text, noautolink=disable_web_page_preview or None)
             else:
-                rich_msg = raw.types.InputRichMessageMarkdown(markdown=rich_text)
+                rich_msg = raw.types.InputRichMessageMarkdown(markdown=rich_text, noautolink=disable_web_page_preview or None)
             text_params = {"message": "", "rich_message": rich_msg}
         else:
             text_params = await utils.parse_text_entities(self, text, parse_mode, entities)
@@ -108,7 +108,9 @@ class EditMessageText:
                 invert_media=invert_media,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 **text_params
-            )
+            ),
+            sleep_threshold=60,
+            business_connection_id=business_connection_id
         )
 
         for i in r.updates:
