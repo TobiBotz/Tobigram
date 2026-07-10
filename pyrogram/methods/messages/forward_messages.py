@@ -151,6 +151,7 @@ class ForwardMessages:
                     message_thread_id
                 ),
                 suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+                with_my_score=None,
             ),
             sleep_threshold=60,
             business_connection_id=business_connection_id

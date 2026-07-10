@@ -190,6 +190,7 @@ class SendMessage:
                 raw.functions.messages.SendMessage(
                     peer=await self.resolve_peer(chat_id),
                     silent=disable_notification or None,
+                    no_webpage=disable_web_page_preview or None,
                     reply_to=await utils.get_reply_to(
                         self,
                         reply_parameters,

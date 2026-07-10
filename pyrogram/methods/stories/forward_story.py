@@ -124,6 +124,7 @@ class ForwardStory:
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
                 schedule_repeat_period=repeat_period,
                 message="",
+                entities=None,
                 reply_to=await utils.get_reply_to(
                     self,
                     reply_parameters,

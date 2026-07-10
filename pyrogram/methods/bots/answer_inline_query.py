@@ -33,7 +33,9 @@ class AnswerInlineQuery:
         is_personal: bool = False,
         next_offset: str = "",
         switch_pm_text: str = "",
-        switch_pm_parameter: str = ""
+        switch_pm_parameter: str = "",
+        switch_webview_text: str = "",
+        switch_webview_url: str = "",
     ):
         """Send answers to an inline query.
 
@@ -107,6 +109,10 @@ class AnswerInlineQuery:
                 switch_pm=raw.types.InlineBotSwitchPM(
                     text=switch_pm_text,
                     start_param=switch_pm_parameter
-                ) if switch_pm_text else None
+                ) if switch_pm_text else None,
+                switch_webview=raw.types.InlineBotWebView(
+                    text=switch_webview_text,
+                    url=switch_webview_url
+                ) if switch_webview_text else None
             )
         )

@@ -30,6 +30,10 @@ class SearchGlobal:
         query: str = "",
         filter: "enums.MessagesFilter" = enums.MessagesFilter.EMPTY,
         limit: int = 0,
+        broadcasts_only: Optional[bool] = None,
+        groups_only: Optional[bool] = None,
+        users_only: Optional[bool] = None,
+        folder_id: Optional[int] = None,
     ) -> Optional[AsyncGenerator["types.Message", None]]:
         """Search messages globally from all of your chats.
 
@@ -92,7 +96,11 @@ class SearchGlobal:
                         offset_rate=offset_date,
                         offset_peer=offset_peer,
                         offset_id=offset_id,
-                        limit=limit
+                        limit=limit,
+                        broadcasts_only=broadcasts_only or None,
+                        groups_only=groups_only or None,
+                        users_only=users_only or None,
+                        folder_id=folder_id
                     ),
                     sleep_threshold=60
                 ),

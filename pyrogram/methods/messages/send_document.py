@@ -238,12 +238,14 @@ class SendDocument:
                         if rich_text_parse_mode == enums.ParseMode.HTML:
                             rich_msg = raw.types.InputRichMessageHTML(
                                 html=rich_text,
+                                noautolink=disable_web_page_preview or None,
                             )
                         else:
                             rich_msg = raw.types.InputRichMessageMarkdown(
                                 markdown=rich_text,
+                                noautolink=disable_web_page_preview or None,
                             )
-                        text_params = {"message": "", "rich_message": rich_msg}
+                        text_params = {"message": "", "entities": None}
                     else:
                         text_params = await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
 

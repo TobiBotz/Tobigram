@@ -69,6 +69,7 @@ class EditStoryCaption:
                 id=story_id,
                 caption=message,
                 entities=entities or [],
+                privacy_rules=None,
             )
         )
 

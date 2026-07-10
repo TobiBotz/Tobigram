@@ -16,10 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
 from typing import Union, Optional
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
+from pyrogram import types
 
 
 class SendInlineBotResult:
@@ -29,7 +31,16 @@ class SendInlineBotResult:
         query_id: int,
         result_id: str,
         disable_notification: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None
+        reply_parameters: Optional["types.ReplyParameters"] = None,
+        reply_to_message_id: Optional[int] = None,
+        background: Optional[bool] = None,
+        clear_draft: Optional[bool] = None,
+        hide_via: Optional[bool] = None,
+        schedule_date: Optional[datetime] = None,
+        send_as: Optional[Union[int, str]] = None,
+        quick_reply_shortcut: Optional[int] = None,
+        paid_message_star_count: Optional[int] = None,
+        business_connection_id: Optional[str] = None,
     ) -> "raw.base.Updates":
         """Send an inline bot result.
         Bot results can be retrieved using :meth:`~pyrogram.Client.get_inline_bot_results`
@@ -63,6 +74,11 @@ class SendInlineBotResult:
 
                 await app.send_inline_bot_result(chat_id, query_id, result_id)
         """
+        if reply_parameters is None and reply_to_message_id is not None:
+            reply_parameters = types.ReplyParameters(
+                message_id=reply_to_message_id,
+            )
+
         return await self.invoke(
             raw.functions.messages.SendInlineBotResult(
                 peer=await self.resolve_peer(chat_id),
@@ -70,8 +86,18 @@ class SendInlineBotResult:
                 id=result_id,
                 random_id=self.rnd_id(),
                 silent=disable_notification or None,
-                reply_to=raw.types.InputReplyToMessage(
-                    reply_to_msg_id=reply_to_message_id
-                ) if reply_to_message_id else None
-            )
+                reply_to=await utils.get_reply_to(
+                    self,
+                    reply_parameters,
+                    None
+                ),
+                background=background or None,
+                clear_draft=clear_draft or None,
+                hide_via=hide_via or None,
+                schedule_date=utils.datetime_to_timestamp(schedule_date),
+                send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                allow_paid_stars=paid_message_star_count or None,
+            ),
+            business_connection_id=business_connection_id
         )

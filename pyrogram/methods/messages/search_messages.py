@@ -30,7 +30,9 @@ async def get_chunk(
     filter: "enums.MessagesFilter" = enums.MessagesFilter.EMPTY,
     offset: int = 0,
     limit: int = 100,
-    from_user: Optional[Union[int, str]] = None
+    from_user: Optional[Union[int, str]] = None,
+    saved_peer_id: Optional[Union[int, str]] = None,
+    top_msg_id: Optional[int] = None,
 ) -> List["types.Message"]:
     r = await client.invoke(
         raw.functions.messages.Search(
@@ -49,6 +51,12 @@ async def get_chunk(
                 if from_user
                 else None
             ),
+            saved_peer_id=(
+                await client.resolve_peer(saved_peer_id)
+                if saved_peer_id
+                else None
+            ),
+            top_msg_id=top_msg_id,
             hash=0
         ),
         sleep_threshold=60
@@ -66,7 +74,9 @@ class SearchMessages:
         offset: int = 0,
         filter: "enums.MessagesFilter" = enums.MessagesFilter.EMPTY,
         limit: int = 0,
-        from_user: Optional[Union[int, str]] = None
+        from_user: Optional[Union[int, str]] = None,
+        saved_peer_id: Optional[Union[int, str]] = None,
+        top_msg_id: Optional[int] = None,
     ) -> Optional[AsyncGenerator["types.Message", None]]:
         """Search for text and media messages inside a specific chat.
 
@@ -134,7 +144,9 @@ class SearchMessages:
                 filter=filter,
                 offset=offset,
                 limit=limit,
-                from_user=from_user
+                from_user=from_user,
+                saved_peer_id=saved_peer_id,
+                top_msg_id=top_msg_id,
             )
 
             if not messages:

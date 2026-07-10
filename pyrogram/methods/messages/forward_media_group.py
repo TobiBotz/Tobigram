@@ -144,6 +144,8 @@ class ForwardMediaGroup:
                 background=background or None,
                 send_as=await self.resolve_peer(send_as) if send_as is not None else None,
                 quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                with_my_score=None,
+                top_msg_id=message_thread_id,
             ),
             sleep_threshold=60,
             business_connection_id=business_connection_id

@@ -93,6 +93,7 @@ class SendGame:
                     ),
                 ),
                 message="",
+                entities=None,
                 silent=disable_notification or None,
                 reply_to=await utils.get_reply_to(
                     self,

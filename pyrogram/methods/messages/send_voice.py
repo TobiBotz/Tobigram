@@ -226,7 +226,7 @@ class SendVoice:
                             rich_msg = raw.types.InputRichMessageMarkdown(
                                 markdown=rich_text,
                             )
-                        text_params = {"message": "", "rich_message": rich_msg}
+                        text_params = {"message": "", "entities": None}
                     else:
                         text_params = await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
 
