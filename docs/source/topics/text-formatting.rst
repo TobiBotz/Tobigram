@@ -56,11 +56,15 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.HTML` to the *parse_mode* 
 
     <i>italic</i>, <em>italic</em>
 
-    <u>underline</u>
+    <u>underline</u>, <ins>underline</ins>
 
     <s>strike</s>, <del>strike</del>, <strike>strike</strike>
 
-    <tg-spoiler>spoiler</tg-spoiler>
+    <tg-spoiler>spoiler</tg-spoiler>, <span class="tg-spoiler">spoiler</span>
+
+    <blockquote>block quotation</blockquote>
+
+    <blockquote expandable>expandable block quotation</blockquote>
 
     <a href="https://telegramplayground.github.io/pyrogram/">text URL</a>
 
@@ -69,6 +73,8 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.HTML` to the *parse_mode* 
     <code>inline fixed-width code</code>
 
     <tg-emoji emoji-id="5469770542288478598">👍</tg-emoji>
+
+    <tg-time unix="1735689600" format="d">formatted date and time</tg-time>
 
     <pre>
         <code class="language-python">
@@ -102,6 +108,8 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.HTML` to the *parse_mode* 
             "for i in range(10):\n"
             "    print(i)"
             "</code></pre>\n\n"
+
+            "<tg-time unix=\"1735689600\" format=\"d\">today</tg-time>\n\n"
 
             "<blockquote>Block quotation started"
             "Block quotation continued"
@@ -301,3 +309,57 @@ Here there are some example texts you can try sending:
 
 - ``--you can combine <i>HTML</i> with **Markdown**--``
 - ``**and also <i>overlap** --entities</i> this way--``
+
+
+-----
+
+RichText (Rich Media Text Formatting)
+--------------------------------------
+
+RichText is used for page blocks, article rendering and inline rich media formatting.
+It is a different wire format from MessageEntity-based text formatting and supports additional decorations.
+
+The following RichText types are available for reading (parsing) from Telegram page blocks:
+
+.. code-block:: text
+
+    RichTextPlain          — plain text string
+    RichTextBold           — bold text
+    RichTextItalic         — italic text
+    RichTextUnderline      — underlined text
+    RichTextStrikethrough  — strikethrough text
+    RichTextSpoiler        — spoiler text
+    RichTextCode           — monospace / inline code
+    RichTextSubscript      — subscript text
+    RichTextSuperscript    — superscript text
+    RichTextMarked         — highlighted / marked text
+    RichTextDateTime       — formatted date and time
+    RichTextCustomEmoji    — custom emoji
+    RichTextMathematicalExpression — LaTeX math expression
+    RichTextUrl            — text with URL
+    RichTextEmailAddress   — email address
+    RichTextPhoneNumber    — phone number
+    RichTextBankCardNumber — bank card number
+    RichTextMention        — username mention
+    RichTextHashtag        — hashtag
+    RichTextCashtag        — cashtag
+    RichTextBotCommand     — bot command
+    RichTextTextMention    — user mention by ID
+    RichTextAnchor         — named anchor
+    RichTextAnchorLink     — link to an anchor
+    RichTextReference      — reference to an anchor
+    RichTextReferenceLink  — link to a reference
+    RichTextImage          — inline image
+
+To construct rich messages for sending, use :class:`~pyrogram.types.InputRichMessage`
+with raw HTML or Markdown text, which is parsed server-side:
+
+.. code-block:: python
+
+    from pyrogram.types import InputRichMessage
+
+    rich = InputRichMessage(
+        html="<b>bold</b> <tg-emoji emoji-id=5469770542288478598>👍</tg-emoji>"
+    )
+
+    # Pass to methods that accept InputRichMessage (e.g. answer_web_app)
