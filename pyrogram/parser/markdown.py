@@ -141,7 +141,21 @@ class Markdown:
                 start_tag = f"{PRE_DELIM}{language}\n"
                 end_tag = f"\n{PRE_DELIM}"
             elif entity_type == MessageEntityType.BLOCKQUOTE:
-                start_tag = end_tag = PRE_DELIM
+                expandable = getattr(entity, "expandable", None)
+                if expandable:
+                    start_tag = "**>"
+                    end_tag = "||"
+                else:
+                    start_tag = ">"
+                    end_tag = ""
+            elif entity_type == MessageEntityType.DATE_TIME:
+                unix_time = getattr(entity, "unix_time", 0) or 0
+                dt_format = getattr(entity, "date_time_format", "") or ""
+                if dt_format:
+                    start_tag = f'<tg-time unix="{unix_time}" format="{dt_format}">'
+                    end_tag = "</tg-time>"
+                else:
+                    continue
             elif entity_type == MessageEntityType.SPOILER:
                 start_tag = end_tag = SPOILER_DELIM
             elif entity_type == MessageEntityType.TEXT_LINK:

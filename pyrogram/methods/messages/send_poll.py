@@ -216,7 +216,8 @@ class SendPoll:
                 update_stickersets_order=update_stickersets_order,
                 send_as=await self.resolve_peer(send_as) if send_as is not None else None,
                 quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
-                reply_markup=await reply_markup.write(self) if reply_markup else None
+                reply_markup=await reply_markup.write(self) if reply_markup else None,
+                entities=None,
             ),
             sleep_threshold=60,
             business_connection_id=business_connection_id

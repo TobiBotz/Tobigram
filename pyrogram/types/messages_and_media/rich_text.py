@@ -230,8 +230,12 @@ class RichText(Object):
                 text=await RichText._parse(client, rich_text.text), name=rich_text.name
             )
 
-        # TODO: Add RichTextImage class and parse raw.types.TextImage
-        # Fields: document_id (long), w (int), h (int)
+        if isinstance(rich_text, raw.types.TextImage):
+            return RichTextImage(
+                document_id=rich_text.document_id,
+                width=rich_text.w,
+                height=rich_text.h,
+            )
 
 
 class RichTextBold(RichText):
@@ -579,6 +583,28 @@ class RichTextHashtag(RichText):
 
         self.text = text
         self.hashtag = hashtag
+
+
+class RichTextImage(RichText):
+    """An inline image.
+
+    Parameters:
+        document_id (``int``):
+            Unique identifier of the photo document.
+
+        width (``int``):
+            Width of the image.
+
+        height (``int``):
+            Height of the image.
+    """
+
+    def __init__(self, document_id: int, width: int, height: int):
+        super().__init__()
+
+        self.document_id = document_id
+        self.width = width
+        self.height = height
 
 
 class RichTextCashtag(RichText):

@@ -26,7 +26,8 @@ class ReadReactions:
     async def read_reactions(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        topic_id: Optional[int] = None
+        topic_id: Optional[int] = None,
+        saved_peer_id: Optional[Union[int, str]] = None,
     ) -> bool:
         """Mark a reaction in the chat as read.
 
@@ -57,7 +58,12 @@ class ReadReactions:
         r = await self.invoke(
             raw.functions.messages.ReadReactions(
                 peer=await self.resolve_peer(chat_id),
-                top_msg_id=topic_id
+                top_msg_id=topic_id,
+                saved_peer_id=(
+                    await self.resolve_peer(saved_peer_id)
+                    if saved_peer_id
+                    else None
+                )
             )
         )
 

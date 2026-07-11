@@ -146,6 +146,8 @@ class ForwardMediaGroup:
                 quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                 with_my_score=None,
                 top_msg_id=message_thread_id,
+                suggested_post=None,
+                video_timestamp=None,
             ),
             sleep_threshold=60,
             business_connection_id=business_connection_id

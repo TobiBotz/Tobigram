@@ -28,7 +28,9 @@ class SearchMessagesCount:
         chat_id: Union[int, str],
         query: str = "",
         filter: "enums.MessagesFilter" = enums.MessagesFilter.EMPTY,
-        from_user: Optional[Union[int, str]] = None
+        from_user: Optional[Union[int, str]] = None,
+        saved_peer_id: Optional[Union[int, str]] = None,
+        top_msg_id: Optional[int] = None,
     ) -> int:
         """Get the count of messages resulting from a search inside a chat.
 
@@ -74,6 +76,12 @@ class SearchMessagesCount:
                     if from_user
                     else None
                 ),
+                saved_peer_id=(
+                    await self.resolve_peer(saved_peer_id)
+                    if saved_peer_id
+                    else None
+                ),
+                top_msg_id=top_msg_id,
                 hash=0
             )
         )

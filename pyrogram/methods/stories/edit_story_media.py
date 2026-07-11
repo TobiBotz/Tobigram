@@ -22,6 +22,7 @@ from typing import List, Optional, Union, BinaryIO, Callable
 import pyrogram
 from pyrogram import enums, raw, types, utils, StopTransmission
 from pyrogram.errors import FilePartMissing
+from pyrogram.file_id import FileId
 
 class EditStoryMedia:
     async def edit_story_media(
@@ -39,6 +40,7 @@ class EditStoryMedia:
         caption: Optional[str] = None,
         parse_mode: Optional["enums.ParseMode"] = None,
         caption_entities: Optional[List["types.MessageEntity"]] = None,
+        music: Optional[Union[str, "types.Document"]] = None,
         progress: Optional[Callable] = None,
         progress_args: tuple = ()
     ) -> "types.Story":
@@ -170,6 +172,22 @@ class EditStoryMedia:
 
             message, entities = (await utils.parse_text_entities(self, caption, parse_mode, caption_entities)).values()
 
+            music_doc = None
+            if music:
+                if isinstance(music, str):
+                    decoded = FileId.decode(music)
+                    music_doc = raw.types.InputDocument(
+                        id=decoded.media_id,
+                        access_hash=decoded.access_hash,
+                        file_reference=decoded.file_reference
+                    )
+                else:
+                    music_doc = raw.types.InputDocument(
+                        id=music.id,
+                        access_hash=music.access_hash,
+                        file_reference=music.file_ref
+                    )
+
             while True:
                 try:
                     r = await self.invoke(
@@ -181,6 +199,7 @@ class EditStoryMedia:
                             caption=message,
                             entities=entities,
                             privacy_rules=None,
+                            music=music_doc,
                         )
                     )
                 except FilePartMissing as e:

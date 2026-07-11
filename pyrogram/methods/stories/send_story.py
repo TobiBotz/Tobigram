@@ -22,6 +22,7 @@ from typing import BinaryIO, Callable, List, Union, Optional
 import pyrogram
 from pyrogram import StopTransmission, enums, raw, types, utils
 from pyrogram.errors import FilePartMissing
+from pyrogram.file_id import FileId
 
 
 class SendStory:
@@ -31,6 +32,8 @@ class SendStory:
         media: Union[str, BinaryIO],
         caption: Optional[str] = None,
         period: Optional[int] = None,
+        albums: Optional[List[int]] = None,
+        music: Optional[Union[str, "types.Document"]] = None,
         media_areas: Optional[List["types.MediaArea"]] = None,
         duration: int = 0,
         width: int = 0,
@@ -42,6 +45,9 @@ class SendStory:
         allowed_users: Optional[List[Union[int, str]]] = None,
         disallowed_users: Optional[List[Union[int, str]]] = None,
         pinned: Optional[bool] = None,
+        fwd_modified: Optional[bool] = None,
+        fwd_from_id: Optional[Union[int, str]] = None,
+        fwd_from_story: Optional[int] = None,
         protect_content: Optional[bool] = None,
         parse_mode: Optional["enums.ParseMode"] = None,
         caption_entities: Optional[List["types.MessageEntity"]] = None,
@@ -245,6 +251,27 @@ class SendStory:
 
             while True:
                 try:
+                    fwd_from_peer = (
+                        await self.resolve_peer(fwd_from_id)
+                        if fwd_from_id
+                        else None
+                    )
+                    music_doc = None
+                    if music:
+                        if isinstance(music, str):
+                            decoded = FileId.decode(music)
+                            music_doc = raw.types.InputDocument(
+                                id=decoded.media_id,
+                                access_hash=decoded.access_hash,
+                                file_reference=decoded.file_reference
+                            )
+                        else:
+                            music_doc = raw.types.InputDocument(
+                                id=music.id,
+                                access_hash=music.access_hash,
+                                file_reference=music.file_ref
+                            )
+
                     r = await self.invoke(
                         raw.functions.stories.SendStory(
                             peer=await self.resolve_peer(chat_id),
@@ -253,10 +280,15 @@ class SendStory:
                             random_id=self.rnd_id(),
                             pinned=pinned,
                             noforwards=protect_content,
+                            fwd_modified=fwd_modified or None,
                             media_areas=[await area.write(self) for area in (media_areas or [])] or None,
                             caption=message,
                             entities=entities,
                             period=period,
+                            fwd_from_id=fwd_from_peer,
+                            fwd_from_story=fwd_from_story,
+                            albums=albums or None,
+                            music=music_doc,
                         )
                     )
                 except FilePartMissing as e:

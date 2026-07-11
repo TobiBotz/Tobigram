@@ -51,18 +51,28 @@ class Parser(HTMLParser):
             entity = raw.types.MessageEntityBold
         elif tag in ["i", "em"]:
             entity = raw.types.MessageEntityItalic
-        elif tag == "u":
+        elif tag in ["u", "ins"]:
             entity = raw.types.MessageEntityUnderline
         elif tag in ["s", "del", "strike"]:
             entity = raw.types.MessageEntityStrike
         elif tag == "blockquote":
             entity = raw.types.MessageEntityBlockquote
-        elif tag == "code":
-            entity = raw.types.MessageEntityCode
+            if "expandable" in attrs:
+                extra["collapsed"] = True
         elif tag == "pre":
             entity = raw.types.MessageEntityPre
             extra["language"] = attrs.get("language", "")
-        elif tag == "spoiler":
+        elif tag == "code":
+            _class = attrs.get("class", "")
+            active_pres = self.tag_entities.get("pre", [])
+            if active_pres:
+                if _class.startswith("language-"):
+                    active_pres[-1].language = _class[9:]
+                return
+            entity = raw.types.MessageEntityCode
+        elif tag in ["spoiler", "tg-spoiler"]:
+            entity = raw.types.MessageEntitySpoiler
+        elif tag == "span" and attrs.get("class", "") == "tg-spoiler":
             entity = raw.types.MessageEntitySpoiler
         elif tag == "a":
             url = attrs.get("href", "")
@@ -75,10 +85,15 @@ class Parser(HTMLParser):
             else:
                 entity = raw.types.MessageEntityTextUrl
                 extra["url"] = url
-        elif tag == "emoji":
+        elif tag in ["emoji", "tg-emoji"]:
             entity = raw.types.MessageEntityCustomEmoji
-            custom_emoji_id = int(attrs.get("id"))
+            custom_emoji_id = int(attrs.get("emoji-id") or attrs.get("id"))
             extra["document_id"] = custom_emoji_id
+        elif tag == "tg-time":
+            entity = raw.types.MessageEntityFormattedDate
+            extra["date"] = int(attrs.get("unix"))
+            date_time_format = attrs.get("format", "")
+            extra = self._parse_date_time_format(extra, date_time_format)
         else:
             return
 
@@ -107,6 +122,32 @@ class Parser(HTMLParser):
         else:
             if not self.tag_entities[tag]:
                 self.tag_entities.pop(tag)
+
+    @staticmethod
+    def _parse_date_time_format(extra, date_time_format):
+        extra["relative"] = False
+        extra["short_time"] = False
+        extra["long_time"] = False
+        extra["short_date"] = False
+        extra["long_date"] = False
+        extra["day_of_week"] = False
+
+        if date_time_format:
+            if date_time_format == "r":
+                extra["relative"] = True
+            else:
+                if "w" in date_time_format:
+                    extra["day_of_week"] = True
+                if "d" in date_time_format:
+                    extra["short_date"] = True
+                elif "D" in date_time_format:
+                    extra["long_date"] = True
+                if "t" in date_time_format:
+                    extra["short_time"] = True
+                elif "T" in date_time_format:
+                    extra["long_time"] = True
+
+        return extra
 
     def error(self, message):
         pass
@@ -173,17 +214,23 @@ class HTML:
                 start_tag = f"<{name}>"
                 end_tag = f"</{name}>"
             elif entity_type == MessageEntityType.PRE:
-                name = entity_type.name.lower()
                 language = getattr(entity, "language", "") or ""
-                start_tag = f'<{name} language="{language}">' if language else f"<{name}>"
-                end_tag = f"</{name}>"
-            elif entity_type in (
-                MessageEntityType.CODE,
-                MessageEntityType.BLOCKQUOTE,
-                MessageEntityType.SPOILER,
-            ):
-                name = entity_type.name.lower()
-                start_tag = f"<{name}>"
+                if language:
+                    start_tag = f'<pre><code class="language-{language}">'
+                    end_tag = "</code></pre>"
+                else:
+                    start_tag = "<pre>"
+                    end_tag = "</pre>"
+            elif entity_type == MessageEntityType.CODE:
+                start_tag = "<code>"
+                end_tag = "</code>"
+            elif entity_type == MessageEntityType.SPOILER:
+                start_tag = "<tg-spoiler>"
+                end_tag = "</tg-spoiler>"
+            elif entity_type == MessageEntityType.BLOCKQUOTE:
+                name = "blockquote"
+                expandable = getattr(entity, "expandable", None)
+                start_tag = f"<{name} expandable>" if expandable else f"<{name}>"
                 end_tag = f"</{name}>"
             elif entity_type == MessageEntityType.TEXT_LINK:
                 url = entity.url
@@ -195,8 +242,13 @@ class HTML:
                 end_tag = "</a>"
             elif entity_type == MessageEntityType.CUSTOM_EMOJI:
                 custom_emoji_id = entity.custom_emoji_id
-                start_tag = f'<emoji id="{custom_emoji_id}">'
-                end_tag = "</emoji>"
+                start_tag = f'<tg-emoji emoji-id="{custom_emoji_id}">'
+                end_tag = "</tg-emoji>"
+            elif entity_type == MessageEntityType.DATE_TIME:
+                unix_time = getattr(entity, "unix_time", 0) or 0
+                dt_format = getattr(entity, "date_time_format", "") or ""
+                start_tag = f'<tg-time unix="{unix_time}" format="{dt_format}">'
+                end_tag = "</tg-time>"
             else:
                 return
 

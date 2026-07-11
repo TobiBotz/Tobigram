@@ -44,6 +44,7 @@ class ForwardMessages:
         paid_message_star_count: Optional[int] = None,
         video_start_timestamp: Optional[int] = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
+        quick_reply_shortcut: Optional[int] = None,
         suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
         business_connection_id: Optional[str] = None,
     ) -> Union["types.Message", List["types.Message"]]:
@@ -152,6 +153,7 @@ class ForwardMessages:
                 ),
                 suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                 with_my_score=None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
             ),
             sleep_threshold=60,
             business_connection_id=business_connection_id
