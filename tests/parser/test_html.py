@@ -61,7 +61,7 @@ def test_html_unparse_strike():
 
 
 def test_html_unparse_spoiler():
-    expected = "<spoiler>spoiler</spoiler>"
+    expected = "<tg-spoiler>spoiler</tg-spoiler>"
     text = "spoiler"
     entities = pyrogram.types.List(
         [pyrogram.types.MessageEntity(type=pyrogram.enums.MessageEntityType.SPOILER, offset=0, length=7)])
@@ -88,8 +88,8 @@ def test_html_unparse_code():
 
 
 def test_html_unparse_pre():
-    expected = """<pre language="python">for i in range(10):
-    print(i)</pre>"""
+    expected = """<pre><code class="language-python">for i in range(10):
+    print(i)</code></pre>"""
 
     text = """for i in range(10):
     print(i)"""
@@ -101,8 +101,8 @@ def test_html_unparse_pre():
 
 
 def test_html_unparse_mixed():
-    expected = "<b>aaaaaaa<i>aaa<u>bbbb</u></i></b><u><i>bbbbbbccc</i></u><u>ccccccc<s>ddd</s></u><s>ddddd<spoiler>dd" \
-               "eee</spoiler></s><spoiler>eeeeeeefff</spoiler>ffff<code>fffggggggg</code>ggghhhhhhhhhh"
+    expected = "<b>aaaaaaa<i>aaa<u>bbbb</u></i></b><u><i>bbbbbbccc</i></u><u>ccccccc<s>ddd</s></u><s>ddddd<tg-spoiler>dd" \
+               "eee</tg-spoiler></s><tg-spoiler>eeeeeeefff</tg-spoiler>ffff<code>fffggggggg</code>ggghhhhhhhhhh"
     text = "aaaaaaaaaabbbbbbbbbbccccccccccddddddddddeeeeeeeeeeffffffffffgggggggggghhhhhhhhhh"
     entities = pyrogram.types.List(
         [pyrogram.types.MessageEntity(type=pyrogram.enums.MessageEntityType.BOLD, offset=0, length=14),
@@ -145,3 +145,78 @@ def test_html_unparse_no_entities():
     entities = []
 
     assert HTML.unparse(text=text, entities=entities) == expected
+
+
+def test_html_parse_blockquote():
+    html = HTML(client=None)
+    import asyncio
+
+    async def run():
+        # regular blockquote
+        result = await html.parse("<blockquote>quote</blockquote>")
+        msg, ents = result["message"], result["entities"]
+        assert msg == "quote"
+        assert len(ents) == 1
+        assert ents[0].collapsed is None
+
+        # expandable blockquote
+        result = await html.parse('<blockquote expandable="">collapsed quote</blockquote>')
+        msg, ents = result["message"], result["entities"]
+        assert msg == "collapsed quote"
+        assert len(ents) == 1
+        assert ents[0].collapsed is True
+
+        # bare expandable attribute (without value)
+        result = await html.parse("<blockquote expandable>bare</blockquote>")
+        assert result["entities"][0].collapsed is True
+
+    asyncio.run(run())
+
+
+def test_html_unparse_blockquote_expandable():
+    text = "expandable quote"
+    entities = pyrogram.types.List([
+        pyrogram.types.MessageEntity(
+            type=pyrogram.enums.MessageEntityType.BLOCKQUOTE,
+            offset=0, length=16, expandable=True
+        )
+    ])
+    assert HTML.unparse(text=text, entities=entities) == '<blockquote expandable>expandable quote</blockquote>'
+
+
+def test_html_parse_tg_spoiler():
+    html = HTML(client=None)
+    import asyncio
+
+    async def run():
+        result = await html.parse("<tg-spoiler>hidden</tg-spoiler>")
+        assert result["message"] == "hidden"
+        assert len(result["entities"]) == 1
+
+        result = await html.parse('<span class="tg-spoiler">hidden</span>')
+        assert result["message"] == "hidden"
+        assert len(result["entities"]) == 1
+
+    asyncio.run(run())
+
+
+def test_html_unparse_pre_no_language():
+    text = "code block"
+    entities = pyrogram.types.List([
+        pyrogram.types.MessageEntity(
+            type=pyrogram.enums.MessageEntityType.PRE,
+            offset=0, length=10
+        )
+    ])
+    assert HTML.unparse(text=text, entities=entities) == "<pre>code block</pre>"
+
+
+def test_html_parse_ins():
+    html = HTML(client=None)
+    import asyncio
+
+    async def run():
+        result = await html.parse("<ins>inserted</ins>")
+        assert result["message"] == "inserted"
+
+    asyncio.run(run())

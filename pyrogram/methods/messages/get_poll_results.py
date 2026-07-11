@@ -31,16 +31,16 @@ from pyrogram import types
 class GetPollResults:
     async def get_poll_results(
         self: "pyrogram.Client",
-        chat_id: Optional[Union[int, str]] = None,
-        msg_id: Optional[int] = None,
+        chat_id: Union[int, str] = None,
+        msg_id: int = None,
     ) -> "types.Message":
         """Get poll results for a message.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            chat_id (Union[int, str], *optional*): Chat where the poll message is
-            msg_id (int, *optional*): Message identifier (from the poll message)
+            chat_id (Union[int, str]): Chat where the poll message is
+            msg_id (int): Message identifier (from the poll message)
 
         Returns:
             :obj:`~pyrogram.types.Message`
