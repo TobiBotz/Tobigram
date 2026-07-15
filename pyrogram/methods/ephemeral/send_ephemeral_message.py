@@ -33,9 +33,6 @@ class SendEphemeralMessage:
         text: str,
         parse_mode: Optional["enums.ParseMode"] = None,
         entities: Optional[List["types.MessageEntity"]] = None,
-        disable_notification: Optional[bool] = None,
-        effect_id: Optional[int] = None,
-        protect_content: Optional[bool] = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
         reply_markup: Optional[Union[
             "types.InlineKeyboardMarkup",
@@ -70,15 +67,6 @@ class SendEphemeralMessage:
                 List of special entities that appear in message text, which can be specified
                 instead of *parse_mode*.
 
-            disable_notification (``bool``, *optional*):
-                Sends the message silently. Users will receive a notification with no sound.
-
-            effect_id (``int``, *optional*):
-                Unique identifier of the effect to apply to the message.
-
-            protect_content (``bool``, *optional*):
-                Pass True to protect the message content from being forwarded.
-
             reply_parameters (:obj:`~pyrogram.types.ReplyParameters`, *optional*):
                 Description of the reply-to message.
 
@@ -96,7 +84,8 @@ class SendEphemeralMessage:
                 Parse mode for ``rich_text``. Defaults to Markdown.
 
             disable_web_page_preview (``bool``, *optional*):
-                Disables link previews for links in this message.
+                Disables link previews for links in the message.
+                Only effective when ``rich_text`` is used.
 
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent ephemeral message is returned.
@@ -125,9 +114,6 @@ class SendEphemeralMessage:
                     receiver_id=await self.resolve_peer(receiver_id),
                     message="",
                     random_id=self.rnd_id(),
-                    silent=disable_notification,
-                    effect=effect_id,
-                    noforwards=protect_content,
                     reply_to=await utils.get_reply_to(self, reply_parameters),
                     reply_markup=await reply_markup.write(self) if reply_markup else None,
                     rich_message=rich_message,
@@ -135,11 +121,6 @@ class SendEphemeralMessage:
                 )
             )
         else:
-            if disable_web_page_preview is not None:
-                no_webpage = disable_web_page_preview
-            else:
-                no_webpage = None
-
             plain_text, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
 
             r = await self.invoke(
@@ -149,13 +130,9 @@ class SendEphemeralMessage:
                     message=plain_text,
                     random_id=self.rnd_id(),
                     entities=entities or None,
-                    silent=disable_notification,
-                    effect=effect_id,
-                    noforwards=protect_content,
                     reply_to=await utils.get_reply_to(self, reply_parameters),
                     reply_markup=await reply_markup.write(self) if reply_markup else None,
                     query_id=query_id,
-                    no_webpage=no_webpage,
                 )
             )
 

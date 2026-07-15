@@ -1992,7 +1992,7 @@ class Message(Object, Update):
             entities = types.List(
                 filter(
                     lambda x: x is not None,
-                    [types.MessageEntity._parse(client, entity, users) for entity in message.entities]
+                    [types.MessageEntity._parse(client, entity, users) for entity in message.entities or []]
                 )
             )
 
