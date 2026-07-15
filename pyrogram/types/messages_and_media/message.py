@@ -1996,6 +1996,12 @@ class Message(Object, Update):
                 )
             )
 
+            reply_markup = None
+            if message.reply_markup:
+                reply_markup, _, _ = await types.ReplyMarkup._parse(
+                    client, message.reply_markup, users
+                )
+
             return Message(
                 id=message.id,
                 from_user=from_user,
@@ -2006,6 +2012,8 @@ class Message(Object, Update):
                 outgoing=message.out,
                 text=types.Str(message.message).init(entities) or None,
                 entities=entities or None,
+                reply_markup=reply_markup,
+                message_thread_id=message.top_msg_id,
                 raw=message,
                 client=client,
             )

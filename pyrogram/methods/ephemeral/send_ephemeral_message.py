@@ -125,10 +125,13 @@ class SendEphemeralMessage:
                     receiver_id=await self.resolve_peer(receiver_id),
                     message="",
                     random_id=self.rnd_id(),
-                    query_id=query_id,
+                    silent=disable_notification,
+                    effect=effect_id,
+                    noforwards=protect_content,
                     reply_to=await utils.get_reply_to(self, reply_parameters),
                     reply_markup=await reply_markup.write(self) if reply_markup else None,
                     rich_message=rich_message,
+                    query_id=query_id,
                 )
             )
         else:
