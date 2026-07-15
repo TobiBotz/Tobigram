@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from typing import Optional, Union
 
 import pyrogram
 from pyrogram import raw, enums
@@ -31,6 +31,7 @@ class SearchGlobalCount:
         groups_only: Optional[bool] = None,
         users_only: Optional[bool] = None,
         folder_id: Optional[int] = None,
+        community: Union[int, str] = None,
     ) -> int:
         """Get the count of messages resulting from a global search.
 
@@ -45,6 +46,9 @@ class SearchGlobalCount:
 
             filter (:obj:`~pyrogram.enums.MessagesFilter`, *optional*):
                 Pass a filter in order to search for specific kind of messages only:
+
+            community (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the community to search in.
 
         Returns:
             ``int``: On success, the messages count is returned.
@@ -62,7 +66,8 @@ class SearchGlobalCount:
                 broadcasts_only=broadcasts_only if broadcasts_only is not None else None,
                 groups_only=groups_only if groups_only is not None else None,
                 users_only=users_only if users_only is not None else None,
-                folder_id=folder_id
+                folder_id=folder_id,
+                community=await self.resolve_peer(community) if community is not None else None
             )
         )
 

@@ -1,15 +1,22 @@
-// boolFalse#bc799737 = Bool;
-// boolTrue#997275b5 = Bool;
+// https://github.com/telegramdesktop/tdesktop/blob/dev/Telegram/SourceFiles/mtproto/scheme/api.tl
+// https://github.com/tdlib/td/blob/master/td/generate/scheme/telegram_api.tl
 
-// true#3fedd339 = True;
-
-// vector#1cb5c415 {t:Type} # [ t ] = Vector t;
-
-// error#c4b9f9bb code:int text:string = Error;
-
-// null#56730bcc = Null;
+///////////////////////////////
+///////// Main application API
+///////////////////////////////
 
 ---types---
+
+// boolFalse#bc799737 = Bool;  // Parsed manually
+// boolTrue#997275b5 = Bool;  // Parsed manually
+
+// true#3fedd339 = True;  // Not used
+
+// vector#1cb5c415 {t:Type} # [ t ] = Vector t;  // Parsed manually
+
+// error#c4b9f9bb code:int text:string = Error;  // Parsed manually
+
+// null#56730bcc = Null;  // Parsed manually
 
 inputPeerEmpty#7f3b18ea = InputPeer;
 inputPeerSelf#7da07ec9 = InputPeer;

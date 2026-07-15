@@ -88,6 +88,9 @@ class ChatPermissions(Object):
         can_manage_topics (``bool``, *optional*):
             True, if the user is allowed to create, rename, close, and reopen forum topics.
             Supergroups only.
+
+        can_manage_linked_peers (``bool``, *optional*):
+            True, if the user is allowed to manage linked peers (communities).
     """
 
     def __init__(
@@ -109,6 +112,7 @@ class ChatPermissions(Object):
         can_invite_users: Optional[bool] = None,
         can_pin_messages: Optional[bool] = None,
         can_manage_topics: Optional[bool] = None,
+        can_manage_linked_peers: Optional[bool] = None,
 
         can_send_media_messages: Optional[bool] = None,  # Audio files, documents, photos, videos, video notes and voice notes. Deprecated
     ):
@@ -130,6 +134,7 @@ class ChatPermissions(Object):
         self.can_invite_users = can_invite_users
         self.can_pin_messages = can_pin_messages
         self.can_manage_topics = can_manage_topics
+        self.can_manage_linked_peers = can_manage_linked_peers
 
         self.can_send_media_messages = can_send_media_messages
 
@@ -157,7 +162,8 @@ class ChatPermissions(Object):
                 can_change_info=not denied_permissions.change_info,
                 can_invite_users=not denied_permissions.invite_users,
                 can_pin_messages=not denied_permissions.pin_messages,
-                can_manage_topics=not denied_permissions.manage_topics
+                can_manage_topics=not denied_permissions.manage_topics,
+                can_manage_linked_peers=not denied_permissions.manage_linked_peers
             )
 
     def write(self, until_date: datetime = utils.zero_datetime()) -> "raw.types.ChatBannedRights":
@@ -207,6 +213,7 @@ class ChatPermissions(Object):
             invite_users=not self.can_invite_users,
             pin_messages=not self.can_pin_messages,
             manage_topics=not self.can_manage_topics,
+            manage_linked_peers=not self.can_manage_linked_peers if self.can_manage_linked_peers is not None else None,
             # send_plain
 
             send_media=send_media

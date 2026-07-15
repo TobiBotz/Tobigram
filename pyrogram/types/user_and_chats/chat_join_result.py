@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
+
 import pyrogram
 from pyrogram import raw, types
 
@@ -50,8 +52,7 @@ class ChatJoinResult(Object):
 
             return ChatJoinResultGuardBotApprovalRequired(
                 bot=types.User._parse(client, users[result.bot_id]),
-                url=result.webview.url,
-                query_id=str(result.webview.query_id) if result.webview.query_id else None
+                query_id=str(result.query_id)
             )
 
 
@@ -88,25 +89,26 @@ class ChatJoinResultGuardBotApprovalRequired(ChatJoinResult):
         bot (:obj:`~pyrogram.types.User`):
             Information about the joined chat.
 
-        url (``str``):
-            The URL of the Web App to open.
-
         query_id (``str``):
             Unique identifier of the join request.
+
+        url (``str``, *optional*):
+            The URL of the Web App to open.
+            Can be obtained by calling :meth:`~pyrogram.Client.request_chat_join_web_view`.
     """
 
     def __init__(
         self,
         *,
         bot: "types.User",
-        url: str,
-        query_id: str
+        query_id: str,
+        url: Optional[str] = None
     ):
         super().__init__()
 
         self.bot = bot
-        self.url = url
         self.query_id = query_id
+        self.url = url
 
 class ChatJoinResultDeclined(Object):
     """The join was declined by the guard bot."""

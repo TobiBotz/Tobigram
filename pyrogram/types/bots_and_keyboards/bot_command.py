@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
+
 from pyrogram import raw
 
 from ..object import Object
@@ -31,23 +33,29 @@ class BotCommand(Object):
 
         description (``str``):
             Description of the command; 1-256 characters.
+
+        ephemeral (``bool``, *optional*):
+            True, if the command is ephemeral and will be removed after execution.
     """
 
-    def __init__(self, command: str, description: str):
+    def __init__(self, command: str, description: str, ephemeral: Optional[bool] = None):
         super().__init__()
 
         self.command = command
         self.description = description
+        self.ephemeral = ephemeral
 
     def write(self) -> "raw.types.BotCommand":
         return raw.types.BotCommand(
             command=self.command,
             description=self.description,
+            ephemeral=self.ephemeral if self.ephemeral is not None else None
         )
 
     @staticmethod
     def read(c: "raw.types.BotCommand") -> "BotCommand":
         return BotCommand(
             command=c.command,
-            description=c.description
+            description=c.description,
+            ephemeral=c.ephemeral
         )
