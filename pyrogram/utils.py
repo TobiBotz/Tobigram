@@ -282,7 +282,7 @@ async def parse_messages(
 
 
 def parse_deleted_messages(client, update, users, chats) -> List["types.Message"]:
-    messages = update.messages
+    messages = getattr(update, "messages", None) or getattr(update, "ids", [])
     channel_id = getattr(update, "channel_id", None)
     peer = getattr(update, "peer", None)
 
@@ -443,9 +443,14 @@ async def get_reply_to(
     reply_parameters: Optional["types.ReplyParameters"] = None,
     message_thread_id: Optional[int] = None,
     direct_messages_topic_id: Optional[int] = None
-) -> Optional[Union[raw.types.InputReplyToMessage, raw.types.InputReplyToStory, raw.types.InputReplyToMonoForum]]:
+) -> Optional[Union[raw.types.InputReplyToMessage, raw.types.InputReplyToStory, raw.types.InputReplyToMonoForum, raw.types.InputReplyToEphemeralMessage]]:
     """Get InputReply for reply_to argument"""
     if reply_parameters:
+        if reply_parameters.ephemeral_message_id:
+            return raw.types.InputReplyToEphemeralMessage(
+                id=reply_parameters.ephemeral_message_id
+            )
+
         if reply_parameters.chat_id and reply_parameters.story_id:
             return raw.types.InputReplyToStory(
                 peer=await client.resolve_peer(reply_parameters.chat_id),

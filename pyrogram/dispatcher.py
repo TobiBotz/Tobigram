@@ -72,14 +72,17 @@ from pyrogram.raw.types import (
     UpdateChannelParticipant,
     UpdateChatParticipant,
     UpdateDeleteChannelMessages,
+    UpdateDeleteEphemeralMessages,
     UpdateDeleteMessages,
     UpdateEditChannelMessage,
+    UpdateEditEphemeralMessage,
     UpdateEditMessage,
     UpdateInlineBotCallbackQuery,
     UpdateManagedBot,
     UpdateMessagePoll,
     UpdateMessagePollVote,
     UpdateNewChannelMessage,
+    UpdateNewEphemeralMessage,
     UpdateNewMessage,
     UpdateNewScheduledMessage,
     UpdateStory,
@@ -90,9 +93,9 @@ log = logging.getLogger(__name__)
 
 
 class Dispatcher:
-    NEW_MESSAGE_UPDATES = (UpdateNewMessage, UpdateNewChannelMessage, UpdateNewScheduledMessage)
-    EDIT_MESSAGE_UPDATES = (UpdateEditMessage, UpdateEditChannelMessage)
-    DELETE_MESSAGES_UPDATES = (UpdateDeleteMessages, UpdateDeleteChannelMessages)
+    NEW_MESSAGE_UPDATES = (UpdateNewMessage, UpdateNewChannelMessage, UpdateNewScheduledMessage, UpdateNewEphemeralMessage)
+    EDIT_MESSAGE_UPDATES = (UpdateEditMessage, UpdateEditChannelMessage, UpdateEditEphemeralMessage)
+    DELETE_MESSAGES_UPDATES = (UpdateDeleteMessages, UpdateDeleteChannelMessages, UpdateDeleteEphemeralMessages)
     CALLBACK_QUERY_UPDATES = (UpdateBotCallbackQuery, UpdateInlineBotCallbackQuery, UpdateBusinessBotCallbackQuery)
     CHAT_MEMBER_UPDATES = (UpdateChatParticipant, UpdateChannelParticipant)
     USER_STATUS_UPDATES = (UpdateUserStatus,)

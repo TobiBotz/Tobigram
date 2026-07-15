@@ -17,10 +17,10 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-from typing import Union
+from typing import Union, List, Optional
 
 import pyrogram
-from pyrogram import raw, types, utils
+from pyrogram import raw, types, utils, enums
 
 log = logging.getLogger(__name__)
 
@@ -31,7 +31,22 @@ class SendEphemeralMessage:
         chat_id: Union[int, str],
         receiver_id: Union[int, str],
         text: str,
-        query_id: int = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        entities: Optional[List["types.MessageEntity"]] = None,
+        disable_notification: Optional[bool] = None,
+        effect_id: Optional[int] = None,
+        protect_content: Optional[bool] = None,
+        reply_parameters: Optional["types.ReplyParameters"] = None,
+        reply_markup: Optional[Union[
+            "types.InlineKeyboardMarkup",
+            "types.ReplyKeyboardMarkup",
+            "types.ReplyKeyboardRemove",
+            "types.ForceReply"
+        ]] = None,
+        query_id: Optional[int] = None,
+        rich_text: Optional[str] = None,
+        rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
+        disable_web_page_preview: Optional[bool] = None,
     ) -> "types.Message":
         """Send an ephemeral message visible only to a specific user and the bot in a group.
 
@@ -45,10 +60,43 @@ class SendEphemeralMessage:
                 Unique identifier (int) or username (str) of the user who will receive the ephemeral message.
 
             text (``str``):
-                Text of the message to be sent.
+                Text of the message to be sent. If ``rich_text`` is provided, this is ignored.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes.
+
+            entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
+                List of special entities that appear in message text, which can be specified
+                instead of *parse_mode*.
+
+            disable_notification (``bool``, *optional*):
+                Sends the message silently. Users will receive a notification with no sound.
+
+            effect_id (``int``, *optional*):
+                Unique identifier of the effect to apply to the message.
+
+            protect_content (``bool``, *optional*):
+                Pass True to protect the message content from being forwarded.
+
+            reply_parameters (:obj:`~pyrogram.types.ReplyParameters`, *optional*):
+                Description of the reply-to message.
+
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
+                Additional interface options. An object for an inline keyboard, custom reply keyboard,
+                instructions to remove reply keyboard or to force a reply from the user.
 
             query_id (``int``, *optional*):
                 Identifier of the guest query to respond to, if this message is a reply to a guest bot query.
+
+            rich_text (``str``, *optional*):
+                Rich text (Markdown or HTML) to render a styled message. Overrides ``text``.
+
+            rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                Parse mode for ``rich_text``. Defaults to Markdown.
+
+            disable_web_page_preview (``bool``, *optional*):
+                Disables link previews for links in this message.
 
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent ephemeral message is returned.
@@ -59,15 +107,54 @@ class SendEphemeralMessage:
                 # Send an ephemeral message to a specific user
                 await app.send_ephemeral_message(chat_id, user_id, "Hello!")
         """
-        r = await self.invoke(
-            raw.functions.ephemeral.SendMessage(
-                peer=await self.resolve_peer(chat_id),
-                receiver_id=await self.resolve_peer(receiver_id),
-                message=text,
-                random_id=self.rnd_id(),
-                query_id=query_id
+        if rich_text is not None:
+            if rich_text_parse_mode == enums.ParseMode.HTML:
+                rich_message = raw.types.InputRichMessageHTML(
+                    html=rich_text,
+                    noautolink=disable_web_page_preview if disable_web_page_preview is not None else None,
+                )
+            else:
+                rich_message = raw.types.InputRichMessageMarkdown(
+                    markdown=rich_text,
+                    noautolink=disable_web_page_preview if disable_web_page_preview is not None else None,
+                )
+
+            r = await self.invoke(
+                raw.functions.ephemeral.SendMessage(
+                    peer=await self.resolve_peer(chat_id),
+                    receiver_id=await self.resolve_peer(receiver_id),
+                    message="",
+                    random_id=self.rnd_id(),
+                    query_id=query_id,
+                    reply_to=await utils.get_reply_to(self, reply_parameters),
+                    reply_markup=await reply_markup.write(self) if reply_markup else None,
+                    rich_message=rich_message,
+                )
             )
-        )
+        else:
+            if disable_web_page_preview is not None:
+                no_webpage = disable_web_page_preview
+            else:
+                no_webpage = None
+
+            plain_text, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
+
+            r = await self.invoke(
+                raw.functions.ephemeral.SendMessage(
+                    peer=await self.resolve_peer(chat_id),
+                    receiver_id=await self.resolve_peer(receiver_id),
+                    message=plain_text,
+                    random_id=self.rnd_id(),
+                    entities=entities or None,
+                    silent=disable_notification,
+                    effect=effect_id,
+                    noforwards=protect_content,
+                    reply_to=await utils.get_reply_to(self, reply_parameters),
+                    reply_markup=await reply_markup.write(self) if reply_markup else None,
+                    query_id=query_id,
+                    no_webpage=no_webpage,
+                )
+            )
 
         for u in getattr(r, "updates", []):
             if isinstance(u, raw.types.UpdateNewEphemeralMessage):

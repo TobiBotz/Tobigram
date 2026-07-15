@@ -105,7 +105,7 @@ class SetGameScore:
             )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateEditMessage,
+            if isinstance(i, (raw.types.UpdateEditMessage, raw.types.UpdateEditEphemeralMessage,
                               raw.types.UpdateEditChannelMessage)):
                 return await types.Message._parse(
                     self, i.message,
