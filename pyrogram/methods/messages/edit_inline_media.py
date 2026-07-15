@@ -171,7 +171,7 @@ class EditInlineMedia:
                     video_timestamp=_vtimestamp,
                     attributes=[
                                    raw.types.DocumentAttributeVideo(
-                                       supports_streaming=media.supports_streaming or None,
+                                       supports_streaming=media.supports_streaming if supports_streaming is not None else None,
                                        duration=media.duration,
                                        w=media.width,
                                        h=media.height

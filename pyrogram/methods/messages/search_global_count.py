@@ -59,9 +59,9 @@ class SearchGlobalCount:
                 offset_peer=raw.types.InputPeerEmpty(),
                 offset_id=0,
                 limit=1,
-                broadcasts_only=broadcasts_only or None,
-                groups_only=groups_only or None,
-                users_only=users_only or None,
+                broadcasts_only=broadcasts_only if broadcasts_only is not None else None,
+                groups_only=groups_only if groups_only is not None else None,
+                users_only=users_only if users_only is not None else None,
                 folder_id=folder_id
             )
         )

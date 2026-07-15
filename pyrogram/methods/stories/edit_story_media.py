@@ -132,7 +132,7 @@ class EditStoryMedia:
                             thumb=thumb,
                             attributes=[
                                 raw.types.DocumentAttributeVideo(
-                                    supports_streaming=supports_streaming or None,
+                                    supports_streaming=supports_streaming if supports_streaming is not None else None,
                                     duration=duration,
                                     w=width,
                                     h=height,
@@ -157,7 +157,7 @@ class EditStoryMedia:
                         thumb=thumb,
                         attributes=[
                             raw.types.DocumentAttributeVideo(
-                                supports_streaming=supports_streaming or None,
+                                supports_streaming=supports_streaming if supports_streaming is not None else None,
                                 duration=duration,
                                 w=width,
                                 h=height,

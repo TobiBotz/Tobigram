@@ -249,7 +249,7 @@ class SendInvoice:
         rpc = raw.functions.messages.SendMedia(
             peer=await self.resolve_peer(chat_id),
             media=media,
-            silent=disable_notification or None,
+            silent=disable_notification if disable_notification is not None else None,
             reply_to=await utils.get_reply_to(
                 self,
                 reply_parameters,
@@ -258,8 +258,8 @@ class SendInvoice:
             ),
             random_id=self.rnd_id(),
             noforwards=protect_content,
-            allow_paid_floodskip=allow_paid_broadcast or None,
-            allow_paid_stars=paid_message_star_count or None,
+            allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
+            allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
             reply_markup=await reply_markup.write(self) if reply_markup else None,
             effect=message_effect_id,
             suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,

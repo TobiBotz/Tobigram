@@ -67,8 +67,8 @@ class PinChatMessage:
             raw.functions.messages.UpdatePinnedMessage(
                 peer=await self.resolve_peer(chat_id),
                 id=message_id,
-                silent=disable_notification or None,
-                pm_oneside=not both_sides or None
+                silent=disable_notification if disable_notification is not None else None,
+                pm_oneside=not both_sides if both_sides is not None else None
             )
         )
 

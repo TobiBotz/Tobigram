@@ -88,8 +88,8 @@ class SetGameScore:
                     id=utils.unpack_inline_message_id(inline_message_id),
                     user_id=await self.resolve_peer(user_id),
                     score=score,
-                    force=force or None,
-                    edit_message=not disable_edit_message or None
+                    force=force if force is not None else None,
+                    edit_message=not disable_edit_message if disable_edit_message is not None else None
                 )
             )
         else:
@@ -99,8 +99,8 @@ class SetGameScore:
                     score=score,
                     id=message_id,
                     user_id=await self.resolve_peer(user_id),
-                    force=force or None,
-                    edit_message=not disable_edit_message or None
+                    force=force if force is not None else None,
+                    edit_message=not disable_edit_message if disable_edit_message is not None else None
                 )
             )
 

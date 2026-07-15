@@ -136,7 +136,7 @@ class SendChecklist:
                         others_can_complete=checklist.others_can_mark_tasks_as_done
                     )
                 ),
-                silent=disable_notification or None,
+                silent=disable_notification if disable_notification is not None else None,
                 reply_to=await utils.get_reply_to(
                     self,
                     reply_parameters,
@@ -147,9 +147,9 @@ class SendChecklist:
                 noforwards=protect_content,
                 effect=effect_id,
                 schedule_repeat_period=repeat_period,
-                allow_paid_stars=paid_message_star_count or None,
-                invert_media=show_caption_above_media or None,
-                allow_paid_floodskip=allow_paid_broadcast or None,
+                allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
+                invert_media=show_caption_above_media if show_caption_above_media is not None else None,
+                allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
                 suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                 background=background,
                 clear_draft=clear_draft,

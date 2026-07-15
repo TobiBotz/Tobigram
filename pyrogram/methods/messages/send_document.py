@@ -207,7 +207,7 @@ class SendDocument:
                     media = raw.types.InputMediaUploadedDocument(
                         mime_type=self.guess_mime_type(document) or "application/zip",
                         file=file,
-                        force_file=force_document or None,
+                        force_file=force_document if force_document is not None else None,
                         thumb=thumb,
                         attributes=[
                             raw.types.DocumentAttributeFilename(file_name=file_name or os.path.basename(document))
@@ -225,7 +225,7 @@ class SendDocument:
                 media = raw.types.InputMediaUploadedDocument(
                     mime_type=self.guess_mime_type(file_name or document.name) or "application/zip",
                     file=file,
-                    force_file=force_document or None,
+                    force_file=force_document if force_document is not None else None,
                     thumb=thumb,
                     attributes=[
                         raw.types.DocumentAttributeFilename(file_name=file_name or document.name)
@@ -238,12 +238,12 @@ class SendDocument:
                         if rich_text_parse_mode == enums.ParseMode.HTML:
                             rich_msg = raw.types.InputRichMessageHTML(
                                 html=rich_text,
-                                noautolink=disable_web_page_preview or None,
+                                noautolink=disable_web_page_preview if disable_web_page_preview is not None else None,
                             )
                         else:
                             rich_msg = raw.types.InputRichMessageMarkdown(
                                 markdown=rich_text,
-                                noautolink=disable_web_page_preview or None,
+                                noautolink=disable_web_page_preview if disable_web_page_preview is not None else None,
                             )
                         text_params = {"message": "", "entities": None}
                     else:
@@ -253,7 +253,7 @@ class SendDocument:
                         raw.functions.messages.SendMedia(
                             peer=await self.resolve_peer(chat_id),
                             media=media,
-                            silent=disable_notification or None,
+                            silent=disable_notification if disable_notification is not None else None,
                             reply_to=await utils.get_reply_to(
                                 self,
                                 reply_parameters,
@@ -264,10 +264,10 @@ class SendDocument:
                             schedule_date=utils.datetime_to_timestamp(schedule_date),
                             noforwards=protect_content,
                             effect=effect_id,
-                            invert_media=show_caption_above_media or None,
+                            invert_media=show_caption_above_media if show_caption_above_media is not None else None,
                             schedule_repeat_period=repeat_period,
-                            allow_paid_floodskip=allow_paid_broadcast or None,
-                            allow_paid_stars=paid_message_star_count or None,
+                            allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
+                            allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
                             suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                             background=background,
                             clear_draft=clear_draft,

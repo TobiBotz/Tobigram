@@ -82,8 +82,8 @@ class EditInlineText:
         return await session.invoke(
             raw.functions.messages.EditInlineBotMessage(
                 id=unpacked,
-                no_webpage=disable_web_page_preview or None,
-                invert_media=show_caption_above_media or None,
+                no_webpage=disable_web_page_preview if disable_web_page_preview is not None else None,
+                invert_media=show_caption_above_media if show_caption_above_media is not None else None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 **await self.parser.parse(text, parse_mode)
             ),

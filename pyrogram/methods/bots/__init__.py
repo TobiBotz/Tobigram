@@ -16,48 +16,92 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from .allow_bot_send_message import AllowBotSendMessage
 from .answer_callback_query import AnswerCallbackQuery
+from .answer_chat_join_request_query import AnswerChatJoinRequestQuery
+from .answer_guest_query import AnswerGuestQuery
 from .answer_inline_query import AnswerInlineQuery
+from .answer_pre_checkout_query import AnswerPreCheckoutQuery
+from .answer_shipping_query import AnswerShippingQuery
 from .answer_web_app_query import AnswerWebAppQuery
+from .can_bot_send_message import CanBotSendMessage
+from .check_bot_username import CheckBotUsername
+from .create_bot import CreateBot
+from .create_invoice_link import CreateInvoiceLink
 from .delete_bot_commands import DeleteBotCommands
+from .edit_user_star_subscription import EditUserStarSubscription
+from .get_admined_bots import GetAdminedBots
 from .get_bot_commands import GetBotCommands
 from .get_bot_default_privileges import GetBotDefaultPrivileges
+from .get_bot_info import GetBotInfo
+from .get_bot_info_description import GetBotInfoDescription
+from .get_bot_info_short_description import GetBotInfoShortDescription
+from .get_bot_name import GetBotName
 from .get_chat_menu_button import GetChatMenuButton
 from .get_game_high_scores import GetGameHighScores
 from .get_inline_bot_results import GetInlineBotResults
+from .get_managed_bot_access_settings import GetManagedBotAccessSettings
+from .get_managed_bot_token import GetManagedBotToken
+from .get_owned_bots import GetOwnedBots
+from .refund_star_payment import RefundStarPayment
+from .replace_managed_bot_token import ReplaceManagedBotToken
 from .request_callback_answer import RequestCallbackAnswer
+from .send_chat_join_request_web_app import SendChatJoinRequestWebApp
 from .send_game import SendGame
 from .send_inline_bot_result import SendInlineBotResult
+from .send_invoice import SendInvoice
 from .set_bot_commands import SetBotCommands
 from .set_bot_default_privileges import SetBotDefaultPrivileges
+from .set_bot_info_description import SetBotInfoDescription
+from .set_bot_info_short_description import SetBotInfoShortDescription
+from .set_bot_name import SetBotName
 from .set_chat_menu_button import SetChatMenuButton
 from .set_game_score import SetGameScore
-from .get_bot_info import GetBotInfo
-from .can_bot_send_message import CanBotSendMessage
-from .allow_bot_send_message import AllowBotSendMessage
-from .get_admined_bots import GetAdminedBots
+from .set_managed_bot_access_settings import SetManagedBotAccessSettings
 
 
 class Bots(
-    AnswerCallbackQuery,
-    AnswerInlineQuery,
-    GetInlineBotResults,
-    RequestCallbackAnswer,
-    SendInlineBotResult,
-    SendGame,
-    SetGameScore,
-    GetGameHighScores,
-    SetBotCommands,
-    GetBotCommands,
-    DeleteBotCommands,
-    SetBotDefaultPrivileges,
-    GetBotDefaultPrivileges,
-    SetChatMenuButton,
-    GetChatMenuButton,
-    AnswerWebAppQuery,
-    GetBotInfo,
-    CanBotSendMessage,
     AllowBotSendMessage,
+    AnswerCallbackQuery,
+    AnswerChatJoinRequestQuery,
+    AnswerGuestQuery,
+    AnswerInlineQuery,
+    AnswerPreCheckoutQuery,
+    AnswerShippingQuery,
+    AnswerWebAppQuery,
+    CanBotSendMessage,
+    CheckBotUsername,
+    CreateBot,
+    CreateInvoiceLink,
+    DeleteBotCommands,
+    EditUserStarSubscription,
     GetAdminedBots,
+    GetBotCommands,
+    GetBotDefaultPrivileges,
+    GetBotInfo,
+    GetBotInfoDescription,
+    GetBotInfoShortDescription,
+    GetBotName,
+    GetChatMenuButton,
+    GetGameHighScores,
+    GetInlineBotResults,
+    GetManagedBotAccessSettings,
+    GetManagedBotToken,
+    GetOwnedBots,
+    RefundStarPayment,
+    ReplaceManagedBotToken,
+    RequestCallbackAnswer,
+    SendChatJoinRequestWebApp,
+    SendGame,
+    SendInlineBotResult,
+    SendInvoice,
+    SetBotCommands,
+    SetBotDefaultPrivileges,
+    SetBotInfoDescription,
+    SetBotInfoShortDescription,
+    SetBotName,
+    SetChatMenuButton,
+    SetGameScore,
+    SetManagedBotAccessSettings
 ):
     pass

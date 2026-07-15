@@ -87,15 +87,15 @@ class EditMessageText:
                 invert_media = True
 
         if disable_web_page_preview is not None:
-            no_webpage = disable_web_page_preview or None
+            no_webpage = disable_web_page_preview if disable_web_page_preview is not None else None
 
-        invert_media = invert_media or show_caption_above_media or None
+        invert_media = invert_media if invert_media is not None else (show_caption_above_media if show_caption_above_media is not None else None)
 
         if rich_text is not None:
             if rich_text_parse_mode == enums.ParseMode.HTML:
-                rich_msg = raw.types.InputRichMessageHTML(html=rich_text, noautolink=disable_web_page_preview or None)
+                rich_msg = raw.types.InputRichMessageHTML(html=rich_text, noautolink=disable_web_page_preview if disable_web_page_preview is not None else None)
             else:
-                rich_msg = raw.types.InputRichMessageMarkdown(markdown=rich_text, noautolink=disable_web_page_preview or None)
+                rich_msg = raw.types.InputRichMessageMarkdown(markdown=rich_text, noautolink=disable_web_page_preview if disable_web_page_preview is not None else None)
             text_params = {"message": "", "rich_message": rich_msg}
         else:
             text_params = await utils.parse_text_entities(self, text, parse_mode, entities)

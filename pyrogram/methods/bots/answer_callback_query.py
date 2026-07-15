@@ -75,7 +75,7 @@ class AnswerCallbackQuery:
             raw.functions.messages.SetBotCallbackAnswer(
                 query_id=int(callback_query_id),
                 cache_time=cache_time,
-                alert=show_alert or None,
+                alert=show_alert if show_alert is not None else None,
                 message=text or None,
                 url=url or None
             )

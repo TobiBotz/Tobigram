@@ -103,8 +103,8 @@ class AnswerInlineQuery:
                 query_id=int(inline_query_id),
                 results=[await r.write(self) for r in results],
                 cache_time=cache_time,
-                gallery=is_gallery or None,
-                private=is_personal or None,
+                gallery=is_gallery if is_gallery is not None else None,
+                private=is_personal if is_personal is not None else None,
                 next_offset=next_offset or None,
                 switch_pm=raw.types.InlineBotSwitchPM(
                     text=switch_pm_text,

@@ -179,18 +179,18 @@ class SendMessage:
             if rich_text_parse_mode == enums.ParseMode.HTML:
                 rich_message = raw.types.InputRichMessageHTML(
                     html=rich_text,
-                    noautolink=disable_web_page_preview or None,
+                    noautolink=disable_web_page_preview if disable_web_page_preview is not None else None,
                 )
             else:
                 rich_message = raw.types.InputRichMessageMarkdown(
                     markdown=rich_text,
-                    noautolink=disable_web_page_preview or None,
+                    noautolink=disable_web_page_preview if disable_web_page_preview is not None else None,
                 )
             r = await self.invoke(
                 raw.functions.messages.SendMessage(
                     peer=await self.resolve_peer(chat_id),
-                    silent=disable_notification or None,
-                    no_webpage=disable_web_page_preview or None,
+                    silent=disable_notification if disable_notification is not None else None,
+                    no_webpage=disable_web_page_preview if disable_web_page_preview is not None else None,
                     reply_to=await utils.get_reply_to(
                         self,
                         reply_parameters,
@@ -204,10 +204,10 @@ class SendMessage:
                     rich_message=rich_message,
                     noforwards=protect_content,
                     effect=effect_id,
-                    invert_media=show_caption_above_media or None,
+                    invert_media=show_caption_above_media if show_caption_above_media is not None else None,
                     schedule_repeat_period=repeat_period,
-                    allow_paid_floodskip=allow_paid_broadcast or None,
-                    allow_paid_stars=paid_message_star_count or None,
+                    allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
+                    allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
                     suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                     background=background,
                     clear_draft=clear_draft,
@@ -234,14 +234,14 @@ class SendMessage:
                     invert_media = True
 
             if disable_web_page_preview is not None:
-                no_webpage = disable_web_page_preview or None
+                no_webpage = disable_web_page_preview if disable_web_page_preview is not None else None
 
             plain_text, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
             r = await self.invoke(
                 raw.functions.messages.SendMessage(
                     peer=await self.resolve_peer(chat_id),
                     no_webpage=no_webpage,
-                    silent=disable_notification or None,
+                    silent=disable_notification if disable_notification is not None else None,
                     reply_to=await utils.get_reply_to(
                         self,
                         reply_parameters,
@@ -255,10 +255,10 @@ class SendMessage:
                     entities=entities,
                     noforwards=protect_content,
                     effect=effect_id,
-                    invert_media=invert_media or show_caption_above_media or None,
+                    invert_media=invert_media if invert_media is not None else (show_caption_above_media if show_caption_above_media is not None else None),
                     schedule_repeat_period=repeat_period,
-                    allow_paid_floodskip=allow_paid_broadcast or None,
-                    allow_paid_stars=paid_message_star_count or None,
+                    allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
+                    allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
                     suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                     background=background,
                     clear_draft=clear_draft,

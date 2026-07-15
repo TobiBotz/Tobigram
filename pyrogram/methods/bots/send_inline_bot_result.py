@@ -85,19 +85,19 @@ class SendInlineBotResult:
                 query_id=query_id,
                 id=result_id,
                 random_id=self.rnd_id(),
-                silent=disable_notification or None,
+                silent=disable_notification if disable_notification is not None else None,
                 reply_to=await utils.get_reply_to(
                     self,
                     reply_parameters,
                     None
                 ),
-                background=background or None,
-                clear_draft=clear_draft or None,
-                hide_via=hide_via or None,
+                background=background if background is not None else None,
+                clear_draft=clear_draft if clear_draft is not None else None,
+                hide_via=hide_via if hide_via is not None else None,
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
                 send_as=await self.resolve_peer(send_as) if send_as is not None else None,
                 quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
-                allow_paid_stars=paid_message_star_count or None,
+                allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
             ),
             business_connection_id=business_connection_id
         )

@@ -171,7 +171,7 @@ class SendStory:
                             thumb=thumb,
                             attributes=[
                                 raw.types.DocumentAttributeVideo(
-                                    supports_streaming=supports_streaming or None,
+                                    supports_streaming=supports_streaming if supports_streaming is not None else None,
                                     duration=duration,
                                     w=width,
                                     h=height,
@@ -196,7 +196,7 @@ class SendStory:
                         thumb=thumb,
                         attributes=[
                             raw.types.DocumentAttributeVideo(
-                                supports_streaming=supports_streaming or None,
+                                supports_streaming=supports_streaming if supports_streaming is not None else None,
                                 duration=duration,
                                 w=width,
                                 h=height,
@@ -280,7 +280,7 @@ class SendStory:
                             random_id=self.rnd_id(),
                             pinned=pinned,
                             noforwards=protect_content,
-                            fwd_modified=fwd_modified or None,
+                            fwd_modified=fwd_modified if fwd_modified is not None else None,
                             media_areas=[await area.write(self) for area in (media_areas or [])] or None,
                             caption=message,
                             entities=entities,
