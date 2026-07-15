@@ -27,6 +27,8 @@ from .decline_suggested_post import DeclineSuggestedPost
 from .delete_chat_history import DeleteChatHistory
 from .delete_direct_messages_chat_topic_history import DeleteDirectMessagesChatTopicHistory
 from .delete_messages import DeleteMessages
+from .delete_participant_reactions import DeleteParticipantReactions
+from .delete_participant_reaction import DeleteParticipantReaction
 from .delete_poll_option import DeletePollOption
 from .delete_scheduled_messages import DeleteScheduledMessages
 from .download_media import DownloadMedia
@@ -55,6 +57,7 @@ from .get_main_web_app import GetMainWebApp
 from .get_media_group import GetMediaGroup
 from .get_messages import GetMessages
 from .get_poll_results import GetPollResults
+from .get_poll_stats import GetPollStats
 from .get_scheduled_messages import GetScheduledMessages
 from .get_stickers import GetStickers
 from .get_user_personal_chat_messages import GetUserPersonalChatMessages
@@ -111,6 +114,8 @@ class Messages(
     DeleteChatHistory,
     DeleteDirectMessagesChatTopicHistory,
     DeleteMessages,
+    DeleteParticipantReactions,
+    DeleteParticipantReaction,
     DeletePollOption,
     DeleteScheduledMessages,
     DownloadMedia,
@@ -139,6 +144,7 @@ class Messages(
     GetMediaGroup,
     GetMessages,
     GetPollResults,
+    GetPollStats,
     GetScheduledMessages,
     GetStickers,
     GetUserPersonalChatMessages,
