@@ -35,7 +35,8 @@ class BotCommand(Object):
             Description of the command; 1-256 characters.
 
         ephemeral (``bool``, *optional*):
-            True, if the command is ephemeral and will be removed after execution.
+            True, if the command is related to an ephemeral message and
+            should be removed from the command list after use.
     """
 
     def __init__(self, command: str, description: str, ephemeral: Optional[bool] = None):

@@ -606,6 +606,14 @@ class Message(Object, Update):
         guest_bot_caller_chat (:obj:`~pyrogram.types.Chat`, *optional*):
             For a message sent by a guest bot, this is the chat whose original message triggered the bot's response.
 
+        receiver_user (:obj:`~pyrogram.types.User`, *optional*):
+            For an ephemeral message, the user who received the copy of the message.
+
+        ephemeral_message_id (``int``, *optional*):
+            For an ephemeral message, the identifier of the ephemeral copy of the message.
+            This can be used with :meth:`~pyrogram.Client.edit_message_text` and other edit methods
+            to edit the ephemeral copy, or with :meth:`~pyrogram.Client.delete_ephemeral_message`.
+
         raw (:obj:`~pyrogram.raw.types.Message`, *optional*):
             The raw message object, as received from the Telegram API.
 
@@ -790,6 +798,8 @@ class Message(Object, Update):
         summary_language_code: Optional[str] = None,
         guest_bot_caller_user: Optional["types.User"] = None,
         guest_bot_caller_chat: Optional["types.Chat"] = None,
+        receiver_user: Optional["types.User"] = None,
+        ephemeral_message_id: Optional[int] = None,
         raw: Optional["raw.types.Message"] = None
     ):
         super().__init__(client)
@@ -957,6 +967,8 @@ class Message(Object, Update):
         self.summary_language_code = summary_language_code
         self.guest_bot_caller_user = guest_bot_caller_user
         self.guest_bot_caller_chat = guest_bot_caller_chat
+        self.receiver_user = receiver_user
+        self.ephemeral_message_id = ephemeral_message_id
         self.raw = raw
 
     @staticmethod
@@ -1970,6 +1982,32 @@ class Message(Object, Update):
                 business_connection_id=business_connection_id,
                 guest_query_id=guest_query_id,
                 raw_reply_to_message=raw_reply_to_message
+            )
+
+        if isinstance(message, raw.types.EphemeralMessage):
+            from_user = types.User._parse(client, users.get(utils.get_raw_peer_id(message.from_id)))
+            chat = types.Chat._parse(client, message, users, chats, is_chat=True)
+            receiver_user = types.User._parse(client, users.get(message.receiver_id))
+
+            entities = types.List(
+                filter(
+                    lambda x: x is not None,
+                    [types.MessageEntity._parse(client, entity, users) for entity in message.entities]
+                )
+            )
+
+            return Message(
+                id=message.id,
+                from_user=from_user,
+                chat=chat,
+                receiver_user=receiver_user,
+                ephemeral_message_id=message.id,
+                date=utils.timestamp_to_datetime(message.date),
+                outgoing=message.out,
+                text=types.Str(message.message).init(entities) or None,
+                entities=entities or None,
+                raw=message,
+                client=client,
             )
 
     @property
