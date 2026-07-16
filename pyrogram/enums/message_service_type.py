@@ -234,6 +234,12 @@ class MessageServiceType(AutoName):
     POLL_OPTION_DELETED = auto()
     "Poll option deleted"
 
+    COMMUNITY_CHAT_ADDED = auto()
+    "Chat added to community"
+
+    COMMUNITY_CHAT_REMOVED = auto()
+    "Chat removed from community"
+
     CONFERENCE_CALL = auto()
     "Conference call"
 

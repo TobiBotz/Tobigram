@@ -1010,7 +1010,7 @@ class Story(Object, Update):
         caption_entities: Optional[List["types.MessageEntity"]] = None,
         has_spoiler: Optional[bool] = None,
         ttl_seconds: Optional[int] = None,
-        view_once: Optional[bool] = None,
+
         disable_notification: Optional[bool] = None,
         schedule_date: Optional[datetime] = None,
         repeat_period: Optional[int] = None,
@@ -1069,9 +1069,6 @@ class Story(Object, Update):
                 If you set a timer, the photo will self-destruct in *ttl_seconds*
                 seconds after it was viewed.
 
-            view_once (``bool``, *optional*):
-                Self-Destruct Timer.
-                If True, the photo will self-destruct after it was viewed.
 
             disable_notification (``bool``, *optional*):
                 Sends the message silently.
@@ -1132,7 +1129,7 @@ class Story(Object, Update):
             caption_entities=caption_entities,
             has_spoiler=has_spoiler,
             ttl_seconds=ttl_seconds,
-            view_once=view_once,
+
             disable_notification=disable_notification,
             schedule_date=schedule_date,
             repeat_period=repeat_period,
@@ -1256,7 +1253,7 @@ class Story(Object, Update):
         caption_entities: Optional[List["types.MessageEntity"]] = None,
         has_spoiler: Optional[bool] = None,
         ttl_seconds: Optional[int] = None,
-        view_once: Optional[bool] = None,
+
         duration: int = 0,
         width: int = 0,
         height: int = 0,
@@ -1324,9 +1321,6 @@ class Story(Object, Update):
                 If you set a timer, the video will self-destruct in *ttl_seconds*
                 seconds after it was viewed.
 
-            view_once (``bool``, *optional*):
-                Self-Destruct Timer.
-                If True, the photo will self-destruct after it was viewed.
 
             duration (``int``, *optional*):
                 Duration of sent video in seconds.
@@ -1423,7 +1417,7 @@ class Story(Object, Update):
             caption_entities=caption_entities,
             has_spoiler=has_spoiler,
             ttl_seconds=ttl_seconds,
-            view_once=view_once,
+
             duration=duration,
             width=width,
             height=height,
@@ -1451,7 +1445,7 @@ class Story(Object, Update):
         disable_notification: Optional[bool] = None,
         schedule_date: Optional[datetime] = None,
         repeat_period: Optional[int] = None,
-        view_once: Optional[bool] = None,
+
         paid_message_star_count: Optional[int] = None,
         reply_markup: Optional[Union[
             "types.InlineKeyboardMarkup",
@@ -1511,9 +1505,7 @@ class Story(Object, Update):
             repeat_period (``int``, *optional*):
                 Period after which the message will be sent again in seconds.
 
-            view_once (``bool``, *optional*):
-                Self-Destruct Timer.
-                If True, the video note will self-destruct after it was viewed.
+
 
             paid_message_star_count (``int``, *optional*):
                 The number of Telegram Stars the user agreed to pay to send the messages.
@@ -1565,7 +1557,7 @@ class Story(Object, Update):
             disable_notification=disable_notification,
             schedule_date=schedule_date,
             repeat_period=repeat_period,
-            view_once=view_once,
+
             paid_message_star_count=paid_message_star_count,
             reply_markup=reply_markup,
             progress=progress,
@@ -1582,7 +1574,7 @@ class Story(Object, Update):
         disable_notification: Optional[bool] = None,
         schedule_date: Optional[datetime] = None,
         repeat_period: Optional[int] = None,
-        view_once: Optional[bool] = None,
+
         paid_message_star_count: Optional[int] = None,
         reply_markup: Optional[Union[
             "types.InlineKeyboardMarkup",
@@ -1643,9 +1635,7 @@ class Story(Object, Update):
             repeat_period (``int``, *optional*):
                 Period after which the message will be sent again in seconds.
 
-            view_once (``bool``, *optional*):
-                Self-Destruct Timer.
-                If True, the voice note will self-destruct after it was listened.
+
 
             paid_message_star_count (``int``, *optional*):
                 The number of Telegram Stars the user agreed to pay to send the messages.
@@ -1698,7 +1688,7 @@ class Story(Object, Update):
             disable_notification=disable_notification,
             schedule_date=schedule_date,
             repeat_period=repeat_period,
-            view_once=view_once,
+
             paid_message_star_count=paid_message_star_count,
             reply_markup=reply_markup,
             progress=progress,

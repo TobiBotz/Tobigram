@@ -742,6 +742,8 @@ class Message(Object, Update):
         direct_message_price_changed: Optional["types.DirectMessagePriceChanged"] = None,
         checklist_tasks_done: Optional[List["types.ChecklistTasksDone"]] = None,
         checklist_tasks_added: Optional[List["types.ChecklistTasksAdded"]] = None,
+        community_chat_added: Optional["types.CommunityChatAdded"] = None,
+        community_chat_removed: Optional["types.CommunityChatRemoved"] = None,
         premium_gift_code: Optional["types.PremiumGiftCode"] = None,
         gifted_premium: Optional["types.GiftedPremium"] = None,
         gifted_stars: Optional["types.GiftedStars"] = None,
@@ -926,6 +928,8 @@ class Message(Object, Update):
         self.direct_message_price_changed = direct_message_price_changed
         self.checklist_tasks_done = checklist_tasks_done
         self.checklist_tasks_added = checklist_tasks_added
+        self.community_chat_added = community_chat_added
+        self.community_chat_removed = community_chat_removed
         self.premium_gift_code = premium_gift_code
         self.gifted_premium = gifted_premium
         self.gifted_stars = gifted_stars
@@ -1076,6 +1080,8 @@ class Message(Object, Update):
         direct_message_price_changed = None
         checklist_tasks_done = None
         checklist_tasks_added = None
+        community_chat_added = None
+        community_chat_removed = None
 
         service_type = enums.MessageServiceType.UNSUPPORTED
 
@@ -1346,6 +1352,14 @@ class Message(Object, Update):
         elif isinstance(action, raw.types.MessageActionTodoAppendTasks):
             service_type = enums.MessageServiceType.CHECKLIST_TASKS_ADDED
             checklist_tasks_added = types.ChecklistTasksAdded._parse(client, message, users, chats)
+        elif isinstance(action, raw.types.MessageActionChangeCommunity):
+            community_chat_added = types.CommunityChatAdded._parse(client, action, chats)
+            community_chat_removed = types.CommunityChatRemoved._parse(action)
+
+            if community_chat_added is not None:
+                service_type = enums.MessageServiceType.COMMUNITY_CHAT_ADDED
+            elif community_chat_removed is not None:
+                service_type = enums.MessageServiceType.COMMUNITY_CHAT_REMOVED
 
         parsed_message = Message(
             id=message.id,
@@ -1422,6 +1436,8 @@ class Message(Object, Update):
             direct_message_price_changed=direct_message_price_changed,
             checklist_tasks_done=checklist_tasks_done,
             checklist_tasks_added=checklist_tasks_added,
+            community_chat_added=community_chat_added,
+            community_chat_removed=community_chat_removed,
             reactions=types.MessageReactions._parse(client, message.reactions, users, chats),
             business_connection_id=business_connection_id,
             raw=message,
@@ -6379,7 +6395,6 @@ class Message(Object, Update):
         has_spoiler: Optional[bool] = None,
         show_caption_above_media: Optional[bool] = None,
         ttl_seconds: Optional[int] = None,
-        view_once: Optional[bool] = None,
         duration: int = 0,
         width: int = 0,
         height: int = 0,
@@ -6449,10 +6464,6 @@ class Message(Object, Update):
                 Self-Destruct Timer.
                 If you set a timer, the video will self-destruct in *ttl_seconds*
                 seconds after it was viewed.
-
-            view_once (``bool``, *optional*):
-                Self-Destruct Timer.
-                If True, the photo will self-destruct after it was viewed.
 
             duration (``int``, *optional*):
                 Duration of sent video in seconds.
@@ -6605,7 +6616,7 @@ class Message(Object, Update):
             has_spoiler=has_spoiler,
             show_caption_above_media=show_caption_above_media,
             ttl_seconds=ttl_seconds,
-            view_once=view_once,
+
             duration=duration,
             width=width,
             height=height,
@@ -6643,7 +6654,7 @@ class Message(Object, Update):
         has_spoiler: Optional[bool] = None,
         show_caption_above_media: Optional[bool] = None,
         ttl_seconds: Optional[int] = None,
-        view_once: Optional[bool] = None,
+
         duration: int = 0,
         width: int = 0,
         height: int = 0,
@@ -6708,9 +6719,6 @@ class Message(Object, Update):
                 If you set a timer, the video will self-destruct in *ttl_seconds*
                 seconds after it was viewed.
 
-            view_once (``bool``, *optional*):
-                Self-Destruct Timer.
-                If True, the photo will self-destruct after it was viewed.
 
             duration (``int``, *optional*):
                 Duration of sent video in seconds.
@@ -6835,7 +6843,7 @@ class Message(Object, Update):
             has_spoiler=has_spoiler,
             show_caption_above_media=show_caption_above_media,
             ttl_seconds=ttl_seconds,
-            view_once=view_once,
+
             duration=duration,
             width=width,
             height=height,
@@ -6874,7 +6882,7 @@ class Message(Object, Update):
         schedule_date: Optional[datetime] = None,
         repeat_period: Optional[int] = None,
         protect_content: Optional[bool] = None,
-        view_once: Optional[bool] = None,
+
         allow_paid_broadcast: Optional[bool] = None,
         paid_message_star_count: Optional[int] = None,
         suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
@@ -6950,9 +6958,6 @@ class Message(Object, Update):
             protect_content (``bool``, *optional*):
                 Protects the contents of the sent message from forwarding and saving.
 
-            view_once (``bool``, *optional*):
-                Self-Destruct Timer.
-                If True, the video note will self-destruct after it was viewed.
 
             allow_paid_broadcast (``bool``, *optional*):
                 If True, you will be allowed to send up to 1000 messages per second.
@@ -7034,7 +7039,7 @@ class Message(Object, Update):
             schedule_date=schedule_date,
             repeat_period=repeat_period,
             protect_content=protect_content,
-            view_once=view_once,
+
             business_connection_id=self.business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
@@ -7063,7 +7068,7 @@ class Message(Object, Update):
         schedule_date: Optional[datetime] = None,
         repeat_period: Optional[int] = None,
         protect_content: Optional[bool] = None,
-        view_once: Optional[bool] = None,
+
         allow_paid_broadcast: Optional[bool] = None,
         paid_message_star_count: Optional[int] = None,
         suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
@@ -7132,9 +7137,6 @@ class Message(Object, Update):
             protect_content (``bool``, *optional*):
                 Protects the contents of the sent message from forwarding and saving.
 
-            view_once (``bool``, *optional*):
-                Self-Destruct Timer.
-                If True, the video note will self-destruct after it was viewed.
 
             allow_paid_broadcast (``bool``, *optional*):
                 If True, you will be allowed to send up to 1000 messages per second.
@@ -7202,7 +7204,7 @@ class Message(Object, Update):
             schedule_date=schedule_date,
             repeat_period=repeat_period,
             protect_content=protect_content,
-            view_once=view_once,
+
             business_connection_id=self.business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
@@ -7226,7 +7228,7 @@ class Message(Object, Update):
         reply_parameters: Optional["types.ReplyParameters"] = None,
         schedule_date: Optional[datetime] = None,
         repeat_period: Optional[int] = None,
-        view_once: Optional[bool] = None,
+
         allow_paid_broadcast: Optional[bool] = None,
         paid_message_star_count: Optional[int] = None,
         suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
@@ -7299,9 +7301,6 @@ class Message(Object, Update):
             repeat_period (``int``, *optional*):
                 Period after which the message will be sent again in seconds.
 
-            view_once (``bool``, *optional*):
-                Self-Destruct Timer.
-                If True, the voice note will self-destruct after it was listened.
 
             allow_paid_broadcast (``bool``, *optional*):
                 If True, you will be allowed to send up to 1000 messages per second.
@@ -7383,7 +7382,7 @@ class Message(Object, Update):
             reply_parameters=reply_parameters,
             schedule_date=schedule_date,
             repeat_period=repeat_period,
-            view_once=view_once,
+
             business_connection_id=self.business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
@@ -7411,7 +7410,7 @@ class Message(Object, Update):
         reply_parameters: Optional["types.ReplyParameters"] = None,
         schedule_date: Optional[datetime] = None,
         repeat_period: Optional[int] = None,
-        view_once: Optional[bool] = None,
+
         allow_paid_broadcast: Optional[bool] = None,
         paid_message_star_count: Optional[int] = None,
         suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
@@ -7478,9 +7477,6 @@ class Message(Object, Update):
             repeat_period (``int``, *optional*):
                 Period after which the message will be sent again in seconds.
 
-            view_once (``bool``, *optional*):
-                Self-Destruct Timer.
-                If True, the voice note will self-destruct after it was listened.
 
             allow_paid_broadcast (``bool``, *optional*):
                 If True, you will be allowed to send up to 1000 messages per second.
@@ -7548,7 +7544,7 @@ class Message(Object, Update):
             reply_parameters=reply_parameters,
             schedule_date=schedule_date,
             repeat_period=repeat_period,
-            view_once=view_once,
+
             business_connection_id=self.business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,

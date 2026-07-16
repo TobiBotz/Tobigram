@@ -27,6 +27,10 @@ from .business_weekly_open import BusinessWeeklyOpen
 from .business_working_hours import BusinessWorkingHours
 from .chat import Chat
 from .chat_admin_with_invite_links import ChatAdminWithInviteLinks
+from .chat_full_info import ChatFullInfo
+from .community import Community
+from .community_chat_added import CommunityChatAdded
+from .community_chat_removed import CommunityChatRemoved
 from .chat_preview import ChatPreview
 from .chat_administrator_rights import ChatAdministratorRights, ChatPrivileges
 from .chat_color import ChatColor
@@ -80,6 +84,10 @@ __all__ = [
     "Chat",
     "ChatAdminWithInviteLinks",
     "ChatAdministratorRights",
+    "ChatFullInfo",
+    "Community",
+    "CommunityChatAdded",
+    "CommunityChatRemoved",
     "ChatColor",
     "ChatEvent",
     "ChatEventFilter",

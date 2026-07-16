@@ -979,6 +979,35 @@ class Chat(Object):
         )
 
     @staticmethod
+    def _parse_community_chat(client, community: "raw.types.Community") -> Optional["Chat"]:
+        if community is None:
+            return None
+
+        peer_id = community.id
+
+        return Chat(
+            id=peer_id,
+            type=enums.ChatType.COMMUNITY,
+            title=community.title,
+            is_creator=community.creator,
+            is_min=community.min,
+            dc_id=getattr(getattr(community, "photo", None), "dc_id", None),
+            raw=community,
+            client=client
+        )
+
+    @staticmethod
+    def _parse_chat(client, chat: Union[raw.types.Chat, raw.types.User, raw.types.Channel, raw.types.Community]) -> Optional["Chat"]:
+        if isinstance(chat, (raw.types.Chat, raw.types.ChatForbidden)):
+            return Chat._parse_chat_chat(client, chat)
+        elif isinstance(chat, raw.types.User):
+            return Chat._parse_user_chat(client, chat)
+        elif isinstance(chat, raw.types.Community):
+            return Chat._parse_community_chat(client, chat)
+        else:
+            return Chat._parse_channel_chat(client, chat)
+
+    @staticmethod
     def _parse(
         client,
         message: Union["raw.types.Message", "raw.types.MessageService"],
@@ -995,7 +1024,10 @@ class Chat(Object):
         elif isinstance(message.peer_id, raw.types.PeerChat):
             return Chat._parse_chat_chat(client, chats.get(chat_id))
         else:
-            return Chat._parse_channel_chat(client, chats.get(chat_id))
+            raw_chat = chats.get(chat_id)
+            if isinstance(raw_chat, raw.types.Community):
+                return Chat._parse_community_chat(client, raw_chat)
+            return Chat._parse_channel_chat(client, raw_chat)
 
     @staticmethod
     def _parse_dialog(client, peer, users: dict, chats: dict):
@@ -1004,7 +1036,10 @@ class Chat(Object):
         elif isinstance(peer, (raw.types.PeerChat, raw.types.InputPeerChat)):
             return Chat._parse_chat_chat(client, chats.get(peer.chat_id))
         else:
-            return Chat._parse_channel_chat(client, chats.get(peer.channel_id))
+            raw_chat = chats.get(peer.channel_id)
+            if isinstance(raw_chat, raw.types.Community):
+                return Chat._parse_community_chat(client, raw_chat)
+            return Chat._parse_channel_chat(client, raw_chat)
 
     @staticmethod
     async def _parse_full_user(
@@ -1269,7 +1304,27 @@ class Chat(Object):
         return parsed_chat
 
     @staticmethod
-    async def _parse_full(client: "pyrogram.Client", chat_full: Union["raw.types.UserFull", "raw.types.ChatFull", "raw.types.ChannelFull"]) -> Optional["Chat"]:
+    async def _parse_full_community(
+        client: "pyrogram.Client",
+        community: "raw.types.CommunityFull",
+        users: Dict[int, "raw.base.User"],
+        chats: Dict[int, "raw.base.Chat"]
+    ) -> "Chat":
+        parsed_chat = Chat._parse_community_chat(client, chats.get(community.id))
+        parsed_chat.raw = community
+
+        parsed_chat.description = community.about or None
+        parsed_chat.admins_count = community.admins_count
+        parsed_chat.kicked_count = community.kicked_count
+        parsed_chat.join_requests_count = community.peer_link_requests_pending
+
+        return parsed_chat
+
+    @staticmethod
+    async def _parse_full(
+        client: "pyrogram.Client",
+        chat_full: Union["raw.types.UserFull", "raw.types.ChatFull", "raw.types.ChannelFull"],
+    ) -> Optional["Chat"]:
         users = {u.id: u for u in chat_full.users}
         chats = {c.id: c for c in chat_full.chats}
 
@@ -1279,15 +1334,8 @@ class Chat(Object):
             return await Chat._parse_full_chat(client, chat_full.full_chat, users, chats)
         elif isinstance(chat_full, raw.types.messages.ChatFull) and isinstance(chat_full.full_chat, raw.types.ChannelFull):
             return await Chat._parse_full_channel(client, chat_full.full_chat, users, chats)
-
-    @staticmethod
-    def _parse_chat(client, chat: Union[raw.types.Chat, raw.types.User, raw.types.Channel]) -> Optional["Chat"]:
-        if isinstance(chat, (raw.types.Chat, raw.types.ChatForbidden)):
-            return Chat._parse_chat_chat(client, chat)
-        elif isinstance(chat, raw.types.User):
-            return Chat._parse_user_chat(client, chat)
-        else:
-            return Chat._parse_channel_chat(client, chat)
+        elif isinstance(chat_full, raw.types.messages.ChatFull) and isinstance(chat_full.full_chat, raw.types.CommunityFull):
+            return await Chat._parse_full_community(client, chat_full.full_chat, users, chats)
 
     @staticmethod
     def _parse_preview(client, chat_invite: "raw.types.ChatInvite") -> "Chat":

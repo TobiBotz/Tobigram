@@ -800,3 +800,36 @@ class TestObjectEq:
         a = types.User(id=1)
         b = types.Message(id=1)
         assert a != b
+
+
+class TestCommunity:
+    def test_minimal(self):
+        c = types.Community(id=1, title="Test")
+        assert c.id == 1
+        assert c.title == "Test"
+        assert c.date is None
+        assert c.is_creator is None
+
+    def test_chat_type_enum(self):
+        assert enums.ChatType.COMMUNITY.value == "community"
+
+    def test_message_service_type_enums(self):
+        assert enums.MessageServiceType.COMMUNITY_CHAT_ADDED is not None
+        assert enums.MessageServiceType.COMMUNITY_CHAT_REMOVED is not None
+
+    def test_message_has_fields(self):
+        msg = types.Message(id=1)
+        assert msg.community_chat_added is None
+        assert msg.community_chat_removed is None
+
+    def test_chat_full_info(self):
+        info = types.ChatFullInfo()
+        assert info.community is None
+
+    def test_community_chat_added(self):
+        added = types.CommunityChatAdded(community_id=123)
+        assert added.community_id == 123
+
+    def test_community_chat_removed(self):
+        removed = types.CommunityChatRemoved()
+        assert removed.community_id is None

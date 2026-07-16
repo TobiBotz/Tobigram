@@ -16,31 +16,37 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from enum import auto
+from typing import Optional
 
-from .auto_name import AutoName
+from pyrogram import raw
+
+from ..object import Object
 
 
-class ChatType(AutoName):
-    """Chat type enumeration used in :obj:`~pyrogram.types.Chat`."""
+class CommunityChatRemoved(Object):
+    """A chat has been removed from a community.
 
-    PRIVATE = auto()
-    "Chat is a private chat with a user"
+    Parameters:
+        community_id (``int``):
+            The identifier of the community the chat was removed from.
+    """
 
-    BOT = auto()
-    "Chat is a private chat with a bot"
+    def __init__(
+        self,
+        *,
+        community_id: Optional[int] = None,
+    ):
+        super().__init__()
 
-    GROUP = auto()
-    "Chat is a basic group"
+        self.community_id = community_id
 
-    SUPERGROUP = auto()
-    "Chat is a supergroup"
+    @staticmethod
+    def _parse(
+        action: "raw.types.MessageActionChangeCommunity",
+    ) -> Optional["CommunityChatRemoved"]:
+        if action.community_id is not None:
+            return None
 
-    CHANNEL = auto()
-    "Chat is a channel"
-
-    FORUM = auto()
-    "Chat is a forum"
-
-    COMMUNITY = auto()
-    "Chat is a community"
+        return CommunityChatRemoved(
+            community_id=action.community_id,
+        )
