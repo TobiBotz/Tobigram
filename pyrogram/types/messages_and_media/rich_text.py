@@ -237,6 +237,12 @@ class RichText(Object):
                 height=rich_text.h,
             )
 
+        if isinstance(rich_text, raw.types.TextDiff):
+            return RichTextDiff(
+                text=await RichText._parse(client, rich_text.text),
+                old_text=await RichText._parse(client, rich_text.old_text),
+            )
+
 
 class RichTextBold(RichText):
     """A bold text.
@@ -605,6 +611,28 @@ class RichTextImage(RichText):
         self.document_id = document_id
         self.width = width
         self.height = height
+
+
+class RichTextDiff(RichText):
+    """A diff text, representing the difference between a text and its previous version.
+
+    Parameters:
+        text (:obj:`~pyrogram.types.RichText`):
+            The new text.
+
+        old_text (:obj:`~pyrogram.types.RichText`):
+            The previous version of the text.
+    """
+
+    def __init__(
+        self,
+        text: "types.RichText",
+        old_text: "types.RichText",
+    ):
+        super().__init__()
+
+        self.text = text
+        self.old_text = old_text
 
 
 class RichTextCashtag(RichText):
