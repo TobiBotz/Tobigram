@@ -16,15 +16,19 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from typing import List, Optional, TYPE_CHECKING
 
 from pyrogram import raw
 
 from ..object import Object
 
+if TYPE_CHECKING:
+    from .input_rich_block import InputRichBlock
+    from .input_rich_message_media import InputRichMessageMedia
+
 
 class InputRichMessage(Object):
-    """Describes a checklist to create.
+    """Describes a rich message to create.
 
     Parameters:
         html (``str``, *optional*):
@@ -41,6 +45,13 @@ class InputRichMessage(Object):
         skip_entity_detection (``bool``, *optional*):
             Pass *True* to skip automatic detection of entities
             (e.g., URLs, email addresses, username mentions, hashtags, cashtags, bot commands, or phone numbers) in the text.
+
+        blocks (List of :obj:`InputRichBlock`, *optional*):
+            List of blocks that define the rich message content.
+            See :doc:`Rich Message Formatting Options </topics/rich-message-formatting-options>` for more details.
+
+        media (:obj:`InputRichMessageMedia`, *optional*):
+            Media referenced by the blocks.
     """
 
     def __init__(
@@ -49,6 +60,8 @@ class InputRichMessage(Object):
         markdown: Optional[str] = None,
         is_rtl: Optional[bool] = None,
         skip_entity_detection: Optional[bool] = None,
+        blocks: Optional[List["InputRichBlock"]] = None,
+        media: Optional["InputRichMessageMedia"] = None,
     ):
         super().__init__()
 
@@ -56,6 +69,8 @@ class InputRichMessage(Object):
         self.markdown = markdown
         self.is_rtl = is_rtl
         self.skip_entity_detection = skip_entity_detection
+        self.blocks = blocks
+        self.media = media
 
     def write(self) -> "raw.base.InputRichMessage":
         if self.html:
@@ -70,8 +85,20 @@ class InputRichMessage(Object):
                 rtl=self.is_rtl,
                 noautolink=self.skip_entity_detection
             )
+        elif self.blocks is not None:
+            photos, documents, users = self.media.write() if self.media else ([], [], [])
+            input_rich_message = raw.types.InputRichMessage(
+                blocks=[block.write() for block in self.blocks],
+                rtl=self.is_rtl,
+                noautolink=self.skip_entity_detection,
+                photos=photos,
+                documents=documents,
+                users=users,
+            )
         else:
-            raise ValueError("You must provide either markdown or html in the rich message")
+            raise ValueError(
+                "You must provide html, markdown or blocks in the rich message"
+            )
 
         return input_rich_message
 
