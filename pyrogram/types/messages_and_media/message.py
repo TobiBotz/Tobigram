@@ -128,7 +128,7 @@ class Message(Object, Update):
             Unique identifier of the message effect.
             For private chats only.
 
-        rich_message (:obj:`~pyrogram.types.Message`, *optional*):
+        rich_message (:obj:`~pyrogram.types.RichMessage`, *optional*):
             Message is a rich formatted message.
 
         reply_to_message_id (``int``, *optional*):
