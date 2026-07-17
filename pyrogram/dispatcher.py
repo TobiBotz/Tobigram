@@ -406,6 +406,11 @@ class Dispatcher:
 
     async def handler_worker(self, lock):
         while True:
+            if self.client.rate_limiter is not None and not self.client.rate_limiter.is_closed:
+                congestion = self.client.rate_limiter.congestion()
+                if congestion > 0.8:
+                    await asyncio.sleep(min(0.5, congestion * 2))
+
             packet = await self.updates_queue.get()
 
             if packet is None:

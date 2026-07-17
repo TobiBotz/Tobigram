@@ -248,6 +248,17 @@ class Client(Methods):
         init_connection_params (``dict``, *optional*):
             Additional initConnection parameters.
             For now, only the tz_offset field is supported, for specifying timezone offset in seconds.
+
+        rate_limits (``dict``, *optional*):
+            Rate limits for different categories of API calls. Each category can have "rate" (calls/sec) and
+            "burst" (max burst). Available categories: "message", "media", "query", "admin", "bulk", "account",
+            "global". Example: ``{"message": {"rate": 20, "burst": 30}}``.
+            Defaults to built-in per-category defaults (20 msg/s, 5 media/s, etc.).
+
+        auto_no_updates (``bool``, *optional*):
+            Pass True to automatically wrap read-only and non-critical API calls with InvokeWithoutUpdates,
+            reducing server-side update traffic and flood pressure.
+            Defaults to True.
     """
 
     APP_VERSION = f"Pyrogram {__version__}"
@@ -321,7 +332,9 @@ class Client(Methods):
         init_connection_params: Optional[dict] = None,
         connection_factory: Type[Connection] = Connection,
         protocol_factory: Type[TCP] = TCPAbridged,
-        loop: Optional[asyncio.AbstractEventLoop] = None
+        loop: Optional[asyncio.AbstractEventLoop] = None,
+        rate_limits: Optional[dict] = None,
+        auto_no_updates: Optional[bool] = True
     ):
         super().__init__()
 
@@ -366,6 +379,10 @@ class Client(Methods):
         self.init_connection_params = init_connection_params
         self.connection_factory = connection_factory
         self.protocol_factory = protocol_factory
+
+        from pyrogram.methods.rate_limiter import RateLimiter
+        self.rate_limiter = RateLimiter(rate_limits) if rate_limits else RateLimiter()
+        self.auto_no_updates = auto_no_updates
 
         self.executor = ThreadPoolExecutor(self.workers, thread_name_prefix="Handler")
         self.crypto_executor = get_crypto_executor()

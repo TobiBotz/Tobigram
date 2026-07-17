@@ -64,3 +64,6 @@ class Terminate:
         self.updates_watchdog_event.clear()
 
         self.is_initialized = False
+
+        if self.rate_limiter is not None:
+            await self.rate_limiter.close()

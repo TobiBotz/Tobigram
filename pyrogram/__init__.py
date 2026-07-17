@@ -43,3 +43,4 @@ from . import raw, types, filters, handlers, enums
 from .client import Client
 from .methods.utilities.idle import idle
 from .methods.utilities.compose import compose
+from .methods.rate_limiter import RateLimiter, TokenBucket

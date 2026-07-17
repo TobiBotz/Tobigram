@@ -20,6 +20,8 @@ import asyncio
 import bisect
 import logging
 import os
+import time
+from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha1
 from io import BytesIO
@@ -111,6 +113,10 @@ class Session:
         self.is_started = asyncio.Event()
 
         self.loop = asyncio.get_event_loop()
+
+        self.flood_history = deque(maxlen=50)
+        self._dynamic_backoff = float(Session.SLEEP_THRESHOLD)
+        self._last_flood_decay = 0.0
 
     async def start(self):
         while True:
@@ -452,7 +458,20 @@ class Session:
                 amount = e.value
 
                 if amount > sleep_threshold >= 0:
-                    raise
+                    effective = max(sleep_threshold, self._dynamic_backoff)
+                    if amount > effective:
+                        raise
+
+                self.flood_history.append((amount, time.monotonic()))
+                now = time.monotonic()
+                if now - self._last_flood_decay > 60:
+                    cutoff = now - 60
+                    recent = sum(1 for a, t in self.flood_history if a > 1 and t > cutoff)
+                    if recent >= 5:
+                        self._dynamic_backoff = min(self._dynamic_backoff * 1.5, 60.0)
+                    elif recent == 0:
+                        self._dynamic_backoff = max(float(Session.SLEEP_THRESHOLD), self._dynamic_backoff * 0.9)
+                    self._last_flood_decay = now
 
                 log.warning('[%s] Waiting for %s seconds before continuing (required by "%s")',
                             self.client.name, amount, query_name)
