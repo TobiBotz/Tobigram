@@ -281,6 +281,27 @@ CLIENT_TO_RAW_MAP = [
       "allow_paid_stars", "background", "clear_draft",
       "update_stickersets_order", "send_as", "quick_reply_shortcut",
       "reply_markup", "suggested_post"}),
+    
+    # send_poll internal raw types
+    ("send_poll", "InputMediaPoll",
+     {"poll", "correct_answers", "solution", "solution_entities"}),
+    ("send_poll", "Poll",
+     {"id", "question", "answers", "hash", "closed", "public_voters",
+      "multiple_choice", "quiz", "close_period", "close_date",
+      "open_answers", "revoting_disabled", "shuffle_answers",
+      "hide_results_until_close", "subscribers_only", "countries_iso2"}),
+    
+    # send_media_group internal: InputSingleMedia
+    ("send_media_group", "InputSingleMedia",
+     {"media", "random_id", "message", "entities"}),
+    
+    # send_location internal
+    ("send_location", "InputMediaGeoPoint",
+     {"geo_point"}),
+    ("send_location", "InputMediaGeoLive",
+     {"geo_point", "heading", "period", "proximity_notification_radius"}),
+    ("send_location", "InputGeoPoint",
+     {"lat", "long", "accuracy_radius"}),
 ]
 
 
