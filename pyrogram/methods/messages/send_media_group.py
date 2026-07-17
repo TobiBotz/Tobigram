@@ -63,6 +63,7 @@ class SendMediaGroup:
         update_stickersets_order: Optional[bool] = None,
         send_as: Optional[Union[int, str]] = None,
         quick_reply_shortcut: Optional[int] = None,
+        **kwargs
     ) -> List["types.Message"]:
         """Send a group of photos or videos as an album.
 
@@ -114,7 +115,9 @@ class SendMediaGroup:
                     ]
                 )
         """
-        if reply_parameters is None:
+
+        if kwargs:
+            raise TypeError(f"Got unexpected keyword argument(s): {set(kwargs)}")
             if reply_to_message_id is not None:
                 reply_parameters = types.ReplyParameters(
                     message_id=reply_to_message_id,

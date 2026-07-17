@@ -72,9 +72,11 @@ class SendDocument:
         send_as: Optional[Union[int, str]] = None,
         quick_reply_shortcut: Optional[int] = None,
         progress: Optional[Callable] = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
+        **kwargs
     ) -> Optional["types.Message"]:
         """Send generic files.
+
 
         .. include:: /_includes/usable-by/users-bots.rst
 
@@ -181,6 +183,9 @@ class SendDocument:
 
                 await app.send_document("me", "document.zip", progress=progress)
         """
+
+        if kwargs:
+            raise TypeError(f"Got unexpected keyword argument(s): {set(kwargs)}")
         if reply_parameters is None:
             if reply_to_message_id is not None:
                 reply_parameters = types.ReplyParameters(
@@ -238,12 +243,10 @@ class SendDocument:
                         if rich_text_parse_mode == enums.ParseMode.HTML:
                             rich_msg = raw.types.InputRichMessageHTML(
                                 html=rich_text,
-                                noautolink=disable_web_page_preview if disable_web_page_preview is not None else None,
                             )
                         else:
                             rich_msg = raw.types.InputRichMessageMarkdown(
                                 markdown=rich_text,
-                                noautolink=disable_web_page_preview if disable_web_page_preview is not None else None,
                             )
                         text_params = {"message": "", "entities": None}
                     else:

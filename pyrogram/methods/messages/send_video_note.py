@@ -68,9 +68,11 @@ class SendVideoNote:
         send_as: Optional[Union[int, str]] = None,
         quick_reply_shortcut: Optional[int] = None,
         progress: Optional[Callable] = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
+        **kwargs
     ) -> Optional["types.Message"]:
         """Send video messages.
+
 
         .. include:: /_includes/usable-by/users-bots.rst
 
@@ -158,6 +160,9 @@ class SendVideoNote:
                 # Set video note length
                 await app.send_video_note("me", "video_note.mp4", length=25)
         """
+
+        if kwargs:
+            raise TypeError(f"Got unexpected keyword argument(s): {set(kwargs)}")
         if reply_parameters is None:
             if reply_to_message_id is not None:
                 reply_parameters = types.ReplyParameters(

@@ -77,9 +77,11 @@ class SendAnimation:
         send_as: Optional[Union[int, str]] = None,
         quick_reply_shortcut: Optional[int] = None,
         progress: Optional[Callable] = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
+        **kwargs
     ) -> Optional["types.Message"]:
         """Send animation files (animation or H.264/MPEG-4 AVC video without sound).
+
 
         .. include:: /_includes/usable-by/users-bots.rst
 
@@ -201,6 +203,9 @@ class SendAnimation:
 
                 await app.send_animation("me", "animation.gif", progress=progress)
         """
+
+        if kwargs:
+            raise TypeError(f"Got unexpected keyword argument(s): {set(kwargs)}")
         if reply_parameters is None:
             if reply_to_message_id is not None:
                 reply_parameters = types.ReplyParameters(

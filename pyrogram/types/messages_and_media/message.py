@@ -2903,7 +2903,6 @@ class Message(Object, Update):
         quote: Optional[bool] = None,
         reply_to_message_id: Optional[int] = None,
         quote_text: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
         quote_entities: Optional[List["types.MessageEntity"]] = None,
     ) -> "Message":
         """Shortcut for method :obj:`~pyrogram.Client.send_contact` will automatically fill method attributes:
@@ -3003,7 +3002,6 @@ class Message(Object, Update):
 
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
-            parse_mode=parse_mode,
             quote_entities=quote_entities,
         )
 
@@ -4352,7 +4350,6 @@ class Message(Object, Update):
         quote: Optional[bool] = None,
         reply_to_message_id: Optional[int] = None,
         quote_text: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
         quote_entities: Optional[List["types.MessageEntity"]] = None,
     ) -> List["types.Message"]:
         """Shortcut for method :obj:`~pyrogram.Client.send_media_group` will automatically fill method attributes:
@@ -4438,7 +4435,6 @@ class Message(Object, Update):
 
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
-            parse_mode=parse_mode,
             quote_entities=quote_entities,
         )
 
@@ -5801,10 +5797,6 @@ class Message(Object, Update):
     async def reply_sticker(
         self,
         sticker: Union[str, BinaryIO],
-        emoji: str = "",
-        caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
         disable_notification: Optional[bool] = None,
         message_thread_id: Optional[int] = None,
         direct_messages_topic_id: Optional[int] = None,
@@ -5846,8 +5838,6 @@ class Message(Object, Update):
                 pass an HTTP URL as a string for Telegram to get a .webp sticker file from the Internet, or
                 pass a file path as string to upload a new sticker that exists on your local machine.
 
-            emoji (``str``, *optional*):
-                Emoji associated with this sticker.
 
             caption (``str``, *optional*):
                 Sticker caption, 0-1024 characters.
@@ -5953,10 +5943,6 @@ class Message(Object, Update):
         return await self._client.send_sticker(
             chat_id=self.chat.id,
             sticker=sticker,
-            emoji=emoji,
-            caption=caption,
-            parse_mode=parse_mode,
-            caption_entities=caption_entities,
             disable_notification=disable_notification,
             message_thread_id=message_thread_id,
             direct_messages_topic_id=direct_messages_topic_id,
@@ -5980,10 +5966,6 @@ class Message(Object, Update):
     async def answer_sticker(
         self,
         sticker: Union[str, BinaryIO],
-        emoji: str = "",
-        caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
         disable_notification: Optional[bool] = None,
         message_thread_id: Optional[int] = None,
         direct_messages_topic_id: Optional[int] = None,
@@ -6019,8 +6001,6 @@ class Message(Object, Update):
                 pass an HTTP URL as a string for Telegram to get a .webp sticker file from the Internet, or
                 pass a file path as string to upload a new sticker that exists on your local machine.
 
-            emoji (``str``, *optional*):
-                Emoji associated with this sticker.
 
             caption (``str``, *optional*):
                 Sticker caption, 0-1024 characters.
@@ -6112,10 +6092,6 @@ class Message(Object, Update):
         return await self._client.send_sticker(
             chat_id=self.chat.id,
             sticker=sticker,
-            emoji=emoji,
-            caption=caption,
-            parse_mode=parse_mode,
-            caption_entities=caption_entities,
             disable_notification=disable_notification,
             message_thread_id=message_thread_id,
             direct_messages_topic_id=direct_messages_topic_id,
@@ -6159,7 +6135,6 @@ class Message(Object, Update):
         quote: Optional[bool] = None,
         reply_to_message_id: Optional[int] = None,
         quote_text: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
         quote_entities: Optional[List["types.MessageEntity"]] = None,
     ) -> "Message":
         """Shortcut for method :obj:`~pyrogram.Client.send_venue` will automatically fill method attributes:
@@ -6268,7 +6243,6 @@ class Message(Object, Update):
 
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
-            parse_mode=parse_mode,
             quote_entities=quote_entities,
         )
 
@@ -7050,7 +7024,6 @@ class Message(Object, Update):
 
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
-            parse_mode=parse_mode,
             quote_entities=quote_entities,
         )
 
@@ -9393,7 +9366,7 @@ class Message(Object, Update):
         return await self._client.send_reaction(
             chat_id=self.chat.id,
             message_id=self.id,
-            emoji=emoji,
+
             big=big,
             business_connection_id=self.business_connection_id
         )

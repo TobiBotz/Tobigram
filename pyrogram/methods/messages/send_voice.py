@@ -70,9 +70,11 @@ class SendVoice:
         send_as: Optional[Union[int, str]] = None,
         quick_reply_shortcut: Optional[int] = None,
         progress: Optional[Callable] = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
+        **kwargs
     ) -> Optional["types.Message"]:
         """Send audio files.
+
 
         .. include:: /_includes/usable-by/users-bots.rst
 
@@ -164,6 +166,9 @@ class SendVoice:
                 # Set voice note duration
                 await app.send_voice("me", "voice.ogg", duration=20)
         """
+
+        if kwargs:
+            raise TypeError(f"Got unexpected keyword argument(s): {set(kwargs)}")
         if reply_parameters is None:
             if reply_to_message_id is not None:
                 reply_parameters = types.ReplyParameters(

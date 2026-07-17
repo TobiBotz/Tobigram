@@ -76,9 +76,11 @@ class SendAudio:
         send_as: Optional[Union[int, str]] = None,
         quick_reply_shortcut: Optional[int] = None,
         progress: Optional[Callable] = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
+        **kwargs
     ) -> Optional["types.Message"]:
         """Send audio files.
+
 
         For sending voice messages, use the :meth:`~pyrogram.Client.send_voice` method instead.
 
@@ -196,6 +198,9 @@ class SendAudio:
 
                 await app.send_audio("me", "audio.mp3", progress=progress)
         """
+
+        if kwargs:
+            raise TypeError(f"Got unexpected keyword argument(s): {set(kwargs)}")
         if reply_parameters is None:
             if reply_to_message_id is not None:
                 reply_parameters = types.ReplyParameters(

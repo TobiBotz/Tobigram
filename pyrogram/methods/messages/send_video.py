@@ -81,9 +81,11 @@ class SendVideo:
         send_as: Optional[Union[int, str]] = None,
         quick_reply_shortcut: Optional[int] = None,
         progress: Optional[Callable] = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
+        **kwargs
     ) -> Optional["types.Message"]:
         """Send video files.
+
 
         .. include:: /_includes/usable-by/users-bots.rst
 
@@ -217,6 +219,9 @@ class SendVideo:
 
                 await app.send_video("me", "video.mp4", progress=progress)
         """
+
+        if kwargs:
+            raise TypeError(f"Got unexpected keyword argument(s): {set(kwargs)}")
         coverfile = None
         if video_cover is not None:
             is_bytes_io = isinstance(video_cover, io.BytesIO)

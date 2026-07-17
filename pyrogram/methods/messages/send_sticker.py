@@ -68,9 +68,11 @@ class SendSticker:
         send_as: Optional[Union[int, str]] = None,
         quick_reply_shortcut: Optional[int] = None,
         progress: Optional[Callable] = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
+        **kwargs
     ) -> Optional["types.Message"]:
         """Send static .webp or animated .tgs stickers.
+
 
         .. include:: /_includes/usable-by/users-bots.rst
 
@@ -146,6 +148,9 @@ class SendSticker:
                 # Send sticker using file_id
                 await app.send_sticker("me", file_id)
         """
+
+        if kwargs:
+            raise TypeError(f"Got unexpected keyword argument(s): {set(kwargs)}")
         if reply_parameters is None:
             if reply_to_message_id is not None:
                 reply_parameters = types.ReplyParameters(

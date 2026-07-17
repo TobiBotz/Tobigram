@@ -70,9 +70,11 @@ class SendPhoto:
         send_as: Optional[Union[int, str]] = None,
         quick_reply_shortcut: Optional[int] = None,
         progress: Optional[Callable] = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
+        **kwargs
     ) -> Optional["types.Message"]:
         """Send photos.
+
 
         .. include:: /_includes/usable-by/users-bots.rst
 
@@ -172,6 +174,9 @@ class SendPhoto:
                 # Send self-destructing photo
                 await app.send_photo("me", "photo.jpg", ttl_seconds=10)
         """
+
+        if kwargs:
+            raise TypeError(f"Got unexpected keyword argument(s): {set(kwargs)}")
         if reply_parameters is None:
             if reply_to_message_id is not None:
                 reply_parameters = types.ReplyParameters(

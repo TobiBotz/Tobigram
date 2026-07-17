@@ -28,15 +28,25 @@ class SendPoll:
     async def send_poll(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        question: str,
-        options: List[str],
+        question: Union[str, "types.FormattedText"],
+        options: List[Union[str, "types.InputPollOption"]],
         is_anonymous: bool = True,
         type: "enums.PollType" = enums.PollType.REGULAR,
         allows_multiple_answers: Optional[bool] = None,
         correct_option_id: Optional[int] = None,
-        explanation: Optional[str] = None,
+        correct_option_ids: Optional[List[int]] = None,
+        explanation: Optional[Union[str, "types.FormattedText"]] = None,
         explanation_parse_mode: Optional["enums.ParseMode"] = None,
         explanation_entities: Optional[List["types.MessageEntity"]] = None,
+        explanation_media: Optional["types.InputPollMedia"] = None,
+        description: Optional["types.FormattedText"] = None,
+        description_media: Optional["types.InputPollMedia"] = None,
+        allows_revoting: Optional[bool] = None,
+        members_only: Optional[bool] = None,
+        country_codes: Optional[List[str]] = None,
+        shuffle_options: Optional[bool] = None,
+        allow_adding_options: Optional[bool] = None,
+        hide_results_until_closes: Optional[bool] = None,
         open_period: Optional[int] = None,
         close_date: Optional[datetime] = None,
         is_closed: Optional[bool] = None,
@@ -79,10 +89,10 @@ class SendPoll:
                 For your personal cloud (Saved Messages) you can simply use "me" or "self".
                 For a contact that exists in your Telegram address book you can use his phone number (str).
 
-            question (``str``):
+            question (``str`` | :obj:`~pyrogram.types.FormattedText`):
                 Poll question, 1-255 characters.
 
-            options (List of ``str``):
+            options (List of ``str`` | :obj:`~pyrogram.types.InputPollOption`):
                 List of answer options, 2-10 strings 1-100 characters each.
 
             is_anonymous (``bool``, *optional*):
@@ -100,7 +110,11 @@ class SendPoll:
             correct_option_id (``int``, *optional*):
                 0-based identifier of the correct answer option, required for polls in quiz mode.
 
-            explanation (``str``, *optional*):
+            correct_option_ids (List of ``int``, *optional*):
+                List of 0-based identifiers of the correct answer options, required for polls in quiz mode
+                with multiple correct answers.
+
+            explanation (``str`` | :obj:`~pyrogram.types.FormattedText`, *optional*):
                 Text that is shown when a user chooses an incorrect answer or taps on the lamp icon in a quiz-style
                 poll, 0-200 characters with at most 2 line feeds after entities parsing.
 
@@ -111,6 +125,33 @@ class SendPoll:
             explanation_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the poll explanation, which can be specified instead of
                 *parse_mode*.
+
+            explanation_media (:obj:`~pyrogram.types.InputPollMedia`, *optional*):
+                Media to display as part of the explanation.
+
+            description (:obj:`~pyrogram.types.FormattedText`, *optional*):
+                Poll description.
+
+            description_media (:obj:`~pyrogram.types.InputPollMedia`, *optional*):
+                Media to display as part of the description.
+
+            allows_revoting (``bool``, *optional*):
+                True, if the poll allows changing the vote.
+
+            members_only (``bool``, *optional*):
+                True, if only members of the chat can vote.
+
+            country_codes (List of ``str``, *optional*):
+                List of country ISO2 codes for country-specific polls.
+
+            shuffle_options (``bool``, *optional*):
+                True, if the poll options should be shuffled.
+
+            allow_adding_options (``bool``, *optional*):
+                True, if users can add options to the poll.
+
+            hide_results_until_closes (``bool``, *optional*):
+                True, if the poll results are hidden until the poll closes.
 
             open_period (``int``, *optional*):
                 Amount of time in seconds the poll will be active after creation, 5-600.
@@ -167,9 +208,47 @@ class SendPoll:
                     quote_entities=quote_entities,
                 )
 
-        solution, solution_entities = (await utils.parse_text_entities(
-            self, explanation, explanation_parse_mode, explanation_entities
-        )).values()
+        if isinstance(question, types.FormattedText):
+            question_text = question.text
+            question_entities = question.entities or []
+        else:
+            question_text = question
+            question_entities = []
+
+        if isinstance(explanation, types.FormattedText):
+            solution_text = explanation.text
+            solution_entities = explanation.entities or []
+        elif explanation is not None:
+            solution_text, solution_entities = (await utils.parse_text_entities(
+                self, explanation, explanation_parse_mode, explanation_entities
+            )).values()
+        else:
+            solution_text = None
+            solution_entities = []
+
+        parsed_options = []
+        for i, opt in enumerate(options):
+            if isinstance(opt, types.InputPollOption):
+                raw_opt = await opt.write(self)
+                parsed_options.append(
+                    raw.types.PollAnswer(
+                        text=raw_opt.text,
+                        option=bytes([i]),
+                    )
+                )
+            else:
+                parsed_options.append(
+                    raw.types.PollAnswer(
+                        text=raw.types.TextWithEntities(text=opt, entities=[]),
+                        option=bytes([i])
+                    )
+                )
+
+        correct = None
+        if correct_option_ids is not None:
+            correct = [bytes([cid]) for cid in correct_option_ids]
+        elif correct_option_id is not None:
+            correct = [bytes([correct_option_id])]
 
         r = await self.invoke(
             raw.functions.messages.SendMedia(
@@ -177,22 +256,25 @@ class SendPoll:
                 media=raw.types.InputMediaPoll(
                     poll=raw.types.Poll(
                         id=self.rnd_id(),
-                        question=raw.types.TextWithEntities(text=question, entities=[]),
-                        answers=[
-                            raw.types.PollAnswer(text=raw.types.TextWithEntities(text=text, entities=[]), option=bytes([i]))
-                            for i, text in enumerate(options)
-                        ],
+                        question=raw.types.TextWithEntities(text=question_text, entities=question_entities),
+                        answers=parsed_options,
                         hash=self.rnd_id(),
                         closed=is_closed,
                         public_voters=not is_anonymous,
                         multiple_choice=allows_multiple_answers,
                         quiz=type == enums.PollType.QUIZ or False,
                         close_period=open_period,
-                        close_date=utils.datetime_to_timestamp(close_date)
+                        close_date=utils.datetime_to_timestamp(close_date),
+                        open_answers=allow_adding_options,
+                        revoting_disabled=not allows_revoting if allows_revoting is not None else None,
+                        shuffle_answers=shuffle_options,
+                        hide_results_until_close=hide_results_until_closes,
+                        subscribers_only=members_only,
+                        countries_iso2=country_codes,
                     ),
-                    correct_answers=[bytes([correct_option_id])] if correct_option_id is not None else None,
-                    solution=solution,
-                    solution_entities=solution_entities or []
+                    correct_answers=correct,
+                    solution=solution_text,
+                    solution_entities=solution_entities or [],
                 ),
                 message="",
                 silent=disable_notification if disable_notification is not None else None,
