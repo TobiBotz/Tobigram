@@ -162,7 +162,7 @@ class Poll(Object, Update):
         options = []
 
         vote_percentages = Poll.get_vote_percentage(
-            [(results[i].voters if results else 0) for i in range(len(poll.answers))],
+            [(results[i].voters if i < len(results) else 0) for i in range(len(poll.answers))],
             media_poll.results.total_voters or 0,
         )
 
@@ -171,7 +171,7 @@ class Poll(Object, Update):
 
             result = None
 
-            if results:
+            if i < len(results):
                 result = results[i]
                 voter_count = result.voters
 
@@ -183,7 +183,7 @@ class Poll(Object, Update):
 
             options.append(
                 types.PollOption(
-                    persistent_id=answer.option.decode(),
+                    persistent_id=answer.option.decode("utf-8"),
                     text=types.FormattedText._parse(client, answer.text),
                     media=await types.MessageContent._parse(
                         client, answer.media, users=users, chats=chats
@@ -283,7 +283,7 @@ class Poll(Object, Update):
 
                 options.append(
                     types.PollOption(
-                        persistent_id=result.option.decode(), voter_count=result.voters, client=client
+                        persistent_id=result.option.decode("utf-8"), voter_count=result.voters, client=client
                     )
                 )
 
@@ -301,7 +301,7 @@ class Poll(Object, Update):
             return Poll(
                 id=str(update.poll_id),
                 options=[
-                    types.PollOption(persistent_id=option.decode(), client=client)
+                    types.PollOption(persistent_id=option.decode("utf-8"), client=client)
                     for option in update.options
                 ],
                 is_closed=False,

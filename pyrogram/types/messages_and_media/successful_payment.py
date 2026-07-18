@@ -106,13 +106,13 @@ class SuccessfulPayment(Object):
             # Try to decode invoice payload into string. If that fails, fallback to bytes instead of decoding by
             # ignoring/replacing errors, this way, button clicks will still work.
             try:
-                invoice_payload = payment.payload.decode()
+                invoice_payload = payment.payload.decode("utf-8")
             except (UnicodeDecodeError, AttributeError):
                 invoice_payload = payment.payload
 
             telegram_payment_charge_id = payment.charge.id
             provider_payment_charge_id = payment.charge.provider_charge_id
-            shipping_option_id = getattr(payment, "shipping_option_id")
+            shipping_option_id = getattr(payment, "shipping_option_id", None)
 
             if payment.info:
                 payment_info = payment.info

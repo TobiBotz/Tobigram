@@ -1463,12 +1463,12 @@ class Client(Methods):
 
                             if len(chunk) < chunk_size or current >= total:
                                 break
-                    except Exception as e:
-                        raise e
+                    except Exception:
+                        raise
                     finally:
                         await cdn_session.stop()
-            except Exception as e:
-                raise e
+            except Exception:
+                raise
 
     async def get_session(
         self,
@@ -1525,6 +1525,8 @@ class Client(Methods):
                     )
                 )
 
+                if not connection.updates:
+                    raise ValueError(f"Empty updates in GetBotBusinessConnection response for {business_connection_id}")
                 dc_id = self.business_connections[business_connection_id] = connection.updates[0].connection.dc_id
 
         is_current_dc = await self.storage.dc_id() == dc_id
@@ -1744,9 +1746,11 @@ class Client(Methods):
 
     def guess_mime_type(self, filename: Union[str, BytesIO]) -> Optional[str]:
         if isinstance(filename, BytesIO):
-            return self.mimetypes.guess_type(filename.name)[0]
+            result = self.mimetypes.guess_type(filename.name)
+        else:
+            result = self.mimetypes.guess_type(filename)
 
-        return self.mimetypes.guess_type(filename)[0]
+        return result[0] if result else None
 
     def guess_extension(self, mime_type: str) -> Optional[str]:
         return self.mimetypes.guess_extension(mime_type)

@@ -161,6 +161,9 @@ class Animation(Object):
 
             videos.sort(key=lambda v: v.w * v.h)
 
+            if not videos:
+                return None
+
             main = videos[-1]
 
             return Animation(

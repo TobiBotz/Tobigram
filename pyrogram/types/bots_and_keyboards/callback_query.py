@@ -73,7 +73,9 @@ class CallbackQuery(Object, Update):
         inline_message_id: Optional[str] = None,
         data: Optional[Union[str, bytes]] = None,
         game_short_name: Optional[str] = None,
-        matches: Optional[List[Match]] = None
+        matches: Optional[List[Match]] = None,
+        connection_id: Optional[str] = None,
+        reply_to_message: Optional["types.Message"] = None
     ):
         super().__init__(client)
 
@@ -85,22 +87,32 @@ class CallbackQuery(Object, Update):
         self.data = data
         self.game_short_name = game_short_name
         self.matches = matches
+        self.connection_id = connection_id
+        self.reply_to_message = reply_to_message
 
     @staticmethod
     async def _parse(client: "pyrogram.Client", callback_query, users, chats={}) -> "CallbackQuery":
         message = None
         inline_message_id = None
+        connection_id = None
+        reply_to_message = None
 
         if isinstance(callback_query, raw.types.UpdateBotCallbackQuery):
             chat_id = utils.get_peer_id(callback_query.peer)
             message_id = callback_query.msg_id
 
-            message = client.message_cache[(chat_id, message_id)]
+            message = client.message_cache.get((chat_id, message_id))
 
             if not message:
                 message = await client.get_messages(chat_id, message_id)
         elif isinstance(callback_query, raw.types.UpdateInlineBotCallbackQuery):
             inline_message_id = utils.pack_inline_message_id(callback_query.msg_id)
+        elif isinstance(callback_query, raw.types.UpdateBusinessBotCallbackQuery):
+            message = await types.Message._parse(client, callback_query.message, users, chats)
+            connection_id = callback_query.connection_id
+
+            if callback_query.reply_to_message:
+                reply_to_message = await types.Message._parse(client, callback_query.reply_to_message, users, chats)
 
         # Try to decode callback query data into string. If that fails, fallback to bytes instead of decoding by
         # ignoring/replacing errors, this way, button clicks will still work.
@@ -116,8 +128,10 @@ class CallbackQuery(Object, Update):
             inline_message_id=inline_message_id,
             chat_instance=str(callback_query.chat_instance),
             data=data,
-            game_short_name=callback_query.game_short_name,
-            client=client
+            game_short_name=getattr(callback_query, "game_short_name", None),
+            client=client,
+            connection_id=connection_id,
+            reply_to_message=reply_to_message
         )
 
     async def answer(self, text: Optional[str] = None, show_alert: Optional[bool] = None, url: Optional[str] = None, cache_time: int = 0):

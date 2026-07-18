@@ -218,6 +218,9 @@ class Sticker(Object):
 
             videos.sort(key=lambda v: v.w * v.h)
 
+            if not videos:
+                return None
+
             main = videos[-1]
 
             premium_animation = Sticker(

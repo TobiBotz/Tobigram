@@ -1889,7 +1889,7 @@ class Message(Object, Update):
             parsed_message.reply_to_message_id = message.reply_to.reply_to_msg_id
             parsed_message.reply_to_top_message_id = message.reply_to.reply_to_top_id
             parsed_message.reply_to_checklist_task_id = message.reply_to.todo_item_id
-            parsed_message.reply_to_poll_option_id = message.reply_to.poll_option.decode() if message.reply_to.poll_option is not None else None
+            parsed_message.reply_to_poll_option_id = message.reply_to.poll_option.decode("utf-8") if message.reply_to.poll_option is not None else None
 
             if replies:
                 if message.reply_to.reply_to_peer_id:

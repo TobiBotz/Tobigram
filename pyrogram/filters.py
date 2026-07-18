@@ -148,7 +148,7 @@ all = create(all_filter)
 
 # region me_filter
 async def me_filter(_, __, m: Message):
-    return bool(m.from_user and m.from_user.is_self or getattr(m, "outgoing", False))
+    return bool(m.from_user and (m.from_user.is_self or getattr(m, "outgoing", False)))
 
 
 me = create(me_filter)
@@ -896,11 +896,13 @@ def command(commands: Union[str, List[str]], prefixes: Optional[Union[str, List[
             without_prefix = text[len(prefix):]
 
             for cmd in flt.commands:
-                if not re.match(rf"^(?:{cmd}(?:@?{username})?)(?:\s|$)", without_prefix,
+                escaped_cmd = re.escape(cmd)
+                escaped_username = re.escape(username)
+                if not re.match(rf"^(?:{escaped_cmd}(?:@?{escaped_username})?)(?:\s|$)", without_prefix,
                                 flags=re.IGNORECASE if not flt.case_sensitive else 0):
                     continue
 
-                without_command = re.sub(rf"{cmd}(?:@?{username})?\s?", "", without_prefix, count=1,
+                without_command = re.sub(rf"{escaped_cmd}(?:@?{escaped_username})?\s?", "", without_prefix, count=1,
                                          flags=re.IGNORECASE if not flt.case_sensitive else 0)
 
                 message.command = [cmd] + [

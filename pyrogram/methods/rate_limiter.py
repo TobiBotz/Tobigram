@@ -115,7 +115,7 @@ class RateLimiter:
         for cat, cfg in resolved.items():
             if cat == "global":
                 continue
-            self._buckets[cat] = TokenBucket(rate=cfg["rate"], burst=cfg.get("burst", cfg["rate"]))
+            self._buckets[cat] = TokenBucket(rate=cfg.get("rate", 30.0), burst=cfg.get("burst", cfg.get("rate", 30.0)))
 
         self._closed = False
 

@@ -53,6 +53,9 @@ class ChatShared(Object):
         ],
         chats: Dict[int, "raw.base.Chat"] = {}
     ) -> Optional["ChatShared"]:
+        if not action.peers:
+            return None
+
         peer = action.peers[0]
 
         if isinstance(peer, (raw.types.PeerUser, raw.types.RequestedPeerUser)):

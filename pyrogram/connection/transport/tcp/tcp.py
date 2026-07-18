@@ -61,8 +61,9 @@ class TCP:
                 else:
                     self.socket = socks.socksocket(socket.AF_INET)
 
+            proxy_type_str = (proxy.get("scheme") or "socks5").upper()
             self.socket.set_proxy(
-                proxy_type=getattr(socks, proxy.get("scheme").upper()),
+                proxy_type=getattr(socks, proxy_type_str, socks.SOCKS5),
                 addr=hostname,
                 port=proxy.get("port", None),
                 username=proxy.get("username", None),
