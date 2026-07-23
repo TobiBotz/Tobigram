@@ -56,6 +56,7 @@ from pyrogram.errors import (
 )
 from pyrogram.handlers.handler import Handler
 from pyrogram.methods import Methods
+from pyrogram.methods.rate_limiter import TokenBucket
 from pyrogram.qrlogin import QRLogin
 from pyrogram.session import Auth, Session
 from pyrogram.storage import SQLiteStorage, Storage
@@ -1114,11 +1115,14 @@ class Client(Methods):
 
         os.makedirs(directory, exist_ok=True) if not in_memory else None
         temp_file_path = os.path.abspath(re.sub("\\\\", "/", os.path.join(directory, file_name))) + ".temp"
-        file = BytesIO() if in_memory else open(temp_file_path, "wb")
+        file = BytesIO() if in_memory else open(temp_file_path, "w+b")
+        if not in_memory and file_size > 0:
+            file.truncate(file_size)
 
         try:
-            async for chunk in self.get_file(file_id, file_size, 0, 0, progress, progress_args):
-                file.write(chunk)
+            async for chunk in self.get_file(file_id, file_size, 0, 0, progress, progress_args, _write_file=None if in_memory else file):
+                if in_memory:
+                    file.write(chunk)
         except BaseException as e:
             if not in_memory:
                 file.close()
@@ -1145,7 +1149,8 @@ class Client(Methods):
         limit: int = 0,
         offset: int = 0,
         progress: Optional[Callable] = None,
-        progress_args: tuple = ()
+        progress_args: tuple = (),
+        _write_file: object = None,
     ) -> AsyncGenerator[bytes, None]:
         async with self.get_file_semaphore:
             file_type = file_id.file_type
@@ -1212,6 +1217,9 @@ class Client(Methods):
                     yield first_chunk
                     current += 1
                     offset_bytes += chunk_size
+                    if _write_file is not None and file_size > 0:
+                        _write_file.seek(0)
+                        _write_file.write(first_chunk)
 
                     if progress:
                         _now = time.monotonic()
@@ -1282,12 +1290,6 @@ class Client(Methods):
                                     asyncio.ensure_future(report())
                         return
 
-                    # aria2c-style parallel download:
-                    #   a) dynamic work queue — workers pull the next available offset
-                    #   b) event notification — no polling
-                    #   c) clean cancellation — no orphaned tasks on early exit
-                    #   d) respects total (limit) so streaming callers are not over-fetched
-
                     n_parallel = min(self.DOWNLOAD_POOL_SIZE, math.ceil((file_size - offset_bytes) / chunk_size))
                     pool = await self._get_media_session_pool(dc_id, n_parallel)
                     n_sessions = len(pool)
@@ -1300,16 +1302,23 @@ class Client(Methods):
                     for i in range(chunks_needed):
                         work.put_nowait(offset_bytes + i * chunk_size)
 
-                    received = {}
-                    data_ready = asyncio.Event()
+                    _write_mode = _write_file is not None and file_size > 0
+                    if not _write_mode:
+                        received = {}
+                        data_ready = asyncio.Event()
+                    _done_count = 0
+                    _total_chunks = chunks_needed
+                    _getfile_rate = TokenBucket(rate=20, burst=10)
 
                     async def _worker(session):
+                        nonlocal _done_count
                         while True:
                             try:
                                 offset = work.get_nowait()
                             except asyncio.QueueEmpty:
                                 return
 
+                            await _getfile_rate.acquire()
                             r = await session.invoke(
                                 raw.functions.upload.GetFile(
                                     location=location,
@@ -1319,8 +1328,15 @@ class Client(Methods):
                                 sleep_threshold=30,
                             )
                             chunk_data = r.bytes
-                            received[offset] = chunk_data
-                            data_ready.set()
+
+                            if _write_mode:
+                                _write_file.seek(offset)
+                                _write_file.write(chunk_data)
+                            else:
+                                received[offset] = chunk_data
+                                data_ready.set()
+
+                            _done_count += 1
 
                             if len(chunk_data) < chunk_size:
                                 return
@@ -1332,30 +1348,41 @@ class Client(Methods):
 
                     try:
                         while current < total:
-                            while offset_bytes not in received:
+                            if _write_mode:
+                                if _done_count >= _total_chunks:
+                                    return
                                 for t in tasks:
                                     if t.done():
                                         exc = t.exception()
                                         if exc and not isinstance(exc, asyncio.CancelledError):
                                             raise exc
-                                if all(t.done() for t in tasks):
+                                await asyncio.sleep(0.1)
+                                _sent = min((_done_count + 1) * chunk_size, file_size)
+                            else:
+                                while offset_bytes not in received:
+                                    for t in tasks:
+                                        if t.done():
+                                            exc = t.exception()
+                                            if exc and not isinstance(exc, asyncio.CancelledError):
+                                                raise exc
+                                    if all(t.done() for t in tasks):
+                                        return
+                                    await data_ready.wait()
+                                    data_ready.clear()
+
+                                chunk = received.pop(offset_bytes)
+                                yield chunk
+                                current += 1
+                                offset_bytes += chunk_size
+                                _sent = min(offset_bytes, file_size) if file_size != 0 else offset_bytes
+
+                                if len(chunk) < chunk_size or current >= total:
                                     return
-                                await data_ready.wait()
-                                data_ready.clear()
-
-                            chunk = received.pop(offset_bytes)
-                            yield chunk
-                            current += 1
-                            offset_bytes += chunk_size
-
-                            if len(chunk) < chunk_size or current >= total:
-                                return
 
                             if progress:
                                 _now = time.monotonic()
                                 if _now - _last_progress_time >= 0.1:
                                     _last_progress_time = _now
-                                    _sent = min(offset_bytes, file_size) if file_size != 0 else offset_bytes
                                     _total = file_size
 
                                     async def report(_sent=_sent, _total=_total):
@@ -1371,6 +1398,8 @@ class Client(Methods):
                                             log.warning(f"Download progress callback error: {e}")
 
                                     asyncio.ensure_future(report())
+                            if _write_mode:
+                                yield b""
                     finally:
                         for t in tasks:
                             if not t.done():

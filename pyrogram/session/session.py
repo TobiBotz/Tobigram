@@ -127,7 +127,9 @@ class Session:
                 self.client.proxy,
                 self.is_media,
                 crypto_executor=self.crypto_executor,
-                loop=self.loop
+                loop=self.loop,
+                server_address=self.server_address,
+                port=self.port,
             )
 
             try:

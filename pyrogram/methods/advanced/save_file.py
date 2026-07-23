@@ -35,11 +35,11 @@ from pyrogram import raw
 log = logging.getLogger(__name__)
 
 PART_SIZE = 512 * 1024
-WORKERS_PER_SESSION = 4
-POOL_SIZE = 4
-MAX_RETRIES = 5
+POOL_SIZE = 8
+MAX_RETRIES = 10
 READ_BUFFER = 4 * 1024 * 1024
 PROGRESS_INTERVAL = 0.1
+RATE_LIMIT_PARTS_PER_SEC = 38  # ~19 MiB/s
 
 
 class SaveFile:
@@ -109,10 +109,12 @@ class SaveFile:
                             )
                             await asyncio.sleep(2**attempt)
 
-            async def read_chunk():
-                return await self.loop.run_in_executor(
-                    self.executor, fp.read, PART_SIZE
+            async def read_batch():
+                batch_size = PART_SIZE * POOL_SIZE
+                data = await self.loop.run_in_executor(
+                    self.executor, fp.read, batch_size
                 )
+                return [data[i:i+PART_SIZE] for i in range(0, len(data), PART_SIZE)]
 
             part_size = PART_SIZE
 
@@ -145,7 +147,6 @@ class SaveFile:
             file_total_parts = int(math.ceil(file_size / part_size))
             is_big = file_size > 10 * 1024 * 1024
             pool_size = POOL_SIZE if is_big else 1
-            workers_count = WORKERS_PER_SESSION if is_big else 1
             is_missing_part = file_id is not None
             file_id = file_id or self.rnd_id()
             md5_sum = md5() if not is_big and not is_missing_part else None
@@ -153,27 +154,28 @@ class SaveFile:
             dc_id = await self.storage.dc_id()
             pool = await self._get_media_session_pool(dc_id, pool_size)
 
-            n_sessions = len(pool)
-            n_workers = n_sessions * workers_count
-            queue = asyncio.Queue(n_workers)
+            n_workers = len(pool)
+            queue = asyncio.Queue(n_workers * 2)
             workers = [
-                self.loop.create_task(worker(pool[i % n_sessions]))
+                self.loop.create_task(worker(pool[i]))
                 for i in range(n_workers)
             ]
-            next_chunk_task = None
+            next_batch_task = None
             _last_progress_time = 0.0
+            _next_dispatch = 0.0
+            _dispatch_interval = 1.0 / RATE_LIMIT_PARTS_PER_SEC
 
             try:
 
                 fp.seek(part_size * file_part)
-                next_chunk_task = self.loop.create_task(read_chunk())
+                next_batch_task = self.loop.create_task(read_batch())
 
                 while True:
-                    chunk = await next_chunk_task
-                    next_chunk_task = self.loop.create_task(read_chunk())
+                    chunks = await next_batch_task
+                    next_batch_task = self.loop.create_task(read_batch())
 
-                    if not chunk:
-                        next_chunk_task.cancel()
+                    if not chunks:
+                        next_batch_task.cancel()
                         if not is_big and not is_missing_part:
                             md5_sum = md5_sum.hexdigest()
                         break
@@ -185,36 +187,42 @@ class SaveFile:
                                 raise exc
                         raise RuntimeError("All upload workers exited")
 
-                    if is_big:
-                        rpc = raw.functions.upload.SaveBigFilePart(
-                            file_id=file_id,
-                            file_part=file_part,
-                            file_total_parts=file_total_parts,
-                            bytes=chunk,
-                        )
-                    else:
-                        rpc = raw.functions.upload.SaveFilePart(
-                            file_id=file_id, file_part=file_part, bytes=chunk
-                        )
+                    for chunk in chunks:
+                        if is_big:
+                            rpc = raw.functions.upload.SaveBigFilePart(
+                                file_id=file_id,
+                                file_part=file_part,
+                                file_total_parts=file_total_parts,
+                                bytes=chunk,
+                            )
+                        else:
+                            rpc = raw.functions.upload.SaveFilePart(
+                                file_id=file_id, file_part=file_part, bytes=chunk
+                            )
 
-                    await queue.put(rpc)
+                        _now = time.monotonic()
+                        if _now < _next_dispatch:
+                            await asyncio.sleep(_next_dispatch - _now)
+                        _next_dispatch = max(time.monotonic(), _next_dispatch) + _dispatch_interval
 
-                    if is_missing_part:
-                        next_chunk_task.cancel()
-                        for _ in range(n_workers):
-                            await queue.put(None)
-                        results = await asyncio.gather(*workers, return_exceptions=True)
-                        for r in results:
-                            if isinstance(r, BaseException) and not isinstance(
-                                r, asyncio.CancelledError
-                            ):
-                                raise r
-                        return None
+                        await queue.put(rpc)
 
-                    if not is_big and not is_missing_part:
-                        md5_sum.update(chunk)
+                        if is_missing_part:
+                            next_batch_task.cancel()
+                            for _ in range(n_workers):
+                                await queue.put(None)
+                            results = await asyncio.gather(*workers, return_exceptions=True)
+                            for r in results:
+                                if isinstance(r, BaseException) and not isinstance(
+                                    r, asyncio.CancelledError
+                                ):
+                                    raise r
+                            return None
 
-                    file_part += 1
+                        if not is_big and not is_missing_part:
+                            md5_sum.update(chunk)
+
+                        file_part += 1
 
                     if progress:
                         _now = time.monotonic()
@@ -224,21 +232,18 @@ class SaveFile:
                             _sent = min(file_part * part_size, file_size)
                             _total = file_size
 
-                            async def report(_sent=_sent, _total=_total):
-                                try:
-                                    if inspect.iscoroutinefunction(progress):
-                                        await progress(_sent, _total, *progress_args)
-                                    else:
-                                        await self.loop.run_in_executor(
-                                            self.executor,
-                                            functools.partial(
-                                                progress, _sent, _total, *progress_args
-                                            ),
-                                        )
-                                except Exception as e:
-                                    log.warning(f"Progress callback error: {e}")
-
-                            asyncio.ensure_future(report())
+                            try:
+                                if inspect.iscoroutinefunction(progress):
+                                    await progress(_sent, _total, *progress_args)
+                                else:
+                                    await self.loop.run_in_executor(
+                                        self.executor,
+                                        functools.partial(
+                                            progress, _sent, _total, *progress_args
+                                        ),
+                                    )
+                            except Exception as e:
+                                log.warning(f"Progress callback error: {e}")
 
             except StopTransmission:
                 raise
@@ -260,8 +265,8 @@ class SaveFile:
                         md5_checksum=md5_sum,
                     )
             finally:
-                if next_chunk_task is not None and not next_chunk_task.done():
-                    next_chunk_task.cancel()
+                if next_batch_task is not None and not next_batch_task.done():
+                    next_batch_task.cancel()
 
                 for _ in workers:
                     await queue.put(None)

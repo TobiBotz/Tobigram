@@ -70,8 +70,8 @@ class TokenBucket:
             while wait > 0:
                 try:
                     await asyncio.wait_for(self._cond.wait(), timeout=wait)
-                except asyncio.CancelledError:
-                    return
+                except (asyncio.CancelledError, asyncio.TimeoutError, TimeoutError):
+                    pass
                 wait = self._wait_time(tokens)
             self._try_consume(tokens)
 
