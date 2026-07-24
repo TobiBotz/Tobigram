@@ -1,234 +1,319 @@
-#  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-present Dan <https://github.com/delivrance>
-#
-#  This file is part of Pyrogram.
-#
-#  Pyrogram is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU Lesser General Public License as published
-#  by the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
-#
-#  Pyrogram is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU Lesser General Public License for more details.
-#
-#  You should have received a copy of the GNU Lesser General Public License
-#  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
-
-import base64
 import logging
 import struct
+import zlib
 from abc import ABC, abstractmethod
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 from pyrogram import raw
 
 log = logging.getLogger(__name__)
 
+SESSION_STRING_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+SESSION_STRING_DECODE = {c: i for i, c in enumerate(SESSION_STRING_ALPHABET)}
+WZ_PREFIX = "wz_"
+
 
 class Storage(ABC):
-    OLD_SESSION_STRING_FORMAT = ">B?256sI?"
-    OLD_SESSION_STRING_FORMAT_64 = ">B?256sQ?"
-    SESSION_STRING_SIZE = 351
-    SESSION_STRING_SIZE_64 = 356
-
-    SESSION_STRING_FORMAT = ">BI?256sQ?"
-    SESSION_STRING_SIZE_CURRENT = 362
-
+    V2_PACKED_SIZE = 290
+    V2_CRC_PACKED_SIZE = 294
     SESSION_STRING_FORMAT_V2 = ">BBI?256sQ?H16s"
-    SESSION_STRING_SIZE_V2 = 387
 
     def __init__(self, name: str):
         self.name = name
 
     @abstractmethod
     async def open(self):
-        """Opens the storage engine."""
         raise NotImplementedError
 
     @abstractmethod
     async def save(self):
-        """Saves the current state of the storage engine."""
         raise NotImplementedError
 
     @abstractmethod
     async def close(self):
-        """Closes the storage engine."""
         raise NotImplementedError
 
     @abstractmethod
     async def delete(self):
-        """Deletes the storage file."""
         raise NotImplementedError
 
     @abstractmethod
     async def update_peers(self, peers: List[Tuple[int, int, str, str]]) -> None:
-        """
-        Update the peers table with the provided information.
-
-        Parameters:
-            peers (``List[Tuple[int, int, str, str]]``):
-                A list of tuples containing the
-                information of the peers to be updated. Each tuple must contain the following
-                information:
-                - ``int``: The peer id.
-                - ``int``: The peer access hash.
-                - ``str``: The peer type (user, chat or channel).
-                - ``str``: The peer phone number (if any).
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def update_usernames(self, usernames: List[Tuple[int, List[str]]]) -> None:
-        """
-        Update the usernames table with the provided information.
-
-        Parameters:
-            usernames (``List[Tuple[int, List[str]]]``):
-                A list of tuples containing the
-                information of the usernames to be updated. Each tuple must contain the following
-                information:
-                - ``int``: The peer id.
-                - List of ``str``: The peer username (if any).
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def update_state(self, update_state: Tuple[int, int, int, int, int] = object) -> Tuple[int, int, int, int, int]:
-        """Get or set the update state of the current session.
-
-        Parameters:
-            update_state (``Tuple[int, int, int, int, int]``):
-                A tuple containing the update state to set.
-                Tuple must contain the following information:
-                - ``int``: The id of the entity.
-                - ``int``: The pts.
-                - ``int``: The qts.
-                - ``int``: The date.
-                - ``int``: The seq.
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def get_peer_by_id(self, peer_id: int) -> "raw.base.InputPeer":
-        """Retrieve a peer by its ID.
-
-        Parameters:
-            peer_id (``int``):
-                The ID of the peer to retrieve.
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def get_peer_by_username(self, username: str) -> "raw.base.InputPeer":
-        """Retrieve a peer by its username.
-
-        Parameters:
-            username (``str``):
-                The username of the peer to retrieve.
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def get_peer_by_phone_number(self, phone_number: str) -> "raw.base.InputPeer":
-        """Retrieve a peer by its phone number.
-
-        Parameters:
-            phone_number (``str``):
-                The phone number of the peer to retrieve.
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def dc_id(self, value: int = object) -> int:
-        """Get or set the DC ID of the current session.
-
-        Parameters:
-            value (``int``, *optional*):
-                The DC ID to set.
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def api_id(self, value: int = object) -> int:
-        """Get or set the API ID of the current session.
-
-        Parameters:
-            value (``int``, *optional*):
-                The API ID to set.
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def server_address(self, value: str = object) -> str:
-        """Get or set the server address of the current session.
-
-        Parameters:
-            value (``str``, *optional*):
-                The server address to set.
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def port(self, value: int = object) -> int:
-        """Get or set the server port of the current session.
-
-        Parameters:
-            value (``int``, *optional*):
-                The server port to set.
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def test_mode(self, value: bool = object) -> bool:
-        """Get or set the test mode of the current session.
-
-        Parameters:
-            value (``bool``, *optional*):
-                The test mode to set.
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def auth_key(self, value: bytes = object) -> bytes:
-        """Get or set the authorization key of the current session.
-
-        Parameters:
-            value (``bytes``, *optional*):
-                The authorization key to set.
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def date(self, value: int = object) -> int:
-        """Get or set the date of the current session.
-
-        Parameters:
-            value (``int``, *optional*):
-                The date to set.
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def user_id(self, value: int = object) -> int:
-        """Get or set the user ID of the current session.
-
-        Parameters:
-            value (``int``, *optional*):
-                The user ID to set.
-        """
         raise NotImplementedError
 
     @abstractmethod
     async def is_bot(self, value: bool = object) -> bool:
-        """Get or set the bot flag of the current session.
-
-        Parameters:
-            value (``bool``, *optional*):
-                The bot flag to set.
-        """
         raise NotImplementedError
+
+    @staticmethod
+    def _encode(raw: bytes) -> str:
+        result = []
+        for i in range(0, len(raw), 3):
+            chunk = raw[i:i + 3]
+            if len(chunk) == 3:
+                n = (chunk[0] << 16) | (chunk[1] << 8) | chunk[2]
+                result.append(SESSION_STRING_ALPHABET[(n >> 18) & 63])
+                result.append(SESSION_STRING_ALPHABET[(n >> 12) & 63])
+                result.append(SESSION_STRING_ALPHABET[(n >> 6) & 63])
+                result.append(SESSION_STRING_ALPHABET[n & 63])
+            elif len(chunk) == 2:
+                n = (chunk[0] << 8) | chunk[1]
+                result.append(SESSION_STRING_ALPHABET[(n >> 10) & 63])
+                result.append(SESSION_STRING_ALPHABET[(n >> 4) & 63])
+                result.append(SESSION_STRING_ALPHABET[(n << 2) & 63])
+            else:
+                n = chunk[0]
+                result.append(SESSION_STRING_ALPHABET[(n >> 2) & 63])
+                result.append(SESSION_STRING_ALPHABET[(n << 4) & 63])
+        return "".join(result)
+
+    @staticmethod
+    def _decode(s: str) -> bytes:
+        result = bytearray()
+        i = 0
+        while i < len(s):
+            if i + 4 <= len(s):
+                n = 0
+                for c in s[i:i + 4]:
+                    n = (n << 6) | SESSION_STRING_DECODE[c]
+                result.append((n >> 16) & 255)
+                result.append((n >> 8) & 255)
+                result.append(n & 255)
+                i += 4
+            elif i + 3 == len(s):
+                n = 0
+                for c in s[i:]:
+                    n = (n << 6) | SESSION_STRING_DECODE[c]
+                n >>= 2
+                result.append((n >> 8) & 255)
+                result.append(n & 255)
+                i += 3
+            elif i + 2 == len(s):
+                n = 0
+                for c in s[i:]:
+                    n = (n << 6) | SESSION_STRING_DECODE[c]
+                n >>= 4
+                result.append(n & 255)
+                i += 2
+            else:
+                raise ValueError(
+                    "Session string corruption: unexpected character count in encoding"
+                )
+        return bytes(result)
+
+    @staticmethod
+    def _try_decode_v2(raw: bytes):
+        if len(raw) != Storage.V2_PACKED_SIZE:
+            return None
+        _, dc_id, api_id, test_mode, auth_key, user_id, is_bot, port, addr_bytes = struct.unpack(
+            Storage.SESSION_STRING_FORMAT_V2, raw
+        )
+        server_address = addr_bytes.rstrip(b"\x00").decode("ascii")
+        return dict(
+            dc_id=dc_id, api_id=api_id, test_mode=test_mode,
+            auth_key=auth_key, user_id=user_id, is_bot=is_bot,
+            port=port, server_address=server_address,
+        )
+
+    @staticmethod
+    def _try_decode_v2_with_crc(raw: bytes):
+        if len(raw) != Storage.V2_CRC_PACKED_SIZE:
+            return None
+        payload = raw[:-4]
+        stored_crc = struct.unpack("<I", raw[-4:])[0]
+        if zlib.crc32(payload) != stored_crc:
+            return None
+        return Storage._try_decode_v2(payload)
+
+    @staticmethod
+    def _validate_char_set(s: str) -> str:
+        clean = []
+        for c in s:
+            if c in SESSION_STRING_DECODE:
+                clean.append(c)
+        return "".join(clean)
+
+    @staticmethod
+    def _strip_prefix(s: str) -> str:
+        if s.startswith(WZ_PREFIX):
+            return s[len(WZ_PREFIX):], True
+        return s, False
+
+    @staticmethod
+    def _decode_session_string(session_string: str) -> dict:
+        s = session_string.strip()
+        if not s:
+            raise ValueError("Session string is empty")
+
+        body, has_prefix = Storage._strip_prefix(s)
+        clean = Storage._validate_char_set(body)
+
+        has_wz_prefix = has_prefix or clean != body
+
+        if has_wz_prefix:
+            for attempt in Storage._repair_attempts(clean):
+                try:
+                    raw = Storage._decode(attempt)
+                except (KeyError, ValueError):
+                    continue
+
+                result = Storage._try_decode_v2_with_crc(raw)
+                if result:
+                    if attempt != clean:
+                        log.info("Session string auto-repaired successfully")
+                    return result
+
+            raise ValueError(
+                "Session string is corrupted: after auto-repair attempts, "
+                "none of the decoded values passed integrity check. "
+                "Please re-export your session string."
+            )
+
+        try:
+            raw = Storage._decode(clean)
+            result = Storage._try_decode_v2_with_crc(raw)
+            if result:
+                return result
+        except (KeyError, ValueError):
+            pass
+
+        try:
+            raw = Storage._decode(clean)
+            result = Storage._try_decode_v2(raw)
+            if result:
+                log.warning(
+                    "Session string uses old format without CRC checksum. "
+                    "Consider re-exporting for integrity verification."
+                )
+                return result
+        except (KeyError, ValueError):
+            pass
+
+        try:
+            raw = Storage._decode(clean)
+            if len(raw) in (263, 267, 271):
+                log.warning(
+                    "Session string uses legacy format (pre-V2). "
+                    "This format is deprecated and will be removed in future versions. "
+                    "Please re-export your session string."
+                )
+                if len(raw) == 271:
+                    dc_id, api_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
+                        ">BI?256sQ?", raw
+                    )
+                    return dict(
+                        dc_id=dc_id, api_id=api_id, test_mode=test_mode,
+                        auth_key=auth_key, user_id=user_id, is_bot=is_bot,
+                        port=None, server_address=None,
+                    )
+                elif len(raw) == 267:
+                    dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
+                        ">B?256sQ?", raw
+                    )
+                    return dict(
+                        dc_id=dc_id, api_id=None, test_mode=test_mode,
+                        auth_key=auth_key, user_id=user_id, is_bot=is_bot,
+                        port=None, server_address=None,
+                    )
+                else:
+                    dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
+                        ">B?256sI?", raw
+                    )
+                    return dict(
+                        dc_id=dc_id, api_id=None, test_mode=test_mode,
+                        auth_key=auth_key, user_id=user_id, is_bot=is_bot,
+                        port=None, server_address=None,
+                    )
+        except (KeyError, ValueError):
+            pass
+
+        for attempt in Storage._repair_attempts(clean):
+            if attempt == clean:
+                continue
+
+            for candidate in {attempt, WZ_PREFIX + attempt}:
+                for data in {candidate, Storage._strip_prefix(candidate)[0]}:
+                    try:
+                        raw = Storage._decode(data)
+                    except (KeyError, ValueError):
+                        continue
+
+                    result = Storage._try_decode_v2_with_crc(raw)
+                    if result:
+                        log.info("Session string auto-repaired successfully")
+                        return result
+
+        raise ValueError(
+            "Session string is corrupted: after auto-repair attempts, "
+            "none of the decoded values passed integrity check. "
+            "Please re-export your session string."
+        )
+
+    @staticmethod
+    def _repair_attempts(s: str):
+        yield s
+
+        for c in SESSION_STRING_ALPHABET:
+            yield c + s
+            yield s + c
+
+        for c1 in SESSION_STRING_ALPHABET:
+            for c2 in SESSION_STRING_ALPHABET:
+                pair = c1 + c2
+                yield pair + s
+                yield s + pair
 
     async def export_session_string(self) -> str:
         dc_id = await self.dc_id()
@@ -250,7 +335,7 @@ class Storage(ABC):
 
         packed = struct.pack(
             self.SESSION_STRING_FORMAT_V2,
-            2,              # version
+            2,
             dc_id,
             api_id,
             test_mode,
@@ -261,60 +346,5 @@ class Storage(ABC):
             addr_bytes,
         )
 
-        return base64.urlsafe_b64encode(packed).decode().rstrip("=")
-
-    @staticmethod
-    def _decode_session_string(
-        session_string: str,
-    ) -> dict:
-        raw = base64.urlsafe_b64decode(session_string + "=" * (-len(session_string) % 4))
-        length = len(raw)
-
-        if length == 263:
-            dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
-                Storage.OLD_SESSION_STRING_FORMAT, raw
-            )
-            log.warning("Old session string format without api_id; upgrade by re-exporting")
-            return dict(
-                dc_id=dc_id, api_id=None, test_mode=test_mode,
-                auth_key=auth_key, user_id=user_id, is_bot=is_bot,
-                port=None, server_address=None,
-            )
-
-        if length == 267:
-            dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
-                Storage.OLD_SESSION_STRING_FORMAT_64, raw
-            )
-            log.warning("Old session string format without api_id; upgrade by re-exporting")
-            return dict(
-                dc_id=dc_id, api_id=None, test_mode=test_mode,
-                auth_key=auth_key, user_id=user_id, is_bot=is_bot,
-                port=None, server_address=None,
-            )
-
-        if length == 271:
-            dc_id, api_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
-                Storage.SESSION_STRING_FORMAT, raw
-            )
-            return dict(
-                dc_id=dc_id, api_id=api_id, test_mode=test_mode,
-                auth_key=auth_key, user_id=user_id, is_bot=is_bot,
-                port=None, server_address=None,
-            )
-
-        if length == 290:
-            _, dc_id, api_id, test_mode, auth_key, user_id, is_bot, port, addr_bytes = struct.unpack(
-                Storage.SESSION_STRING_FORMAT_V2, raw
-            )
-            server_address = addr_bytes.rstrip(b"\x00").decode("ascii")
-            return dict(
-                dc_id=dc_id, api_id=api_id, test_mode=test_mode,
-                auth_key=auth_key, user_id=user_id, is_bot=is_bot,
-                port=port, server_address=server_address,
-            )
-
-        raise ValueError(
-            f"Invalid session string: unexpected length {length} bytes. "
-            "The session string may be corrupted or from an incompatible version."
-        )
-
+        crc = struct.pack("<I", zlib.crc32(packed))
+        return WZ_PREFIX + Storage._encode(packed + crc)
