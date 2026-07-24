@@ -35,9 +35,9 @@ from pyrogram import raw
 log = logging.getLogger(__name__)
 
 PART_SIZE = 512 * 1024
-POOL_SIZE = 16
+POOL_SIZE = 20
 MAX_RETRIES = 16
-READ_BUFFER = 8 * 1024 * 1024
+READ_BUFFER = 16 * 1024 * 1024
 PROGRESS_INTERVAL = 0.2
 
 
@@ -117,7 +117,7 @@ class SaveFile:
                             await asyncio.sleep(delay)
 
             async def read_batch():
-                batch_size = PART_SIZE * POOL_SIZE
+                batch_size = PART_SIZE * n_workers
                 data = await self.loop.run_in_executor(
                     self.executor, fp.read, batch_size
                 )
@@ -160,10 +160,10 @@ class SaveFile:
                 rate_limit = 40  # ~20 MiB/s
                 pool_size = min(8, POOL_SIZE) if is_big else 1
             elif is_premium:
-                rate_limit = 200  # ~100 MiB/s
-                pool_size = min(16, POOL_SIZE) if is_big else 1
+                rate_limit = 300
+                pool_size = min(14, POOL_SIZE) if is_big else 1
             else:
-                rate_limit = 45  # ~22.5 MiB/s
+                rate_limit = 50  # ~25 MiB/s
                 pool_size = min(12, POOL_SIZE) if is_big else 1
 
             is_missing_part = file_id is not None
@@ -173,10 +173,10 @@ class SaveFile:
             dc_id = await self.storage.dc_id()
             pool = await self._get_media_session_pool(dc_id, pool_size)
 
-            n_workers = len(pool)
+            n_workers = len(pool) * 2
             queue = asyncio.Queue(n_workers * 4)
             workers = [
-                self.loop.create_task(worker(pool[i]))
+                self.loop.create_task(worker(pool[i % len(pool)]))
                 for i in range(n_workers)
             ]
             next_batch_task = None
