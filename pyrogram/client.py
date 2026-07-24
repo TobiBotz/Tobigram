@@ -504,9 +504,13 @@ class Client(Methods):
         if self.bot_token:
             return await self.sign_in_bot(self.bot_token)
 
-        print(f"Welcome to Pyrogram (version {__version__})")
-        print(f"Pyrogram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n"
-              f"under the terms of the {__license__}.\n")
+        print(rf"_ _ _ _____ _    ____ ____ ____ ")
+        print(rf"| | | | ____| |  | ___| ___) ___)")
+        print(rf"| | | |  _| | |__| |__| |__ | |__ ")
+        print(rf"| |_| | |___|____|____|____)|____)")
+        print(rf" \___/|_____|                     ")
+        print(f"  wzgram v{__version__}")
+        print()
 
         while True:
             try:
