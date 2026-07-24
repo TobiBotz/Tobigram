@@ -35,11 +35,10 @@ from pyrogram import raw
 log = logging.getLogger(__name__)
 
 PART_SIZE = 512 * 1024
-POOL_SIZE = 8
-MAX_RETRIES = 10
-READ_BUFFER = 4 * 1024 * 1024
-PROGRESS_INTERVAL = 0.1
-RATE_LIMIT_PARTS_PER_SEC = 38  # ~19 MiB/s
+POOL_SIZE = 16
+MAX_RETRIES = 16
+READ_BUFFER = 8 * 1024 * 1024
+PROGRESS_INTERVAL = 0.2
 
 
 class SaveFile:
@@ -103,11 +102,19 @@ class SaveFile:
                                     f"{MAX_RETRIES} attempts: {e}"
                                 )
                                 raise
+                            delay = 2 ** attempt
+                            err_str = str(e)
+                            if "FLOOD_WAIT" in err_str or "FLOOD" in err_str:
+                                for part in err_str.split():
+                                    if part.isdigit():
+                                        delay = min(int(part), 30)
+                                        break
                             log.warning(
                                 f"Retrying upload part "
-                                f"(attempt {attempt + 1}/{MAX_RETRIES}): {e}"
+                                f"(attempt {attempt + 1}/{MAX_RETRIES}): "
+                                f"{err_str[:120]}"
                             )
-                            await asyncio.sleep(2**attempt)
+                            await asyncio.sleep(delay)
 
             async def read_batch():
                 batch_size = PART_SIZE * POOL_SIZE
@@ -146,7 +153,19 @@ class SaveFile:
 
             file_total_parts = int(math.ceil(file_size / part_size))
             is_big = file_size > 10 * 1024 * 1024
-            pool_size = POOL_SIZE if is_big else 1
+            is_bot = self.me.is_bot if hasattr(self.me, 'is_bot') else False
+            is_premium = self.me.is_premium if hasattr(self.me, 'is_premium') else False
+
+            if is_bot:
+                rate_limit = 40  # ~20 MiB/s
+                pool_size = min(8, POOL_SIZE) if is_big else 1
+            elif is_premium:
+                rate_limit = 200  # ~100 MiB/s
+                pool_size = min(16, POOL_SIZE) if is_big else 1
+            else:
+                rate_limit = 45  # ~22.5 MiB/s
+                pool_size = min(12, POOL_SIZE) if is_big else 1
+
             is_missing_part = file_id is not None
             file_id = file_id or self.rnd_id()
             md5_sum = md5() if not is_big and not is_missing_part else None
@@ -155,7 +174,7 @@ class SaveFile:
             pool = await self._get_media_session_pool(dc_id, pool_size)
 
             n_workers = len(pool)
-            queue = asyncio.Queue(n_workers * 2)
+            queue = asyncio.Queue(n_workers * 4)
             workers = [
                 self.loop.create_task(worker(pool[i]))
                 for i in range(n_workers)
@@ -163,7 +182,7 @@ class SaveFile:
             next_batch_task = None
             _last_progress_time = 0.0
             _next_dispatch = 0.0
-            _dispatch_interval = 1.0 / RATE_LIMIT_PARTS_PER_SEC
+            _dispatch_interval = 1.0 / rate_limit
 
             try:
 
