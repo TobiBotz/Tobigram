@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 SESSION_STRING_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 SESSION_STRING_DECODE = {c: i for i, c in enumerate(SESSION_STRING_ALPHABET)}
-WZ_PREFIX = "wz_"
+WZ_PREFIX = "WZ_"
 
 
 class Storage(ABC):

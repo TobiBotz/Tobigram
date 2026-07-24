@@ -22,11 +22,9 @@ class TestStorageABC:
             assert hasattr(Storage, m), f"Storage missing abstract method: {m}"
 
     def test_storage_constants(self):
-        assert Storage.OLD_SESSION_STRING_FORMAT == ">B?256sI?"
-        assert Storage.OLD_SESSION_STRING_FORMAT_64 == ">B?256sQ?"
-        assert Storage.SESSION_STRING_SIZE == 351
-        assert Storage.SESSION_STRING_SIZE_64 == 356
-        assert Storage.SESSION_STRING_FORMAT == ">BI?256sQ?"
+        assert Storage.V2_PACKED_SIZE == 290
+        assert Storage.V2_CRC_PACKED_SIZE == 294
+        assert Storage.SESSION_STRING_FORMAT_V2 == ">BBI?256sQ?H16s"
 
 
 class TestMemoryStorage:
@@ -156,10 +154,13 @@ class TestMemoryStorage:
         await storage.user_id(999)
         await storage.is_bot(False)
         await storage.date(0)
+        await storage.server_address("149.154.167.50")
+        await storage.port(443)
 
         s = await storage.export_session_string()
         assert isinstance(s, str)
-        assert len(s) > 0
+        assert len(s) == 395
+        assert s.startswith("WZ_")
 
         await storage.close()
 
