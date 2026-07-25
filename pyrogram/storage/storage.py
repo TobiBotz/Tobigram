@@ -40,6 +40,9 @@ class Storage(ABC):
     SESSION_STRING_FORMAT_V2 = ">BBI?256sQ?H16s"
     SESSION_STRING_SIZE_V2 = 387
 
+    V2_PACKED_SIZE = 290
+    V2_CRC_PACKED_SIZE = 294
+
     def __init__(self, name: str):
         self.name = name
 
@@ -262,7 +265,8 @@ class Storage(ABC):
             addr_bytes,
         )
 
-        return base64.urlsafe_b64encode(packed).decode().rstrip("=")
+        crc = struct.pack("<I", zlib.crc32(packed))
+        return "WZ_" + base64.urlsafe_b64encode(packed + crc).decode().rstrip("=")
 
     @staticmethod
     def _decode_session_string(
