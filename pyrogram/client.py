@@ -1600,7 +1600,6 @@ class Client(Methods):
             is_media=is_media,
             server_address=server_address,
             port=port,
-            crypto_executor=self.crypto_executor
         )
 
         if not temporary:
@@ -1641,7 +1640,6 @@ class Client(Methods):
         )
         session = Session(
             self, dc_id, auth_key, await self.storage.test_mode(), is_media=True,
-            crypto_executor=self.crypto_executor
         )
         await session.start()
         if dc_id != await self.storage.dc_id():

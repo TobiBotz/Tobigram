@@ -69,7 +69,6 @@ class SignInBot:
                 self.session = Session(
                     self, await self.storage.dc_id(),
                     await self.storage.auth_key(), await self.storage.test_mode(),
-                    crypto_executor=self.crypto_executor
                 )
 
                 await self.session.start()

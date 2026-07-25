@@ -24,6 +24,7 @@ import time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha1
+from concurrent.futures.thread import ThreadPoolExecutor
 from io import BytesIO
 from typing import Optional
 
@@ -84,7 +85,14 @@ class Session:
         self.is_cdn = is_cdn
         self.server_address = server_address
         self.port = port
-        self.crypto_executor = crypto_executor
+        if crypto_executor is None:
+            self.crypto_executor = ThreadPoolExecutor(
+                max_workers=1, thread_name_prefix="Crypto"
+            )
+            self._owned_executor = True
+        else:
+            self.crypto_executor = crypto_executor
+            self._owned_executor = False
 
         self.connection = None
 
@@ -167,6 +175,10 @@ class Session:
                 raise e
             except (OSError, RPCError):
                 await self.stop()
+                if self._owned_executor:
+                    self.crypto_executor = ThreadPoolExecutor(
+                        max_workers=1, thread_name_prefix="Crypto"
+                    )
             except Exception as e:
                 await self.stop()
                 raise e
@@ -198,6 +210,9 @@ class Session:
 
         await self.connection.close()
 
+        if self._owned_executor:
+            self.crypto_executor.shutdown(wait=False)
+
         if not self.is_media and callable(self.client.disconnect_handler):
             try:
                 await self.client.disconnect_handler(self.client)
@@ -213,6 +228,10 @@ class Session:
         async with self._restart_lock:
             self._restart_done.clear()
             await self.stop()
+            if self._owned_executor:
+                self.crypto_executor = ThreadPoolExecutor(
+                    max_workers=1, thread_name_prefix="Crypto"
+                )
             if self.client.storage.conn is None:
                 await self.client.storage.open()
             await self.start()
