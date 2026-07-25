@@ -17,7 +17,6 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import threading
 import time
 
 log = logging.getLogger(__name__)
@@ -25,17 +24,15 @@ log = logging.getLogger(__name__)
 
 class _MsgIdGenerator:
     def __init__(self):
-        self._lock = threading.Lock()
         self.last_time = 0
         self.offset = 0
 
     def __call__(self) -> int:
-        with self._lock:
-            now = int(time.time())
-            self.offset = (self.offset + 4) if now == self.last_time else 0
-            msg_id = (now * 2 ** 32) + self.offset
-            self.last_time = now
-            return msg_id
+        now = int(time.time())
+        self.offset = (self.offset + 4) if now == self.last_time else 0
+        msg_id = (now * 2 ** 32) + self.offset
+        self.last_time = now
+        return msg_id
 
 
 MsgId = _MsgIdGenerator()  # module-level singleton for backward compat

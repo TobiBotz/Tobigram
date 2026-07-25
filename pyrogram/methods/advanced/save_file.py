@@ -155,6 +155,7 @@ class SaveFile:
             is_big = file_size > 10 * 1024 * 1024
             is_bot = self.me.is_bot if hasattr(self.me, 'is_bot') else False
             is_premium = self.me.is_premium if hasattr(self.me, 'is_premium') else False
+            _ul_file_size_mib = file_size / (1024 * 1024) if file_size > 0 else 0
 
             if is_bot:
                 rate_limit = 40  # ~20 MiB/s
@@ -165,6 +166,13 @@ class SaveFile:
             else:
                 rate_limit = 50  # ~25 MiB/s
                 pool_size = min(12, POOL_SIZE) if is_big else 1
+
+            if _ul_file_size_mib >= 500:
+                pool_size = min(pool_size + 4, POOL_SIZE)
+                rate_limit = min(int(rate_limit * 1.5), 500)
+            elif _ul_file_size_mib >= 100:
+                pool_size = min(pool_size + 2, POOL_SIZE)
+                rate_limit = min(int(rate_limit * 1.2), 400)
 
             is_missing_part = file_id is not None
             file_id = file_id or self.rnd_id()
@@ -183,6 +191,58 @@ class SaveFile:
             _last_progress_time = 0.0
             _next_dispatch = 0.0
             _dispatch_interval = 1.0 / rate_limit
+
+            _ul_auto_tune_task = None
+            if _ul_file_size_mib >= 100:
+                async def _ul_auto_tuner():
+                    _last_part = 0
+                    _last_time = time.monotonic()
+                    try:
+                        while True:
+                            await asyncio.sleep(2.0)
+                            now = time.monotonic()
+                            elapsed = now - _last_time
+                            done = file_part - _last_part
+                            if elapsed > 0 and done >= 10:
+                                cps = done / elapsed
+                                new_rate = max(cps * 1.5, 10.0)
+                                new_rate = min(new_rate, 600.0)
+                                _dispatch_interval = 1.0 / new_rate
+                            _last_part = file_part
+                            _last_time = now
+                    except asyncio.CancelledError:
+                        pass
+                _ul_auto_tune_task = asyncio.ensure_future(_ul_auto_tuner())
+
+            _progress_task = None
+            if progress:
+                async def _progress_reporter():
+                    nonlocal _last_progress_time
+                    try:
+                        _prev_part = 0
+                        while True:
+                            await asyncio.sleep(0.5)
+                            p = file_part
+                            if p == 0 or p == _prev_part:
+                                continue
+                            _prev_part = p
+                            now = time.monotonic()
+                            if now - _last_progress_time >= PROGRESS_INTERVAL:
+                                _last_progress_time = now
+                                s = min(p * part_size, file_size)
+                                try:
+                                    if inspect.iscoroutinefunction(progress):
+                                        await progress(s, file_size, *progress_args)
+                                    else:
+                                        await self.loop.run_in_executor(
+                                            self.executor,
+                                            functools.partial(progress, s, file_size, *progress_args),
+                                        )
+                                except Exception as e:
+                                    log.warning(f"Progress callback error: {e}")
+                    except asyncio.CancelledError:
+                        pass
+                _progress_task = asyncio.ensure_future(_progress_reporter())
 
             try:
 
@@ -243,26 +303,6 @@ class SaveFile:
 
                         file_part += 1
 
-                    if progress:
-                        _now = time.monotonic()
-                        if _now - _last_progress_time >= PROGRESS_INTERVAL:
-                            _last_progress_time = _now
-
-                            _sent = min(file_part * part_size, file_size)
-                            _total = file_size
-
-                            try:
-                                if inspect.iscoroutinefunction(progress):
-                                    await progress(_sent, _total, *progress_args)
-                                else:
-                                    await self.loop.run_in_executor(
-                                        self.executor,
-                                        functools.partial(
-                                            progress, _sent, _total, *progress_args
-                                        ),
-                                    )
-                            except Exception as e:
-                                log.warning(f"Progress callback error: {e}")
 
             except StopTransmission:
                 raise
@@ -284,6 +324,10 @@ class SaveFile:
                         md5_checksum=md5_sum,
                     )
             finally:
+                if _progress_task and not _progress_task.done():
+                    _progress_task.cancel()
+                if _ul_auto_tune_task and not _ul_auto_tune_task.done():
+                    _ul_auto_tune_task.cancel()
                 if next_batch_task is not None and not next_batch_task.done():
                     next_batch_task.cancel()
 
