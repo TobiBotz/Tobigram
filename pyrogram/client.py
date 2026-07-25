@@ -1224,18 +1224,6 @@ class Client(Methods):
                     dl_rate = 30
                     dl_burst = 15
 
-                _dl_file_size_mib = file_size / (1024 * 1024) if file_size > 0 else 0
-                if _dl_file_size_mib >= 500:
-                    dl_pool_size = min(dl_pool_size + 1, 8)
-                    dl_workers_per_session = min(dl_workers_per_session + 2, 12)
-                    dl_rate = min(int(dl_rate * 1.5), 300)
-                    dl_burst = min(int(dl_burst * 1.5), 150)
-                elif _dl_file_size_mib >= 100:
-                    dl_pool_size = min(dl_pool_size + 1, 6)
-                    dl_workers_per_session = min(dl_workers_per_session + 1, 8)
-                    dl_rate = min(int(dl_rate * 1.3), 200)
-                    dl_burst = min(int(dl_burst * 1.3), 100)
-
                 total_chunks = math.ceil((file_size - offset_bytes) / chunk_size)
                 pool_size = min(dl_pool_size, total_chunks)
                 total_workers = min(dl_pool_size * dl_workers_per_session, total_chunks)
@@ -1383,28 +1371,6 @@ class Client(Methods):
                                 pass
                         _progress_task = asyncio.ensure_future(_progress_reporter())
 
-                    _auto_tune_task = None
-                    if _dl_file_size_mib >= 100:
-                        async def _auto_tuner():
-                            _last_count = 0
-                            _last_time = time.monotonic()
-                            try:
-                                while True:
-                                    await asyncio.sleep(2.0)
-                                    now = time.monotonic()
-                                    elapsed = now - _last_time
-                                    done = _done_count - _last_count
-                                    if elapsed > 0 and done >= 10:
-                                        cps = done / elapsed
-                                        new_rate = max(cps * 1.5, 10.0)
-                                        new_rate = min(new_rate, 400.0)
-                                        _getfile_rate.rate = new_rate
-                                    _last_count = _done_count
-                                    _last_time = now
-                            except asyncio.CancelledError:
-                                pass
-                        _auto_tune_task = asyncio.ensure_future(_auto_tuner())
-
                     try:
                         while current < total:
                             if _write_mode:
@@ -1439,8 +1405,6 @@ class Client(Methods):
                     finally:
                         if _progress_task and not _progress_task.done():
                             _progress_task.cancel()
-                        if _auto_tune_task and not _auto_tune_task.done():
-                            _auto_tune_task.cancel()
                         for t in tasks:
                             if not t.done():
                                 t.cancel()
