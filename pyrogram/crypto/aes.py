@@ -41,6 +41,34 @@ def ctr256_decrypt(data: bytes, key: bytes, iv: bytearray, state: Optional[bytea
     return warpcrypto.ctr256_decrypt(data, key, iv, state or bytearray(1))
 
 
+def ctr256_encrypt_inplace(data: bytearray, key: bytes, iv: bytearray, state: Optional[bytearray] = None):
+    return warpcrypto.ctr256_encrypt_inplace(data, key, iv, state or bytearray(1))
+
+
+def ctr256_decrypt_inplace(data: bytearray, key: bytes, iv: bytearray, state: Optional[bytearray] = None):
+    return warpcrypto.ctr256_decrypt_inplace(data, key, iv, state or bytearray(1))
+
+
+def ctr256_encrypt_batch(
+    data_flat: bytes,
+    sizes: bytearray,
+    key: bytes,
+    ivs: bytearray,
+    states: bytearray,
+) -> bytes:
+    return warpcrypto.ctr256_encrypt_batch(data_flat, sizes, key, ivs, states)
+
+
+def ctr256_decrypt_batch(
+    data_flat: bytes,
+    sizes: bytearray,
+    key: bytes,
+    ivs: bytearray,
+    states: bytearray,
+) -> bytes:
+    return warpcrypto.ctr256_decrypt_batch(data_flat, sizes, key, ivs, states)
+
+
 def xor(a: bytes, b: bytes) -> bytes:
     return int.to_bytes(
         int.from_bytes(a, "big") ^ int.from_bytes(b, "big"),

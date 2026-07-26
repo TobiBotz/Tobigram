@@ -39,7 +39,7 @@ from typing import AsyncGenerator, Callable, List, Optional, Type, Union
 import pyrogram
 from pyrogram import __license__, __version__, enums, raw, utils
 from pyrogram.crypto import aes
-from pyrogram.crypto.executor import get_crypto_executor, create_crypto_executor
+from pyrogram.crypto.executor import create_crypto_executor
 from pyrogram.errors import (
     AuthBytesInvalid,
     BadRequest,
@@ -386,7 +386,7 @@ class Client(Methods):
         self.auto_no_updates = auto_no_updates
 
         self.executor = ThreadPoolExecutor(self.workers, thread_name_prefix="Handler")
-        self.crypto_executor = get_crypto_executor()
+        self.crypto_executor = create_crypto_executor()
 
         self.storage: Storage
 
@@ -1301,13 +1301,17 @@ class Client(Methods):
                     if not _write_mode:
                         received = {}
                         data_ready = asyncio.Event()
+                    else:
+                        _write_fd = _write_file.fileno()
                     _done_count = 0
                     _total_chunks = chunks_needed
                     _getfile_rate = TokenBucket(rate=dl_rate, burst=dl_burst)
                     _last_progress_count = 0
+                    _last_rate_adj = 0.0
+                    _fast_window = 0
 
                     async def _worker(session):
-                        nonlocal _done_count
+                        nonlocal _done_count, _last_rate_adj, _fast_window
                         while True:
                             try:
                                 offset = work.get_nowait()
@@ -1315,6 +1319,7 @@ class Client(Methods):
                                 return
 
                             await _getfile_rate.acquire()
+                            t0 = time.monotonic()
                             r = await session.invoke(
                                 raw.functions.upload.GetFile(
                                     location=location,
@@ -1324,10 +1329,10 @@ class Client(Methods):
                                 sleep_threshold=30,
                             )
                             chunk_data = r.bytes
+                            t1 = time.monotonic()
 
                             if _write_mode:
-                                _write_file.seek(offset)
-                                _write_file.write(chunk_data)
+                                os.pwrite(_write_fd, chunk_data, offset)
                             else:
                                 received[offset] = chunk_data
                                 data_ready.set()
@@ -1336,6 +1341,21 @@ class Client(Methods):
 
                             if len(chunk_data) < chunk_size:
                                 return
+
+                            elapsed = t1 - t0
+                            now = t1
+                            if elapsed > 2.0 and now - _last_rate_adj > 0.5:
+                                _last_rate_adj = now
+                                _fast_window = 0
+                                _getfile_rate.rate = max(_getfile_rate.rate * 0.8, 3.0)
+                            elif elapsed < 0.5:
+                                _fast_window += 1
+                                if _fast_window >= 5 and now - _last_rate_adj > 0.5:
+                                    _last_rate_adj = now
+                                    _getfile_rate.rate = min(_getfile_rate.rate + 2.0, dl_rate)
+                                    _fast_window = 0
+                            else:
+                                _fast_window = 0
 
                     tasks = [
                         asyncio.ensure_future(_worker(pool[i % n_sessions]))

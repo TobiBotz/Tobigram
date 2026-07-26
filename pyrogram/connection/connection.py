@@ -21,7 +21,7 @@ import logging
 from concurrent.futures import ThreadPoolExecutor
 from typing import Optional, Type
 
-from pyrogram.crypto.executor import get_crypto_executor
+from pyrogram.crypto.executor import create_crypto_executor
 from .transport import TCP, TCPAbridged
 from ..session.internals import DataCenter
 
@@ -50,7 +50,7 @@ class Connection:
         self.proxy = proxy
         self.media = media
         self.protocol_factory = protocol_factory
-        self.crypto_executor = crypto_executor or get_crypto_executor()
+        self.crypto_executor = crypto_executor or create_crypto_executor()
 
         if server_address and port:
             self.address = (server_address, port)

@@ -26,14 +26,13 @@ from typing import Optional
 
 import socks
 
-from pyrogram.crypto.executor import get_crypto_executor
+from pyrogram.crypto.executor import create_crypto_executor
 
 log = logging.getLogger(__name__)
 
 
 class TCP:
     TIMEOUT = 10
-    _shared_crypto_executor: Optional[ThreadPoolExecutor] = None
 
     def __init__(self, ipv6: bool, proxy: dict, crypto_executor: Optional[ThreadPoolExecutor] = None, loop: Optional[asyncio.AbstractEventLoop] = None):
         self.socket = None
@@ -46,7 +45,7 @@ class TCP:
 
         self.proxy = proxy
 
-        self.crypto_executor = crypto_executor or get_crypto_executor()
+        self.crypto_executor = crypto_executor or create_crypto_executor()
 
         if proxy:
             hostname = proxy.get("hostname")
