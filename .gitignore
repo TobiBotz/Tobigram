@@ -1,5 +1,7 @@
 # Development
 *.session
+*.session-shm
+*.session-wal
 config.ini
 main.py
 unknown_errors.txt
@@ -21,6 +23,9 @@ docs/source/api/types/
 
 # VS Code
 .vscode/
+
+# Lock files
+*.lock
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

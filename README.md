@@ -3,7 +3,7 @@
 [![PyPI](https://img.shields.io/pypi/v/wzgram)](https://pypi.org/project/wzgram/)
 [![Python](https://img.shields.io/pypi/pyversions/wzgram)](https://pypi.org/project/wzgram/)
 [![Downloads](https://img.shields.io/pypi/dm/wzgram)](https://pypi.org/project/wzgram/)
-[![License](https://img.shields.io/github/license/rjriajul/wzgram)](LICENSE)
+[![License](https://img.shields.io/github/license/rjriajul/wzgram)](COPYING.lesser)
 [![Documentation](https://img.shields.io/badge/docs-rjriajul.github.io/blue)](https://rjriajul.github.io/wzgram)
 
 > Elegant, modern and asynchronous Telegram MTProto API framework in Python for users and bots
@@ -77,7 +77,7 @@ pip install wzgram[fast]
 
 ```bash
 # Clone the repo
-git clone https://github.com/rjriajul/wzgram
+git clone https://github.com/rjriajul/wzgram.git
 cd wzgram
 
 # Install uv (if not already)
