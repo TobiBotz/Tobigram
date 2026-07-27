@@ -122,7 +122,13 @@ class ForumTopic(Object):
         self.is_deleted = is_deleted
 
     @staticmethod
-    def _parse(client: "pyrogram.Client", forum_topic: "raw.types.ForumTopic", messages: dict = {},  users: dict = {}, chats: dict = {}) -> "ForumTopic":
+    def _parse(client: "pyrogram.Client", forum_topic: "raw.types.ForumTopic", messages: dict = None,  users: dict = None, chats: dict = None) -> "ForumTopic":
+        if messages is None:
+            messages = {}
+        if users is None:
+            users = {}
+        if chats is None:
+            chats = {}
         if not forum_topic:
             return None
 

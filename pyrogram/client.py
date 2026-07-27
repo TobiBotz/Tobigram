@@ -672,7 +672,7 @@ class Client(Methods):
 
         return signed_up
 
-    async def authorize_qr(self, except_ids: List[int] = []) -> "User":
+    async def authorize_qr(self, except_ids: Optional[List[int]] = None) -> "User":
         from qrcode import QRCode
 
         qr_login = QRLogin(self, except_ids)
