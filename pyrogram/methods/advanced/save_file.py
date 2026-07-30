@@ -38,7 +38,7 @@ log = logging.getLogger(__name__)
 PART_SIZE = 512 * 1024
 POOL_SIZE = 20
 MAX_RETRIES = 16
-READ_BUFFER = 16 * 1024 * 1024
+READ_BUFFER = 4 * 1024 * 1024
 PROGRESS_INTERVAL = 0.2
 
 

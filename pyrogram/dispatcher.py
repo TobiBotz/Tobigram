@@ -124,7 +124,7 @@ class Dispatcher:
         self.locks_list = []
         self._modify_lock = asyncio.Lock()
 
-        self.updates_queue = asyncio.Queue(maxsize=8192)
+        self.updates_queue = asyncio.Queue(maxsize=256)
         self.groups = OrderedDict()
 
         async def message_parser(update, users, chats):

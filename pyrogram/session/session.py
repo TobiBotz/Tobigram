@@ -110,7 +110,7 @@ class Session:
 
         self._handler_lock = asyncio.Lock()
         self._packet_tasks = set()
-        self._update_semaphore = asyncio.Semaphore(100)
+        self._update_semaphore = asyncio.Semaphore(32)
 
         self.ping_task = None
         self.ping_task_event = asyncio.Event()
