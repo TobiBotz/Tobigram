@@ -1692,9 +1692,10 @@ class Client(Methods):
             pool = [s for s in pool if s.is_started.is_set()]
             needed = n - len(pool)
             if needed > 0:
-                for _ in range(needed):
-                    session = await self._make_media_session(dc_id)
-                    pool.append(session)
+                sessions = await asyncio.gather(
+                    *(self._make_media_session(dc_id) for _ in range(needed))
+                )
+                pool.extend(sessions)
             self.media_session_pools[dc_id] = pool
             return list(pool)
 
