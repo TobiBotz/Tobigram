@@ -131,13 +131,17 @@ class RateLimiter:
         if self._closed:
             return True
         bucket = self._buckets.get(category)
-        if bucket and not bucket._try_consume(tokens):
-            return False
-        if not self._global._try_consume(tokens):
-            if bucket:
-                bucket._tokens += tokens
+        if bucket:
+            saved = (bucket._last_refill, bucket._tokens)
+            if not bucket._try_consume(tokens):
+                return False
+            if not self._global._try_consume(tokens):
+                bucket._last_refill, bucket._tokens = saved
                 bucket._total_taken -= tokens
-            return False
+                return False
+        else:
+            if not self._global._try_consume(tokens):
+                return False
         return True
 
     def congestion(self) -> float:

@@ -122,6 +122,7 @@ class Session:
         self._restart_done.set()
 
         self.is_started = asyncio.Event()
+        self._stopping = False
 
         try:
             self.loop = asyncio.get_running_loop()
@@ -133,6 +134,7 @@ class Session:
         self._last_flood_decay = 0.0
 
     async def start(self):
+        self._stopping = False
         while True:
             self.connection = Connection(
                 self.dc_id,
@@ -197,6 +199,7 @@ class Session:
 
     async def stop(self):
         self.is_started.clear()
+        self._stopping = True
 
         self.stored_msg_ids.clear()
 
@@ -246,6 +249,7 @@ class Session:
             try:
                 await self.stop()
                 if self._owned_executor:
+                    self.crypto_executor.shutdown(wait=False)
                     self.crypto_executor = ThreadPoolExecutor(
                         max_workers=1, thread_name_prefix="Crypto"
                     )
@@ -422,7 +426,8 @@ class Session:
 
                 break
 
-            self.loop.create_task(self._handle_packet_wrapper(packet))
+            if not self._stopping:
+                self.loop.create_task(self._handle_packet_wrapper(packet))
 
         log.info("NetworkTask stopped")
 

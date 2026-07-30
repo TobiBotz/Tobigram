@@ -17,9 +17,12 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import logging
 import os
 from datetime import datetime
 from typing import Union, Optional, Callable, BinaryIO
+
+log = logging.getLogger(__name__)
 
 import pyrogram
 from pyrogram import types

@@ -18,6 +18,7 @@
 
 import asyncio
 import logging
+import os
 import signal
 from signal import signal as signal_fn, SIGINT, SIGTERM, SIGABRT
 
@@ -75,7 +76,8 @@ async def idle():
     task = None
 
     def signal_handler(signum, __):
-        logging.info(f"Stop signal received ({signals[signum]}). Exiting...")
+        msg = f"Stop signal received ({signals[signum]}). Exiting...\n"
+        os.write(2, msg.encode())
         if task:
             task.cancel()
 
