@@ -27,7 +27,7 @@ class TokenBucket:
         self._burst = burst if burst is not None else rate
         self._tokens = float(self._burst)
         self._last_refill = time.monotonic()
-        self._cond = asyncio.Condition()
+        self._lock = asyncio.Lock()
         self._total_taken = 0
 
     @property
@@ -66,13 +66,14 @@ class TokenBucket:
 
     async def acquire(self, tokens: float = 1.0):
         while True:
-            async with self._cond:
-                wait = self._wait_time(tokens)
-                if wait <= 0:
-                    self._try_consume(tokens)
+            async with self._lock:
+                self._refill()
+                if self._tokens >= tokens:
+                    self._tokens -= tokens
+                    self._total_taken += tokens
                     return
+                wait = (tokens - self._tokens) / max(self._rate, 0.0001)
             await asyncio.sleep(wait)
-
 
     def congestion(self) -> float:
         if self._burst <= 0:
@@ -130,13 +131,13 @@ class RateLimiter:
         if self._closed:
             return True
         bucket = self._buckets.get(category)
-        if bucket and bucket.available < tokens:
+        if bucket and not bucket._try_consume(tokens):
             return False
-        if self._global.available < tokens:
+        if not self._global._try_consume(tokens):
+            if bucket:
+                bucket._tokens += tokens
+                bucket._total_taken -= tokens
             return False
-        if bucket:
-            bucket._try_consume(tokens)
-        self._global._try_consume(tokens)
         return True
 
     def congestion(self) -> float:
@@ -158,6 +159,14 @@ class RateLimiter:
         return self._closed
 
     def update_limits(self, category: str, rate: float, burst: float):
-        self._buckets[category] = TokenBucket(rate=rate, burst=burst)
         if category == "global":
-            self._global = self._buckets.pop(category)
+            old = self._global
+            self._global = TokenBucket(rate=rate, burst=burst)
+            self._global._tokens = min(old._tokens, burst)
+            self._global._total_taken = old._total_taken
+        else:
+            old = self._buckets.get(category)
+            self._buckets[category] = TokenBucket(rate=rate, burst=burst)
+            if old:
+                self._buckets[category]._tokens = min(old._tokens, burst)
+                self._buckets[category]._total_taken = old._total_taken

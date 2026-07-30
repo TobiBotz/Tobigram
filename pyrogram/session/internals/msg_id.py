@@ -32,7 +32,12 @@ class _MsgIdGenerator:
     def __call__(self) -> int:
         with self._lock:
             now = int(time.time())
-            self.offset = (self.offset + 4) if now == self.last_time else 0
+            if now == self.last_time:
+                self.offset += 4
+            elif now < self.last_time:
+                self.offset += 4
+            else:
+                self.offset = 0
             msg_id = (now * 2 ** 32) + self.offset
             self.last_time = now
             return msg_id

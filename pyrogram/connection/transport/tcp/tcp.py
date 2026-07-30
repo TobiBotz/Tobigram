@@ -41,7 +41,13 @@ class TCP:
         self.writer = None
 
         self.lock = asyncio.Lock()
-        self.loop = loop or asyncio.get_event_loop()
+        if loop:
+            self.loop = loop
+        else:
+            try:
+                self.loop = asyncio.get_running_loop()
+            except RuntimeError:
+                self.loop = asyncio.get_event_loop_policy().get_event_loop()
 
         self.proxy = proxy
 
@@ -82,12 +88,17 @@ class TCP:
 
     async def connect(self, address: tuple):
         if self.proxy:
-            with ThreadPoolExecutor(1) as executor:
-                await self.loop.run_in_executor(executor, self.socket.connect, address)
+            try:
+                await asyncio.wait_for(
+                    self.loop.run_in_executor(None, self.socket.connect, address),
+                    TCP.TIMEOUT
+                )
+            except asyncio.TimeoutError:
+                raise TimeoutError("Proxy connection timed out")
         else:
             try:
-                await asyncio.wait_for(asyncio.get_event_loop().sock_connect(self.socket, address), TCP.TIMEOUT)
-            except asyncio.TimeoutError:  # Re-raise as TimeoutError. asyncio.TimeoutError is deprecated in 3.11
+                await asyncio.wait_for(self.loop.sock_connect(self.socket, address), TCP.TIMEOUT)
+            except asyncio.TimeoutError:
                 raise TimeoutError("Connection timed out")
 
         self.reader, self.writer = await asyncio.open_connection(sock=self.socket)
@@ -129,7 +140,9 @@ class TCP:
                     self.reader.read(length - len(data)),
                     TCP.TIMEOUT
                 )
-            except (OSError, asyncio.TimeoutError):
+            except asyncio.TimeoutError:
+                raise TimeoutError("Socket read timed out")
+            except OSError:
                 return None
             else:
                 if chunk:

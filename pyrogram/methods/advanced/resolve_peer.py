@@ -107,6 +107,8 @@ class ResolvePeer:
                         id=[-peer_id]
                     )
                 )
+            elif peer_type == "secret_chat":
+                raise PeerIdInvalid
             else:
                 await self.invoke(
                     raw.functions.channels.GetChannels(

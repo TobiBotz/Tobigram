@@ -385,7 +385,7 @@ class Client(Methods):
         self.rate_limiter = RateLimiter(rate_limits) if rate_limits else RateLimiter()
         self.auto_no_updates = auto_no_updates
 
-        self.executor = ThreadPoolExecutor(self.workers, thread_name_prefix="Handler")
+        self.executor = ThreadPoolExecutor(max(1, self.workers // 4), thread_name_prefix="Handler")
         self.crypto_executor = create_crypto_executor()
 
         self.storage: Storage
@@ -599,7 +599,7 @@ class Client(Methods):
                 enums.SentCodeType.EMAIL_CODE: "email code"
             }
 
-            print(f"The confirmation code has been sent via {sent_code_descriptions[sent_code.type]}")
+            print(f"The confirmation code has been sent via {sent_code_descriptions.get(sent_code.type, sent_code.type)}")
 
         while True:
             if not self.phone_code:
@@ -639,6 +639,7 @@ class Client(Methods):
                                         raise
                             else:
                                 self.password = None
+                                self.phone_code = None
                         else:
                             return await self.check_password(self.password)
                     except BadRequest as e:
@@ -1432,9 +1433,11 @@ class Client(Methods):
                 elif isinstance(r, raw.types.upload.FileCdnRedirect):
 
                     cdn_session = await self.get_session(dc_id, is_cdn=True, temporary=True)
+                    _cdn_rate = TokenBucket(rate=dl_rate, burst=dl_burst)
 
                     try:
                         while True:
+                            await _cdn_rate.acquire()
                             r2 = await cdn_session.invoke(
                                 raw.functions.upload.GetCdnFile(
                                     file_token=r.file_token,

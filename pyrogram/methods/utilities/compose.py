@@ -17,7 +17,10 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import logging
 from typing import List
+
+log = logging.getLogger(__name__)
 
 import pyrogram
 from .idle import idle
@@ -66,16 +69,40 @@ async def compose(
             asyncio.run(main())
 
     """
+    started = []
+
     if sequential:
         for c in clients:
-            await c.start()
+            try:
+                await c.start()
+                started.append(c)
+            except Exception:
+                log.exception("Failed to start client %s", c.name)
     else:
-        await asyncio.gather(*[c.start() for c in clients])
+        results = await asyncio.gather(
+            *[c.start() for c in clients], return_exceptions=True
+        )
+        for c, result in zip(clients, results):
+            if isinstance(result, Exception):
+                log.exception("Failed to start client %s", c.name, exc_info=result)
+            else:
+                started.append(c)
+
+    if not started:
+        return
 
     await idle()
 
     if sequential:
-        for c in clients:
-            await c.stop()
+        for c in started:
+            try:
+                await c.stop()
+            except Exception:
+                log.exception("Failed to stop client %s", c.name)
     else:
-        await asyncio.gather(*[c.stop() for c in clients])
+        results = await asyncio.gather(
+            *[c.stop() for c in started], return_exceptions=True
+        )
+        for c, result in zip(started, results):
+            if isinstance(result, Exception):
+                log.exception("Failed to stop client %s", c.name, exc_info=result)

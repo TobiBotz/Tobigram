@@ -23,7 +23,7 @@ from typing import Optional, Type
 
 from pyrogram.crypto.executor import create_crypto_executor
 from .transport import TCP, TCPAbridged
-from ..session.internals import DataCenter
+from ..session.internals import DataCenter, get_dc_address
 
 log = logging.getLogger(__name__)
 
@@ -50,18 +50,26 @@ class Connection:
         self.proxy = proxy
         self.media = media
         self.protocol_factory = protocol_factory
-        self.crypto_executor = crypto_executor or create_crypto_executor()
+        if crypto_executor is None:
+            self.crypto_executor = create_crypto_executor()
+            self._owned_executor = True
+        else:
+            self.crypto_executor = crypto_executor
+            self._owned_executor = False
 
         if server_address and port:
             self.address = (server_address, port)
         else:
-            self.address = DataCenter(dc_id, test_mode, ipv6, media)
+            self.address = get_dc_address(dc_id, test_mode, ipv6, media)
         self.protocol: TCP = None
 
         if isinstance(loop, asyncio.AbstractEventLoop):
             self.loop = loop
         else:
-            self.loop = asyncio.get_event_loop()
+            try:
+                self.loop = asyncio.get_running_loop()
+            except RuntimeError:
+                self.loop = asyncio.get_event_loop_policy().get_event_loop()
 
     async def connect(self):
         for i in range(Connection.MAX_CONNECTION_ATTEMPTS):
@@ -88,6 +96,8 @@ class Connection:
     async def close(self):
         if self.protocol is None:
             return
+        if self._owned_executor:
+            self.crypto_executor.shutdown(wait=False)
         async with self.protocol.lock:
             await self.protocol.close()
         log.info("Disconnected")

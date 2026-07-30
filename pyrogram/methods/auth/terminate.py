@@ -46,12 +46,18 @@ class Terminate:
         await self.storage.save()
         await self.dispatcher.stop()
 
-        for media_session in self.media_sessions.values():
-            await media_session.stop()
+        for media_session in list(self.media_sessions.values()):
+            try:
+                await media_session.stop()
+            except Exception:
+                log.exception("Error stopping media session")
 
-        for pool in self.media_session_pools.values():
-            for session in pool:
-                await session.stop()
+        for pool in list(self.media_session_pools.values()):
+            for session in list(pool):
+                try:
+                    await session.stop()
+                except Exception:
+                    log.exception("Error stopping media session pool session")
 
         self.media_sessions.clear()
         self.media_session_pools.clear()
@@ -67,3 +73,6 @@ class Terminate:
 
         if self.rate_limiter is not None:
             await self.rate_limiter.close()
+
+        if self.executor is not None:
+            self.executor.shutdown(wait=False)

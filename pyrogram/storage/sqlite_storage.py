@@ -443,8 +443,8 @@ class SQLiteStorage(Storage):
     async def _write_attr(self, attr: str, value: Any):
         if self.conn is None:
             raise ConnectionError("Database is not open")
-        self._cache[attr] = value
         await self.conn.execute(f"UPDATE sessions SET {attr} = ?", (value,))
+        self._cache[attr] = value
         self._dirty = True
         await self._maybe_commit()
 

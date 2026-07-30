@@ -184,4 +184,9 @@ class DownloadMedia:
         if block:
             return await downloader
         else:
-            asyncio.get_event_loop().create_task(downloader)
+            async def _run_download():
+                try:
+                    return await downloader
+                except Exception as e:
+                    log.exception("Background download failed: %s", e)
+            asyncio.ensure_future(_run_download())

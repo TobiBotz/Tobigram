@@ -31,6 +31,7 @@ from typing import Union, BinaryIO, Callable, Optional
 import pyrogram
 from pyrogram import StopTransmission
 from pyrogram import raw
+from pyrogram.errors import RPCError
 
 log = logging.getLogger(__name__)
 
@@ -95,11 +96,11 @@ class SaveFile:
                             break
                         except StopTransmission:
                             raise
-                        except Exception as e:
+                        except (OSError, TimeoutError, RPCError, asyncio.TimeoutError) as e:
                             if attempt == MAX_RETRIES - 1:
-                                log.error(
-                                    f"Upload part failed after "
-                                    f"{MAX_RETRIES} attempts: {e}"
+                                log.exception(
+                                    "Upload part failed after %d attempts",
+                                    MAX_RETRIES,
                                 )
                                 raise
                             delay = 2 ** attempt
@@ -110,9 +111,8 @@ class SaveFile:
                                         delay = min(int(part), 30)
                                         break
                             log.warning(
-                                f"Retrying upload part "
-                                f"(attempt {attempt + 1}/{MAX_RETRIES}): "
-                                f"{err_str[:120]}"
+                                "Retrying upload part (attempt %d/%d): %s",
+                                attempt + 1, MAX_RETRIES, err_str[:120],
                             )
                             await asyncio.sleep(delay)
 
@@ -228,12 +228,14 @@ class SaveFile:
                             md5_sum = md5_sum.hexdigest()
                         break
 
-                    if all(t.done() for t in workers):
+                    async def _check_workers():
                         for t in workers:
-                            exc = t.exception()
-                            if exc is not None:
-                                raise exc
-                        raise RuntimeError("All upload workers exited")
+                            if t.done():
+                                exc = t.exception()
+                                if exc is not None and not isinstance(exc, asyncio.CancelledError):
+                                    raise exc
+
+                    await _check_workers()
 
                     for chunk in chunks:
                         if is_big:
@@ -253,7 +255,11 @@ class SaveFile:
                             await asyncio.sleep(_next_dispatch - _now)
                         _next_dispatch = max(time.monotonic(), _next_dispatch) + _dispatch_interval
 
-                        await queue.put(rpc)
+                        try:
+                            await asyncio.wait_for(queue.put(rpc), timeout=30)
+                        except asyncio.TimeoutError:
+                            await _check_workers()
+                            raise TimeoutError("Upload timed out — workers may have stopped")
 
                         if is_missing_part:
                             next_batch_task.cancel()

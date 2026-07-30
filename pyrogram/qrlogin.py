@@ -46,6 +46,7 @@ class QRLogin:
     async def wait(self, timeout: Optional[float] = None) -> Optional["types.User"]:
         if timeout is None:
             timeout = self.r.expires - int(datetime.datetime.now(datetime.timezone.utc).timestamp())
+        timeout = max(timeout, 1.0)
 
         event = asyncio.Event()
 
@@ -59,7 +60,9 @@ class QRLogin:
             )
         )
 
-        await self.client.dispatcher.start()
+        self.client.dispatcher.prune_workers()
+        if not self.client.dispatcher.handler_worker_tasks:
+            await self.client.dispatcher.start()
 
         try:
             await asyncio.wait_for(event.wait(), timeout=timeout)

@@ -122,8 +122,9 @@ class Dispatcher:
 
         self.handler_worker_tasks = []
         self.locks_list = []
+        self._modify_lock = asyncio.Lock()
 
-        self.updates_queue = asyncio.Queue()
+        self.updates_queue = asyncio.Queue(maxsize=8192)
         self.groups = OrderedDict()
 
         async def message_parser(update, users, chats):
@@ -334,6 +335,11 @@ class Dispatcher:
             if not self.client.skip_updates:
                 await self.client.recover_gaps()
 
+    def prune_workers(self):
+        self.handler_worker_tasks = [
+            t for t in self.handler_worker_tasks if not t.done()
+        ]
+
     async def stop(self, clear_handlers: bool = True):
         if callable(self.client.stop_handler):
             try:
@@ -346,7 +352,17 @@ class Dispatcher:
                 self.updates_queue.put_nowait(None)
 
             for i in self.handler_worker_tasks:
-                await i
+                try:
+                    await asyncio.wait_for(i, timeout=10)
+                except asyncio.TimeoutError:
+                    log.warning("Handler worker task timed out during stop")
+                    i.cancel()
+                    try:
+                        await i
+                    except asyncio.CancelledError:
+                        pass
+                except Exception:
+                    pass
 
             if clear_handlers:
                 self.handler_worker_tasks.clear()
@@ -356,15 +372,17 @@ class Dispatcher:
 
     def add_handler(self, handler: Handler, group: int):
         async def fn():
-            for lock in self.locks_list:
-                await lock.acquire()
-
             try:
+                for lock in self.locks_list:
+                    await lock.acquire()
+
                 if group not in self.groups:
                     self.groups[group] = []
                     self.groups = OrderedDict(sorted(self.groups.items()))
 
                 self.groups[group].append(handler)
+            except Exception as e:
+                log.exception("Failed to add handler: %s", e)
             finally:
                 for lock in self.locks_list:
                     lock.release()
@@ -379,10 +397,10 @@ class Dispatcher:
 
     def remove_handler(self, handler: Handler, group: int):
         async def fn():
-            for lock in self.locks_list:
-                await lock.acquire()
-
             try:
+                for lock in self.locks_list:
+                    await lock.acquire()
+
                 if group not in self.groups:
                     raise ValueError(
                         f"Group {group} does not exist. Handler was not removed."
@@ -392,6 +410,8 @@ class Dispatcher:
 
                 if not self.groups[group]:
                     del self.groups[group]
+            except Exception as e:
+                log.exception("Failed to remove handler: %s", e)
             finally:
                 for lock in self.locks_list:
                     lock.release()
@@ -427,52 +447,54 @@ class Dispatcher:
                 )
 
                 async with lock:
-                    for group in self.groups.values():
-                        for handler in group:
-                            if isinstance(handler, ErrorHandler):
-                                continue
+                    groups_snapshot = list(self.groups.items())
 
-                            args = None
+                for group, handlers in groups_snapshot:
+                    for handler in handlers:
+                        if isinstance(handler, ErrorHandler):
+                            continue
 
-                            if isinstance(handler, handler_type):
-                                try:
-                                    if await handler.check(self.client, parsed_update):
-                                        args = (parsed_update,)
-                                except Exception as e:
-                                    log.exception(e)
-                                    continue
+                        args = None
 
-                            elif isinstance(handler, RawUpdateHandler):
-                                try:
-                                    if await handler.check(self.client, update):
-                                        args = (update, users, chats)
-                                except Exception as e:
-                                    log.exception(e)
-                                    continue
-
-                            if args is None:
-                                continue
-
+                        if isinstance(handler, handler_type):
                             try:
-                                if inspect.iscoroutinefunction(handler.callback):
-                                    await handler.callback(self.client, *args)
-                                else:
-                                    await self.client.loop.run_in_executor(
-                                        self.client.executor,
-                                        handler.callback,
-                                        self.client,
-                                        *args
-                                    )
-                            except pyrogram.StopPropagation:
-                                raise
-                            except pyrogram.ContinuePropagation:
+                                if await handler.check(self.client, parsed_update):
+                                    args = (parsed_update,)
+                            except Exception as e:
+                                log.exception(e)
                                 continue
-                            except Exception as exc:
-                                await self.handle_update_handler_exception(
-                                    exc, handler, update, users, chats
-                                )
 
-                            break
+                        elif isinstance(handler, RawUpdateHandler):
+                            try:
+                                if await handler.check(self.client, update):
+                                    args = (update, users, chats)
+                            except Exception as e:
+                                log.exception(e)
+                                continue
+
+                        if args is None:
+                            continue
+
+                        try:
+                            if inspect.iscoroutinefunction(handler.callback):
+                                await handler.callback(self.client, *args)
+                            else:
+                                await self.client.loop.run_in_executor(
+                                    self.client.executor,
+                                    handler.callback,
+                                    self.client,
+                                    *args
+                                )
+                        except pyrogram.StopPropagation:
+                            raise
+                        except pyrogram.ContinuePropagation:
+                            continue
+                        except Exception as exc:
+                            await self.handle_update_handler_exception(
+                                exc, handler, update, users, chats
+                            )
+
+                        break
             except pyrogram.StopPropagation:
                 pass
             except Exception as e:

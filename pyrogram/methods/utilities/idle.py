@@ -76,7 +76,8 @@ async def idle():
 
     def signal_handler(signum, __):
         logging.info(f"Stop signal received ({signals[signum]}). Exiting...")
-        task.cancel()
+        if task:
+            task.cancel()
 
     for s in (SIGINT, SIGTERM, SIGABRT):
         signal_fn(s, signal_handler)

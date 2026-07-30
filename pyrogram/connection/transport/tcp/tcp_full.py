@@ -60,6 +60,7 @@ class TCPFull(TCP):
         packet = packet[:-4]
 
         if crc32(packet) != unpack("<I", checksum)[0]:
+            log.warning("TCP full packet CRC mismatch, dropping connection")
             return None
 
         return packet[8:]

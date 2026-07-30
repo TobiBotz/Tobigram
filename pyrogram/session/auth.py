@@ -18,6 +18,7 @@
 
 from typing import Optional
 import asyncio
+import functools
 import logging
 import time
 from hashlib import sha1
@@ -107,7 +108,8 @@ class Auth:
                 pq = int.from_bytes(res_pq.pq, "big")
                 log.debug("Start PQ factorization: %s", pq)
                 start = time.time()
-                g = prime.decompose(pq)
+                loop = asyncio.get_running_loop()
+                g = await loop.run_in_executor(None, prime.decompose, pq)
                 p, q = sorted((g, pq // g))  # p < q
                 log.debug("Done PQ factorization (%ss): %s %s", round(time.time() - start, 3), p, q)
 
@@ -127,7 +129,9 @@ class Auth:
                 sha = sha1(data).digest()
                 padding = urandom(- (len(data) + len(sha)) % 255)
                 data_with_hash = sha + data + padding
-                encrypted_data = rsa.encrypt(data_with_hash, public_key_fingerprint)
+                encrypted_data = await loop.run_in_executor(
+                    None, functools.partial(rsa.encrypt, data_with_hash, public_key_fingerprint)
+                )
 
                 log.debug("Done encrypt data with RSA")
 

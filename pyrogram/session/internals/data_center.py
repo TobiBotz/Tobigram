@@ -19,6 +19,29 @@
 from typing import Tuple
 
 
+def get_dc_address(dc_id: int, test_mode: bool, ipv6: bool, media: bool) -> Tuple[str, int]:
+    if test_mode:
+        if ipv6:
+            ip = DataCenter.TEST_IPV6[dc_id]
+        else:
+            ip = DataCenter.TEST[dc_id]
+
+        return ip, 80
+    else:
+        if ipv6:
+            if media:
+                ip = DataCenter.PROD_IPV6_MEDIA.get(dc_id, DataCenter.PROD_IPV6[dc_id])
+            else:
+                ip = DataCenter.PROD_IPV6[dc_id]
+        else:
+            if media:
+                ip = DataCenter.PROD_MEDIA.get(dc_id, DataCenter.PROD[dc_id])
+            else:
+                ip = DataCenter.PROD[dc_id]
+
+        return ip, 443
+
+
 class DataCenter:
     TEST = {
         1: "149.154.175.10",
@@ -59,25 +82,3 @@ class DataCenter:
         2: "2001:067c:04e8:f002:0000:0000:0000:000b",
         4: "2001:067c:04e8:f004:0000:0000:0000:000b"
     }
-
-    def __new__(cls, dc_id: int, test_mode: bool, ipv6: bool, media: bool) -> Tuple[str, int]:
-        if test_mode:
-            if ipv6:
-                ip = cls.TEST_IPV6[dc_id]
-            else:
-                ip = cls.TEST[dc_id]
-
-            return ip, 80
-        else:
-            if ipv6:
-                if media:
-                    ip = cls.PROD_IPV6_MEDIA.get(dc_id, cls.PROD_IPV6[dc_id])
-                else:
-                    ip = cls.PROD_IPV6[dc_id]
-            else:
-                if media:
-                    ip = cls.PROD_MEDIA.get(dc_id, cls.PROD[dc_id])
-                else:
-                    ip = cls.PROD[dc_id]
-
-            return ip, 443

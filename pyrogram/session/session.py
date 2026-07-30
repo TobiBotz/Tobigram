@@ -24,7 +24,6 @@ import time
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha1
-from concurrent.futures.thread import ThreadPoolExecutor
 from io import BytesIO
 from typing import Optional
 
@@ -109,6 +108,10 @@ class Session:
 
         self.stored_msg_ids = []
 
+        self._handler_lock = asyncio.Lock()
+        self._packet_tasks = set()
+        self._update_semaphore = asyncio.Semaphore(100)
+
         self.ping_task = None
         self.ping_task_event = asyncio.Event()
 
@@ -120,7 +123,10 @@ class Session:
 
         self.is_started = asyncio.Event()
 
-        self.loop = asyncio.get_event_loop()
+        try:
+            self.loop = asyncio.get_running_loop()
+        except RuntimeError:
+            self.loop = asyncio.get_event_loop_policy().get_event_loop()
 
         self.flood_history = deque(maxlen=50)
         self._dynamic_backoff = float(Session.SLEEP_THRESHOLD)
@@ -197,7 +203,10 @@ class Session:
         self.ping_task_event.set()
 
         if self.ping_task is not None:
-            await self.ping_task
+            try:
+                await self.ping_task
+            except Exception:
+                pass
 
         self.ping_task_event.clear()
 
@@ -205,10 +214,17 @@ class Session:
             self.recv_task.cancel()
             try:
                 await self.recv_task
-            except (asyncio.CancelledError, RuntimeError):
+            except Exception:
                 pass
 
-        await self.connection.close()
+        for task in list(self._packet_tasks):
+            task.cancel()
+        if self._packet_tasks:
+            await asyncio.gather(*self._packet_tasks, return_exceptions=True)
+            self._packet_tasks.clear()
+
+        if self.connection:
+            await self.connection.close()
 
         if self._owned_executor:
             self.crypto_executor.shutdown(wait=False)
@@ -227,15 +243,17 @@ class Session:
             return
         async with self._restart_lock:
             self._restart_done.clear()
-            await self.stop()
-            if self._owned_executor:
-                self.crypto_executor = ThreadPoolExecutor(
-                    max_workers=1, thread_name_prefix="Crypto"
-                )
-            if self.client.storage.conn is None:
-                await self.client.storage.open()
-            await self.start()
-            self._restart_done.set()
+            try:
+                await self.stop()
+                if self._owned_executor:
+                    self.crypto_executor = ThreadPoolExecutor(
+                        max_workers=1, thread_name_prefix="Crypto"
+                    )
+                if self.client.storage.conn is None:
+                    await self.client.storage.open()
+                await self.start()
+            finally:
+                self._restart_done.set()
 
     async def handle_packet(self, packet):
         msg_id, seq_no, length, body_bytes, total_len = await self.loop.run_in_executor(
@@ -268,43 +286,37 @@ class Session:
 
         for msg in messages:
             if msg.seq_no % 2 != 0:
-                if msg.msg_id in self.pending_acks:
-                    continue
-                else:
-                    self.pending_acks.add(msg.msg_id)
+                async with self._handler_lock:
+                    if msg.msg_id not in self.pending_acks:
+                        self.pending_acks.add(msg.msg_id)
 
             try:
                 if len(self.stored_msg_ids) > Session.STORED_MSG_IDS_MAX_SIZE:
                     del self.stored_msg_ids[:Session.STORED_MSG_IDS_MAX_SIZE // 2]
 
                 if self.stored_msg_ids:
-                    # https://core.telegram.org/mtproto/security_guidelines#checking-msg-id
                     if msg.msg_id < self.stored_msg_ids[0]:
                         raise SecurityCheckMismatch("The msg_id is lower than all the stored values")
 
-                    # https://core.telegram.org/mtproto/security_guidelines#checking-msg-id
                     if msg.msg_id in self.stored_msg_ids:
                         raise SecurityCheckMismatch("The msg_id is equal to any of the stored values")
 
-                    # https://core.telegram.org/mtproto/security_guidelines#checking-msg-id
                     time_diff = (msg.msg_id - MsgId()) / 2 ** 32
 
-                    # https://core.telegram.org/mtproto/security_guidelines#checking-msg-id
                     if time_diff > 30:
                         raise SecurityCheckMismatch("The msg_id belongs to over 30 seconds in the future. "
                                                     "Most likely the client time has to be synchronized.")
 
-                    # https://core.telegram.org/mtproto/security_guidelines#checking-msg-id
                     if time_diff < -300:
                         raise SecurityCheckMismatch("The msg_id belongs to over 300 seconds in the past. "
                                                     "Most likely the client time has to be synchronized.")
             except SecurityCheckMismatch as e:
-                # https://core.telegram.org/mtproto/security_guidelines#behaviour-in-case-of-mismatch
                 log.info("Discarding packet: %s", e)
                 await self.connection.close()
                 return
             else:
-                bisect.insort(self.stored_msg_ids, msg.msg_id)
+                async with self._handler_lock:
+                    bisect.insort(self.stored_msg_ids, msg.msg_id)
 
             if isinstance(msg.body, (raw.types.MsgDetailedInfo, raw.types.MsgNewDetailedInfo)):
                 self.pending_acks.add(msg.body.answer_msg_id)
@@ -323,21 +335,25 @@ class Session:
                 msg_id = msg.body.msg_id
             else:
                 if self.client is not None:
-                    self.loop.create_task(self.client.handle_updates(msg.body))
+                    self.loop.create_task(self._run_update(msg.body))
 
             if msg_id in self.results:
                 self.results[msg_id].value = getattr(msg.body, "result", msg.body)
                 self.results[msg_id].event.set()
 
-        if len(self.pending_acks) >= self.ACKS_THRESHOLD:
-            log.debug("Sending %s acks", len(self.pending_acks))
+        async with self._handler_lock:
+            ack_ids = None
+            if len(self.pending_acks) >= self.ACKS_THRESHOLD:
+                ack_ids = list(self.pending_acks)
+                self.pending_acks.clear()
+
+        if ack_ids:
+            log.debug("Sending %s acks", len(ack_ids))
 
             try:
-                await self.send(raw.types.MsgsAck(msg_ids=list(self.pending_acks)), False)
+                await self.send(raw.types.MsgsAck(msg_ids=ack_ids), False)
             except OSError:
                 pass
-            else:
-                self.pending_acks.clear()
 
     async def ping_worker(self):
         log.info("PingTask started")
@@ -361,11 +377,36 @@ class Session:
 
         log.info("PingTask stopped")
 
+    async def _run_update(self, body):
+        async with self._update_semaphore:
+            await self.client.handle_updates(body)
+
+    async def _handle_packet_wrapper(self, packet):
+        task = asyncio.current_task()
+        self._packet_tasks.add(task)
+        try:
+            await self.handle_packet(packet)
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            log.exception("Error handling packet")
+        finally:
+            self._packet_tasks.discard(task)
+
     async def recv_worker(self):
         log.info("NetworkTask started")
 
         while True:
-            packet = await self.connection.recv()
+            try:
+                packet = await self.connection.recv()
+            except TimeoutError:
+                log.debug("Socket read timed out, continuing")
+                continue
+            except Exception:
+                log.exception("Error receiving packet")
+                if self.is_started.is_set():
+                    await self._safe_restart()
+                break
 
             if packet is None or len(packet) == 4:
                 if packet:
@@ -377,13 +418,19 @@ class Session:
                     )
 
                 if self.is_started.is_set():
-                    self.loop.create_task(self.restart())
+                    await self._safe_restart()
 
                 break
 
-            self.loop.create_task(self.handle_packet(packet))
+            self.loop.create_task(self._handle_packet_wrapper(packet))
 
         log.info("NetworkTask stopped")
+
+    async def _safe_restart(self):
+        try:
+            await self.restart()
+        except Exception as e:
+            log.error("Session restart failed: %s", e)
 
     async def send(self, data: TLObject, wait_response: bool = True, timeout: float = WAIT_TIMEOUT,
                    retry: int = 0):
@@ -395,20 +442,25 @@ class Session:
 
         log.debug("Sent: %s", message)
 
-        payload = await self.loop.run_in_executor(
-            self.connection.protocol.crypto_executor,
-            warpcrypto.pack_message,
-            message.msg_id,
-            message.seq_no,
-            message.body.write(),
-            self.salt,
-            self.session_id,
-            self.auth_key,
-            self.auth_key_id
-        )
+        try:
+            payload = await self.loop.run_in_executor(
+                self.connection.protocol.crypto_executor,
+                warpcrypto.pack_message,
+                message.msg_id,
+                message.seq_no,
+                message.body.write(),
+                self.salt,
+                self.session_id,
+                self.auth_key,
+                self.auth_key_id
+            )
+        except Exception:
+            if wait_response:
+                self.results.pop(msg_id, None)
+            raise
 
         try:
-            await self.connection.send(payload)
+            await asyncio.wait_for(self.connection.send(payload), timeout=timeout or self.WAIT_TIMEOUT)
         except OSError as e:
             self.results.pop(msg_id, None)
             raise e
@@ -433,25 +485,30 @@ class Session:
             if isinstance(result, raw.types.BadMsgNotification):
                 if retry > 1:
                     raise BadMsgNotification(result.error_code)
-                self._handle_bad_notification()
+                await self._handle_bad_notification()
                 return await self.send(data, wait_response, timeout, retry + 1)
 
             if isinstance(result, raw.types.BadServerSalt):
+                if retry > 3:
+                    raise BadMsgNotification(result.error_code)
                 self.salt = result.new_server_salt
-                return await self.send(data, wait_response, timeout)
+                return await self.send(data, wait_response, timeout, retry + 1)
 
             return result
 
-    def _handle_bad_notification(self):
-        new_msg_id = MsgId()
-        if self.stored_msg_ids[len(self.stored_msg_ids) - 1] >= new_msg_id:
-            new_msg_id = self.stored_msg_ids[len(self.stored_msg_ids) - 1] + 4
-            log.debug(
-                "Changing msg_id old=%s new=%s",
-                self.stored_msg_ids[len(self.stored_msg_ids) - 1],
-                new_msg_id,
-            )
-        self.stored_msg_ids[len(self.stored_msg_ids) - 1] = new_msg_id
+    async def _handle_bad_notification(self):
+        async with self._handler_lock:
+            if not self.stored_msg_ids:
+                return
+            new_msg_id = MsgId()
+            if self.stored_msg_ids[-1] >= new_msg_id:
+                new_msg_id = self.stored_msg_ids[-1] + 4
+                log.debug(
+                    "Changing msg_id old=%s new=%s",
+                    self.stored_msg_ids[-1],
+                    new_msg_id,
+                )
+            self.stored_msg_ids[-1] = new_msg_id
 
     async def invoke(
         self,
@@ -461,10 +518,14 @@ class Session:
         sleep_threshold: float = SLEEP_THRESHOLD
     ):
         while retries > 0:
-            try:
-                await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
-            except asyncio.TimeoutError:
-                pass
+            if not self.is_started.is_set():
+                try:
+                    await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
+                except asyncio.TimeoutError:
+                    retries -= 1
+                    if retries == 0:
+                        raise TimeoutError("Session failed to start")
+                    continue
 
             if isinstance(query, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)):
                 inner_query = query.query

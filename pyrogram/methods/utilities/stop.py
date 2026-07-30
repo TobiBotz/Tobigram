@@ -61,8 +61,11 @@ class Stop:
         """
 
         async def do_it():
-            await self.terminate()
-            await self.disconnect()
+            try:
+                await self.terminate()
+                await self.disconnect()
+            except Exception:
+                log.exception("Error while stopping client")
 
         if block:
             await do_it()

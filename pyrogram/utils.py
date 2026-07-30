@@ -39,20 +39,17 @@ from pyrogram.types.messages_and_media.message import Str
 
 def get_event_loop() -> asyncio.AbstractEventLoop:
     try:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
     except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+        loop = asyncio.get_event_loop_policy().get_event_loop()
 
     return loop
 
 
 async def ainput(prompt: str = "", *, hide: bool = False, loop: Optional[asyncio.AbstractEventLoop] = None):
     """Just like the built-in input, but async"""
-    if isinstance(loop, asyncio.AbstractEventLoop):
-        loop = loop
-    else:
-        loop = get_event_loop()
+    if not isinstance(loop, asyncio.AbstractEventLoop):
+        loop = asyncio.get_running_loop()
 
     with ThreadPoolExecutor(1) as executor:
         func = functools.partial(getpass if hide else input, prompt)

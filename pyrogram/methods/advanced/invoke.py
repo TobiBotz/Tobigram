@@ -236,7 +236,14 @@ class Invoke:
              else self.sleep_threshold)
         )
 
-        await self.fetch_peers(getattr(r, "users", []))
-        await self.fetch_peers(getattr(r, "chats", []))
+        try:
+            await self.fetch_peers(getattr(r, "users", []))
+        except Exception:
+            log.exception("Failed to fetch peers from users")
+
+        try:
+            await self.fetch_peers(getattr(r, "chats", []))
+        except Exception:
+            log.exception("Failed to fetch peers from chats")
 
         return r
