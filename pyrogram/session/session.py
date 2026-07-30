@@ -187,7 +187,7 @@ class Session:
                     self.crypto_executor = ThreadPoolExecutor(
                         max_workers=1, thread_name_prefix="Crypto"
                     )
-            except Exception as e:
+            except (Exception, asyncio.CancelledError) as e:
                 await self.stop()
                 raise e
             else:
@@ -208,7 +208,7 @@ class Session:
         if self.ping_task is not None:
             try:
                 await self.ping_task
-            except Exception:
+            except (Exception, asyncio.CancelledError):
                 pass
 
         self.ping_task_event.clear()
@@ -217,7 +217,7 @@ class Session:
             self.recv_task.cancel()
             try:
                 await self.recv_task
-            except Exception:
+            except (Exception, asyncio.CancelledError):
                 pass
 
         for task in list(self._packet_tasks):
@@ -235,7 +235,7 @@ class Session:
         if not self.is_media and callable(self.client.disconnect_handler):
             try:
                 await self.client.disconnect_handler(self.client)
-            except Exception as e:
+            except (Exception, asyncio.CancelledError) as e:
                 log.exception(e)
 
         log.info("Session stopped")
@@ -434,7 +434,7 @@ class Session:
     async def _safe_restart(self):
         try:
             await self.restart()
-        except Exception as e:
+        except (Exception, asyncio.CancelledError) as e:
             log.error("Session restart failed: %s", e)
 
     async def send(self, data: TLObject, wait_response: bool = True, timeout: float = WAIT_TIMEOUT,
