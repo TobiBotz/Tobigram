@@ -35,6 +35,7 @@ async def get_session(client: "pyrogram.Client", dc_id: int):
             client, dc_id,
             await Auth(client, dc_id, await client.storage.test_mode()).create(),
             await client.storage.test_mode(), is_media=True,
+            crypto_executor=client.crypto_executor,
         )
 
         await session.start()
