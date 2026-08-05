@@ -11,10 +11,6 @@ def _default_crypto_workers() -> int:
         except ValueError:
             pass
 
-    # warpcrypto releases the GIL for MTProto framing, so a small pool gives
-    # real parallel crypto for the media sessions used in parallel transfers
-    # (DOWNLOAD_POOL_SIZE / POOL_SIZE are 4-20). Capping avoids spawning
-    # cpu_count threads on big boxes, keeping peak RAM low.
     return min(4, max(1, os.cpu_count() or 1))
 
 

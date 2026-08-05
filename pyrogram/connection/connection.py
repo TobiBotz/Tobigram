@@ -51,7 +51,6 @@ class Connection:
         self.media = media
         self.protocol_factory = protocol_factory
         self.crypto_executor = crypto_executor or get_crypto_executor()
-        self._owned_executor = False
 
         if server_address and port:
             self.address = (server_address, port)

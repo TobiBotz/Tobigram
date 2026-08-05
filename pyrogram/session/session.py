@@ -85,12 +85,7 @@ class Session:
         self.is_cdn = is_cdn
         self.server_address = server_address
         self.port = port
-        if crypto_executor is None:
-            self.crypto_executor = get_crypto_executor()
-            self._owned_executor = False
-        else:
-            self.crypto_executor = crypto_executor
-            self._owned_executor = False
+        self.crypto_executor = crypto_executor or get_crypto_executor()
 
         self.connection = None
 
@@ -184,15 +179,7 @@ class Session:
                 raise e
             except (OSError, RPCError):
                 await self.stop()
-                if self._owned_executor:
-                    self.crypto_executor = ThreadPoolExecutor(
-                        max_workers=1, thread_name_prefix="Crypto"
-                    )
 
-                # Exponential backoff (capped) so a flaky network doesn't make
-                # the session spin in a tight connect/retry loop. Reconnects are
-                # especially expensive on low-memory hosts, so slow the loop
-                # down instead of thrashing.
                 backoff = min(2 ** (attempt - 1), 30)
                 log.debug(
                     "Session start attempt %d failed, retrying in %ss",
@@ -241,11 +228,6 @@ class Session:
         if self.connection:
             await self.connection.close()
 
-        if self._owned_executor:
-            self.crypto_executor.shutdown(wait=False)
-
-        # Wake every in-flight request so it re-checks state (and retries via
-        # invoke) instead of hanging until its own timeout.
         for result in self.results.values():
             result.event.set()
 
@@ -265,11 +247,6 @@ class Session:
             self._restart_done.clear()
             try:
                 await self.stop()
-                if self._owned_executor:
-                    self.crypto_executor.shutdown(wait=False)
-                    self.crypto_executor = ThreadPoolExecutor(
-                        max_workers=1, thread_name_prefix="Crypto"
-                    )
                 if self.client.storage.conn is None:
                     await self.client.storage.open()
                 await self.start()
@@ -287,8 +264,6 @@ class Session:
                 self.auth_key_id
             )
         except Exception as e:
-            # A corrupt/undecryptable frame (or a protocol torn down by a
-            # concurrent restart) must not kill the background task.
             log.warning("Failed to decrypt packet: %s %s", type(e).__name__, e)
             return
 
@@ -503,8 +478,6 @@ class Session:
                 except asyncio.TimeoutError:
                     pass
             finally:
-                # Always release the pending request so a cancelled or
-                # timed-out caller doesn't leak an entry into self.results.
                 result = self.results.pop(msg_id, None)
                 result = result.value if result is not None else None
 
