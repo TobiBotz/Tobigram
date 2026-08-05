@@ -103,7 +103,7 @@ class SaveFile:
                                     MAX_RETRIES,
                                 )
                                 raise
-                            delay = 2 ** attempt
+                            delay = min(2 ** attempt, 30)
                             err_str = str(e)
                             if "FLOOD_WAIT" in err_str or "FLOOD" in err_str:
                                 for part in err_str.split():
@@ -182,6 +182,7 @@ class SaveFile:
             _last_progress_time = 0.0
             _next_dispatch = 0.0
             _dispatch_interval = 1.0 / rate_limit
+            _stalled_since = 0.0
 
             _progress_task = None
             if progress:
@@ -255,11 +256,18 @@ class SaveFile:
                             await asyncio.sleep(_next_dispatch - _now)
                         _next_dispatch = max(time.monotonic(), _next_dispatch) + _dispatch_interval
 
-                        try:
-                            await asyncio.wait_for(queue.put(rpc), timeout=30)
-                        except asyncio.TimeoutError:
-                            await _check_workers()
-                            raise TimeoutError("Upload timed out — workers may have stopped")
+                        while True:
+                            try:
+                                await asyncio.wait_for(queue.put(rpc), timeout=30)
+                                _stalled_since = 0.0
+                                break
+                            except asyncio.TimeoutError:
+                                await _check_workers()
+                                if _stalled_since == 0.0:
+                                    _stalled_since = time.monotonic()
+                                elif time.monotonic() - _stalled_since > 180:
+                                    raise TimeoutError("Upload timed out — workers may have stopped")
+                                await asyncio.sleep(1)
 
                         if is_missing_part:
                             next_batch_task.cancel()
