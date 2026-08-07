@@ -1690,6 +1690,7 @@ class Client(Methods):
                         )
                     )
                 except AuthBytesInvalid:
+                    await asyncio.sleep(1)
                     continue
                 else:
                     break
@@ -1705,10 +1706,14 @@ class Client(Methods):
             pool = [s for s in pool if s.is_started.is_set()]
             needed = n - len(pool)
             if needed > 0:
-                sessions = await asyncio.gather(
-                    *(self._make_media_session(dc_id) for _ in range(needed))
-                )
-                pool.extend(sessions)
+                created = []
+                while needed > 0:
+                    chunk = min(needed, 3)
+                    created += await asyncio.gather(
+                        *(self._make_media_session(dc_id) for _ in range(chunk))
+                    )
+                    needed -= chunk
+                pool.extend(created)
             self.media_session_pools[dc_id] = pool
             return list(pool)
 

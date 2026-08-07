@@ -177,7 +177,16 @@ class Session:
             except AuthKeyDuplicated as e:
                 await self.stop()
                 raise e
-            except (OSError, RPCError):
+            except (FloodWait, FloodPremiumWait) as e:
+                await self.stop()
+
+                backoff = min(e.value, 30)
+                log.debug(
+                    "Session start attempt %d flood-limited, retrying in %ss",
+                    attempt, backoff
+                )
+                await asyncio.sleep(backoff)
+            except (InternalServerError, ServiceUnavailable, TimeoutError, OSError):
                 await self.stop()
 
                 backoff = min(2 ** (attempt - 1), 30)
@@ -186,6 +195,9 @@ class Session:
                     attempt, backoff
                 )
                 await asyncio.sleep(backoff)
+            except RPCError:
+                await self.stop()
+                raise
             except (Exception, asyncio.CancelledError) as e:
                 await self.stop()
                 raise e
