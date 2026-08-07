@@ -3687,7 +3687,7 @@ class Message(Object, Update):
         allow_paid_broadcast: Optional[bool] = None,
         direct_messages_topic_id: Optional[int] = None,
         suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        subscription_expiration_date: Optional[int] = None,
+        subscription_period: Optional[int] = None,
         reply_markup: Optional[
             Union[
                 "types.InlineKeyboardMarkup",
@@ -3799,8 +3799,8 @@ class Message(Object, Update):
             suggested_post_parameters (:obj:`~pyrogram.types.SuggestedPostParameters`, *optional*):
                 Information about the suggested post.
 
-            subscription_expiration_date (``int``, *optional*):
-                Expiration date of the subscription, in Unix time.
+            subscription_period (``int``, *optional*):
+                Duration of the subscription, in seconds.
                 Currently the only allowed subscription period is 30*24*60*60 (1 month).
                 For recurring payments only.
 
@@ -3863,7 +3863,7 @@ class Message(Object, Update):
             allow_paid_broadcast=allow_paid_broadcast,
             direct_messages_topic_id=direct_messages_topic_id,
             suggested_post_parameters=suggested_post_parameters,
-            subscription_expiration_date=subscription_expiration_date,
+            subscription_period=subscription_period,
             reply_markup=reply_markup,
             caption=caption,
             parse_mode=parse_mode,
@@ -3901,7 +3901,7 @@ class Message(Object, Update):
         allow_paid_broadcast: Optional[bool] = None,
         direct_messages_topic_id: Optional[int] = None,
         suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        subscription_expiration_date: Optional[int] = None,
+        subscription_period: Optional[int] = None,
         reply_markup: Optional[
             Union[
                 "types.InlineKeyboardMarkup",
@@ -4012,8 +4012,8 @@ class Message(Object, Update):
             suggested_post_parameters (:obj:`~pyrogram.types.SuggestedPostParameters`, *optional*):
                 Information about the suggested post.
 
-            subscription_expiration_date (``int``, *optional*):
-                Expiration date of the subscription, in Unix time.
+            subscription_period (``int``, *optional*):
+                Duration of the subscription, in seconds.
                 Currently the only allowed subscription period is 30*24*60*60 (1 month).
                 For recurring payments only.
 
@@ -4071,7 +4071,7 @@ class Message(Object, Update):
             allow_paid_broadcast=allow_paid_broadcast,
             direct_messages_topic_id=direct_messages_topic_id,
             suggested_post_parameters=suggested_post_parameters,
-            subscription_expiration_date=subscription_expiration_date,
+            subscription_period=subscription_period,
             reply_markup=reply_markup,
             caption=caption,
             parse_mode=parse_mode,
@@ -8074,11 +8074,7 @@ class Message(Object, Update):
             direct_messages_topic_id=direct_messages_topic_id,
             reply_parameters=reply_parameters,
             paid_message_star_count=paid_message_star_count,
-
             reply_to_message_id=reply_to_message_id,
-            quote_text=quote_text,
-            parse_mode=parse_mode,
-            quote_entities=quote_entities,
         )
 
     async def answer_inline_bot_result(
@@ -9113,14 +9109,7 @@ class Message(Object, Update):
             show_caption_above_media=show_caption_above_media,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
-
             reply_to_message_id=reply_to_message_id,
-            reply_to_chat_id=reply_to_chat_id,
-            reply_to_story_id=reply_to_story_id,
-            quote_text=quote_text,
-            parse_mode=parse_mode,
-            quote_entities=quote_entities,
-            quote_offset=quote_offset,
         )
 
     async def delete(self, revoke: bool = True):
@@ -9312,10 +9301,7 @@ class Message(Object, Update):
                     direct_messages_topic_id=self.direct_messages_topic_id,
                 )
             elif button.user_id:
-                return await self._client.get_chat(
-                    button.user_id,
-                    force_full=False
-                )
+                return await self._client.get_chat(button.user_id)
             elif button.switch_inline_query:
                 return button.switch_inline_query
             elif button.switch_inline_query_current_chat:

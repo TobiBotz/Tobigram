@@ -16,10 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+from typing import Optional, Union
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
 
 
 class RequestCallbackAnswer:
@@ -28,7 +28,8 @@ class RequestCallbackAnswer:
         chat_id: Union[int, str],
         message_id: int,
         callback_data: Union[str, bytes],
-        timeout: int = 10
+        timeout: int = 10,
+        password: Optional[str] = None
     ):
         """Request a callback answer from bots.
         This is the equivalent of clicking an inline button containing callback data.
@@ -50,6 +51,9 @@ class RequestCallbackAnswer:
             timeout (``int``, *optional*):
                 Timeout in seconds.
 
+            password (``str``, *optional*):
+                Two-Step Verification password, required by buttons that ask for one.
+
         Returns:
             The answer containing info useful for clients to display a notification at the top of the chat screen
             or as an alert.
@@ -70,7 +74,11 @@ class RequestCallbackAnswer:
             raw.functions.messages.GetBotCallbackAnswer(
                 peer=await self.resolve_peer(chat_id),
                 msg_id=message_id,
-                data=data
+                data=data,
+                password=utils.compute_password_check(
+                    await self.invoke(raw.functions.account.GetPassword()),
+                    password
+                ) if password is not None else None
             ),
             retries=0,
             timeout=timeout

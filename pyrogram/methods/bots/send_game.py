@@ -41,6 +41,8 @@ class SendGame:
         reply_parameters: Optional["types.ReplyParameters"] = None,
         message_thread_id: Optional[int] = None,
         business_connection_id: Optional[str] = None,
+        effect_id: Optional[int] = None,
+        allow_paid_broadcast: Optional[bool] = None,
     ) -> "types.Message":
         """Send a game.
 
@@ -68,6 +70,12 @@ class SendGame:
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An object for an inline keyboard. If empty, one ‘Play game_title’ button will be shown automatically.
                 If not empty, the first button must launch the game.
+
+            effect_id (``int``, *optional*):
+                Unique identifier of the message effect to be added to the message.
+
+            allow_paid_broadcast (``bool``, *optional*):
+                Pass True to allow the message to be sent ignoring broadcasting limits, for a fee.
 
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent game message is returned.
@@ -102,6 +110,8 @@ class SendGame:
                 ),
                 random_id=self.rnd_id(),
                 noforwards=protect_content,
+                effect=effect_id,
+                allow_paid_floodskip=allow_paid_broadcast,
                 reply_markup=await reply_markup.write(self) if reply_markup else None
             ),
             sleep_threshold=60,

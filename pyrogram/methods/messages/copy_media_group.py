@@ -47,6 +47,7 @@ class CopyMediaGroup:
         send_as: Optional[Union[int, str]] = None,
         quick_reply_shortcut: Optional[int] = None,
         business_connection_id: Optional[str] = None,
+        has_spoilers: Optional[bool] = None,
     ) -> List["types.Message"]:
         """Copy a media group by providing one of the message ids.
 
@@ -124,6 +125,9 @@ class CopyMediaGroup:
             quick_reply_shortcut (``int``, *optional*):
                 Unique identifier of the quick reply shortcut.
 
+            has_spoilers (``bool``, *optional*):
+                Pass True to cover the copied media with a spoiler animation.
+
         Returns:
             List of :obj:`~pyrogram.types.Message`: On success, a list of copied messages is returned.
 
@@ -159,7 +163,7 @@ class CopyMediaGroup:
             else:
                 raise ValueError("Message with this type can't be copied.")
 
-            media = utils.get_input_media_from_file_id(file_id=file_id)
+            media = utils.get_input_media_from_file_id(file_id=file_id, has_spoiler=has_spoilers)
 
             text, entities = (await self.parser.parse(
                 captions[i] if isinstance(captions, list) and i < len(captions) and captions[i] else

@@ -41,6 +41,8 @@ class SendInlineBotResult:
         quick_reply_shortcut: Optional[int] = None,
         paid_message_star_count: Optional[int] = None,
         business_connection_id: Optional[str] = None,
+        message_thread_id: Optional[int] = None,
+        direct_messages_topic_id: Optional[int] = None,
     ) -> "raw.base.Updates":
         """Send an inline bot result.
         Bot results can be retrieved using :meth:`~pyrogram.Client.get_inline_bot_results`
@@ -89,7 +91,8 @@ class SendInlineBotResult:
                 reply_to=await utils.get_reply_to(
                     self,
                     reply_parameters,
-                    None
+                    message_thread_id,
+                    direct_messages_topic_id
                 ),
                 background=background if background is not None else None,
                 clear_draft=clear_draft if clear_draft is not None else None,

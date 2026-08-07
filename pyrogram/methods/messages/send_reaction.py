@@ -26,11 +26,12 @@ class SendReaction:
     async def send_reaction(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        message_id: int,
+        message_id: Optional[int] = None,
         emoji: str = "",
         big: bool = False,
         add_to_recent: bool = False,
-        business_connection_id: Optional[str] = None
+        business_connection_id: Optional[str] = None,
+        story_id: Optional[int] = None
     ) -> bool:
         """Send a reaction to a message.
 
@@ -55,6 +56,9 @@ class SendReaction:
                 Unique identifier of the business connection.
                 Defaults to None.
 
+            story_id (``int``, *optional*):
+                Identifier of the story to react to, instead of a message.
+
         Returns:
             ``bool``: On success, True is returned.
 
@@ -67,11 +71,28 @@ class SendReaction:
                 # Retract a reaction
                 await app.send_reaction(chat_id, message_id)
         """
+        if message_id is None and story_id is None:
+            raise ValueError("You must pass either message_id or story_id")
+
+        reaction = [raw.types.ReactionEmoji(emoticon=emoji)] if emoji else None
+
+        if story_id is not None:
+            await self.invoke(
+                raw.functions.stories.SendReaction(
+                    peer=await self.resolve_peer(chat_id),
+                    story_id=story_id,
+                    reaction=reaction[0] if reaction else raw.types.ReactionEmpty(),
+                    add_to_recent=add_to_recent
+                )
+            )
+
+            return True
+
         await self.invoke(
             raw.functions.messages.SendReaction(
                 peer=await self.resolve_peer(chat_id),
                 msg_id=message_id,
-                reaction=[raw.types.ReactionEmoji(emoticon=emoji)] if emoji else None,
+                reaction=reaction,
                 big=big,
                 add_to_recent=add_to_recent
             ),

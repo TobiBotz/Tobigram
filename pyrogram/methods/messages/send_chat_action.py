@@ -27,7 +27,8 @@ class SendChatAction:
         self: "pyrogram.Client",
         chat_id: Union[int, str],
         action: "enums.ChatAction",
-        top_msg_id: Optional[int] = None
+        top_msg_id: Optional[int] = None,
+        business_connection_id: Optional[str] = None
     ) -> bool:
         """Tell the other party that something is happening on your side.
 
@@ -41,6 +42,12 @@ class SendChatAction:
 
             action (:obj:`~pyrogram.enums.ChatAction`):
                 Type of action to broadcast.
+
+            top_msg_id (``int``, *optional*):
+                Unique identifier of the forum topic the action is broadcast to.
+
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection on behalf of which the action will be sent.
 
         Returns:
             ``bool``: On success, True is returned.
@@ -78,5 +85,6 @@ class SendChatAction:
                 peer=await self.resolve_peer(chat_id),
                 action=action,
                 top_msg_id=top_msg_id
-            )
+            ),
+            business_connection_id=business_connection_id
         )
