@@ -82,20 +82,20 @@ class GetTopChats:
             users = {i.id: i for i in r.users}
             chats = {i.id: i for i in r.chats}
 
-            chats = []
+            top_chats = []
 
             for cat in r.categories:
                 for top_peer in cat.peers:
                     peer_id = utils.get_raw_peer_id(top_peer.peer)
 
-                    chats.append(types.Chat._parse_chat(self, users.get(peer_id) or chats.get(peer_id)))
+                    top_chats.append(types.Chat._parse_chat(self, users.get(peer_id) or chats.get(peer_id)))
 
-            if not chats:
+            if not top_chats:
                 return
 
-            offset += len(chats)
+            offset += len(top_chats)
 
-            for chat in chats:
+            for chat in top_chats:
                 yield chat
 
                 current += 1
