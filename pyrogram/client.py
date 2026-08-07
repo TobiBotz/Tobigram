@@ -430,6 +430,7 @@ class Client(Methods):
         self.media_sessions = {}
         self.media_session_pools = {}
         self.sessions_lock = asyncio.Lock()
+        self._session_locks = {}
         self._media_sessions_locks = {}
 
         self.save_file_semaphore = asyncio.Semaphore(self.max_concurrent_transmissions)
@@ -1606,97 +1607,89 @@ class Client(Methods):
         if not temporary and sessions.get(dc_id):
             return sessions[dc_id]
 
-        if not server_address or not port:
-            dc_option = await self.get_dc_option(dc_id, is_media=is_media, ipv6=self.ipv6, is_cdn=is_cdn)
+        # Concurrent exports for one DC invalidate each other: AUTH_BYTES_INVALID.
+        lock = self._session_locks.setdefault((dc_id, bool(is_media)), asyncio.Lock())
 
-            server_address = server_address or dc_option.ip_address
-            port = port or dc_option.port
+        async with lock:
+            if not temporary and sessions.get(dc_id):
+                return sessions[dc_id]
 
-        if is_media:
-            auth_key = (await self.get_session(dc_id)).auth_key
-        else:
-            if not is_current_dc:
-                auth_key = await Auth(
-                    self,
-                    dc_id,
-                    await self.storage.test_mode(),
-                    server_address=server_address,
-                    port=port
-                ).create()
+            if not server_address or not port:
+                dc_option = await self.get_dc_option(dc_id, is_media=is_media, ipv6=self.ipv6, is_cdn=is_cdn)
+
+                server_address = server_address or dc_option.ip_address
+                port = port or dc_option.port
+
+            if is_media:
+                auth_key = (await self.get_session(dc_id)).auth_key
+                export_authorization = False
             else:
-                auth_key = await self.storage.auth_key()
+                if not is_current_dc:
+                    auth_key = await Auth(
+                        self,
+                        dc_id,
+                        await self.storage.test_mode(),
+                        server_address=server_address,
+                        port=port
+                    ).create()
+                else:
+                    auth_key = await self.storage.auth_key()
 
-        session = Session(
-            self,
-            dc_id,
-            auth_key,
-            await self.storage.test_mode(),
-            is_media=is_media,
-            server_address=server_address,
-            port=port,
-            crypto_executor=self.crypto_executor,
-        )
+            session = Session(
+                self,
+                dc_id,
+                auth_key,
+                await self.storage.test_mode(),
+                is_media=is_media,
+                server_address=server_address,
+                port=port,
+                crypto_executor=self.crypto_executor,
+            )
 
-        if not temporary:
-            sessions[dc_id] = session
+            await session.start()
 
-        await session.start()
-
-        if not is_current_dc and export_authorization:
-            for _ in range(3):
-                exported_auth = await self.invoke(
-                    raw.functions.auth.ExportAuthorization(
-                        dc_id=dc_id
-                    )
-                )
-
-                try:
-                    await session.invoke(
-                        raw.functions.auth.ImportAuthorization(
-                            id=exported_auth.id,
-                            bytes=exported_auth.bytes
+            if not is_current_dc and export_authorization:
+                for _ in range(3):
+                    exported_auth = await self.invoke(
+                        raw.functions.auth.ExportAuthorization(
+                            dc_id=dc_id
                         )
                     )
-                except AuthBytesInvalid:
-                    continue
+
+                    try:
+                        await session.invoke(
+                            raw.functions.auth.ImportAuthorization(
+                                id=exported_auth.id,
+                                bytes=exported_auth.bytes
+                            )
+                        )
+                    except AuthBytesInvalid:
+                        await asyncio.sleep(1)
+                        continue
+                    else:
+                        break
                 else:
-                    break
-            else:
-                await session.stop()
-                raise AuthBytesInvalid
+                    await session.stop()
+                    raise AuthBytesInvalid
 
-        return session
+            if not temporary:
+                sessions[dc_id] = session
 
-    async def _make_media_session(self, dc_id: int) -> "Session":
-        auth_key = (
-            await self.storage.auth_key()
-            if dc_id == await self.storage.dc_id()
-            else await Auth(self, dc_id, await self.storage.test_mode()).create()
-        )
+            return session
+
+    async def _make_media_session(
+        self,
+        dc_id: int,
+        auth_key: bytes,
+        server_address: Optional[str] = None,
+        port: Optional[int] = None
+    ) -> "Session":
         session = Session(
             self, dc_id, auth_key, await self.storage.test_mode(), is_media=True,
+            server_address=server_address, port=port,
             crypto_executor=self.crypto_executor,
         )
         await session.start()
-        if dc_id != await self.storage.dc_id():
-            for _ in range(3):
-                exported_auth = await self.invoke(
-                    raw.functions.auth.ExportAuthorization(dc_id=dc_id)
-                )
-                try:
-                    await session.invoke(
-                        raw.functions.auth.ImportAuthorization(
-                            id=exported_auth.id, bytes=exported_auth.bytes
-                        )
-                    )
-                except AuthBytesInvalid:
-                    await asyncio.sleep(1)
-                    continue
-                else:
-                    break
-            else:
-                await session.stop()
-                raise AuthBytesInvalid
         return session
 
     async def _get_media_session_pool(self, dc_id: int, n: int) -> list:
@@ -1706,14 +1699,14 @@ class Client(Methods):
             pool = [s for s in pool if s.is_started.is_set()]
             needed = n - len(pool)
             if needed > 0:
-                created = []
-                while needed > 0:
-                    chunk = min(needed, 3)
-                    created += await asyncio.gather(
-                        *(self._make_media_session(dc_id) for _ in range(chunk))
+                media = await self.get_session(dc_id, is_media=True)
+
+                pool.extend(await asyncio.gather(*(
+                    self._make_media_session(
+                        dc_id, media.auth_key, media.server_address, media.port
                     )
-                    needed -= chunk
-                pool.extend(created)
+                    for _ in range(needed)
+                )))
             self.media_session_pools[dc_id] = pool
             return list(pool)
 
