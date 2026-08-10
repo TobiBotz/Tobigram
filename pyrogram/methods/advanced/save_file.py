@@ -38,6 +38,7 @@ log = logging.getLogger(__name__)
 PART_SIZE = 512 * 1024
 POOL_SIZE = 20
 MAX_RETRIES = 16
+STALL_TIMEOUT = 900
 READ_BUFFER = 4 * 1024 * 1024
 PROGRESS_INTERVAL = 0.2
 
@@ -105,10 +106,10 @@ class SaveFile:
                                 raise
                             delay = min(2 ** attempt, 30)
                             err_str = str(e)
-                            if "FLOOD_WAIT" in err_str or "FLOOD" in err_str:
+                            if "FLOOD" in err_str:
                                 for part in err_str.split():
                                     if part.isdigit():
-                                        delay = min(int(part), 30)
+                                        delay = min(int(part), 300)
                                         break
                             log.warning(
                                 "Retrying upload part (attempt %d/%d): %s",
@@ -263,10 +264,20 @@ class SaveFile:
                                 break
                             except asyncio.TimeoutError:
                                 await _check_workers()
+                                _now = time.monotonic()
                                 if _stalled_since == 0.0:
-                                    _stalled_since = time.monotonic()
-                                elif time.monotonic() - _stalled_since > 180:
-                                    raise TimeoutError("Upload timed out — workers may have stopped")
+                                    _stalled_since = _now
+                                    log.warning(
+                                        "Upload queue full: workers throttled (flood/connection churn), "
+                                        "waiting up to %ss",
+                                        STALL_TIMEOUT,
+                                    )
+                                elif _now - _stalled_since > STALL_TIMEOUT:
+                                    raise TimeoutError(
+                                        "Upload stalled: no part completed for "
+                                        f"{STALL_TIMEOUT}s while workers are alive "
+                                        "(flood or network throttling)"
+                                    )
                                 await asyncio.sleep(1)
 
                         if is_missing_part:
