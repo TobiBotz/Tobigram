@@ -11,7 +11,7 @@ requires-python = ">=3.10"
 authors = [{ name = "Dan", email = "dan@pyrogram.org" }]
 maintainers = [
     { name = "rjriajul" },
-    { name = "mysterysd", email = "me.dawn@mysterysd.in" },
+    { name = "SilentDemonSD" },
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
