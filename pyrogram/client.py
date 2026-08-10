@@ -1262,7 +1262,7 @@ class Client(Methods):
                     yield first_chunk
                     current += 1
                     offset_bytes += chunk_size
-                    if _write_file is not None and file_size > 0:
+                    if _write_file is not None:
                         _write_file.seek(0)
                         _write_file.write(first_chunk)
 
@@ -1288,6 +1288,8 @@ class Client(Methods):
                             if not chunk:
                                 return
                             yield chunk
+                            if _write_file is not None:
+                                _write_file.write(chunk)
                             current += 1
                             offset_bytes += chunk_size
 
