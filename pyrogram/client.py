@@ -1652,7 +1652,7 @@ class Client(Methods):
             )
 
             async with self._session_creation_gate:
-                await session.start()
+                await session.start(max_attempts=Session.MAX_RETRIES)
 
             if not is_current_dc and export_authorization:
                 for _ in range(3):
@@ -1695,7 +1695,7 @@ class Client(Methods):
             server_address=server_address, port=port,
             crypto_executor=self.crypto_executor,
         )
-        await session.start()
+        await session.start(max_attempts=Session.MAX_RETRIES)
         return session
 
     async def _get_media_session_pool(self, dc_id: int, n: int) -> list:

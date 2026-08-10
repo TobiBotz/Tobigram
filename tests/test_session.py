@@ -37,6 +37,19 @@ class _AuthFailThenUnreg:
         pass
 
 
+class _AlwaysFails:
+    attempts = 0
+
+    def __init__(self, *args, **kwargs):
+        _AlwaysFails.attempts += 1
+
+    async def connect(self):
+        raise OSError("persistent outage")
+
+    async def close(self):
+        pass
+
+
 @pytest.fixture
 def session_factory():
     return lambda: Session(
@@ -62,3 +75,18 @@ async def test_fatal_auth_after_transient_retry_propagates(monkeypatch, session_
         f"expected transient OSError then fatal auth, got {_AuthFailThenUnreg.attempts} attempts"
     )
     assert elapsed < 4, f"fatal error should propagate fast, took {elapsed:.1f}s"
+
+
+async def test_bounded_start_raises_instead_of_looping(monkeypatch, session_factory):
+    _AlwaysFails.attempts = 0
+    monkeypatch.setattr(session_mod, "Connection", _AlwaysFails)
+
+    started = asyncio.get_event_loop().time()
+    with pytest.raises(OSError):
+        await asyncio.wait_for(session_factory().start(max_attempts=2), timeout=5)
+
+    elapsed = asyncio.get_event_loop().time() - started
+    assert _AlwaysFails.attempts == 2, (
+        f"expected start to stop after max_attempts, got {_AlwaysFails.attempts} attempts"
+    )
+    assert elapsed < 4, f"max_attempts should cap retries, took {elapsed:.1f}s"

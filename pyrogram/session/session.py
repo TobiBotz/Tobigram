@@ -128,7 +128,7 @@ class Session:
         self._last_flood_decay = 0.0
         self.last_packet_received = 0.0
 
-    async def start(self):
+    async def start(self, max_attempts: Optional[int] = None):
         self._stopping = False
         attempt = 0
         while True:
@@ -181,6 +181,9 @@ class Session:
             except (FloodWait, FloodPremiumWait) as e:
                 await self.stop()
 
+                if max_attempts is not None and attempt >= max_attempts:
+                    raise
+
                 backoff = min(e.value, 30)
                 log.debug(
                     "Session start attempt %d flood-limited, retrying in %ss",
@@ -189,6 +192,9 @@ class Session:
                 await asyncio.sleep(backoff)
             except (InternalServerError, ServiceUnavailable, TimeoutError, OSError):
                 await self.stop()
+
+                if max_attempts is not None and attempt >= max_attempts:
+                    raise
 
                 backoff = min(2 ** (attempt - 1), 30)
                 log.debug(
@@ -262,7 +268,7 @@ class Session:
                 await self.stop()
                 if self.client.storage.conn is None:
                     await self.client.storage.open()
-                await self.start()
+                await self.start(max_attempts=self.MAX_RETRIES)
             finally:
                 self._restart_done.set()
 

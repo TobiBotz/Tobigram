@@ -23,13 +23,15 @@ import pyrogram
 
 
 class FakeSession:
+    MAX_RETRIES = 10
+
     def __init__(self, *args, **kwargs):
         self.auth_key = args[2]
         self.server_address = kwargs.get("server_address")
         self.port = kwargs.get("port")
         self.is_started = asyncio.Event()
 
-    async def start(self):
+    async def start(self, *args, **kwargs):
         self.is_started.set()
 
     async def invoke(self, *args, **kwargs):
