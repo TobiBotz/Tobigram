@@ -126,6 +126,7 @@ class Session:
         self.flood_history = deque(maxlen=50)
         self._dynamic_backoff = float(Session.SLEEP_THRESHOLD)
         self._last_flood_decay = 0.0
+        self.last_packet_received = 0.0
 
     async def start(self):
         self._stopping = False
@@ -436,6 +437,8 @@ class Session:
 
                 break
 
+            self.last_packet_received = time.monotonic()
+
             if not self._stopping:
                 self.loop.create_task(self._handle_packet_wrapper(packet))
 
@@ -590,9 +593,12 @@ class Session:
                     query_name, str(e) or repr(e)
                 )
 
-                if isinstance(e, (OSError, TimeoutError)):
-                    await self.restart()
-                else:
+                if isinstance(e, (InternalServerError, ServiceUnavailable)) or (
+                    isinstance(e, TimeoutError)
+                    and time.monotonic() - self.last_packet_received < self.WAIT_TIMEOUT
+                ):
                     await asyncio.sleep(1)
+                else:
+                    await self.restart()
 
         raise TimeoutError("Exceeded maximum number of retries")
