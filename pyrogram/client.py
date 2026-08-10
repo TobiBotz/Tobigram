@@ -436,6 +436,8 @@ class Client(Methods):
         self.save_file_semaphore = asyncio.Semaphore(self.max_concurrent_transmissions)
         self.get_file_semaphore = asyncio.Semaphore(self.max_concurrent_transmissions)
 
+        self._session_creation_gate = asyncio.Semaphore(4)
+
         self.is_connected = None
         self.is_initialized = None
 
@@ -1625,13 +1627,14 @@ class Client(Methods):
                 export_authorization = False
             else:
                 if not is_current_dc:
-                    auth_key = await Auth(
-                        self,
-                        dc_id,
-                        await self.storage.test_mode(),
-                        server_address=server_address,
-                        port=port
-                    ).create()
+                    async with self._session_creation_gate:
+                        auth_key = await Auth(
+                            self,
+                            dc_id,
+                            await self.storage.test_mode(),
+                            server_address=server_address,
+                            port=port
+                        ).create()
                 else:
                     auth_key = await self.storage.auth_key()
 
@@ -1646,7 +1649,8 @@ class Client(Methods):
                 crypto_executor=self.crypto_executor,
             )
 
-            await session.start()
+            async with self._session_creation_gate:
+                await session.start()
 
             if not is_current_dc and export_authorization:
                 for _ in range(3):
@@ -1701,12 +1705,16 @@ class Client(Methods):
             if needed > 0:
                 media = await self.get_session(dc_id, is_media=True)
 
-                pool.extend(await asyncio.gather(*(
-                    self._make_media_session(
-                        dc_id, media.auth_key, media.server_address, media.port
-                    )
-                    for _ in range(needed)
-                )))
+                while needed > 0:
+                    chunk = min(needed, 3)
+                    async with self._session_creation_gate:
+                        pool.extend(await asyncio.gather(*(
+                            self._make_media_session(
+                                dc_id, media.auth_key, media.server_address, media.port
+                            )
+                            for _ in range(chunk)
+                        )))
+                    needed -= chunk
             self.media_session_pools[dc_id] = pool
             return list(pool)
 

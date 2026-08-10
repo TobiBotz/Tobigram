@@ -51,6 +51,7 @@ class FakeClient:
     def __init__(self):
         self.media_session_pools = {}
         self._media_sessions_locks = {}
+        self._session_creation_gate = asyncio.Semaphore(4)
         self.crypto_executor = None
         self.exports = 0
 
