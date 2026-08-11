@@ -3,6 +3,7 @@ import asyncio
 import pytest
 
 import pyrogram.session.session as session_mod
+from pyrogram import raw
 from pyrogram.errors import AuthKeyUnregistered
 from pyrogram.session.session import Session
 
@@ -90,3 +91,53 @@ async def test_bounded_start_raises_instead_of_looping(monkeypatch, session_fact
         f"expected start to stop after max_attempts, got {_AlwaysFails.attempts} attempts"
     )
     assert elapsed < 4, f"max_attempts should cap retries, took {elapsed:.1f}s"
+
+
+async def test_invoke_surfaces_real_start_failure(monkeypatch, session_factory):
+    s = session_factory()
+    s._start_active = False
+    s._start_exc = AuthKeyUnregistered(401, "AUTH_KEY_UNREGISTERED")
+
+    with pytest.raises(AuthKeyUnregistered):
+        await s.invoke(raw.functions.Ping(ping_id=0))
+
+
+async def test_invoke_waits_out_active_start_then_proceeds(monkeypatch, session_factory):
+    s = session_factory()
+    s._start_active = True
+    s._start_completed.clear()
+    assert not s.is_started.is_set()
+
+    async def _finish_start():
+        await asyncio.sleep(0.05)
+        s.is_started.set()
+        s._start_completed.set()
+
+    task = asyncio.ensure_future(_finish_start())
+    try:
+        with pytest.raises(OSError, match="Connection is not established"):
+            await asyncio.wait_for(
+                s.invoke(raw.functions.Ping(ping_id=0), retries=1, timeout=1),
+                timeout=2,
+            )
+    finally:
+        await task
+
+
+async def test_invoke_raises_bounded_start_error_after_active_finishes(monkeypatch, session_factory):
+    s = session_factory()
+    s._start_active = True
+    s._start_completed.clear()
+
+    async def _fail_start():
+        await asyncio.sleep(0.05)
+        s._start_exc = OSError("request timed out")
+        s._start_active = False
+        s._start_completed.set()
+
+    task = asyncio.ensure_future(_fail_start())
+    try:
+        with pytest.raises(OSError, match="request timed out"):
+            await s.invoke(raw.functions.Ping(ping_id=0), retries=2, timeout=1)
+    finally:
+        await task
