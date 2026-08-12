@@ -94,7 +94,6 @@ async def test_bounded_start_raises_instead_of_looping(monkeypatch, session_fact
 
 
 class _BlackHoleThenHealthy:
-    """First attempt never answers; later attempts are a healthy echo."""
     attempts = 0
 
     def __init__(self, *args, **kwargs):
@@ -123,7 +122,7 @@ async def test_start_retry_still_dispatches_packets(monkeypatch, session_factory
 
     s = session_factory()
     s.is_media = True
-    s.is_cdn = True  # skip InitConnection; the Ping round-trip is enough
+    s.is_cdn = True  # skips InitConnection
     handled = []
 
     async def fake_handle_packet(packet):
@@ -148,6 +147,90 @@ async def test_start_retry_still_dispatches_packets(monkeypatch, session_factory
 
 async def _packed():
     return b"packed"
+
+
+class _OutageConn:
+    outage = False
+
+    def __init__(self, *args, **kwargs):
+        self.protocol = type("P", (), {"crypto_executor": None})()
+        self.queue = asyncio.Queue()
+
+    async def connect(self):
+        if _OutageConn.outage:
+            raise OSError("no route to host")
+
+    async def close(self):
+        pass
+
+    async def send(self, payload):
+        if _OutageConn.outage:
+            raise OSError("broken pipe")
+        self.queue.put_nowait(b"reply")
+
+    async def recv(self):
+        while True:
+            if _OutageConn.outage:
+                return None  # transport closed
+            try:
+                return await asyncio.wait_for(self.queue.get(), 0.02)
+            except TimeoutError:
+                continue
+
+
+class _OutageClient(DummyClient):
+    class storage:
+        conn = object()
+
+        @staticmethod
+        async def api_id():
+            return 1
+
+        @staticmethod
+        async def open():
+            pass
+
+
+async def _wait_until(predicate, timeout=10):
+    for _ in range(int(timeout / 0.05)):
+        if predicate():
+            return True
+        await asyncio.sleep(0.05)
+    return predicate()
+
+
+async def test_dead_session_rearms_when_network_returns(monkeypatch):
+    monkeypatch.setattr(session_mod, "Connection", _OutageConn)
+    monkeypatch.setattr(Session, "MAX_RETRIES", 2)
+    monkeypatch.setattr(_OutageConn, "outage", False)
+
+    s = Session(_OutageClient(), 1, b"\x00" * 256, False, is_media=True, crypto_executor=None)
+    s.is_cdn = True  # skips InitConnection
+
+    async def fake_handle_packet(packet):
+        for result in list(s.results.values()):
+            result.value = object()
+            result.event.set()
+
+    monkeypatch.setattr(s, "handle_packet", fake_handle_packet)
+    monkeypatch.setattr(s.loop, "run_in_executor", lambda ex, fn, *a: _packed())
+
+    await s.start(max_attempts=2)
+    assert s.is_started.is_set()
+
+    _OutageConn.outage = True
+    assert await _wait_until(lambda: not s.is_started.is_set() and not s._start_active)
+    assert isinstance(s._start_exc, OSError), (
+        f"a restart driven by recv_worker must record why it failed, got {s._start_exc!r}"
+    )
+
+    _OutageConn.outage = False
+    await asyncio.wait_for(
+        s.invoke(raw.functions.Ping(ping_id=0), retries=3, timeout=1), timeout=15
+    )
+    assert s.is_started.is_set(), "invoke must re-arm a session nothing else will restart"
+
+    await s.stop()
 
 
 async def test_invoke_surfaces_real_start_failure(monkeypatch, session_factory):

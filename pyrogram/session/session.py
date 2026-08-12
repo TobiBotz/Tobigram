@@ -59,6 +59,8 @@ class Session:
     PING_INTERVAL = 5
     STORED_MSG_IDS_MAX_SIZE = 1000 * 2
 
+    TRANSIENT_ERRORS = (InternalServerError, ServiceUnavailable, TimeoutError, OSError)
+
     TRANSPORT_ERRORS = {
         404: "auth key not found",
         429: "transport flood",
@@ -200,7 +202,7 @@ class Session:
                         attempt, backoff
                     )
                     await asyncio.sleep(backoff)
-                except (InternalServerError, ServiceUnavailable, TimeoutError, OSError) as e:
+                except self.TRANSIENT_ERRORS as e:
                     await self.stop()
 
                     if max_attempts is not None and attempt >= max_attempts:
@@ -247,7 +249,8 @@ class Session:
 
         self.ping_task_event.clear()
 
-        if self.recv_task:
+        # recv_worker reaches stop() through restart(); it must not cancel itself
+        if self.recv_task and self.recv_task is not asyncio.current_task():
             self.recv_task.cancel()
             try:
                 await self.recv_task
@@ -555,6 +558,24 @@ class Session:
                 )
             self.stored_msg_ids[-1] = new_msg_id
 
+    async def _wait_started(self, retries: int):
+        while not self.is_started.is_set():
+            if retries <= 0:
+                if self._start_exc is not None:
+                    raise self._start_exc
+                raise TimeoutError("Session failed to start")
+
+            retries -= 1
+
+            if self._start_active:
+                await self._start_completed.wait()
+                continue
+
+            if self._start_exc is not None and not isinstance(self._start_exc, self.TRANSIENT_ERRORS):
+                raise self._start_exc
+
+            await self._safe_restart()
+
     async def invoke(
         self,
         query: TLObject,
@@ -564,22 +585,7 @@ class Session:
     ):
         while retries > 0:
             if not self.is_started.is_set():
-                if self._start_exc is not None and not self._start_active:
-                    raise self._start_exc
-
-                if self._start_active:
-                    await self._start_completed.wait()
-
-                if not self.is_started.is_set():
-                    if self._start_exc is not None:
-                        raise self._start_exc
-                    try:
-                        await asyncio.wait_for(self.is_started.wait(), self.WAIT_TIMEOUT)
-                    except asyncio.TimeoutError:
-                        retries -= 1
-                        if retries == 0:
-                            raise TimeoutError("Session failed to start")
-                        continue
+                await self._wait_started(retries)
 
             if isinstance(query, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)):
                 inner_query = query.query
