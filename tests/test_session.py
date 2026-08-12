@@ -21,6 +21,17 @@ class DummyClient:
     dc_id = 2
     disconnect_handler = None
 
+    class storage:
+        conn = object()
+
+        @staticmethod
+        async def api_id():
+            return 1
+
+        @staticmethod
+        async def open():
+            pass
+
 
 class _AuthFailThenUnreg:
     kills_with_unregistered_on = 0
@@ -122,7 +133,7 @@ async def test_start_retry_still_dispatches_packets(monkeypatch, session_factory
 
     s = session_factory()
     s.is_media = True
-    s.is_cdn = True  # skips InitConnection
+    s.is_cdn = True
     handled = []
 
     async def fake_handle_packet(packet):
@@ -149,6 +160,24 @@ async def _packed():
     return b"packed"
 
 
+async def test_send_timeout_normalises_error_and_frees_result(monkeypatch, session_factory):
+    s = session_factory()
+
+    async def never_completes(payload):
+        await asyncio.sleep(30)
+
+    s.connection = type("C", (), {
+        "protocol": type("P", (), {"crypto_executor": None})(),
+        "send": staticmethod(never_completes),
+    })()
+    monkeypatch.setattr(s.loop, "run_in_executor", lambda ex, fn, *a: _packed())
+
+    with pytest.raises(TimeoutError, match="send timed out"):
+        await s.send(raw.functions.Ping(ping_id=0), timeout=0.05)
+
+    assert not s.results, f"a timed-out send must release its result slot, got {s.results}"
+
+
 class _OutageConn:
     outage = False
 
@@ -171,24 +200,11 @@ class _OutageConn:
     async def recv(self):
         while True:
             if _OutageConn.outage:
-                return None  # transport closed
+                return None
             try:
-                return await asyncio.wait_for(self.queue.get(), 0.02)
-            except TimeoutError:
-                continue
-
-
-class _OutageClient(DummyClient):
-    class storage:
-        conn = object()
-
-        @staticmethod
-        async def api_id():
-            return 1
-
-        @staticmethod
-        async def open():
-            pass
+                return self.queue.get_nowait()
+            except asyncio.QueueEmpty:
+                await asyncio.sleep(0.01)
 
 
 async def _wait_until(predicate, timeout=10):
@@ -204,8 +220,8 @@ async def test_dead_session_rearms_when_network_returns(monkeypatch):
     monkeypatch.setattr(Session, "MAX_RETRIES", 2)
     monkeypatch.setattr(_OutageConn, "outage", False)
 
-    s = Session(_OutageClient(), 1, b"\x00" * 256, False, is_media=True, crypto_executor=None)
-    s.is_cdn = True  # skips InitConnection
+    s = Session(DummyClient(), 1, b"\x00" * 256, False, is_media=True, crypto_executor=None)
+    s.is_cdn = True
 
     async def fake_handle_packet(packet):
         for result in list(s.results.values()):
@@ -234,12 +250,17 @@ async def test_dead_session_rearms_when_network_returns(monkeypatch):
 
 
 async def test_invoke_surfaces_real_start_failure(monkeypatch, session_factory):
-    s = session_factory()
-    s._start_active = False
-    s._start_exc = AuthKeyUnregistered(401, "AUTH_KEY_UNREGISTERED")
+    _AuthFailThenUnreg.attempts = 1
+    monkeypatch.setattr(session_mod, "Connection", _AuthFailThenUnreg)
 
+    s = session_factory()
+
+    started = asyncio.get_event_loop().time()
     with pytest.raises(AuthKeyUnregistered):
-        await s.invoke(raw.functions.Ping(ping_id=0))
+        await asyncio.wait_for(s.invoke(raw.functions.Ping(ping_id=0)), timeout=10)
+
+    elapsed = asyncio.get_event_loop().time() - started
+    assert elapsed < 4, f"a fatal start error must not be retried, took {elapsed:.1f}s"
 
 
 async def test_invoke_waits_out_active_start_then_proceeds(monkeypatch, session_factory):
@@ -265,19 +286,24 @@ async def test_invoke_waits_out_active_start_then_proceeds(monkeypatch, session_
 
 
 async def test_invoke_raises_bounded_start_error_after_active_finishes(monkeypatch, session_factory):
+    _AlwaysFails.attempts = 0
+    monkeypatch.setattr(session_mod, "Connection", _AlwaysFails)
+    monkeypatch.setattr(Session, "MAX_RETRIES", 2)
+
     s = session_factory()
     s._start_active = True
     s._start_completed.clear()
 
     async def _fail_start():
         await asyncio.sleep(0.05)
-        s._start_exc = OSError("request timed out")
         s._start_active = False
         s._start_completed.set()
 
     task = asyncio.ensure_future(_fail_start())
     try:
-        with pytest.raises(OSError, match="request timed out"):
-            await s.invoke(raw.functions.Ping(ping_id=0), retries=2, timeout=1)
+        with pytest.raises(OSError, match="persistent outage"):
+            await asyncio.wait_for(
+                s.invoke(raw.functions.Ping(ping_id=0), retries=2, timeout=1), timeout=15
+            )
     finally:
         await task
