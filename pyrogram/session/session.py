@@ -140,6 +140,7 @@ class Session:
         try:
             while True:
                 attempt += 1
+                self._stopping = False
                 self.connection = Connection(
                     self.dc_id,
                     self.test_mode,

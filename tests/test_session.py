@@ -93,6 +93,63 @@ async def test_bounded_start_raises_instead_of_looping(monkeypatch, session_fact
     assert elapsed < 4, f"max_attempts should cap retries, took {elapsed:.1f}s"
 
 
+class _BlackHoleThenHealthy:
+    """First attempt never answers; later attempts are a healthy echo."""
+    attempts = 0
+
+    def __init__(self, *args, **kwargs):
+        _BlackHoleThenHealthy.attempts += 1
+        self.attempt = _BlackHoleThenHealthy.attempts
+        self.protocol = type("P", (), {"crypto_executor": None})()
+        self.queue = asyncio.Queue()
+
+    async def connect(self):
+        pass
+
+    async def close(self):
+        pass
+
+    async def send(self, payload):
+        if self.attempt >= 2:
+            self.queue.put_nowait(b"reply")
+
+    async def recv(self):
+        return await self.queue.get()
+
+
+async def test_start_retry_still_dispatches_packets(monkeypatch, session_factory):
+    _BlackHoleThenHealthy.attempts = 0
+    monkeypatch.setattr(session_mod, "Connection", _BlackHoleThenHealthy)
+
+    s = session_factory()
+    s.is_media = True
+    s.is_cdn = True  # skip InitConnection; the Ping round-trip is enough
+    handled = []
+
+    async def fake_handle_packet(packet):
+        handled.append(packet)
+        for result in list(s.results.values()):
+            result.value = object()
+            result.event.set()
+
+    monkeypatch.setattr(s, "handle_packet", fake_handle_packet)
+    monkeypatch.setattr(s.loop, "run_in_executor", lambda ex, fn, *a: _packed())
+
+    await asyncio.wait_for(s.start(max_attempts=4), timeout=30)
+
+    assert _BlackHoleThenHealthy.attempts == 2, (
+        f"a healthy second attempt must succeed, took {_BlackHoleThenHealthy.attempts}"
+    )
+    assert handled, "packets on a retried attempt must reach handle_packet"
+    assert not s._stopping, "_stopping must be cleared for each start attempt"
+
+    await s.stop()
+
+
+async def _packed():
+    return b"packed"
+
+
 async def test_invoke_surfaces_real_start_failure(monkeypatch, session_factory):
     s = session_factory()
     s._start_active = False
