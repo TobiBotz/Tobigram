@@ -57,6 +57,8 @@ class RichText(Object):
     - :obj:`~pyrogram.types.RichTextAnchorLink`
     - :obj:`~pyrogram.types.RichTextReference`
     - :obj:`~pyrogram.types.RichTextReferenceLink`
+    - :obj:`~pyrogram.types.RichTextImage`
+    - :obj:`~pyrogram.types.RichTextDiff`
     """
 
     def __init__(self):
@@ -453,7 +455,7 @@ class RichTextCustomEmoji(RichText):
     Parameters:
         custom_emoji_id (``str``):
             Unique identifier of the custom emoji.
-            Use :meth:`pyrogram.Client.get_custom_emoji_stickers` to get full information about the sticker.
+            Use :meth:`~pyrogram.Client.get_custom_emoji_stickers` to get full information about the sticker.
 
         alternative_text (``str``):
             Alternative emoji for the custom emoji.

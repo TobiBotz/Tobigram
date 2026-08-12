@@ -28,7 +28,7 @@ class RichMessage(Object):
     """Rich formatted message.
 
     Parameters:
-        blocks (List of :obj:`pyrogram.types.RichBlock`):
+        blocks (List of :obj:`~pyrogram.types.RichBlock`):
             Content of the message.
 
         is_rtl (``bool``, *optional*):

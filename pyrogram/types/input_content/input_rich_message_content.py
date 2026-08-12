@@ -30,7 +30,7 @@ class InputRichMessageContent(InputMessageContent):
     """Content of a rich message to be sent as the result of an inline query.
 
     Parameters:
-        rich_message (:obj:`pyrogram.types.InputRichMessage`):
+        rich_message (:obj:`~pyrogram.types.InputRichMessage`):
             The message to be sent.
     """
 

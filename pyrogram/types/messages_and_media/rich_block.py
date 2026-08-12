@@ -435,7 +435,7 @@ class RichBlockListItem(RichBlock):
         label (``str``):
             Label of the item.
 
-        blocks (List of :obj:`pyrogram.types.RichBlock`):
+        blocks (List of :obj:`~pyrogram.types.RichBlock`):
             The content of the item.
 
         has_checkbox (``bool``, *optional*):
@@ -659,7 +659,7 @@ class RichBlockList(RichBlock):
     """A list of blocks, corresponding to the HTML tag ``<ul>`` or ``<ol>`` with multiple nested tags ``<li>``.
 
     Parameters:
-        items (List of :obj:`pyrogram.types.RichBlockListItem`):
+        items (List of :obj:`~pyrogram.types.RichBlockListItem`):
             Items of the list.
     """
 
@@ -673,7 +673,7 @@ class RichBlockBlockQuotation(RichBlock):
     """A block quotation, corresponding to the HTML tag ``<blockquote>``.
 
     Parameters:
-        blocks (List of :obj:`pyrogram.types.RichBlock`):
+        blocks (List of :obj:`~pyrogram.types.RichBlock`):
             Content of the block.
 
         credit (:obj:`~pyrogram.types.RichText`, *optional*):
@@ -968,9 +968,6 @@ class RichBlockVoiceNote(RichBlock):
     Parameters:
         voice_note (:obj:`~pyrogram.types.Voice`):
             The voice note.
-
-        has_spoiler (``bool``, *optional*):
-            True, if the media preview is covered by a spoiler animation.
 
         caption (:obj:`~pyrogram.types.RichBlockCaption`, *optional*):
             Caption of the block.

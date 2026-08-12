@@ -21,6 +21,8 @@ import os
 import re
 import shutil
 
+from pyrogram import types as pyrogram_types
+
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 HOME = os.path.join(ROOT, "compiler/docs")
 DESTINATION = os.path.join(ROOT, "docs/source/telegram")
@@ -131,6 +133,10 @@ def generate(source_path, base):
 def pyrogram_api():
     def get_title_list(s: str) -> list:
         return [i.strip() for i in [j.strip() for j in s.split("\n") if j] if i]
+
+    def is_property(bound_method: str) -> bool:
+        cls_name, _, attr = bound_method.partition(".")
+        return isinstance(getattr(getattr(pyrogram_types, cls_name, None), attr, None), property)
 
     # Methods
 
@@ -570,7 +576,6 @@ def pyrogram_api():
             ChatAdministratorRights
             ChatColor
             ChatJoinResult
-            ChatReactions
             ChatSettings
             Folder
             FolderInviteLink
@@ -596,10 +601,6 @@ def pyrogram_api():
             Link
             Username
             VerificationStatus
-            VideoChatEnded
-            VideoChatMembersInvited
-            VideoChatScheduled
-            VideoChatStarted
         """,
         messages_media="""
         Messages & Media
@@ -1240,7 +1241,8 @@ def pyrogram_api():
         for k, v in categories.items():
             name, *bound_methods = get_title_list(v)
 
-            fmt_keys.update({"{}_hlist".format(k): "\n    ".join("- :meth:`~{}`".format(bm) for bm in bound_methods)})
+            fmt_keys.update({"{}_hlist".format(k): "\n    ".join(
+                "- :{}:`~{}`".format("attr" if is_property(bm) else "meth", bm) for bm in bound_methods)})
 
             fmt_keys.update(
                 {"{}_toctree".format(k): "\n    ".join("{} <{}>".format(bm.split(".")[1], bm) for bm in bound_methods)})
@@ -1248,10 +1250,13 @@ def pyrogram_api():
             # noinspection PyShadowingBuiltins
             for bm in bound_methods:
                 with open(os.path.join(root, "bound-methods/{}.rst".format(bm)), "w") as f2:
-                    title = "{}()".format(bm)
+                    if is_property(bm):
+                        title, directive, suffix = bm, "autoattribute", ""
+                    else:
+                        title, directive, suffix = "{}()".format(bm), "automethod", "()"
 
                     f2.write(title + "\n" + "=" * len(title) + "\n\n")
-                    f2.write(".. automethod:: pyrogram.types.{}()".format(bm))
+                    f2.write(".. {}:: pyrogram.types.{}{}".format(directive, bm, suffix))
 
         f.write(template.format(**fmt_keys))
 

@@ -30,6 +30,10 @@ if TYPE_CHECKING:
 class InputRichMessage(Object):
     """Describes a rich message to create.
 
+    Exactly one of *html*, *markdown* or *blocks* must be provided: if more than one is set,
+    the first one in that order is used and the others are ignored, and if none is set a
+    ``ValueError`` is raised when the message is sent.
+
     Parameters:
         html (``str``, *optional*):
             Content of the rich message to send described using HTML formatting.
@@ -46,12 +50,13 @@ class InputRichMessage(Object):
             Pass *True* to skip automatic detection of entities
             (e.g., URLs, email addresses, username mentions, hashtags, cashtags, bot commands, or phone numbers) in the text.
 
-        blocks (List of :obj:`InputRichBlock`, *optional*):
+        blocks (List of :obj:`~pyrogram.types.InputRichBlock`, *optional*):
             List of blocks that define the rich message content.
             See `rich message formatting options <https://core.telegram.org/bots/api#rich-message-formatting-options>`__ for more details.
 
-        media (:obj:`InputRichMessageMedia`, *optional*):
+        media (:obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
             Media referenced by the blocks.
+            Only used together with *blocks*, ignored for *html* and *markdown*.
     """
 
     def __init__(
