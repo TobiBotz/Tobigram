@@ -418,7 +418,6 @@ class Client(Methods):
         self.dispatcher: Dispatcher = Dispatcher(self)
 
         self.rnd_id = MsgId
-        self._server_time_offset = 0.0
 
         self.parser: Parser = Parser(self)
 
@@ -1815,12 +1814,7 @@ class Client(Methods):
 
     @property
     def server_time(self) -> float:
-        return time.time() + self._server_time_offset
-
-    def _set_server_time(self, msg_id: int):
-        server_ts = msg_id / float(2**32)
-        self._server_time_offset = server_ts - time.time()
-        log.info(f"Time synced: offset={self._server_time_offset:.3f}s, server_time={utils.timestamp_to_datetime(server_ts)}")
+        return MsgId.now()
 
     def guess_mime_type(self, filename: Union[str, BytesIO]) -> Optional[str]:
         if isinstance(filename, BytesIO):

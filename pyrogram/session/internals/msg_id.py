@@ -24,23 +24,36 @@ log = logging.getLogger(__name__)
 
 
 class _MsgIdGenerator:
-    def __init__(self):
-        self._lock = threading.Lock()
-        self.last_time = 0
-        self.offset = 0
+    _lock = threading.Lock()
+    _last_msg_id = 0
+    time_offset = 0.0
+
+    @classmethod
+    def now(cls) -> float:
+        return time.time() + cls.time_offset
+
+    @classmethod
+    def sync(cls, server_msg_id: int, rejected: bool = False):
+        with cls._lock:
+            cls.time_offset = (server_msg_id >> 32) - time.time()
+
+            if rejected:
+                cls._last_msg_id = 0
+
+        if abs(cls.time_offset) > 30:
+            log.info("System clock is off, time offset set to %.1fs", cls.time_offset)
 
     def __call__(self) -> int:
-        with self._lock:
-            now = int(time.time())
-            if now == self.last_time:
-                self.offset += 4
-            elif now < self.last_time:
-                self.offset += 4
-            else:
-                self.offset = 0
-            msg_id = (now * 2 ** 32) + self.offset
-            self.last_time = now
+        now = self.now()
+
+        with _MsgIdGenerator._lock:
+            msg_id = int(now * 2 ** 32) & ~3
+
+            if msg_id <= _MsgIdGenerator._last_msg_id:
+                msg_id = _MsgIdGenerator._last_msg_id + 4
+
+            _MsgIdGenerator._last_msg_id = msg_id
             return msg_id
 
 
-MsgId = _MsgIdGenerator()  # module-level singleton for backward compat
+MsgId = _MsgIdGenerator()

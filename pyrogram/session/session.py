@@ -235,8 +235,6 @@ class Session:
         self.is_started.clear()
         self._stopping = True
 
-        self.stored_msg_ids.clear()
-
         self.ping_task_event.set()
 
         if self.ping_task is not None:
@@ -259,6 +257,8 @@ class Session:
         if self._packet_tasks:
             await asyncio.gather(*self._packet_tasks, return_exceptions=True)
             self._packet_tasks.clear()
+
+        self.stored_msg_ids.clear()
 
         if self.connection:
             await self.connection.close()
@@ -327,6 +327,15 @@ class Session:
                     if msg.msg_id not in self.pending_acks:
                         self.pending_acks.add(msg.msg_id)
 
+            is_bad_notification = isinstance(
+                msg.body, (raw.types.BadMsgNotification, raw.types.BadServerSalt)
+            )
+
+            rejected = is_bad_notification and msg.body.error_code in (16, 17)
+
+            if rejected or not self.stored_msg_ids:
+                MsgId.sync(msg.msg_id, rejected)
+
             try:
                 if len(self.stored_msg_ids) > Session.STORED_MSG_IDS_MAX_SIZE:
                     del self.stored_msg_ids[:Session.STORED_MSG_IDS_MAX_SIZE // 2]
@@ -338,17 +347,17 @@ class Session:
                     if msg.msg_id in self.stored_msg_ids:
                         raise SecurityCheckMismatch("The msg_id is equal to any of the stored values")
 
-                    time_diff = (msg.msg_id - MsgId()) / 2 ** 32
+                    time_diff = (msg.msg_id >> 32) - MsgId.now()
 
-                    if time_diff > 30:
+                    if time_diff > 30 and not is_bad_notification:
                         raise SecurityCheckMismatch("The msg_id belongs to over 30 seconds in the future. "
                                                     "Most likely the client time has to be synchronized.")
 
-                    if time_diff < -300:
+                    if time_diff < -300 and not is_bad_notification:
                         raise SecurityCheckMismatch("The msg_id belongs to over 300 seconds in the past. "
                                                     "Most likely the client time has to be synchronized.")
             except SecurityCheckMismatch as e:
-                log.info("Discarding packet: %s", e)
+                log.warning("Discarding packet and closing connection: %s", e)
                 await self.connection.close()
                 return
             else:
@@ -364,7 +373,7 @@ class Session:
 
             msg_id = None
 
-            if isinstance(msg.body, (raw.types.BadMsgNotification, raw.types.BadServerSalt)):
+            if is_bad_notification:
                 msg_id = msg.body.bad_msg_id
             elif isinstance(msg.body, (FutureSalts, raw.types.RpcResult)):
                 msg_id = msg.body.req_msg_id
@@ -533,7 +542,6 @@ class Session:
             if isinstance(result, raw.types.BadMsgNotification):
                 if retry > 1:
                     raise BadMsgNotification(result.error_code)
-                await self._handle_bad_notification()
                 return await self.send(data, wait_response, timeout, retry + 1)
 
             if isinstance(result, raw.types.BadServerSalt):
@@ -543,20 +551,6 @@ class Session:
                 return await self.send(data, wait_response, timeout, retry + 1)
 
             return result
-
-    async def _handle_bad_notification(self):
-        async with self._handler_lock:
-            if not self.stored_msg_ids:
-                return
-            new_msg_id = MsgId()
-            if self.stored_msg_ids[-1] >= new_msg_id:
-                new_msg_id = self.stored_msg_ids[-1] + 4
-                log.debug(
-                    "Changing msg_id old=%s new=%s",
-                    self.stored_msg_ids[-1],
-                    new_msg_id,
-                )
-            self.stored_msg_ids[-1] = new_msg_id
 
     async def _wait_started(self):
         if self._start_active:
