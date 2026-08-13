@@ -27,9 +27,9 @@ class UpgradedGiftAttributeId(Object):
 
     It can be one of:
 
-    - :obj:`~pyrogram.types.UpgradedfGiftAttributeIdModel`
-    - :obj:`~pyrogram.types.UpgradedfGiftAttributeIdSymbol`
-    - :obj:`~pyrogram.types.UpgradedfGiftAttributeIdBackdrop`
+    - :obj:`~pyrogram.types.UpgradedGiftAttributeIdModel`
+    - :obj:`~pyrogram.types.UpgradedGiftAttributeIdSymbol`
+    - :obj:`~pyrogram.types.UpgradedGiftAttributeIdBackdrop`
     """
 
     def __init__(
@@ -45,15 +45,15 @@ class UpgradedGiftAttributeId(Object):
             return None
 
         if isinstance(attribute_id, raw.types.StarGiftAttributeIdModel):
-            return types.UpgradedfGiftAttributeIdModel(
+            return types.UpgradedGiftAttributeIdModel(
                 sticker_id=attribute_id.document_id
             )
         elif isinstance(attribute_id, raw.types.StarGiftAttributeIdPattern):
-            return types.UpgradedfGiftAttributeIdSymbol(
+            return types.UpgradedGiftAttributeIdSymbol(
                 sticker_id=attribute_id.document_id
             )
         elif isinstance(attribute_id, raw.types.StarGiftAttributeIdBackdrop):
-            return types.UpgradedfGiftAttributeIdBackdrop(
+            return types.UpgradedGiftAttributeIdBackdrop(
                 backdrop_id=attribute_id.backdrop_id
             )
 

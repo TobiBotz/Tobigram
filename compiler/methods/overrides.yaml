@@ -365,11 +365,13 @@ forward_messages:
 get_poll_results:
   category: messages
   usable_by: users
-  response_pattern: updates
-  return_type: types.Message
+  response_pattern: custom
+  return_type: types.Poll
   raw_function: messages.getPollResults
-  skip_if_exists: false
-  doc_summary: "Get poll results for a message."
+  skip_if_exists: true
+  param_mapping:
+    peer: chat_id
+  doc_summary: "Get the current results of a poll."
   extra_params:
     - name: chat_id
       type: Union[int, str]

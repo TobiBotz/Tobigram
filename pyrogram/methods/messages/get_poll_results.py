@@ -31,40 +31,37 @@ from pyrogram import types
 class GetPollResults:
     async def get_poll_results(
         self: "pyrogram.Client",
-        chat_id: Union[int, str] = None,
-        msg_id: int = None,
-    ) -> "types.Message":
-        """Get poll results for a message.
+        chat_id: Union[int, str],
+        msg_id: int,
+    ) -> Optional["types.Poll"]:
+        """Get the current results of a poll.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            chat_id (Union[int, str]): Chat where the poll message is
-            msg_id (int): Message identifier (from the poll message)
+            chat_id (``int`` | ``str``): Chat where the poll message is
+            msg_id (``int``): Message identifier (from the poll message)
 
         Returns:
-            :obj:`~pyrogram.types.Message`
+            :obj:`~pyrogram.types.Poll`: On success, the poll with its updated results is returned.
 
         Example:
             .. code-block:: python
 
-                await app.get_poll_results(...)
+                await app.get_poll_results(chat_id, message_id)
         """
 
         r = await self.invoke(
             raw.functions.messages.GetPollResults(
-                peer=await self.resolve_peer(peer),
+                peer=await self.resolve_peer(chat_id),
                 msg_id=msg_id,
+                poll_hash=0,
             )
         )
 
+        users = {i.id: i for i in r.users}
+        chats = {i.id: i for i in r.chats}
+
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
-                return await types.Message._parse(
-                    self, i.message,
-                    {i.id: i for i in r.users},
-                    {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
-                )
+            if isinstance(i, raw.types.UpdateMessagePoll):
+                return await types.Poll._parse_update(self, i, users, chats)

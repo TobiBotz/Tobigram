@@ -89,6 +89,13 @@ def to_pascal_case(name: str) -> str:
     return "".join(word.capitalize() for word in name.split("_"))
 
 
+def to_raw_reference(raw_func: str) -> str:
+    namespace, _, name = raw_func.rpartition(".")
+    name = name[:1].upper() + name[1:]
+
+    return f"{namespace}.{name}" if namespace else name
+
+
 def find_method_name(raw_name: str) -> str:
     return to_snake_case(raw_name)
 
@@ -204,6 +211,11 @@ def map_raw_params(method_name: str, tl_params: List[Dict], override: Dict) -> s
         else:
             if mapped_name in extra_names:
                 lines.append(f"{name}={mapped_name},")
+            elif "?" not in p["tl_type"]:
+                print(
+                    f"  WARNING: {method_name} drops required TL param "
+                    f"{name!r} ({tl_type}); add it to extra_params or param_mapping"
+                )
 
     if override.get("supports_caption"):
         text_params_comment = (
@@ -313,7 +325,7 @@ class MethodGenerator:
                 "doc_summary": override.get("doc_summary", f"{class_name}."),
                 "response_pattern": override.get("response_pattern", "updates"),
                 "has_text_parsing": override.get("has_text_parsing", False),
-                "raw_function": raw_func,
+                "raw_function": to_raw_reference(raw_func),
                 "additional_params": build_signature_params(override),
                 "raw_params": INDENT + ("\n" + INDENT).join(raw_params_str.split("\n"))
                 if raw_params_str
