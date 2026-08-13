@@ -176,3 +176,24 @@ class TestMemoryStorage:
 
     def test_is_subclass_of_sqlite_storage(self):
         assert issubclass(MemoryStorage, SQLiteStorage)
+
+
+class TestSQLiteStoragePersistence:
+    @pytest.mark.asyncio
+    async def test_writes_survive_close_without_save(self, tmp_path):
+        storage = SQLiteStorage("persist", workdir=tmp_path)
+        await storage.open()
+        await storage.update_peers([(123, 456, "user", "+1234567890")])
+        await storage.update_usernames([(123, ["bob"])])
+        await storage.update_state((1, 2, 3, 4, 5))
+        await storage.close()
+
+        storage = SQLiteStorage("persist", workdir=tmp_path)
+        await storage.open()
+        try:
+            assert (await storage.get_peer_by_id(123)).user_id == 123
+            assert (await storage.get_peer_by_username("bob")).user_id == 123
+            assert (await storage.get_peer_by_phone_number("+1234567890")).user_id == 123
+            assert await storage.update_state() == [(1, 2, 3, 4, 5)]
+        finally:
+            await storage.close()

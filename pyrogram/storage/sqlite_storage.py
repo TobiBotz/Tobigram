@@ -191,6 +191,7 @@ class SQLiteStorage(Storage):
             self._dirty = False
 
     async def _maybe_commit(self):
+        self._dirty = True
         self._write_count += 1
         if self._write_count >= self._AUTO_COMMIT_INTERVAL:
             self._write_count = 0
@@ -357,6 +358,7 @@ class SQLiteStorage(Storage):
         await self.conn.executemany(
             "REPLACE INTO peers (id, access_hash, type, phone_number) VALUES (?, ?, ?, ?)", peers
         )
+        await self._maybe_commit()
 
     async def update_usernames(self, usernames: List[Tuple[int, List[str]]]):
         if not usernames:
@@ -367,6 +369,7 @@ class SQLiteStorage(Storage):
             "REPLACE INTO usernames (id, username) VALUES (?, ?)",
             [(id, username) for id, usernames in usernames for username in usernames],
         )
+        await self._maybe_commit()
 
     async def update_state(self, value: Tuple[int, int, int, int, int] = object):
         if value is object:
@@ -387,6 +390,8 @@ class SQLiteStorage(Storage):
                     "  seq   = excluded.seq",
                     value,
                 )
+
+            await self._maybe_commit()
 
     async def get_peer_by_id(self, peer_id: int):
         cursor = await self.conn.execute(
@@ -445,7 +450,6 @@ class SQLiteStorage(Storage):
             raise ConnectionError("Database is not open")
         await self.conn.execute(f"UPDATE sessions SET {attr} = ?", (value,))
         self._cache[attr] = value
-        self._dirty = True
         await self._maybe_commit()
 
     async def dc_id(self, value: int = object):
