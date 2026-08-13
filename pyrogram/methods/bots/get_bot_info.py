@@ -52,7 +52,7 @@ class GetBotInfo:
         """
 
         r = await self.invoke(
-            raw.functions.bots.getBotInfo(
+            raw.functions.bots.GetBotInfo(
                 bot=await self.resolve_peer(bot),
                 lang_code=lang_code,
             )

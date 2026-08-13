@@ -54,7 +54,7 @@ class ToggleAntiSpam:
         """
 
         r = await self.invoke(
-            raw.functions.channels.toggleAntiSpam(
+            raw.functions.channels.ToggleAntiSpam(
                 
                 channel=await self.resolve_peer(chat_id),
                 enabled=enabled,

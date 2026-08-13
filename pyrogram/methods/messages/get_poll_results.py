@@ -52,7 +52,7 @@ class GetPollResults:
         """
 
         r = await self.invoke(
-            raw.functions.messages.getPollResults(
+            raw.functions.messages.GetPollResults(
                 peer=await self.resolve_peer(peer),
                 msg_id=msg_id,
             )

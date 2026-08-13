@@ -50,7 +50,7 @@ class UpdateBusinessWorkHours:
         """
 
         r = await self.invoke(
-            raw.functions.account.updateBusinessWorkHours(
+            raw.functions.account.UpdateBusinessWorkHours(
                 business_work_hours=business_work_hours,
             )
         )

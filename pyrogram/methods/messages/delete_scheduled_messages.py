@@ -54,7 +54,7 @@ class DeleteScheduledMessages:
         """
 
         r = await self.invoke(
-            raw.functions.messages.deleteScheduledMessages(
+            raw.functions.messages.DeleteScheduledMessages(
                 
                 peer=await self.resolve_peer(chat_id),
                 id=id,

@@ -62,7 +62,7 @@ class UpdateChannelColor:
         """
 
         r = await self.invoke(
-            raw.functions.channels.updateColor(
+            raw.functions.channels.UpdateColor(
                 
                 for_profile=for_profile,
                 channel=await self.resolve_peer(chat_id),

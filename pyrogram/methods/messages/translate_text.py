@@ -58,7 +58,7 @@ class TranslateText:
         """
 
         r = await self.invoke(
-            raw.functions.messages.translateText(
+            raw.functions.messages.TranslateText(
                 peer=await self.resolve_peer(peer),
                 id=id,
                 text=text,

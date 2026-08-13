@@ -54,7 +54,7 @@ class EditFactCheck:
         """
 
         r = await self.invoke(
-            raw.functions.messages.editFactCheck(
+            raw.functions.messages.EditFactCheck(
                 peer=await self.resolve_peer(peer),
                 msg_id=msg_id,
                 text=text_with_entities

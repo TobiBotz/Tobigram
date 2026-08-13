@@ -50,7 +50,7 @@ class CreateBusinessChatLink:
         """
 
         r = await self.invoke(
-            raw.functions.account.createBusinessChatLink(
+            raw.functions.account.CreateBusinessChatLink(
                 link=link,
             )
         )

@@ -54,7 +54,7 @@ class SendScheduledMessages:
         """
 
         r = await self.invoke(
-            raw.functions.messages.sendScheduledMessages(
+            raw.functions.messages.SendScheduledMessages(
                 
                 peer=await self.resolve_peer(chat_id),
                 id=id,

@@ -50,7 +50,7 @@ class ResolveBusinessChatLink:
         """
 
         r = await self.invoke(
-            raw.functions.account.resolveBusinessChatLink(
+            raw.functions.account.ResolveBusinessChatLink(
                 slug=slug,
             )
         )

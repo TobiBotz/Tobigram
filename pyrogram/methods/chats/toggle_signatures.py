@@ -58,7 +58,7 @@ class ToggleSignatures:
         """
 
         r = await self.invoke(
-            raw.functions.channels.toggleSignatures(
+            raw.functions.channels.ToggleSignatures(
                 
                 signatures_enabled=signatures_enabled,
                 profiles_enabled=profiles_enabled,

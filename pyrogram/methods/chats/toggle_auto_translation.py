@@ -54,7 +54,7 @@ class ToggleAutoTranslation:
         """
 
         r = await self.invoke(
-            raw.functions.channels.toggleAutotranslation(
+            raw.functions.channels.ToggleAutotranslation(
                 
                 channel=await self.resolve_peer(chat_id),
                 enabled=enabled,

@@ -46,7 +46,7 @@ class GetBusinessChatLinks:
         """
 
         r = await self.invoke(
-            raw.functions.account.getBusinessChatLinks(
+            raw.functions.account.GetBusinessChatLinks(
 
             )
         )

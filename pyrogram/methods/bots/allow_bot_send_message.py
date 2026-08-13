@@ -50,7 +50,7 @@ class AllowBotSendMessage:
         """
 
         r = await self.invoke(
-            raw.functions.bots.allowSendMessage(
+            raw.functions.bots.AllowSendMessage(
                 bot=await self.resolve_peer(bot),
             )
         )

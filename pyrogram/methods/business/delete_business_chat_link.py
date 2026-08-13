@@ -50,7 +50,7 @@ class DeleteBusinessChatLink:
         """
 
         r = await self.invoke(
-            raw.functions.account.deleteBusinessChatLink(
+            raw.functions.account.DeleteBusinessChatLink(
                 slug=slug,
             )
         )

@@ -46,7 +46,7 @@ class GetConnectedBots:
         """
 
         r = await self.invoke(
-            raw.functions.account.getConnectedBots(
+            raw.functions.account.GetConnectedBots(
 
             )
         )

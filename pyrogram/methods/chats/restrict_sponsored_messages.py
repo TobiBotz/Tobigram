@@ -54,7 +54,7 @@ class RestrictSponsoredMessages:
         """
 
         r = await self.invoke(
-            raw.functions.channels.restrictSponsoredMessages(
+            raw.functions.channels.RestrictSponsoredMessages(
                 
                 channel=await self.resolve_peer(chat_id),
                 restricted=restricted,

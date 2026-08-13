@@ -50,7 +50,7 @@ class UpdateBusinessAwayMessage:
         """
 
         r = await self.invoke(
-            raw.functions.account.updateBusinessAwayMessage(
+            raw.functions.account.UpdateBusinessAwayMessage(
                 message=message,
             )
         )

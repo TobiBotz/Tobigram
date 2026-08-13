@@ -50,7 +50,7 @@ class UpdateBusinessIntro:
         """
 
         r = await self.invoke(
-            raw.functions.account.updateBusinessIntro(
+            raw.functions.account.UpdateBusinessIntro(
                 intro=intro,
             )
         )

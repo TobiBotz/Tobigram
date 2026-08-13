@@ -54,7 +54,7 @@ class ToggleViewForumAsMessages:
         """
 
         r = await self.invoke(
-            raw.functions.channels.toggleViewForumAsMessages(
+            raw.functions.channels.ToggleViewForumAsMessages(
                 
                 channel=await self.resolve_peer(chat_id),
                 enabled=enabled,

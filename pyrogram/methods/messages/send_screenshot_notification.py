@@ -54,7 +54,7 @@ class SendScreenshotNotification:
         """
 
         r = await self.invoke(
-            raw.functions.messages.sendScreenshotNotification(
+            raw.functions.messages.SendScreenshotNotification(
                 
                 peer=await self.resolve_peer(chat_id),
                 reply_to=raw.types.InputReplyToMessage(

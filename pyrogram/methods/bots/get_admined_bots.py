@@ -46,7 +46,7 @@ class GetAdminedBots:
         """
 
         r = await self.invoke(
-            raw.functions.bots.getAdminedBots(
+            raw.functions.bots.GetAdminedBots(
 
             )
         )

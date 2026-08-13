@@ -56,7 +56,7 @@ class SummarizeText:
         """
 
         r = await self.invoke(
-            raw.functions.messages.summarizeText(
+            raw.functions.messages.SummarizeText(
                 peer=await self.resolve_peer(peer),
                 id=id,
                 to_lang=to_lang,

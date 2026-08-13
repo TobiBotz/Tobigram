@@ -54,7 +54,7 @@ class ToggleSlowMode:
         """
 
         r = await self.invoke(
-            raw.functions.channels.toggleSlowMode(
+            raw.functions.channels.ToggleSlowMode(
                 
                 channel=await self.resolve_peer(chat_id),
                 seconds=seconds,

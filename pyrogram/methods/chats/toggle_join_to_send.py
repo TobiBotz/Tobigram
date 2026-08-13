@@ -54,7 +54,7 @@ class ToggleJoinToSend:
         """
 
         r = await self.invoke(
-            raw.functions.channels.toggleJoinToSend(
+            raw.functions.channels.ToggleJoinToSend(
                 
                 channel=await self.resolve_peer(chat_id),
                 enabled=enabled,

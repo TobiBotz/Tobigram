@@ -50,7 +50,7 @@ class CanBotSendMessage:
         """
 
         r = await self.invoke(
-            raw.functions.bots.canSendMessage(
+            raw.functions.bots.CanSendMessage(
                 bot=await self.resolve_peer(bot),
             )
         )

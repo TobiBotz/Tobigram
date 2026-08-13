@@ -52,7 +52,7 @@ class UpdateBusinessLocation:
         """
 
         r = await self.invoke(
-            raw.functions.account.updateBusinessLocation(
+            raw.functions.account.UpdateBusinessLocation(
                 geo_point=geo_point,
                 address=address,
             )
