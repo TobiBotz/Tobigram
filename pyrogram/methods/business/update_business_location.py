@@ -25,7 +25,6 @@ from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw
-from pyrogram import types
 
 
 class UpdateBusinessLocation:
@@ -33,7 +32,7 @@ class UpdateBusinessLocation:
         self: "pyrogram.Client",
         geo_point: Optional[raw.types.InputGeoPoint] = None,
         address: Optional[str] = None,
-    ) -> "types.Message":
+    ) -> bool:
         """Update the business location shown on your business page.
 
         .. include:: /_includes/usable-by/users.rst
@@ -43,7 +42,7 @@ class UpdateBusinessLocation:
             address (str): Text address to display
 
         Returns:
-            :obj:`~pyrogram.types.Message`
+            ``bool``: True on success.
 
         Example:
             .. code-block:: python
@@ -57,3 +56,5 @@ class UpdateBusinessLocation:
                 address=address,
             )
         )
+
+        return r

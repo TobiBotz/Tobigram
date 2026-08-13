@@ -25,14 +25,13 @@ from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw
-from pyrogram import types
 
 
 class UpdateBusinessGreetingMessage:
     async def update_business_greeting_message(
         self: "pyrogram.Client",
         message: Optional[raw.types.InputBusinessGreetingMessage] = None,
-    ) -> "types.Message":
+    ) -> bool:
         """Set an automatic greeting message for new conversations.
 
         .. include:: /_includes/usable-by/users.rst
@@ -41,7 +40,7 @@ class UpdateBusinessGreetingMessage:
             message (raw.types.InputBusinessGreetingMessage): Greeting message config (shortcut_id + recipients + no_activity_days)
 
         Returns:
-            :obj:`~pyrogram.types.Message`
+            ``bool``: True on success.
 
         Example:
             .. code-block:: python
@@ -54,3 +53,5 @@ class UpdateBusinessGreetingMessage:
                 message=message,
             )
         )
+
+        return r

@@ -25,14 +25,13 @@ from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw
-from pyrogram import types
 
 
 class ResolveBusinessChatLink:
     async def resolve_business_chat_link(
         self: "pyrogram.Client",
         slug: Optional[str] = None,
-    ) -> "types.Message":
+    ) -> "raw.types.account.ResolvedBusinessChatLinks":
         """Resolve a business chat link slug to its info.
 
         .. include:: /_includes/usable-by/users.rst
@@ -41,7 +40,7 @@ class ResolveBusinessChatLink:
             slug (str): Slug from the business chat link URL
 
         Returns:
-            :obj:`~pyrogram.types.Message`
+            :obj:`~pyrogram.raw.types.account.ResolvedBusinessChatLinks`
 
         Example:
             .. code-block:: python
@@ -55,4 +54,4 @@ class ResolveBusinessChatLink:
             )
         )
 
-        return types.Message._parse(self, r)
+        return r

@@ -25,14 +25,13 @@ from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw
-from pyrogram import types
 
 
 class CanBotSendMessage:
     async def can_bot_send_message(
         self: "pyrogram.Client",
         bot: Optional[Union[int, str]] = None,
-    ) -> "types.Message":
+    ) -> bool:
         """Check if a bot can send messages to the user.
 
         .. include:: /_includes/usable-by/users.rst
@@ -41,7 +40,7 @@ class CanBotSendMessage:
             bot (Union[int, str], *optional*): Bot username or ID
 
         Returns:
-            :obj:`~pyrogram.types.Message`
+            ``bool``: True on success.
 
         Example:
             .. code-block:: python
@@ -54,3 +53,5 @@ class CanBotSendMessage:
                 bot=await self.resolve_peer(bot),
             )
         )
+
+        return r

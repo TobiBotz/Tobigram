@@ -10,6 +10,11 @@ from pyrogram import raw
 from .. import utils
 from .storage import Storage
 
+try:
+    import fcntl
+except ImportError:
+    fcntl = None
+
 log = logging.getLogger(__name__)
 
 
@@ -132,22 +137,29 @@ def get_input_peer(peer_id: int, access_hash: int, peer_type: str):
 
 
 def _try_lock(path: Path) -> Optional[object]:
-    try:
-        import fcntl
-        fd = os.open(path, os.O_CREAT | os.O_RDWR)
-        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-        return fd
-    except (ImportError, BlockingIOError, OSError):
+    if fcntl is None:
         return None
+
+    try:
+        fd = os.open(path, os.O_CREAT | os.O_RDWR)
+    except OSError:
+        return None
+
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        os.close(fd)
+        return None
+
+    return fd
 
 
 def _unlock(fd: object):
     if fd is not None:
         try:
-            import fcntl
             fcntl.flock(fd, fcntl.LOCK_UN)
             os.close(fd)
-        except (ImportError, OSError):
+        except OSError:
             pass
 
 
@@ -291,7 +303,7 @@ class SQLiteStorage(Storage):
 
         lock_path = path.with_suffix(".session.lock")
         self._lock_fd = _try_lock(lock_path)
-        if self._lock_fd is None and file_exists:
+        if self._lock_fd is None and fcntl is not None and file_exists:
             log.warning("Could not acquire lock on %s — another client may be using the same session", lock_path)
 
         self.conn = await aiosqlite.connect(str(path), timeout=5)

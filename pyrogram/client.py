@@ -1243,6 +1243,7 @@ class Client(Methods):
                 needs_pool = pool_size >= 1
                 if needs_pool:
                     pool_task = asyncio.ensure_future(self._get_media_session_pool(dc_id, pool_size))
+                    pool_task.add_done_callback(lambda t: t.cancelled() or t.exception())
 
                 session = await self.get_session(dc_id, is_media=True)
 

@@ -1,6 +1,9 @@
+import logging
+
 import pytest
 
 from pyrogram.storage import Storage, SQLiteStorage
+from pyrogram.storage import sqlite_storage
 from pyrogram.storage.memory_storage import MemoryStorage
 from pyrogram.storage.sqlite_storage import PROD
 
@@ -238,6 +241,25 @@ class TestSQLiteStorageMigration:
             assert await storage.port() is None
         finally:
             await storage.close()
+
+
+class TestSQLiteStorageLocking:
+    @pytest.mark.asyncio
+    async def test_a_platform_without_flock_does_not_warn_about_other_clients(
+        self, tmp_path, monkeypatch, caplog
+    ):
+        monkeypatch.setattr(sqlite_storage, "fcntl", None)
+
+        storage = SQLiteStorage("nolock", workdir=tmp_path)
+        await storage.open()
+        await storage.close()
+
+        with caplog.at_level(logging.WARNING, logger=sqlite_storage.log.name):
+            storage = SQLiteStorage("nolock", workdir=tmp_path)
+            await storage.open()
+            await storage.close()
+
+        assert caplog.records == []
 
 
 class TestSQLiteStoragePersistence:

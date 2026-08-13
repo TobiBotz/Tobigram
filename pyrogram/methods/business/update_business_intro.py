@@ -25,14 +25,13 @@ from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw
-from pyrogram import types
 
 
 class UpdateBusinessIntro:
     async def update_business_intro(
         self: "pyrogram.Client",
         intro: Optional[raw.types.InputBusinessIntro] = None,
-    ) -> "types.Message":
+    ) -> bool:
         """Update your business intro (title, description, sticker).
 
         .. include:: /_includes/usable-by/users.rst
@@ -41,7 +40,7 @@ class UpdateBusinessIntro:
             intro (raw.types.InputBusinessIntro): Business intro with title, description, and optional sticker
 
         Returns:
-            :obj:`~pyrogram.types.Message`
+            ``bool``: True on success.
 
         Example:
             .. code-block:: python
@@ -54,3 +53,5 @@ class UpdateBusinessIntro:
                 intro=intro,
             )
         )
+
+        return r

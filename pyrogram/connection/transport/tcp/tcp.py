@@ -119,6 +119,8 @@ class TCP:
             if self.writer is not None:
                 self.writer.close()
                 await asyncio.wait_for(self.writer.wait_closed(), TCP.TIMEOUT)
+            elif self.socket is not None:
+                self.socket.close()
         except Exception as e:
             log.info("Close exception: %s %s", type(e).__name__, e)
 

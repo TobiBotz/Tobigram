@@ -25,14 +25,13 @@ from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw
-from pyrogram import types
 
 
 class UpdateBusinessWorkHours:
     async def update_business_work_hours(
         self: "pyrogram.Client",
         business_work_hours: Optional[raw.types.BusinessWorkHours] = None,
-    ) -> "types.Message":
+    ) -> bool:
         """Update business work hours for your business account.
 
         .. include:: /_includes/usable-by/users.rst
@@ -41,7 +40,7 @@ class UpdateBusinessWorkHours:
             business_work_hours (raw.types.BusinessWorkHours): Business work hours (timezone + weekly schedule)
 
         Returns:
-            :obj:`~pyrogram.types.Message`
+            ``bool``: True on success.
 
         Example:
             .. code-block:: python
@@ -54,3 +53,5 @@ class UpdateBusinessWorkHours:
                 business_work_hours=business_work_hours,
             )
         )
+
+        return r

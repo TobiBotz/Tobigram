@@ -25,14 +25,13 @@ from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw
-from pyrogram import types
 
 
 class UpdateBusinessAwayMessage:
     async def update_business_away_message(
         self: "pyrogram.Client",
         message: Optional[raw.types.InputBusinessAwayMessage] = None,
-    ) -> "types.Message":
+    ) -> bool:
         """Set an automatic away message when you are offline.
 
         .. include:: /_includes/usable-by/users.rst
@@ -41,7 +40,7 @@ class UpdateBusinessAwayMessage:
             message (raw.types.InputBusinessAwayMessage): Away message config (shortcut_id + schedule + recipients)
 
         Returns:
-            :obj:`~pyrogram.types.Message`
+            ``bool``: True on success.
 
         Example:
             .. code-block:: python
@@ -54,3 +53,5 @@ class UpdateBusinessAwayMessage:
                 message=message,
             )
         )
+
+        return r
