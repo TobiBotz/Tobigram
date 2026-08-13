@@ -64,6 +64,22 @@ class Str(str):
         return parser_utils.remove_surrogates(parser_utils.add_surrogates(self)[item])
 
 
+def _parse_reply_markup(reply_markup: "raw.base.ReplyMarkup"):
+    if isinstance(reply_markup, raw.types.ReplyKeyboardForceReply):
+        return types.ForceReply.read(reply_markup)
+
+    if isinstance(reply_markup, raw.types.ReplyKeyboardMarkup):
+        return types.ReplyKeyboardMarkup.read(reply_markup)
+
+    if isinstance(reply_markup, raw.types.ReplyInlineMarkup):
+        return types.InlineKeyboardMarkup.read(reply_markup)
+
+    if isinstance(reply_markup, raw.types.ReplyKeyboardHide):
+        return types.ReplyKeyboardRemove.read(reply_markup)
+
+    return None
+
+
 class Message(Object, Update):
     """A message.
 
@@ -1684,19 +1700,7 @@ class Message(Object, Update):
             message.invert_media
         )
 
-        reply_markup = message.reply_markup
-
-        if reply_markup:
-            if isinstance(reply_markup, raw.types.ReplyKeyboardForceReply):
-                reply_markup = types.ForceReply.read(reply_markup)
-            elif isinstance(reply_markup, raw.types.ReplyKeyboardMarkup):
-                reply_markup = types.ReplyKeyboardMarkup.read(reply_markup)
-            elif isinstance(reply_markup, raw.types.ReplyInlineMarkup):
-                reply_markup = types.InlineKeyboardMarkup.read(reply_markup)
-            elif isinstance(reply_markup, raw.types.ReplyKeyboardHide):
-                reply_markup = types.ReplyKeyboardRemove.read(reply_markup)
-            else:
-                reply_markup = None
+        reply_markup = _parse_reply_markup(message.reply_markup)
 
         reactions = types.MessageReactions._parse(client, message.reactions, users, chats)
 
@@ -2012,11 +2016,7 @@ class Message(Object, Update):
                 )
             )
 
-            reply_markup = None
-            if message.reply_markup:
-                reply_markup, _, _ = await types.ReplyMarkup._parse(
-                    client, message.reply_markup, users
-                )
+            reply_markup = _parse_reply_markup(message.reply_markup)
 
             return Message(
                 id=message.id,
