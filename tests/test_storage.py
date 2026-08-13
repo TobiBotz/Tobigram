@@ -2,6 +2,7 @@ import pytest
 
 from pyrogram.storage import Storage, SQLiteStorage
 from pyrogram.storage.memory_storage import MemoryStorage
+from pyrogram.storage.sqlite_storage import PROD
 
 
 class TestStorageABC:
@@ -176,6 +177,47 @@ class TestMemoryStorage:
 
     def test_is_subclass_of_sqlite_storage(self):
         assert issubclass(MemoryStorage, SQLiteStorage)
+
+
+class TestSQLiteStorageMigration:
+    @pytest.mark.asyncio
+    async def test_stale_address_is_reset_to_match_dc_id(self, tmp_path):
+        storage = SQLiteStorage("stale", workdir=tmp_path)
+        await storage.open()
+        await storage.test_mode(False)
+        await storage.auth_key(b"k" * 256)
+        await storage.server_address("149.154.167.51")
+        await storage.port(443)
+        await storage.dc_id(4)
+        await storage.version(7)
+        await storage.close()
+
+        storage = SQLiteStorage("stale", workdir=tmp_path)
+        await storage.open()
+        try:
+            assert await storage.dc_id() == 4
+            assert await storage.server_address() == PROD[4]
+            assert await storage.port() == 443
+            assert await storage.version() == SQLiteStorage.VERSION
+        finally:
+            await storage.close()
+
+    @pytest.mark.asyncio
+    async def test_migration_skips_an_unknown_dc(self, tmp_path):
+        storage = SQLiteStorage("unknown", workdir=tmp_path)
+        await storage.open()
+        await storage.test_mode(False)
+        await storage.server_address("10.0.0.1")
+        await storage.dc_id(99)
+        await storage.version(7)
+        await storage.close()
+
+        storage = SQLiteStorage("unknown", workdir=tmp_path)
+        await storage.open()
+        try:
+            assert await storage.server_address() == "10.0.0.1"
+        finally:
+            await storage.close()
 
 
 class TestSQLiteStoragePersistence:

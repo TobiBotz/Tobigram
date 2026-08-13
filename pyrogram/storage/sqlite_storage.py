@@ -152,7 +152,7 @@ def _unlock(fd: object):
 
 
 class SQLiteStorage(Storage):
-    VERSION = 7
+    VERSION = 8
     USERNAME_TTL = 8 * 60 * 60
     FILE_EXTENSION = ".session"
     _AUTO_COMMIT_INTERVAL = 20
@@ -236,6 +236,19 @@ class SQLiteStorage(Storage):
             await self.conn.execute("UPDATE sessions SET server_address = ?;", (address,))
             await self.conn.execute("UPDATE sessions SET port = ?;", (port,))
             await self.conn.commit()
+            version += 1
+
+        if version == 7:
+            test_mode = await self.test_mode()
+            address = (TEST if test_mode else PROD).get(await self.dc_id())
+
+            if address is not None:
+                await self.conn.execute(
+                    "UPDATE sessions SET server_address = ?, port = ?;",
+                    (address, 80 if test_mode else 443)
+                )
+                await self.conn.commit()
+
             version += 1
 
         await self.version(version)

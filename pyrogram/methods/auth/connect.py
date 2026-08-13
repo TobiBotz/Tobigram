@@ -39,9 +39,17 @@ class Connect:
 
         await self.load_session()
 
+        server_address = await self.storage.server_address()
+        port = await self.storage.port()
+
+        if server_address and (":" in server_address) != self.ipv6:
+            server_address = port = None
+
         self.session = Session(
             self, await self.storage.dc_id(),
             await self.storage.auth_key(), await self.storage.test_mode(),
+            server_address=server_address,
+            port=port,
             crypto_executor=self.crypto_executor,
         )
 

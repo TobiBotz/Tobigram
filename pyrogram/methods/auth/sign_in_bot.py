@@ -22,7 +22,6 @@ import pyrogram
 from pyrogram import raw
 from pyrogram import types
 from pyrogram.errors import UserMigrate
-from pyrogram.session import Session, Auth
 
 log = logging.getLogger(__name__)
 
@@ -57,22 +56,21 @@ class SignInBot:
                     )
                 )
             except UserMigrate as e:
+                dc_option = await self.get_dc_option(e.value, ipv6=self.ipv6)
                 await self.session.stop()
 
-                await self.storage.dc_id(e.value)
-                await self.storage.auth_key(
-                    await Auth(
-                        self, await self.storage.dc_id(),
-                        await self.storage.test_mode()
-                    ).create()
-                )
-                self.session = Session(
-                    self, await self.storage.dc_id(),
-                    await self.storage.auth_key(), await self.storage.test_mode(),
-                    crypto_executor=self.crypto_executor,
+                self.session = await self.get_session(
+                    dc_id=e.value,
+                    server_address=dc_option.ip_address,
+                    port=dc_option.port,
+                    export_authorization=False,
+                    temporary=True,
                 )
 
-                await self.session.start()
+                await self.storage.dc_id(e.value)
+                await self.storage.server_address(dc_option.ip_address)
+                await self.storage.port(dc_option.port)
+                await self.storage.auth_key(self.session.auth_key)
             else:
                 await self.storage.user_id(r.user.id)
                 await self.storage.is_bot(True)
