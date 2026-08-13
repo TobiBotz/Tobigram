@@ -19,6 +19,7 @@ class DummyClient:
     proxy = None
     ipv6 = False
     dc_id = 2
+    session = None
     disconnect_handler = None
 
     class storage:

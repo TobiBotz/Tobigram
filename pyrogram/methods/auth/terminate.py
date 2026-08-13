@@ -46,19 +46,17 @@ class Terminate:
         await self.storage.save()
         await self.dispatcher.stop()
 
-        for media_session in list(self.media_sessions.values()):
+        for session in [
+            *self.sessions.values(),
+            *self.media_sessions.values(),
+            *(s for pool in self.media_session_pools.values() for s in pool),
+        ]:
             try:
-                await media_session.stop()
+                await session.stop()
             except Exception:
-                log.exception("Error stopping media session")
+                log.exception("Error stopping session")
 
-        for pool in list(self.media_session_pools.values()):
-            for session in list(pool):
-                try:
-                    await session.stop()
-                except Exception:
-                    log.exception("Error stopping media session pool session")
-
+        self.sessions.clear()
         self.media_sessions.clear()
         self.media_session_pools.clear()
 

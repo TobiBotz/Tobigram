@@ -29,6 +29,7 @@ class DummyClient:
     lang_code = "en"
     proxy = None
     ipv6 = False
+    session = None
     disconnect_handler = None
     storage = DummyStorage()
 

@@ -428,7 +428,6 @@ class Client(Methods):
         self.sessions = {}
         self.media_sessions = {}
         self.media_session_pools = {}
-        self.sessions_lock = asyncio.Lock()
         self._session_locks = {}
         self._media_sessions_locks = {}
 
