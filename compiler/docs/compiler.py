@@ -300,6 +300,7 @@ def pyrogram_api():
             set_chat_photo
             set_chat_protected_content
             set_chat_title
+            set_chat_ttl
             set_chat_username
             set_send_as_chat
             set_slow_mode
@@ -317,6 +318,7 @@ def pyrogram_api():
             unpin_all_chat_messages
             unpin_chat_message
             update_channel_color
+            update_chat_notifications
         """,
         contacts="""
         Contacts
@@ -453,6 +455,7 @@ def pyrogram_api():
             stream_media
             summarize_text
             translate_text
+            view_messages
             vote_poll
         """,
         password="""

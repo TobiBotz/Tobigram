@@ -101,6 +101,7 @@ from .stop_poll import StopPoll
 from .stream_media import StreamMedia
 from .summarize_text import SummarizeText
 from .translate_text import TranslateText
+from .view_messages import ViewMessages
 from .vote_poll import VotePoll
 
 
@@ -190,6 +191,7 @@ class Messages(
     StreamMedia,
     SummarizeText,
     TranslateText,
+    ViewMessages,
     VotePoll
 ):
     pass

@@ -614,7 +614,7 @@ summarize_text:
   raw_function: messages.summarizeText
   skip_if_exists: true
   doc_summary: "Summarize text content using AI."
-  return_type: raw.types.TextWithEntities
+  return_type: types.FormattedText
   extra_params:
     - name: peer
       type: Union[int, str]

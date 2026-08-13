@@ -35,7 +35,7 @@ class SummarizeText:
         id: Optional[int] = None,
         to_lang: Optional[str] = None,
         tone: Optional[str] = None,
-    ) -> "raw.types.TextWithEntities":
+    ) -> "types.FormattedText":
         """Summarize text content using AI.
 
         .. include:: /_includes/usable-by/users.rst
@@ -47,7 +47,7 @@ class SummarizeText:
             tone (str, *optional*): AI summary tone preset
 
         Returns:
-            :obj:`~pyrogram.raw.types.TextWithEntities`
+            :obj:`~pyrogram.types.FormattedText`
 
         Example:
             .. code-block:: python
@@ -63,3 +63,5 @@ class SummarizeText:
                 tone=tone,
             )
         )
+
+        return types.FormattedText._parse(self, r)

@@ -9614,11 +9614,11 @@ class Message(Object, Update):
         )
 
     async def summarize(self, translate_to_language_code: Optional[str] = None) -> "types.FormattedText":
-        """Shortcut for method :obj:`~pyrogram.Client.summarize_message` will automatically fill method attributes:
+        """Shortcut for method :obj:`~pyrogram.Client.summarize_text` will automatically fill method attributes:
 
-        * chat_id
-        * message_id
-        * translate_to_language_code
+        * peer
+        * id
+        * to_lang
 
         Parameters:
             translate_to_language_code (``str``, *optional*):
@@ -9641,9 +9641,9 @@ class Message(Object, Update):
         if translate_to_language_code is None:
             translate_to_language_code = self._client.lang_code
 
-        return await self._client.summarize_message(
-            chat_id=self.chat.id,
-            message_id=self.id,
-            translate_to_language_code=translate_to_language_code
+        return await self._client.summarize_text(
+            peer=self.chat.id,
+            id=self.id,
+            to_lang=translate_to_language_code
         )
 

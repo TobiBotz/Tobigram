@@ -75,6 +75,7 @@ from .set_chat_permissions import SetChatPermissions
 from .set_chat_photo import SetChatPhoto
 from .set_chat_protected_content import SetChatProtectedContent
 from .set_chat_title import SetChatTitle
+from .set_chat_ttl import SetChatTTL
 from .set_chat_username import SetChatUsername
 from .set_send_as_chat import SetSendAsChat
 from .set_slow_mode import SetSlowMode
@@ -92,6 +93,7 @@ from .unban_chat_member import UnbanChatMember
 from .unpin_all_chat_messages import UnpinAllChatMessages
 from .unpin_chat_message import UnpinChatMessage
 from .update_channel_color import UpdateChannelColor
+from .update_chat_notifications import UpdateChatNotifications
 
 
 class Chats(
@@ -154,6 +156,7 @@ class Chats(
     SetChatPhoto,
     SetChatProtectedContent,
     SetChatTitle,
+    SetChatTTL,
     SetChatUsername,
     SetSendAsChat,
     SetSlowMode,
@@ -170,6 +173,7 @@ class Chats(
     UnbanChatMember,
     UnpinAllChatMessages,
     UnpinChatMessage,
-    UpdateChannelColor
+    UpdateChannelColor,
+    UpdateChatNotifications
 ):
     pass
