@@ -71,8 +71,6 @@ class SendVideo:
         allow_paid_broadcast: Optional[bool] = None,
         paid_message_star_count: Optional[int] = None,
         suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        rich_text: Optional[str] = None,
-        rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
         quote_text: Optional[str] = None,
         quote_entities: Optional[List["types.MessageEntity"]] = None,
         background: Optional[bool] = None,
@@ -111,13 +109,6 @@ class SendVideo:
 
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
-
-            rich_text (``str``, *optional*):
-                Rich text content with GitHub Flavored Markdown or HTML formatting (server-side rendered).
-                When provided, *caption*/*parse_mode*/*caption_entities* are ignored.
-
-            rich_text_parse_mode (``str``, *optional*):
-                Parse mode for *rich_text*: ``"markdown"`` (default, supports GFM) or ``"html"``.
 
             has_spoiler (``bool``, *optional*):
                 Pass True if the video needs to be covered with a spoiler animation.
@@ -351,18 +342,7 @@ class SendVideo:
 
             while True:
                 try:
-                    if rich_text is not None:
-                        if rich_text_parse_mode == enums.ParseMode.HTML:
-                            rich_msg = raw.types.InputRichMessageHTML(
-                                html=rich_text,
-                            )
-                        else:
-                            rich_msg = raw.types.InputRichMessageMarkdown(
-                                markdown=rich_text,
-                            )
-                        text_params = {"message": "", "entities": None}
-                    else:
-                        text_params = await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
+                    text_params = await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
 
                     r = await self.invoke(
                         raw.functions.messages.SendMedia(

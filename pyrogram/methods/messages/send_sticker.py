@@ -22,7 +22,7 @@ from datetime import datetime
 from typing import Union, BinaryIO, List, Optional, Callable
 
 import pyrogram
-from pyrogram import StopTransmission, enums
+from pyrogram import StopTransmission
 from pyrogram import raw
 from pyrogram import types
 from pyrogram import utils
@@ -48,8 +48,6 @@ class SendSticker:
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
         ]] = None,
-        rich_text: Optional[str] = None,
-        rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
         quote_text: Optional[str] = None,
         quote_entities: Optional[List["types.MessageEntity"]] = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
@@ -88,12 +86,6 @@ class SendSticker:
                 pass an HTTP URL as a string for Telegram to get a .webp sticker file from the Internet,
                 pass a file path as string to upload a new sticker that exists on your local machine, or
                 pass a binary file-like object with its attribute ".name" set for in-memory uploads.
-
-            rich_text (``str``, *optional*):
-                Rich text content with GitHub Flavored Markdown or HTML formatting (server-side rendered).
-
-            rich_text_parse_mode (``str``, *optional*):
-                Parse mode for *rich_text*: ``"markdown"`` (default, supports GFM) or ``"html"``.
 
             disable_notification (``bool``, *optional*):
                 Sends the message silently.
@@ -204,18 +196,7 @@ class SendSticker:
 
             while True:
                 try:
-                    if rich_text is not None:
-                        if rich_text_parse_mode == enums.ParseMode.HTML:
-                            rich_msg = raw.types.InputRichMessageHTML(
-                                html=rich_text,
-                            )
-                        else:
-                            rich_msg = raw.types.InputRichMessageMarkdown(
-                                markdown=rich_text,
-                            )
-                        text_params = {"message": "", "entities": None}
-                    else:
-                        text_params = {"message": ""}
+                    text_params = {"message": ""}
 
                     r = await self.invoke(
                         raw.functions.messages.SendMedia(

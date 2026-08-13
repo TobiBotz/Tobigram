@@ -21,7 +21,7 @@ from datetime import datetime
 from typing import Union, BinaryIO, List, Optional, Callable
 
 import pyrogram
-from pyrogram import StopTransmission, enums
+from pyrogram import StopTransmission
 from pyrogram import raw
 from pyrogram import types
 from pyrogram import utils
@@ -48,8 +48,6 @@ class SendVideoNote:
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
         ]] = None,
-        rich_text: Optional[str] = None,
-        rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
         quote_text: Optional[str] = None,
         quote_entities: Optional[List["types.MessageEntity"]] = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
@@ -107,12 +105,6 @@ class SendVideoNote:
 
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message
-
-            rich_text (``str``, *optional*):
-                Rich text content with GitHub Flavored Markdown or HTML formatting (server-side rendered).
-
-            rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
-                Parse mode for *rich_text*: :obj:`~pyrogram.enums.ParseMode.MARKDOWN` (default, supports GFM) or :obj:`~pyrogram.enums.ParseMode.HTML`.
 
             schedule_date (:py:obj:`~datetime.datetime`, *optional*):
                 Date when the message will be automatically sent.
@@ -220,18 +212,7 @@ class SendVideoNote:
 
             while True:
                 try:
-                    if rich_text is not None:
-                        if rich_text_parse_mode == enums.ParseMode.HTML:
-                            rich_msg = raw.types.InputRichMessageHTML(
-                                html=rich_text,
-                            )
-                        else:
-                            rich_msg = raw.types.InputRichMessageMarkdown(
-                                markdown=rich_text,
-                            )
-                        text_params = {"message": "", "entities": None}
-                    else:
-                        text_params = {"message": ""}
+                    text_params = {"message": ""}
 
                     r = await self.invoke(
                         raw.functions.messages.SendMedia(
