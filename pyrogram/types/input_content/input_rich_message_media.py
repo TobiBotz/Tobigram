@@ -26,17 +26,17 @@ from ..object import Object
 class InputRichMessageMedia(Object):
     """Describes media referenced in a rich message.
 
-    When constructing a rich message using blocks (e.g., :class:`InputRichBlockPhoto`,
-    :class:`InputRichBlockVideo`, :class:`InputRichBlockAudio`), the actual
+    When constructing a rich message using blocks (e.g., :class:`~pyrogram.types.InputRichBlockPhoto`,
+    :class:`~pyrogram.types.InputRichBlockVideo`, :class:`~pyrogram.types.InputRichBlockAudio`), the actual
     media payloads (photos, documents, users) must be provided separately.
     This object groups them together so they can be attached to an
-    :class:`InputRichMessage` via the *media* parameter.
+    :class:`~pyrogram.types.InputRichMessage` via the *media* parameter.
 
     .. note::
 
         Media objects in these lists are referenced by their ``id`` field
         from the corresponding block objects (e.g., the ``photo_id`` of an
-        :class:`InputRichBlockPhoto` must match the ``id`` attribute of the
+        :class:`~pyrogram.types.InputRichBlockPhoto` must match the ``id`` attribute of the
         :class:`~pyrogram.raw.types.InputPhoto` in this list).
 
     Parameters:

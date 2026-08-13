@@ -156,23 +156,31 @@ def pyrogram_api():
         """,
         advanced="""
         Advanced
+            get_session
             invoke
             recover_gaps
             resolve_peer
             save_file
+            set_dc
         """,
         auth="""
         Authorization
             accept_terms_of_service
+            change_phone_number
             check_password
             connect
             disconnect
+            get_active_sessions
             get_password_hint
             initialize
             log_out
             recover_password
             resend_code
+            resend_phone_number_code
+            reset_session
+            reset_sessions
             send_code
+            send_phone_number_code
             send_recovery_code
             sign_in
             sign_in_bot
@@ -183,24 +191,46 @@ def pyrogram_api():
         Bots
             allow_bot_send_message
             answer_callback_query
+            answer_chat_join_request_query
+            answer_guest_query
             answer_inline_query
+            answer_pre_checkout_query
+            answer_shipping_query
             answer_web_app_query
             can_bot_send_message
+            check_bot_username
+            create_bot
+            create_invoice_link
             delete_bot_commands
+            edit_user_star_subscription
             get_admined_bots
             get_bot_commands
             get_bot_default_privileges
             get_bot_info
+            get_bot_info_description
+            get_bot_info_short_description
+            get_bot_name
             get_chat_menu_button
             get_game_high_scores
             get_inline_bot_results
+            get_managed_bot_access_settings
+            get_managed_bot_token
+            get_owned_bots
+            refund_star_payment
+            replace_managed_bot_token
             request_callback_answer
+            send_chat_join_request_web_app
             send_game
             send_inline_bot_result
+            send_invoice
             set_bot_commands
             set_bot_default_privileges
+            set_bot_info_description
+            set_bot_info_short_description
+            set_bot_name
             set_chat_menu_button
             set_game_score
+            set_managed_bot_access_settings
         """,
         business="""
         Business
@@ -225,23 +255,38 @@ def pyrogram_api():
             add_chat_members
             archive_chats
             ban_chat_member
+            close_forum_topic
             create_channel
+            create_forum_topic
             create_group
             create_supergroup
+            delete_all_message_reactions
             delete_channel
             delete_chat_photo
+            delete_forum_topic
+            delete_message_reaction
             delete_supergroup
             delete_user_history
+            edit_forum_topic
             get_chat
             get_chat_event_log
             get_chat_member
             get_chat_members
             get_chat_members_count
             get_chat_online_count
+            get_chat_settings
             get_dialogs
             get_dialogs_count
+            get_direct_messages_topics
+            get_direct_messages_topics_by_id
+            get_forum_topics
+            get_forum_topics_by_id
             get_nearby_chats
+            get_personal_channels
             get_send_as_chats
+            get_similar_channels
+            get_suitable_discussion_chats
+            get_top_chats
             join_chat
             leave_chat
             mark_chat_unread
@@ -277,13 +322,27 @@ def pyrogram_api():
         Contacts
             add_contact
             delete_contacts
+            get_blocked_message_senders
             get_contacts
             get_contacts_count
             import_contacts
+            search_contacts
+            set_contact_note
         """,
         folders="""
         Folders
             check_chat_folder_invite_link
+            create_folder
+            create_folder_invite_link
+            delete_folder
+            delete_folder_invite_link
+            edit_folder
+            edit_folder_invite_link
+            get_chats_for_folder_invite_link
+            get_folder_invite_links
+            get_folders
+            join_folder
+            leave_folder
         """,
         invite_links="""
         Invite Links
@@ -307,9 +366,21 @@ def pyrogram_api():
         """,
         messages="""
         Messages
+            add_checklist_tasks
+            add_poll_option
+            add_to_gifs
+            approve_suggested_post
+            compose_text_with_ai
             copy_media_group
             copy_message
+            decline_suggested_post
+            delete_chat_history
+            delete_direct_messages_chat_topic_history
+            delete_ephemeral_message
             delete_messages
+            delete_participant_reaction
+            delete_participant_reactions
+            delete_poll_option
             delete_scheduled_messages
             download_media
             edit_fact_check
@@ -322,17 +393,32 @@ def pyrogram_api():
             edit_message_media
             edit_message_reply_markup
             edit_message_text
+            fix_text_with_ai
+            forward_media_group
             forward_messages
+            get_available_effects
             get_chat_history
             get_chat_history_count
             get_custom_emoji_stickers
+            get_direct_messages_chat_topic_history
             get_discussion_message
             get_discussion_replies
             get_discussion_replies_count
+            get_main_web_app
             get_media_group
             get_messages
             get_poll_results
+            get_poll_stats
+            get_scheduled_messages
+            get_stickers
+            get_user_personal_chat_messages
+            get_web_app_link_url
+            get_web_app_url
+            mark_checklist_tasks_as_done
+            open_web_app
             read_chat_history
+            read_mentions
+            read_reactions
             retract_vote
             search_global
             search_global_count
@@ -341,17 +427,21 @@ def pyrogram_api():
             send_animation
             send_audio
             send_cached_media
-            send_checklist
             send_chat_action
+            send_checklist
             send_contact
             send_dice
             send_document
+            send_ephemeral_message
             send_location
             send_media_group
             send_message
+            send_paid_media
             send_photo
             send_poll
             send_reaction
+            send_rich_message
+            send_rich_message_draft
             send_scheduled_messages
             send_screenshot_notification
             send_sticker
@@ -455,7 +545,10 @@ def pyrogram_api():
         users="""
         Users
             block_user
+            check_username
             delete_profile_photos
+            get_chat_audios
+            get_chat_audios_count
             get_chat_photos
             get_chat_photos_count
             get_common_chats
@@ -463,10 +556,13 @@ def pyrogram_api():
             get_me
             get_users
             set_emoji_status
+            set_personal_channel
             set_profile_photo
             set_username
             unblock_user
+            update_birthday
             update_profile
+            update_status
         """,
         utilities="""
         Utilities
@@ -475,6 +571,7 @@ def pyrogram_api():
             remove_handler
             restart
             run
+            set_parse_mode
             start
             stop
             stop_transmission
@@ -593,10 +690,14 @@ def pyrogram_api():
             BotVerification
             BusinessBotRights
             ChatFolderInviteLinkInfo
+            ChatFullInfo
             ChatJoinResultDeclined
             ChatJoinResultGuardBotApprovalRequired
             ChatJoinResultRequestSent
             ChatJoinResultSuccess
+            Community
+            CommunityChatAdded
+            CommunityChatRemoved
             FailedToAddMember
             Link
             Username
@@ -744,6 +845,7 @@ def pyrogram_api():
             GiftUpgradePrice
             GiftUpgradeVariants
             PaymentResult
+            PollStats
             RichBlockAnchor
             RichBlockAnimation
             RichBlockAudio
@@ -778,8 +880,10 @@ def pyrogram_api():
             RichTextCode
             RichTextCustomEmoji
             RichTextDateTime
+            RichTextDiff
             RichTextEmailAddress
             RichTextHashtag
+            RichTextImage
             RichTextItalic
             RichTextMarked
             RichTextMathematicalExpression
@@ -927,6 +1031,32 @@ def pyrogram_api():
             InputChatPhotoAnimation
             InputChatPhotoPrevious
             InputChatPhotoStatic
+            InputMediaVoiceNote
+            InputRichBlock
+            InputRichBlockAnchor
+            InputRichBlockAnimation
+            InputRichBlockAudio
+            InputRichBlockBlockQuotation
+            InputRichBlockCollage
+            InputRichBlockDetails
+            InputRichBlockDivider
+            InputRichBlockFooter
+            InputRichBlockList
+            InputRichBlockListItem
+            InputRichBlockMap
+            InputRichBlockMathematicalExpression
+            InputRichBlockParagraph
+            InputRichBlockPhoto
+            InputRichBlockPreformatted
+            InputRichBlockPullQuotation
+            InputRichBlockSectionHeading
+            InputRichBlockSlideshow
+            InputRichBlockTable
+            InputRichBlockTableCell
+            InputRichBlockThinking
+            InputRichBlockVideo
+            InputRichBlockVoiceNote
+            InputRichMessageMedia
         """,
         authorization="""
         Authorization
