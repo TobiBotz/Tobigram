@@ -25,6 +25,6 @@ you can omit ``username`` and ``password``.
         "password": "password"
     }
 
-   app = Client("my_account", proxy=proxy)
+    app = Client("my_account", proxy=proxy)
 
-   app.run()
+    app.run()

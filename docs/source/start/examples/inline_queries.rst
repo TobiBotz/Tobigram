@@ -26,13 +26,13 @@ It uses the :meth:`~pyrogram.Client.on_inline_query` decorator to register an :o
                     input_message_content=InputTextMessageContent(
                         "Here's how to install **Pyrogram**"
                     ),
-                    url="https://telegramplayground.github.io/pyrogram/intro/install",
+                    url="https://rjriajul.github.io/wzgram/intro/install",
                     description="How to install Pyrogram",
                     reply_markup=InlineKeyboardMarkup(
                         [
                             [InlineKeyboardButton(
                                 "Open website",
-                                url="https://telegramplayground.github.io/pyrogram/intro/install"
+                                url="https://rjriajul.github.io/wzgram/intro/install"
                             )]
                         ]
                     )
@@ -42,13 +42,13 @@ It uses the :meth:`~pyrogram.Client.on_inline_query` decorator to register an :o
                     input_message_content=InputTextMessageContent(
                         "Here's how to use **Pyrogram**"
                     ),
-                    url="https://telegramplayground.github.io/pyrogram/start/invoking",
+                    url="https://rjriajul.github.io/wzgram/start/invoking",
                     description="How to use Pyrogram",
                     reply_markup=InlineKeyboardMarkup(
                         [
                             [InlineKeyboardButton(
                                 "Open website",
-                                url="https://telegramplayground.github.io/pyrogram/start/invoking"
+                                url="https://rjriajul.github.io/wzgram/start/invoking"
                             )]
                         ]
                     )

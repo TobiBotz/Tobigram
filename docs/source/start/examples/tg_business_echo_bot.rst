@@ -4,7 +4,7 @@ business_echo_bot
 This simple echo bot replies to every private business message.
 
 It uses the :meth:`~pyrogram.Client.on_message` decorator to register a :obj:`~pyrogram.handlers.MessageHandler` and applies two filters on it:
-``filters.tg_business`` and ``filters.private`` to make sure it will reply to private business messages only.
+``filters.business`` and ``filters.private`` to make sure it will reply to private business messages only.
 
 .. include:: /_includes/usable-by/bots.rst
 
@@ -15,7 +15,7 @@ It uses the :meth:`~pyrogram.Client.on_message` decorator to register a :obj:`~p
     app = Client("my_account")
 
 
-    @app.on_message(filters.tg_business & filters.private)
+    @app.on_message(filters.business & filters.private)
     async def echo(client, message):
         await message.copy(message.chat.id)
 

@@ -40,14 +40,14 @@ list of the basic styles currently supported by Pyrogram.
       fixed-width
         code block
 - spoiler
-- `text URL <https://telegramplayground.github.io/pyrogram/>`_
+- `text URL <https://rjriajul.github.io/wzgram/>`_
 - `user text mention <tg://user?id=123456789>`_
 
 
 HTML Style
 ----------
 
-To strictly use this mode, pass :obj:`~pyrogram.enums.HTML` to the *parse_mode* parameter when using
+To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.HTML` to the *parse_mode* parameter when using
 :meth:`~pyrogram.Client.send_message`. The following tags are currently supported:
 
 .. code-block:: text
@@ -66,7 +66,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.HTML` to the *parse_mode* 
 
     <blockquote expandable>expandable block quotation</blockquote>
 
-    <a href="https://telegramplayground.github.io/pyrogram/">text URL</a>
+    <a href="https://rjriajul.github.io/wzgram/">text URL</a>
 
     <a href="tg://user?id=123456789">inline mention</a>
 
@@ -99,7 +99,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.HTML` to the *parse_mode* 
 
             "<b>bold <i>italic bold <s>italic bold strike <tg-spoiler>italic bold strike spoiler</tg-spoiler></s> <u>underline italic bold</u></i> bold</b>\n\n"
 
-            "<a href=\"https://telegramplayground.github.io/pyrogram/\">inline URL</a> "
+            "<a href=\"https://rjriajul.github.io/wzgram/\">inline URL</a> "
             "<a href=\"tg://user?id=23122162\">inline mention of a user</a>\n"
             "<tg-emoji emoji-id=5469770542288478598>👍</tg-emoji> "
             "<code>inline fixed-width code</code> "
@@ -185,7 +185,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.MARKDOWN` to the
 
     ||spoiler||
 
-    [text URL](https://telegramplayground.github.io/pyrogram/)
+    [text URL](https://rjriajul.github.io/wzgram/)
 
     [text user mention](tg://user?id=123456789)
 
@@ -204,7 +204,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.MARKDOWN` to the
             "--underline--, "
             "~~strike~~, "
             "||spoiler||, "
-            "[URL](https://telegramplayground.github.io/pyrogram/), "
+            "[URL](https://rjriajul.github.io/wzgram/), "
             "![👍](tg://emoji?id=5469770542288478598)"
             "`code`, "
             "```py"
@@ -249,7 +249,7 @@ Result:
     **bold**, *italic*
 
 If you don't like this behaviour you can always choose to only enable either Markdown or HTML in strict mode by passing
-:obj:`~pyrogram.enums.MARKDOWN` or :obj:`~pyrogram.enums.HTML` as argument to the *parse_mode* parameter.
+:obj:`~pyrogram.enums.ParseMode.MARKDOWN` or :obj:`~pyrogram.enums.ParseMode.HTML` as argument to the *parse_mode* parameter.
 
 .. code-block:: python
 
@@ -264,7 +264,7 @@ Result:
 
     \*\*bold**, *italic*
 
-In case you want to completely turn off the style parser, simply pass :obj:`~pyrogram.enums.DISABLED` to *parse_mode*.
+In case you want to completely turn off the style parser, simply pass :obj:`~pyrogram.enums.ParseMode.DISABLED` to *parse_mode*.
 The text will be sent as-is.
 
 .. code-block:: python

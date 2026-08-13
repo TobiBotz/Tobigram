@@ -132,7 +132,7 @@ Example with ``raise StopPropagation``:
 
 
     @app.on_message(filters.private, group=1)
-    async ef _(client, message):
+    async def _(client, message):
         print(1)
         raise StopPropagation
 

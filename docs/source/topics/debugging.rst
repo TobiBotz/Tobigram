@@ -92,14 +92,14 @@ error. The correct way to get the object type is by using the built-in function 
 
 .. code-block:: text
 
-    <class 'pyrogram.types.UserStatus'>
+    <enum 'UserStatus'>
 
 And to check if an object is an instance of a given class, you use the built-in function ``isinstance()``:
 
 .. code-block:: python
     :name: this-py
 
-    from pyrogram.types import UserStatus
+    from pyrogram.enums import UserStatus
 
     status = me.status
     print(isinstance(status, UserStatus))

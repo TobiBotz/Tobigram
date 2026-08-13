@@ -49,7 +49,7 @@ like :meth:`~pyrogram.Client.send_audio`, :meth:`~pyrogram.Client.send_document`
                             ),
                             InlineKeyboardButton(  # Opens a web URL
                                 "URL",
-                                url="https://telegramplayground.github.io/pyrogram/"
+                                url="https://rjriajul.github.io/wzgram/"
                             ),
                         ],
                         [  # Second row

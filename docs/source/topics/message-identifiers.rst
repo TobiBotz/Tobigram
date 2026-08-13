@@ -14,7 +14,7 @@ The message identifier will be based on the message counter of the receiving acc
 
 In megagroups and broadcast channels, the message counter instead belongs to the channel itself.
 It also starts at 1 and is incremented by 1 for every message sent to the group or channel.
-This means every account will see the same message identifier for a given mesasge in a group or channel.
+This means every account will see the same message identifier for a given message in a group or channel.
 
 This design has the following implications:
 
