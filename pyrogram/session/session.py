@@ -302,6 +302,8 @@ class Session:
             log.warning("Failed to decrypt packet: %s %s", type(e).__name__, e)
             return
 
+        self.last_packet_received = time.monotonic()
+
         # https://core.telegram.org/mtproto/security_guidelines#checking-message-length
         padding_len = total_len - 16 - length
         SecurityCheckMismatch.check(12 <= padding_len <= 1024, "12 <= len(padding) <= 1024")
@@ -454,8 +456,8 @@ class Session:
                     await self._safe_restart()
                 break
 
-            if packet is None or len(packet) == 4:
-                if packet:
+            if packet is None or len(packet) <= 4:
+                if packet and len(packet) == 4:
                     error_code = -Int.read(BytesIO(packet))
 
                     log.warning(
@@ -467,8 +469,6 @@ class Session:
                     await self._safe_restart()
 
                 break
-
-            self.last_packet_received = time.monotonic()
 
             if not self._stopping:
                 self.loop.create_task(self._handle_packet_wrapper(packet))
