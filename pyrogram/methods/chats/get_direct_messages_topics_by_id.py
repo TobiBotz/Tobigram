@@ -61,17 +61,26 @@ class GetDirectMessagesTopicsByID:
 
         r = await self.invoke(
             raw.functions.messages.GetSavedDialogsByID(
-                ids=[await self.resolve_peer(i) for i in ids]
+                ids=[await self.resolve_peer(i) for i in ids],
+                parent_peer=await self.resolve_peer(chat_id)
             )
         )
 
         users = {i.id: i for i in r.users}
         chats = {i.id: i for i in r.chats}
 
+        messages = {}
+
+        for message in r.messages:
+            if isinstance(message, raw.types.MessageEmpty):
+                continue
+
+            messages[message.id] = await types.Message._parse(self, message, users, chats)
+
         topics = types.List()
 
         for i in r.dialogs:
-            topics.append(types.DirectMessagesTopic._parse(client=self, topic=i, users=users, chats=chats))
+            topics.append(types.DirectMessagesTopic._parse(client=self, topic=i, messages=messages, users=users, chats=chats))
 
         return topics if is_iterable else topics[0] if topics else None
 
