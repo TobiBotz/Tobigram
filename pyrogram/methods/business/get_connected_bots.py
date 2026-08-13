@@ -21,23 +21,22 @@
 # Source: tl:account.getConnectedBots
 # ***************************
 
-from typing import Union, Optional
+from typing import List
 
 import pyrogram
 from pyrogram import raw
-from pyrogram import types
 
 
 class GetConnectedBots:
     async def get_connected_bots(
         self: "pyrogram.Client",
-    ) -> "types.ConnectedBots":
+    ) -> List["raw.types.ConnectedBot"]:
         """Get bots connected to your business account.
 
         .. include:: /_includes/usable-by/users.rst
 
         Returns:
-            :obj:`~pyrogram.types.ConnectedBots`
+            List of :obj:`~pyrogram.raw.types.ConnectedBot`
 
         Example:
             .. code-block:: python
@@ -51,4 +50,4 @@ class GetConnectedBots:
             )
         )
 
-        return types.ConnectedBots._parse(self, r)
+        return r.connected_bots

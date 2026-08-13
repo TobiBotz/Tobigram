@@ -21,23 +21,22 @@
 # Source: tl:account.getBusinessChatLinks
 # ***************************
 
-from typing import Union, Optional
+from typing import List
 
 import pyrogram
 from pyrogram import raw
-from pyrogram import types
 
 
 class GetBusinessChatLinks:
     async def get_business_chat_links(
         self: "pyrogram.Client",
-    ) -> "types.BusinessChatLinks":
+    ) -> List["raw.types.BusinessChatLink"]:
         """Get all business chat links.
 
         .. include:: /_includes/usable-by/users.rst
 
         Returns:
-            :obj:`~pyrogram.types.BusinessChatLinks`
+            List of :obj:`~pyrogram.raw.types.BusinessChatLink`
 
         Example:
             .. code-block:: python
@@ -51,4 +50,4 @@ class GetBusinessChatLinks:
             )
         )
 
-        return types.BusinessChatLinks._parse(self, r)
+        return r.links

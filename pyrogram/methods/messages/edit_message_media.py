@@ -175,7 +175,7 @@ class EditMessageMedia:
                             video_timestamp=media.video_start_timestamp,
                             attributes=[
                                 raw.types.DocumentAttributeVideo(
-                                    supports_streaming=media.supports_streaming if supports_streaming is not None else None,
+                                    supports_streaming=media.supports_streaming or None,
                                     duration=media.duration,
                                     w=media.width,
                                     h=media.height

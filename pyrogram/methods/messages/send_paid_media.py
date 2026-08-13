@@ -303,7 +303,7 @@ class SendPaidMedia:
                                     video_timestamp=i.video_start_timestamp,
                                     attributes=[
                                         raw.types.DocumentAttributeVideo(
-                                            supports_streaming=i.supports_streaming if supports_streaming is not None else None,
+                                            supports_streaming=i.supports_streaming or None,
                                             duration=i.duration,
                                             w=i.width,
                                             h=i.height
@@ -357,7 +357,7 @@ class SendPaidMedia:
                                 video_timestamp=i.video_start_timestamp,
                                 attributes=[
                                     raw.types.DocumentAttributeVideo(
-                                        supports_streaming=i.supports_streaming if supports_streaming is not None else None,
+                                        supports_streaming=i.supports_streaming or None,
                                         duration=i.duration,
                                         w=i.width,
                                         h=i.height

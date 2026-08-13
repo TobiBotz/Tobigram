@@ -25,7 +25,6 @@ from typing import Union, List, Optional
 
 import pyrogram
 from pyrogram import raw
-from pyrogram import types
 
 
 class TranslateText:
@@ -36,7 +35,7 @@ class TranslateText:
         text: Optional[Union[str, List[raw.types.TextWithEntities]]] = None,
         to_lang: Optional[str] = None,
         tone: Optional[str] = None,
-    ) -> "types.TranslatedText":
+    ) -> List["raw.types.TextWithEntities"]:
         """Translate text or a message to another language.
 
         .. include:: /_includes/usable-by/users.rst
@@ -49,7 +48,7 @@ class TranslateText:
             tone (str, *optional*): AI translation tone preset
 
         Returns:
-            :obj:`~pyrogram.types.TranslatedText`
+            List of :obj:`~pyrogram.raw.types.TextWithEntities`
 
         Example:
             .. code-block:: python
@@ -57,9 +56,12 @@ class TranslateText:
                 await app.translate_text(...)
         """
 
+        if isinstance(text, str):
+            text = [raw.types.TextWithEntities(text=text, entities=[])]
+
         r = await self.invoke(
             raw.functions.messages.TranslateText(
-                peer=await self.resolve_peer(peer),
+                peer=await self.resolve_peer(peer) if peer is not None else None,
                 id=id,
                 text=text,
                 to_lang=to_lang,
@@ -67,4 +69,4 @@ class TranslateText:
             )
         )
 
-        return types.TranslatedText._parse(self, r)
+        return r.result
