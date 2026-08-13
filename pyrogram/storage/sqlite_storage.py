@@ -224,17 +224,8 @@ class SQLiteStorage(Storage):
             version += 1
 
         if version == 6:
-            if await self.test_mode():
-                address = TEST[await self.dc_id()]
-                port = 80
-            else:
-                address = PROD[await self.dc_id()]
-                port = 443
-
             await self.conn.execute("ALTER TABLE sessions ADD server_address TEXT;")
             await self.conn.execute("ALTER TABLE sessions ADD port INTEGER;")
-            await self.conn.execute("UPDATE sessions SET server_address = ?;", (address,))
-            await self.conn.execute("UPDATE sessions SET port = ?;", (port,))
             await self.conn.commit()
             version += 1
 

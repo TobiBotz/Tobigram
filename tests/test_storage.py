@@ -219,6 +219,26 @@ class TestSQLiteStorageMigration:
         finally:
             await storage.close()
 
+    @pytest.mark.asyncio
+    async def test_migration_from_v6_handles_a_dc_missing_from_the_address_table(self, tmp_path):
+        storage = SQLiteStorage("v6", workdir=tmp_path)
+        await storage.open()
+        await storage.test_mode(True)
+        await storage.dc_id(4)
+        await storage.conn.execute("ALTER TABLE sessions DROP COLUMN server_address;")
+        await storage.conn.execute("ALTER TABLE sessions DROP COLUMN port;")
+        await storage.version(6)
+        await storage.close()
+
+        storage = SQLiteStorage("v6", workdir=tmp_path)
+        await storage.open()
+        try:
+            assert await storage.version() == SQLiteStorage.VERSION
+            assert await storage.server_address() is None
+            assert await storage.port() is None
+        finally:
+            await storage.close()
+
 
 class TestSQLiteStoragePersistence:
     @pytest.mark.asyncio
