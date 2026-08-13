@@ -1447,7 +1447,9 @@ class Client(Methods):
 
                 elif isinstance(r, raw.types.upload.FileCdnRedirect):
 
-                    cdn_session = await self.get_session(dc_id, is_cdn=True, temporary=True)
+                    cdn_session = await self.get_session(
+                        r.dc_id, is_media=True, is_cdn=True, temporary=True
+                    )
                     _cdn_rate = TokenBucket(rate=dl_rate, burst=dl_burst)
 
                     try:
@@ -1623,7 +1625,17 @@ class Client(Methods):
                 server_address = server_address or dc_option.ip_address
                 port = port or dc_option.port
 
-            if is_media:
+            if is_cdn:
+                async with self._session_creation_gate:
+                    auth_key = await Auth(
+                        self,
+                        dc_id,
+                        await self.storage.test_mode(),
+                        server_address=server_address,
+                        port=port
+                    ).create()
+                export_authorization = False
+            elif is_media:
                 auth_key = (await self.get_session(dc_id)).auth_key
                 export_authorization = False
             else:
@@ -1645,6 +1657,7 @@ class Client(Methods):
                 auth_key,
                 await self.storage.test_mode(),
                 is_media=is_media,
+                is_cdn=is_cdn,
                 server_address=server_address,
                 port=port,
                 crypto_executor=self.crypto_executor,
