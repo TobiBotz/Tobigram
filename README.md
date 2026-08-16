@@ -1,3 +1,7 @@
+<div align="center">
+
+<img src="assets/png/wzgram-icon-256.png" alt="wzgram" width="160">
+
 # wzgram
 
 [![PyPI](https://img.shields.io/pypi/v/wzgram)](https://pypi.org/project/wzgram/)
@@ -6,7 +10,9 @@
 [![License](https://img.shields.io/github/license/rjriajul/wzgram)](COPYING.lesser)
 [![Documentation](https://img.shields.io/badge/docs-rjriajul.github.io/blue)](https://rjriajul.github.io/wzgram)
 
-> Elegant, modern and asynchronous Telegram MTProto API framework in Python for users and bots
+**Elegant, modern and asynchronous Telegram MTProto API framework in Python for users and bots**
+
+</div>
 
 wzgram is a **drop-in replacement** for Pyrogram — your existing `from pyrogram import ...` code works without changes, with access to the latest Telegram features including **Gifts, Stories, Topics, Business Accounts**, and more.
 

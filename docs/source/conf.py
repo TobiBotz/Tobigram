@@ -41,6 +41,8 @@ exclude_patterns = ["_build", "_includes", "Thumbs.db", ".DS_Store", "telegram/b
 html_theme = "furo"
 html_title = "wzgram"
 html_baseurl = "https://rjriajul.github.io/wzgram/"
+html_logo = "../../assets/svg/wzgram-icon.svg"
+html_favicon = "../../assets/favicon.svg"
 html_static_path = ["_static"]
 html_css_files = [
     "css/custom.css",
