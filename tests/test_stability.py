@@ -836,3 +836,149 @@ def test_reading_a_vector_does_not_consume_what_follows():
     assert Int.read(stream, False) == 0x5EEDBEEF, (
         "a typed vector must leave the stream positioned right after its elements"
     )
+
+
+async def test_a_dropped_connection_does_not_restart_once_per_request(monkeypatch):
+    session = make_session()
+    session.is_started.set()
+
+    restarts = []
+    attempts = []
+    sentinel = object()
+
+    async def send(data, timeout=None, **kwargs):
+        attempts.append(data)
+        if len(attempts) == 1:
+            raise ConnectionResetError("Connection lost while awaiting a response")
+        return sentinel
+
+    async def restart():
+        restarts.append(1)
+
+    monkeypatch.setattr(session, "send", send)
+    monkeypatch.setattr(session, "restart", restart)
+
+    assert await session.invoke(raw.functions.Ping(ping_id=0)) is sentinel
+    assert restarts == [], (
+        "the connection was already torn down; restarting again turns one drop "
+        "into one restart per in-flight request, which is what wedges a busy "
+        "session under load"
+    )
+
+
+async def test_a_real_timeout_with_a_silent_link_still_restarts(monkeypatch):
+    session = make_session()
+    session.is_started.set()
+    session.last_packet_received = 0.0
+
+    restarts = []
+    attempts = []
+    sentinel = object()
+
+    async def send(data, timeout=None, **kwargs):
+        attempts.append(data)
+        if len(attempts) == 1:
+            raise TimeoutError("Request timed out")
+        return sentinel
+
+    async def restart():
+        restarts.append(1)
+
+    monkeypatch.setattr(session, "send", send)
+    monkeypatch.setattr(session, "restart", restart)
+
+    assert await session.invoke(raw.functions.Ping(ping_id=0)) is sentinel
+    assert restarts == [1]
+
+
+async def test_the_handshake_gets_longer_after_a_failed_attempt(monkeypatch):
+    session = make_session()
+    seen = []
+
+    class Flaky:
+        def __init__(self, *a, **k):
+            self.protocol = SimpleNamespace(crypto_executor=None)
+
+        async def connect(self):
+            pass
+
+        async def close(self):
+            pass
+
+        async def recv(self):
+            await asyncio.sleep(3600)
+
+    monkeypatch.setattr("pyrogram.session.session.Connection", Flaky)
+
+    async def send(data, wait_response=True, timeout=None, retry=0):
+        seen.append(timeout)
+        raise TimeoutError("Request timed out")
+
+    monkeypatch.setattr(session, "send", send)
+
+    with pytest.raises(TimeoutError):
+        await session.start(max_attempts=3)
+
+    assert seen == sorted(seen) and seen[0] < seen[-1], (
+        f"handshake timeouts {seen} never grew; a congested link that misses "
+        "the first one will miss every retry the same way"
+    )
+
+
+async def test_a_cancelled_send_does_not_leave_its_slot_behind(monkeypatch):
+    session = make_session()
+    session.connection = RecordingConnection()
+
+    async def slow_pack(*args, **kwargs):
+        await asyncio.sleep(3600)
+
+    monkeypatch.setattr(session.loop, "run_in_executor", slow_pack)
+
+    task = asyncio.ensure_future(session.send(raw.functions.Ping(ping_id=0)))
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+    task.cancel()
+    await asyncio.gather(task, return_exceptions=True)
+
+    assert session.results == {}, (
+        "a cancelled send left a result slot behind; handle_packet fills those "
+        "with the whole response body and nothing ever pops them"
+    )
+
+
+async def test_a_send_cancelled_on_the_wire_does_not_leave_its_slot_behind(monkeypatch):
+    session = make_session()
+
+    class Stalling(RecordingConnection):
+        async def send(self, payload):
+            await asyncio.sleep(3600)
+
+    session.connection = Stalling()
+    monkeypatch.setattr(session.loop, "run_in_executor", _packed)
+
+    task = asyncio.ensure_future(session.send(raw.functions.Ping(ping_id=0)))
+    for _ in range(6):
+        await asyncio.sleep(0)
+    task.cancel()
+    await asyncio.gather(task, return_exceptions=True)
+
+    assert session.results == {}
+
+
+async def test_an_orphaned_slot_would_hold_the_whole_response(monkeypatch):
+    session = make_session()
+    session.connection = RecordingConnection()
+
+    msg_id = MsgId() | 1
+    payload = b"\x00" * 4096
+    body = raw.types.Pong(msg_id=msg_id, ping_id=0).write()
+    monkeypatch.setattr(session.loop, "run_in_executor", unpacked_as(msg_id, body))
+
+    session.results[msg_id] = Result()
+    await session.handle_packet(b"ignored")
+
+    assert session.results[msg_id].value is not None, (
+        "this documents why a leaked slot matters: an arriving reply is stored "
+        "in it, so each orphan retains a whole response payload"
+    )
+    assert len(payload) > 0

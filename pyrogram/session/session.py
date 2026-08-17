@@ -165,12 +165,17 @@ class Session:
                     port=self.port,
                 )
 
+                # A saturated uplink can push the handshake round trip past a
+                # couple of seconds, and failing it just restarts into the same
+                # congestion, so later attempts wait longer.
+                handshake_timeout = min(self.START_TIMEOUT * attempt, self.WAIT_TIMEOUT)
+
                 try:
                     await self.connection.connect()
 
                     self.recv_task = self.loop.create_task(self.recv_worker())
 
-                    await self.send(raw.functions.Ping(ping_id=0), timeout=self.START_TIMEOUT)
+                    await self.send(raw.functions.Ping(ping_id=0), timeout=handshake_timeout)
 
                     if not self.is_cdn:
                         await self.send(
@@ -187,7 +192,7 @@ class Session:
                                     query=raw.functions.help.GetConfig(),
                                 )
                             ),
-                            timeout=self.START_TIMEOUT
+                            timeout=handshake_timeout
                         )
 
                     self.ping_task = self.loop.create_task(self.ping_worker())
@@ -522,6 +527,12 @@ class Session:
 
         log.debug("Sent: %s", message)
 
+        # Anything that leaves before the request is on the wire has to take
+        # its slot with it, cancellation included. A slot left behind is not
+        # just an empty dict entry: handle_packet will fill it with the whole
+        # response body once that arrives, and nothing will ever pop it.
+        delivered = False
+
         try:
             payload = await self.loop.run_in_executor(
                 self.connection.protocol.crypto_executor,
@@ -534,19 +545,16 @@ class Session:
                 self.auth_key,
                 self.auth_key_id
             )
-        except Exception:
-            if wait_response:
-                self.results.pop(msg_id, None)
-            raise
 
-        try:
-            await asyncio.wait_for(self.connection.send(payload), timeout=timeout or self.WAIT_TIMEOUT)
-        except asyncio.TimeoutError:
-            self.results.pop(msg_id, None)
-            raise TimeoutError("Request send timed out")
-        except OSError:
-            self.results.pop(msg_id, None)
-            raise
+            try:
+                await asyncio.wait_for(self.connection.send(payload), timeout=timeout or self.WAIT_TIMEOUT)
+            except asyncio.TimeoutError:
+                raise TimeoutError("Request send timed out")
+
+            delivered = True
+        finally:
+            if wait_response and not delivered:
+                self.results.pop(msg_id, None)
 
         if wait_response:
             try:
@@ -663,7 +671,13 @@ class Session:
                     str(e) or repr(e)
                 )
 
-                if isinstance(e, (InternalServerError, ServiceUnavailable)) or (
+                if isinstance(e, ConnectionResetError):
+                    # The connection was already torn down by whoever closed
+                    # it, and _wait_started brings it back at the top of the
+                    # loop. Restarting again here turns one dropped connection
+                    # into one restart per in-flight request.
+                    await asyncio.sleep(0.1)
+                elif isinstance(e, (InternalServerError, ServiceUnavailable)) or (
                     isinstance(e, TimeoutError)
                     and time.monotonic() - self.last_packet_received < self.WAIT_TIMEOUT
                 ):
