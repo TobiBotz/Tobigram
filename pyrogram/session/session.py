@@ -165,9 +165,6 @@ class Session:
                     port=self.port,
                 )
 
-                # A saturated uplink can push the handshake round trip past a
-                # couple of seconds, and failing it just restarts into the same
-                # congestion, so later attempts wait longer.
                 handshake_timeout = min(self.START_TIMEOUT * attempt, self.WAIT_TIMEOUT)
 
                 try:
@@ -528,10 +525,6 @@ class Session:
 
         log.debug("Sent: %s", message)
 
-        # Anything that leaves before the request is on the wire has to take
-        # its slot with it, cancellation included. A slot left behind is not
-        # just an empty dict entry: handle_packet will fill it with the whole
-        # response body once that arrives, and nothing will ever pop it.
         delivered = False
 
         try:
@@ -673,10 +666,6 @@ class Session:
                 )
 
                 if isinstance(e, ConnectionResetError):
-                    # The connection was already torn down by whoever closed
-                    # it, and _wait_started brings it back at the top of the
-                    # loop. Restarting again here turns one dropped connection
-                    # into one restart per in-flight request.
                     await asyncio.sleep(0.1)
                 elif isinstance(e, (InternalServerError, ServiceUnavailable)) or (
                     isinstance(e, TimeoutError)

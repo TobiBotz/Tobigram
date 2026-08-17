@@ -46,8 +46,6 @@ class Vector(bytes, TLObject):
         if t is not None:
             return List(t.read(data) for _ in range(count))
 
-        # Only a bare vector has to guess its element width from the bytes
-        # left, and measuring them must not copy them.
         pos = data.tell()
         left = data.seek(0, 2) - pos
         data.seek(pos)

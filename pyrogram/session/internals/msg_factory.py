@@ -32,8 +32,6 @@ class MsgFactory:
         self.msg_id_gen = msg_id_generator or _MsgIdGenerator()
 
     def __call__(self, body: TLObject, length: Optional[int] = None) -> Message:
-        # len(body) serialises the whole object. Callers that are about to
-        # serialise it anyway pass the length so it only happens once.
         return Message(
             body,
             self.msg_id_gen(),
