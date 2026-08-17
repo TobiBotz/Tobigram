@@ -982,3 +982,38 @@ async def test_an_orphaned_slot_would_hold_the_whole_response(monkeypatch):
         "in it, so each orphan retains a whole response payload"
     )
     assert len(payload) > 0
+
+
+class CountingPing(raw.functions.Ping):
+    writes = 0
+
+    def write(self, *args, **kwargs):
+        type(self).writes += 1
+        return super().write(*args, **kwargs)
+
+
+async def test_an_outgoing_message_is_serialised_once(monkeypatch):
+    session = make_session()
+    session.connection = RecordingConnection()
+    monkeypatch.setattr(session.loop, "run_in_executor", _packed)
+
+    CountingPing.writes = 0
+
+    with pytest.raises(TimeoutError):
+        await session.send(CountingPing(ping_id=0), timeout=0.05)
+
+    assert CountingPing.writes == 1, (
+        f"the message body was serialised {CountingPing.writes} times; "
+        "len(TLObject) serialises it too, so measuring and packing must share "
+        "one pass"
+    )
+
+
+def test_measuring_a_message_costs_a_serialisation():
+    query = raw.functions.upload.SaveBigFilePart(
+        file_id=1, file_part=0, file_total_parts=8, bytes=b"\x00" * 4096
+    )
+    assert len(query) == len(query.write()), (
+        "len() on a TLObject is not free: it serialises. This test exists so "
+        "the cost is visible if someone adds a len() to the send path."
+    )

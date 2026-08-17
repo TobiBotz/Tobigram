@@ -519,7 +519,8 @@ class Session:
         if self.connection is None or self.connection.protocol is None:
             raise OSError("Connection is not established")
 
-        message = self.msg_factory(data)
+        serialized = data.write()
+        message = self.msg_factory(data, len(serialized))
         msg_id = message.msg_id
 
         if wait_response:
@@ -539,7 +540,7 @@ class Session:
                 warpcrypto.pack_message,
                 message.msg_id,
                 message.seq_no,
-                message.body.write(),
+                serialized,
                 self.salt,
                 self.session_id,
                 self.auth_key,
