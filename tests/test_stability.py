@@ -803,3 +803,36 @@ async def test_every_chunk_still_arrives_in_order(monkeypatch):
     assert total == file_size, (
         f"bounding the read-ahead must not lose data: got {total} of {file_size}"
     )
+
+
+def bare_vector(prim, values):
+    from pyrogram.raw.core import Int, Vector
+    return Int(Vector.ID, False) + Int(len(values)) + b"".join(prim(v) for v in values)
+
+
+def test_a_bare_vector_of_ints_still_reads():
+    from io import BytesIO
+    from pyrogram.raw.core import Int, TLObject
+
+    assert list(TLObject.read(BytesIO(bare_vector(Int, [1, 2, 3, 4])))) == [1, 2, 3, 4]
+
+
+def test_a_bare_vector_of_longs_still_reads():
+    from io import BytesIO
+    from pyrogram.raw.core import Long, TLObject
+
+    values = [1 << 40, 2 << 40, 3]
+    assert list(TLObject.read(BytesIO(bare_vector(Long, values)))) == values
+
+
+def test_reading_a_vector_does_not_consume_what_follows():
+    from io import BytesIO
+    from pyrogram.raw.core import Int, Vector
+
+    stream = BytesIO(Int(2) + Int(7) + Int(9) + Int(0x5EEDBEEF, False))
+    got = Vector.read(stream, Int)
+
+    assert list(got) == [7, 9]
+    assert Int.read(stream, False) == 0x5EEDBEEF, (
+        "a typed vector must leave the stream positioned right after its elements"
+    )
