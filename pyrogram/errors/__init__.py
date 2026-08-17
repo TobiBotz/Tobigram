@@ -59,6 +59,10 @@ class SecurityCheckMismatch(SecurityError):
         super().__init__("A security check mismatch has occurred." if msg is None else msg)
 
 
+class ReplayedMsgId(SecurityCheckMismatch):
+    """Raised when a msg_id was already seen or has fallen out of the replay window."""
+
+
 class CDNFileHashMismatch(SecurityError):
     """Raised when a CDN file hash mismatch occurs."""
 

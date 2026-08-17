@@ -55,6 +55,8 @@ class FakeClient(Terminate):
         self._session_creation_gate = asyncio.Semaphore(4)
         self.updates_watchdog_event = asyncio.Event()
         self.updates_watchdog_task = None
+        self.media_pool_reaper_event = asyncio.Event()
+        self.media_pool_reaper_task = None
         self.dispatcher = SimpleNamespace(stop=self._noop)
         self.session = FakeSession(self, 1, b"home-key", False)
 

@@ -46,6 +46,18 @@ class Terminate:
         await self.storage.save()
         await self.dispatcher.stop()
 
+        self.media_pool_reaper_event.set()
+
+        if self.media_pool_reaper_task is not None:
+            try:
+                await self.media_pool_reaper_task
+            except Exception:
+                log.exception("Error stopping media pool reaper")
+
+            self.media_pool_reaper_task = None
+
+        self.media_pool_reaper_event.clear()
+
         for session in [
             *self.sessions.values(),
             *self.media_sessions.values(),

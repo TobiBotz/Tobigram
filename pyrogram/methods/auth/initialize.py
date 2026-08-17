@@ -48,5 +48,6 @@ class Initialize:
         await self.dispatcher.start()
 
         self.updates_watchdog_task = asyncio.create_task(self.updates_watchdog())
+        self.media_pool_reaper_task = asyncio.create_task(self.media_pool_reaper())
 
         self.is_initialized = True

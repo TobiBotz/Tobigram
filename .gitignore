@@ -132,3 +132,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# ai
+CLAUDE.md
+.claude

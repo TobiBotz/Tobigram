@@ -35,7 +35,7 @@ from pyrogram.connection import Connection
 from pyrogram.crypto.executor import get_crypto_executor
 from pyrogram.errors import (
     RPCError, InternalServerError, AuthKeyDuplicated, FloodWait, FloodPremiumWait, ServiceUnavailable,
-    BadMsgNotification, SecurityCheckMismatch
+    BadMsgNotification, ReplayedMsgId, SecurityCheckMismatch
 )
 from pyrogram.raw.all import layer
 from pyrogram.raw.core import TLObject, Message, MsgContainer, Int, FutureSalts
@@ -50,14 +50,21 @@ class Result:
         self.event = asyncio.Event()
 
 
+class ConnectionLost:
+    pass
+
+
 class Session:
     START_TIMEOUT = 2
     WAIT_TIMEOUT = 15
+    MEDIA_WAIT_TIMEOUT = int(os.environ.get("WZGRAM_MEDIA_TIMEOUT", 60))
     SLEEP_THRESHOLD = 10
     MAX_RETRIES = 10
     ACKS_THRESHOLD = 10
     PING_INTERVAL = 5
     STORED_MSG_IDS_MAX_SIZE = 1000 * 2
+    MAX_INFLIGHT_PACKETS = int(os.environ.get("WZGRAM_MAX_INFLIGHT_PACKETS", 16))
+    MAX_INFLIGHT_MEDIA = int(os.environ.get("WZGRAM_MAX_INFLIGHT_MEDIA", 6))
 
     TRANSPORT_ERRORS = {
         404: "auth key not found",
@@ -104,7 +111,11 @@ class Session:
 
         self._handler_lock = asyncio.Lock()
         self._packet_tasks = set()
+        self._packet_semaphore = asyncio.Semaphore(Session.MAX_INFLIGHT_PACKETS)
         self._update_semaphore = asyncio.Semaphore(32)
+        self._invoke_semaphore = (
+            asyncio.Semaphore(Session.MAX_INFLIGHT_MEDIA) if is_media else None
+        )
 
         self.ping_task = None
         self.ping_task_event = asyncio.Event()
@@ -130,6 +141,7 @@ class Session:
         self._dynamic_backoff = float(Session.SLEEP_THRESHOLD)
         self._last_flood_decay = 0.0
         self.last_packet_received = 0.0
+        self.last_used = time.monotonic()
 
     async def start(self, max_attempts: Optional[int] = None):
         self._stopping = False
@@ -264,6 +276,8 @@ class Session:
             await self.connection.close()
 
         for result in self.results.values():
+            if result.value is None:
+                result.value = ConnectionLost
             result.event.set()
 
         if self is self.client.session and callable(self.client.disconnect_handler):
@@ -344,10 +358,12 @@ class Session:
 
                 if self.stored_msg_ids:
                     if msg.msg_id < self.stored_msg_ids[0]:
-                        raise SecurityCheckMismatch("The msg_id is lower than all the stored values")
+                        raise ReplayedMsgId("The msg_id is lower than all the stored values")
 
-                    if msg.msg_id in self.stored_msg_ids:
-                        raise SecurityCheckMismatch("The msg_id is equal to any of the stored values")
+                    index = bisect.bisect_left(self.stored_msg_ids, msg.msg_id)
+
+                    if index < len(self.stored_msg_ids) and self.stored_msg_ids[index] == msg.msg_id:
+                        raise ReplayedMsgId("The msg_id is equal to any of the stored values")
 
                     time_diff = (msg.msg_id >> 32) - MsgId.now()
 
@@ -358,6 +374,9 @@ class Session:
                     if time_diff < -300 and not is_bad_notification:
                         raise SecurityCheckMismatch("The msg_id belongs to over 300 seconds in the past. "
                                                     "Most likely the client time has to be synchronized.")
+            except ReplayedMsgId as e:
+                log.debug("Discarding message: %s", e)
+                continue
             except SecurityCheckMismatch as e:
                 log.warning("Discarding packet and closing connection: %s", e)
                 await self.connection.close()
@@ -470,8 +489,17 @@ class Session:
 
                 break
 
-            if not self._stopping:
-                self.loop.create_task(self._handle_packet_wrapper(packet))
+            if self._stopping:
+                continue
+
+            await self._packet_semaphore.acquire()
+
+            if self._stopping:
+                self._packet_semaphore.release()
+                break
+
+            task = self.loop.create_task(self._handle_packet_wrapper(packet))
+            task.add_done_callback(lambda _: self._packet_semaphore.release())
 
         log.info("NetworkTask stopped")
 
@@ -530,6 +558,9 @@ class Session:
                 result = self.results.pop(msg_id, None)
                 result = result.value if result is not None else None
 
+            if result is ConnectionLost:
+                raise ConnectionResetError("Connection lost while awaiting a response")
+
             if result is None:
                 raise TimeoutError("Request timed out")
 
@@ -568,6 +599,21 @@ class Session:
         retries: int = MAX_RETRIES,
         timeout: float = WAIT_TIMEOUT,
         sleep_threshold: float = SLEEP_THRESHOLD
+    ):
+        self.last_used = time.monotonic()
+
+        if self._invoke_semaphore is None:
+            return await self._invoke(query, retries, timeout, sleep_threshold)
+
+        async with self._invoke_semaphore:
+            return await self._invoke(query, retries, timeout, sleep_threshold)
+
+    async def _invoke(
+        self,
+        query: TLObject,
+        retries: int,
+        timeout: float,
+        sleep_threshold: float
     ):
         while retries > 0:
             if not self.is_started.is_set():
@@ -611,9 +657,10 @@ class Session:
                     raise
 
                 (log.warning if retries < 2 else log.info)(
-                    '[%s] Retrying "%s" due to: %s',
-                    Session.MAX_RETRIES - retries,
-                    query_name, str(e) or repr(e)
+                    '[%s] Retrying "%s" (attempt %s/%s) due to: %s',
+                    self.client.name, query_name,
+                    Session.MAX_RETRIES - retries, Session.MAX_RETRIES,
+                    str(e) or repr(e)
                 )
 
                 if isinstance(e, (InternalServerError, ServiceUnavailable)) or (

@@ -73,6 +73,58 @@ from .session.internals import MsgId
 
 log = logging.getLogger(__name__)
 
+class ReadAhead:
+    """Borrows read-ahead slots from a client-wide budget and always gives them back.
+
+    The budget is shared by every transfer, so a transfer that ends with chunks
+    still buffered — a short read, an early break out of ``stream_media`` — has
+    to return those slots or the pool bleeds away one transfer at a time.
+    """
+
+    __slots__ = ("_budget", "_held")
+
+    def __init__(self, budget: asyncio.Semaphore):
+        self._budget = budget
+        self._held = 0
+
+    async def acquire(self):
+        await self._budget.acquire()
+        self._held += 1
+
+    def release(self):
+        if self._held:
+            self._held -= 1
+            self._budget.release()
+
+    def release_all(self):
+        while self._held:
+            self.release()
+
+
+_pwrite = getattr(os, "pwrite", None)
+
+
+def write_at(fd: int, data: bytes, offset: int) -> None:
+    """Write *data* at *offset* without disturbing the file position.
+
+    ``os.pwrite`` is POSIX-only. On Windows the seek and the write are two
+    syscalls with no await between them, so concurrent download workers on the
+    event loop cannot interleave.
+    """
+    view = memoryview(data)
+
+    if _pwrite is not None:
+        while view:
+            written = _pwrite(fd, view, offset)
+            view = view[written:]
+            offset += written
+        return
+
+    os.lseek(fd, offset, os.SEEK_SET)
+
+    while view:
+        view = view[os.write(fd, view):]
+
 
 class Client(Methods):
     """Pyrogram Client, the main means for interacting with Telegram.
@@ -294,6 +346,11 @@ class Client(Methods):
     # Interval of seconds in which the updates watchdog will kick in
     UPDATES_WATCHDOG_INTERVAL = 15 * 60
 
+    MEDIA_SESSION_IDLE_TIMEOUT = int(os.environ.get("WZGRAM_MEDIA_SESSION_IDLE_TIMEOUT", 300))
+    MEDIA_SESSION_REAP_INTERVAL = 60
+
+    MAX_READ_AHEAD_CHUNKS = int(os.environ.get("WZGRAM_MAX_READ_AHEAD", 32))
+
     DOWNLOAD_POOL_SIZE = 4  # fallback default
     MAX_CONCURRENT_TRANSMISSIONS = 16
     MAX_MESSAGE_CACHE_SIZE = 1000
@@ -433,6 +490,7 @@ class Client(Methods):
 
         self.save_file_semaphore = asyncio.Semaphore(self.max_concurrent_transmissions)
         self.get_file_semaphore = asyncio.Semaphore(self.max_concurrent_transmissions)
+        self.read_ahead_slots = asyncio.Semaphore(self.MAX_READ_AHEAD_CHUNKS)
 
         self._session_creation_gate = asyncio.Semaphore(4)
 
@@ -457,6 +515,9 @@ class Client(Methods):
         self.updates_watchdog_task = None
         self.updates_watchdog_event = asyncio.Event()
         self.last_update_time = datetime.now()
+
+        self.media_pool_reaper_task = None
+        self.media_pool_reaper_event = asyncio.Event()
 
         if isinstance(loop, asyncio.AbstractEventLoop):
             self.loop = loop
@@ -512,15 +573,73 @@ class Client(Methods):
                 await self.invoke(raw.functions.updates.GetState())
                 await self.recover_gaps()
 
+    async def media_pool_reaper(self):
+        """Close media sessions that have gone idle since their transfer ended."""
+        while True:
+            try:
+                await asyncio.wait_for(
+                    self.media_pool_reaper_event.wait(),
+                    self.MEDIA_SESSION_REAP_INTERVAL
+                )
+            except asyncio.TimeoutError:
+                pass
+            else:
+                break
+
+            try:
+                await self.reap_media_sessions()
+            except Exception:
+                log.exception("Media session reaper failed")
+
+    async def reap_media_sessions(self, idle_timeout: Optional[int] = None) -> int:
+        """Stop pooled media sessions unused for longer than *idle_timeout* seconds."""
+        if idle_timeout is None:
+            idle_timeout = self.MEDIA_SESSION_IDLE_TIMEOUT
+
+        now = time.monotonic()
+        reaped = 0
+
+        for dc_id in list(self.media_session_pools):
+            lock = self._media_sessions_locks.setdefault(dc_id, asyncio.Lock())
+
+            async with lock:
+                pool = self.media_session_pools.get(dc_id) or []
+                keep = []
+
+                for session in pool:
+                    if session.results or now - session.last_used < idle_timeout:
+                        keep.append(session)
+                        continue
+
+                    try:
+                        await session.stop()
+                    except Exception:
+                        log.exception("Error stopping idle media session")
+
+                    reaped += 1
+
+                if keep:
+                    self.media_session_pools[dc_id] = keep
+                else:
+                    self.media_session_pools.pop(dc_id, None)
+
+        if reaped:
+            log.info("Reaped %s idle media session(s)", reaped)
+
+        return reaped
+
     async def authorize(self) -> User:
         if self.bot_token:
             return await self.sign_in_bot(self.bot_token)
 
-        print(rf"_ _ _ _____ _    ____ ____ ____ ")
-        print(rf"| | | | ____| |  | ___| ___) ___)")
-        print(rf"| | | |  _| | |__| |__| |__ | |__ ")
-        print(rf"| |_| | |___|____|____|____)|____)")
-        print(rf" \___/|_____|                     ")
+        print(rf"$$\      $$\            $$$$$$\                                   ")
+        print(rf"$$ | $\  $$ |          $$  __$$\                                  ")
+        print(rf"$$ |$$$\ $$ |$$$$$$$$\ $$ /  \__| $$$$$$\  $$$$$$\  $$$$$$\$$$$\  ")
+        print(rf"$$ $$ $$\$$ |\____$$  |$$ |$$$$\ $$  __$$\ \____$$\ $$  _$$  _$$\ ")
+        print(rf"$$$$  _$$$$ |  $$$$ _/ $$ |\_$$ |$$ |  \__|$$$$$$$ |$$ / $$ / $$ |")
+        print(rf"$$$  / \$$$ | $$  _/   $$ |  $$ |$$ |     $$  __$$ |$$ | $$ | $$ |")
+        print(rf"$$  /   \$$ |$$$$$$$$\ \$$$$$$  |$$ |     \$$$$$$$ |$$ | $$ | $$ |")
+        print(rf"\__/     \__|\________| \______/ \__|      \_______|\__| \__| \__|")
         print(f"  wzgram v{__version__}")
         print()
 
@@ -915,7 +1034,7 @@ class Client(Methods):
                                 users.update({u.id: u for u in diff.users})
                                 chats.update({c.id: c for c in diff.chats})
 
-                self.dispatcher.updates_queue.put_nowait((update, users, chats))
+                await self.dispatcher.enqueue_update(update, users, chats)
         elif isinstance(updates, (raw.types.UpdateShortMessage, raw.types.UpdateShortChatMessage)):
             await self.storage.update_state(
                 (
@@ -936,7 +1055,7 @@ class Client(Methods):
             )
 
             if diff.new_messages:
-                self.dispatcher.updates_queue.put_nowait((
+                await self.dispatcher.enqueue_update(
                     raw.types.UpdateNewMessage(
                         message=diff.new_messages[0],
                         pts=updates.pts,
@@ -944,12 +1063,12 @@ class Client(Methods):
                     ),
                     {u.id: u for u in diff.users},
                     {c.id: c for c in diff.chats}
-                ))
+                )
             else:
                 if diff.other_updates:  # The other_updates list can be empty
-                    self.dispatcher.updates_queue.put_nowait((diff.other_updates[0], {}, {}))
+                    await self.dispatcher.enqueue_update(diff.other_updates[0], {}, {})
         elif isinstance(updates, raw.types.UpdateShort):
-            self.dispatcher.updates_queue.put_nowait((updates.update, {}, {}))
+            await self.dispatcher.enqueue_update(updates.update, {}, {})
         elif isinstance(updates, raw.types.UpdatesTooLong):
             log.info(updates)
 
@@ -1253,11 +1372,13 @@ class Client(Methods):
                         offset=offset_bytes,
                         limit=chunk_size
                     ),
+                    timeout=Session.MEDIA_WAIT_TIMEOUT,
                     sleep_threshold=30
                 )
 
                 if isinstance(r, raw.types.upload.File):
                     first_chunk = r.bytes
+                    r = None
                     yield first_chunk
                     current += 1
                     offset_bytes += chunk_size
@@ -1265,11 +1386,10 @@ class Client(Methods):
                         _write_file.seek(0)
                         _write_file.write(first_chunk)
 
-                    if (
-                        not first_chunk
-                        or len(first_chunk) < chunk_size
-                        or current >= total
-                    ):
+                    first_len = len(first_chunk)
+                    first_chunk = None
+
+                    if not first_len or first_len < chunk_size or current >= total:
                         return
 
                     # Sequential fallback when file size is unknown
@@ -1281,6 +1401,7 @@ class Client(Methods):
                                     offset=offset_bytes,
                                     limit=chunk_size,
                                 ),
+                                timeout=Session.MEDIA_WAIT_TIMEOUT,
                                 sleep_threshold=30,
                             )
                             chunk = r.bytes
@@ -1314,9 +1435,10 @@ class Client(Methods):
                         work.put_nowait(offset_bytes + i * chunk_size)
 
                     _write_mode = _write_file is not None and file_size > 0
+                    data_ready = asyncio.Event()
                     if not _write_mode:
                         received = {}
-                        data_ready = asyncio.Event()
+                        buffer_slots = ReadAhead(self.read_ahead_slots)
                     else:
                         _write_fd = _write_file.fileno()
                     _done_count = 0
@@ -1329,33 +1451,49 @@ class Client(Methods):
                     async def _worker(session):
                         nonlocal _done_count, _last_rate_adj, _fast_window
                         while True:
+                            if not _write_mode:
+                                await buffer_slots.acquire()
+
                             try:
                                 offset = work.get_nowait()
                             except asyncio.QueueEmpty:
+                                if not _write_mode:
+                                    buffer_slots.release()
                                 return
 
-                            await _getfile_rate.acquire()
-                            t0 = time.monotonic()
-                            r = await session.invoke(
-                                raw.functions.upload.GetFile(
-                                    location=location,
-                                    offset=offset,
-                                    limit=chunk_size,
-                                ),
-                                sleep_threshold=30,
-                            )
+                            try:
+                                await _getfile_rate.acquire()
+                                t0 = time.monotonic()
+                                r = await session.invoke(
+                                    raw.functions.upload.GetFile(
+                                        location=location,
+                                        offset=offset,
+                                        limit=chunk_size,
+                                    ),
+                                    timeout=Session.MEDIA_WAIT_TIMEOUT,
+                                    sleep_threshold=30,
+                                )
+                            except BaseException:
+                                if not _write_mode:
+                                    buffer_slots.release()
+                                raise
+
                             chunk_data = r.bytes
+                            r = None
                             t1 = time.monotonic()
 
                             if _write_mode:
-                                os.pwrite(_write_fd, chunk_data, offset)
+                                write_at(_write_fd, chunk_data, offset)
                             else:
                                 received[offset] = chunk_data
-                                data_ready.set()
 
                             _done_count += 1
+                            data_ready.set()
 
-                            if len(chunk_data) < chunk_size:
+                            chunk_len = len(chunk_data)
+                            chunk_data = None
+
+                            if chunk_len < chunk_size:
                                 return
 
                             elapsed = t1 - t0
@@ -1377,6 +1515,9 @@ class Client(Methods):
                         asyncio.ensure_future(_worker(pool[i % n_sessions]))
                         for i in range(total_workers)
                     ]
+
+                    for t in tasks:
+                        t.add_done_callback(lambda _: data_ready.set())
 
                     _progress_task = None
                     if progress:
@@ -1417,7 +1558,11 @@ class Client(Methods):
                                         exc = t.exception()
                                         if exc and not isinstance(exc, asyncio.CancelledError):
                                             raise exc
-                                await asyncio.sleep(0.5)
+                                try:
+                                    await asyncio.wait_for(data_ready.wait(), 0.5)
+                                except asyncio.TimeoutError:
+                                    pass
+                                data_ready.clear()
                                 yield b""
                             else:
                                 while offset_bytes not in received:
@@ -1432,6 +1577,7 @@ class Client(Methods):
                                     data_ready.clear()
 
                                 chunk = received.pop(offset_bytes)
+                                buffer_slots.release()
                                 yield chunk
                                 current += 1
                                 offset_bytes += chunk_size
@@ -1444,6 +1590,8 @@ class Client(Methods):
                         for t in tasks:
                             if not t.done():
                                 t.cancel()
+                        if not _write_mode:
+                            buffer_slots.release_all()
 
                 elif isinstance(r, raw.types.upload.FileCdnRedirect):
 
@@ -1451,6 +1599,7 @@ class Client(Methods):
                         r.dc_id, is_media=True, is_cdn=True, temporary=True
                     )
                     _cdn_rate = TokenBucket(rate=dl_rate, burst=dl_burst)
+                    _report_tasks = set()
 
                     try:
                         while True:
@@ -1460,7 +1609,8 @@ class Client(Methods):
                                     file_token=r.file_token,
                                     offset=offset_bytes,
                                     limit=chunk_size
-                                )
+                                ),
+                                timeout=Session.MEDIA_WAIT_TIMEOUT
                             )
 
                             if isinstance(r2, raw.types.upload.CdnFileReuploadNeeded):
@@ -1532,13 +1682,16 @@ class Client(Methods):
                                         except Exception as e:
                                             log.warning(f"CDN download progress callback error: {e}")
 
-                                    asyncio.ensure_future(report())
+                                    _t = asyncio.ensure_future(report())
+                                    _report_tasks.add(_t)
+                                    _t.add_done_callback(_report_tasks.discard)
 
                             if len(chunk) < chunk_size or current >= total:
                                 break
-                    except Exception:
-                        raise
                     finally:
+                        for _t in list(_report_tasks):
+                            if not _t.done():
+                                _t.cancel()
                         await cdn_session.stop()
             except Exception:
                 raise

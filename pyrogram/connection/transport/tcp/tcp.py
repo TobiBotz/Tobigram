@@ -35,6 +35,8 @@ class TCP:
     TIMEOUT = int(os.environ.get("WZGRAM_TCP_TIMEOUT", 10))
     CONNECT_TIMEOUT = int(os.environ.get("WZGRAM_TCP_CONNECT_TIMEOUT", 600))
 
+    SOCKET_BUFFER = int(os.environ.get("WZGRAM_SOCKET_BUFFER", 0))
+
     def __init__(self, ipv6: bool, proxy: dict, crypto_executor: Optional[ThreadPoolExecutor] = None, loop: Optional[asyncio.AbstractEventLoop] = None):
         self.socket = None
 
@@ -109,8 +111,11 @@ class TCP:
             if sock is not None:
                 sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_SNDBUF, 4 * 1024 * 1024)
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 4 * 1024 * 1024)
+
+                if TCP.SOCKET_BUFFER > 0:
+                    for option in (socket.SO_SNDBUF, socket.SO_RCVBUF):
+                        if TCP.SOCKET_BUFFER > sock.getsockopt(socket.SOL_SOCKET, option):
+                            sock.setsockopt(socket.SOL_SOCKET, option, TCP.SOCKET_BUFFER)
         except OSError:
             pass
 
@@ -135,22 +140,27 @@ class TCP:
                 raise OSError(e)
 
     async def recv(self, length: int = 0):
-        data = b""
+        if length <= 0:
+            return b""
 
-        while len(data) < length:
+        chunks = []
+        received = 0
+
+        while received < length:
             try:
                 chunk = await asyncio.wait_for(
-                    self.reader.read(length - len(data)),
+                    self.reader.read(length - received),
                     TCP.TIMEOUT
                 )
             except asyncio.TimeoutError:
                 raise TimeoutError("Socket read timed out")
             except OSError:
                 return None
-            else:
-                if chunk:
-                    data += chunk
-                else:
-                    return None
 
-        return data
+            if not chunk:
+                return None
+
+            chunks.append(chunk)
+            received += len(chunk)
+
+        return chunks[0] if len(chunks) == 1 else b"".join(chunks)

@@ -1,0 +1,805 @@
+import asyncio
+import socket
+import time
+from types import SimpleNamespace
+
+import pytest
+
+import pyrogram
+from pyrogram import raw
+from pyrogram.connection.transport.tcp.tcp import TCP
+from pyrogram.connection.transport.tcp.tcp_abridged import TCPAbridged
+from pyrogram.dispatcher import Dispatcher
+from pyrogram.file_id import FileId, FileType
+from pyrogram.session.internals import MsgId
+from pyrogram.session.session import ConnectionLost, Result, Session
+
+
+class DummyClient:
+    name = "stability"
+    app_version = "1.0"
+    device_model = "Test"
+    system_version = "Linux"
+    lang_code = "en"
+    loop = None
+    is_media = False
+    proxy = None
+    ipv6 = False
+    dc_id = 2
+    session = None
+    disconnect_handler = None
+
+    def __init__(self):
+        self.updates = []
+
+    async def handle_updates(self, body):
+        self.updates.append(body)
+
+
+class RecordingConnection:
+
+    def __init__(self):
+        self.protocol = SimpleNamespace(crypto_executor=None)
+        self.closed = False
+        self.sent = []
+
+    async def connect(self):
+        pass
+
+    async def close(self):
+        self.closed = True
+
+    async def send(self, payload):
+        self.sent.append(payload)
+
+    async def recv(self):
+        await asyncio.sleep(3600)
+
+
+def make_session(client=None):
+    return Session(
+        client or DummyClient(),
+        1,
+        b"\x00" * 256,
+        False,
+        is_media=False,
+        crypto_executor=None,
+    )
+
+
+async def _packed(*args, **kwargs):
+    return b"packed"
+
+
+def unpacked_as(msg_id: int, body: bytes):
+    length = len(body)
+    total_len = 16 + length + 16
+
+    async def run(*args, **kwargs):
+        return msg_id, 1, length, body, total_len
+
+    return run
+
+
+async def test_a_replayed_msg_id_is_dropped_without_closing_the_connection(monkeypatch):
+    session = make_session()
+    session.connection = RecordingConnection()
+
+    msg_id = MsgId()
+    msg_id |= 1  # msg_id must be odd
+    body = raw.types.Pong(msg_id=msg_id, ping_id=0).write()
+
+    monkeypatch.setattr(session.loop, "run_in_executor", unpacked_as(msg_id, body))
+
+    await session.handle_packet(b"ignored")
+    assert session.stored_msg_ids == [msg_id]
+
+    await session.handle_packet(b"ignored")
+
+    assert session.stored_msg_ids == [msg_id], "a replayed msg_id must not be stored twice"
+    assert not session.connection.closed, (
+        "a duplicate msg_id must not cost a reconnect"
+    )
+
+
+async def test_a_msg_id_below_the_replay_window_is_dropped_not_fatal(monkeypatch):
+    session = make_session()
+    session.connection = RecordingConnection()
+
+    recent = MsgId() | 1
+    stale = recent - (1 << 33)  # comfortably below the stored floor
+    session.stored_msg_ids = [recent]
+
+    body = raw.types.Pong(msg_id=stale, ping_id=0).write()
+    monkeypatch.setattr(session.loop, "run_in_executor", unpacked_as(stale, body))
+
+    await session.handle_packet(b"ignored")
+
+    assert not session.connection.closed
+    assert session.stored_msg_ids == [recent]
+
+
+async def test_a_clock_skew_mismatch_still_closes_the_connection(monkeypatch):
+    session = make_session()
+    session.connection = RecordingConnection()
+
+    session.stored_msg_ids = [MsgId() | 1]
+
+    future = ((MsgId() >> 32) + 600) << 32 | 1
+    body = raw.types.Pong(msg_id=future, ping_id=0).write()
+    monkeypatch.setattr(session.loop, "run_in_executor", unpacked_as(future, body))
+
+    await session.handle_packet(b"ignored")
+
+    assert session.connection.closed, (
+        "a desynchronised clock invalidates the sequence and must drop the connection"
+    )
+
+
+async def test_in_flight_requests_report_a_lost_connection_not_a_timeout(monkeypatch):
+    session = make_session()
+    session.connection = RecordingConnection()
+    monkeypatch.setattr(session.loop, "run_in_executor", _packed)
+
+    pending = asyncio.ensure_future(
+        session.send(raw.functions.Ping(ping_id=0), timeout=30)
+    )
+    await asyncio.sleep(0)
+    await asyncio.sleep(0)
+    assert session.results, "the request should be waiting for a reply"
+
+    await session.stop()
+
+    with pytest.raises(ConnectionResetError):
+        await asyncio.wait_for(pending, timeout=5)
+
+
+async def test_a_genuine_timeout_is_still_reported_as_one(monkeypatch):
+    session = make_session()
+    session.connection = RecordingConnection()
+    monkeypatch.setattr(session.loop, "run_in_executor", _packed)
+
+    with pytest.raises(TimeoutError, match="Request timed out"):
+        await session.send(raw.functions.Ping(ping_id=0), timeout=0.05)
+
+
+async def test_connection_loss_is_retried_by_invoke(monkeypatch):
+    session = make_session()
+    session.is_started.set()
+
+    attempts = []
+    sentinel = object()
+
+    async def send(data, timeout=None, **kwargs):
+        attempts.append(data)
+        if len(attempts) == 1:
+            raise ConnectionResetError("Connection lost while awaiting a response")
+        return sentinel
+
+    monkeypatch.setattr(session, "send", send)
+    monkeypatch.setattr(session, "restart", _packed)
+
+    assert await session.invoke(raw.functions.Ping(ping_id=0)) is sentinel
+    assert len(attempts) == 2, "the dropped request should have been re-sent once"
+
+
+async def test_stop_leaves_an_already_answered_result_alone():
+    session = make_session()
+    session.connection = RecordingConnection()
+
+    answered = Result()
+    answered.value = "the real answer"
+    session.results = {1: answered}
+
+    await session.stop()
+
+    assert answered.value == "the real answer", (
+        "a reply that already arrived must not be overwritten by the shutdown marker"
+    )
+    assert answered.value is not ConnectionLost
+
+
+async def test_the_receive_loop_stops_reading_once_the_decrypt_backlog_is_full():
+    session = make_session()
+
+    reads = 0
+    blocked = asyncio.Event()
+
+    class FloodingConnection(RecordingConnection):
+        async def recv(self):
+            nonlocal reads
+            reads += 1
+            await asyncio.sleep(0)
+            return b"\x00" * 64
+
+    session.connection = FloodingConnection()
+    session._packet_semaphore = asyncio.Semaphore(2)
+
+    async def never_finishes(packet):
+        await blocked.wait()
+
+    session.handle_packet = never_finishes
+
+    worker = asyncio.ensure_future(session.recv_worker())
+    await asyncio.sleep(0.1)
+
+    try:
+        assert reads <= 3, (
+            "with 2 decrypt slots the loop may read 2 packets and block on the "
+            f"third; it read {reads}, so nothing is throttling the socket"
+        )
+
+        settled = reads
+        await asyncio.sleep(0.1)
+        assert reads == settled, "a blocked backlog must not keep draining the socket"
+    finally:
+        blocked.set()
+        worker.cancel()
+        await asyncio.gather(worker, return_exceptions=True)
+
+
+async def _reads_under_cap(session, handler, cap=2, limit=20):
+    reads = 0
+
+    class CountingConnection(RecordingConnection):
+        async def recv(self):
+            nonlocal reads
+            reads += 1
+            if reads > limit:
+                await asyncio.sleep(3600)
+            await asyncio.sleep(0)
+            return b"\x00" * 64
+
+    session.connection = CountingConnection()
+    session._packet_semaphore = asyncio.Semaphore(cap)
+    session.handle_packet = handler
+
+    worker = asyncio.ensure_future(session.recv_worker())
+    await asyncio.sleep(0.1)
+    worker.cancel()
+    await asyncio.gather(worker, return_exceptions=True)
+
+    return reads
+
+
+async def test_a_handled_packet_returns_its_slot():
+    async def instant(packet):
+        return None
+
+    reads = await _reads_under_cap(make_session(), instant)
+
+    assert reads > 2, (
+        "slots must come back as packets complete, or the loop wedges after "
+        f"MAX_INFLIGHT_PACKETS messages; it stopped at {reads}"
+    )
+
+
+async def test_a_failing_packet_also_returns_its_slot():
+    async def explodes(packet):
+        raise ValueError("bad packet")
+
+    reads = await _reads_under_cap(make_session(), explodes)
+
+    assert reads > 2, (
+        f"a packet that raised must not leak its slot; the loop stopped at {reads}"
+    )
+
+
+class FragmentedReader:
+
+    def __init__(self, payload: bytes, piece: int = 7):
+        self.buf = payload
+        self.piece = piece
+        self.calls = 0
+
+    async def read(self, n):
+        self.calls += 1
+        take = min(n, self.piece)
+        out, self.buf = self.buf[:take], self.buf[take:]
+        return out
+
+
+def make_transport(payload: bytes, piece: int = 7):
+    transport = TCP(False, None)
+    transport.reader = FragmentedReader(payload, piece)
+    return transport
+
+
+async def test_recv_reassembles_a_fragmented_message():
+    payload = bytes(range(256)) * 4
+    transport = make_transport(payload)
+
+    got = await transport.recv(len(payload))
+
+    assert got == payload
+    assert transport.reader.calls > 1, "the payload should have arrived in pieces"
+
+
+async def test_recv_of_nothing_is_empty_not_none():
+    assert await make_transport(b"").recv(0) == b""
+
+
+async def test_recv_reports_a_closed_socket_as_none():
+    assert await make_transport(b"ab").recv(8) is None, (
+        "a short read means the peer went away"
+    )
+
+
+async def test_an_abridged_frame_still_round_trips():
+    body = b"A" * 64
+    framed = bytes([len(body) // 4]) + body
+
+    protocol = TCPAbridged(False, None)
+    protocol.reader = FragmentedReader(framed, piece=5)
+
+    assert await protocol.recv() == body
+
+
+class FakeSocket:
+    def __init__(self, existing: int):
+        self.existing = existing
+        self.applied = {}
+
+    def getsockopt(self, level, option):
+        return self.existing
+
+    def setsockopt(self, level, option, value):
+        self.applied[option] = value
+
+
+def apply_buffers(sock):
+    if TCP.SOCKET_BUFFER > 0:
+        for option in (socket.SO_SNDBUF, socket.SO_RCVBUF):
+            current = sock.getsockopt(socket.SOL_SOCKET, option)
+            if TCP.SOCKET_BUFFER > current:
+                sock.setsockopt(socket.SOL_SOCKET, option, TCP.SOCKET_BUFFER)
+
+
+def test_the_socket_buffer_is_never_shrunk_below_the_os_default(monkeypatch):
+    monkeypatch.setattr(TCP, "SOCKET_BUFFER", 256 * 1024)
+    sock = FakeSocket(existing=8 * 1024 * 1024)
+
+    apply_buffers(sock)
+
+    assert sock.applied == {}, "a host tuned for large buffers must keep them"
+
+
+def test_the_socket_buffer_is_raised_when_the_default_is_tiny(monkeypatch):
+    monkeypatch.setattr(TCP, "SOCKET_BUFFER", 256 * 1024)
+    sock = FakeSocket(existing=4096)
+
+    apply_buffers(sock)
+
+    assert sock.applied[socket.SO_SNDBUF] == 256 * 1024
+    assert sock.applied[socket.SO_RCVBUF] == 256 * 1024
+
+
+def test_the_socket_buffer_can_be_left_to_the_os(monkeypatch):
+    monkeypatch.setattr(TCP, "SOCKET_BUFFER", 0)
+    sock = FakeSocket(existing=4096)
+
+    apply_buffers(sock)
+
+    assert sock.applied == {}
+
+
+def test_the_kernel_autotunes_socket_buffers_by_default():
+    assert TCP.SOCKET_BUFFER == 0, (
+        "pinning SO_SNDBUF/SO_RCVBUF disables autotuning, so every session pays "
+        "the fixed size in kernel memory and cannot grow on a high-latency link"
+    )
+
+
+def make_dispatcher(**kwargs):
+    client = SimpleNamespace(
+        workers=1,
+        no_updates=False,
+        rate_limiter=None,
+        start_handler=None,
+        stop_handler=None,
+        **kwargs
+    )
+    return Dispatcher(client)
+
+
+async def test_an_update_is_queued_when_there_is_room():
+    dispatcher = make_dispatcher()
+
+    assert await dispatcher.enqueue_update("update", {}, {}) is True
+    assert dispatcher.updates_queue.qsize() == 1
+
+
+async def test_a_full_queue_waits_for_room_instead_of_raising(monkeypatch):
+    dispatcher = make_dispatcher()
+    monkeypatch.setattr(Dispatcher, "ENQUEUE_TIMEOUT", 5)
+
+    for _ in range(dispatcher.updates_queue.maxsize):
+        dispatcher.updates_queue.put_nowait(("filler", {}, {}))
+
+    pending = asyncio.ensure_future(dispatcher.enqueue_update("late", {}, {}))
+    await asyncio.sleep(0.05)
+    assert not pending.done(), "a burst should be absorbed by waiting, not dropped"
+
+    await dispatcher.updates_queue.get()
+
+    assert await asyncio.wait_for(pending, timeout=2) is True
+
+
+async def test_a_permanently_full_queue_drops_and_says_so(monkeypatch, caplog):
+    dispatcher = make_dispatcher()
+    monkeypatch.setattr(Dispatcher, "ENQUEUE_TIMEOUT", 0.05)
+
+    for _ in range(dispatcher.updates_queue.maxsize):
+        dispatcher.updates_queue.put_nowait(("filler", {}, {}))
+
+    with caplog.at_level("WARNING"):
+        queued = await dispatcher.enqueue_update("late", {}, {})
+
+    assert queued is False
+    assert "Dropping" in caplog.text, "a dropped update must not be silent"
+
+
+async def test_the_updates_queue_stays_bounded():
+    dispatcher = make_dispatcher()
+
+    assert dispatcher.updates_queue.maxsize > 0, (
+        "an unbounded update queue turns a slow handler into unbounded memory use"
+    )
+
+
+class FakeSession:
+    def __init__(self, last_used: float, results=None):
+        self.last_used = last_used
+        self.results = results or {}
+        self.stopped = False
+        self.is_started = asyncio.Event()
+        self.is_started.set()
+
+    async def stop(self):
+        self.stopped = True
+        self.is_started.clear()
+
+
+class ReapableClient:
+    reap_media_sessions = pyrogram.Client.reap_media_sessions
+    MEDIA_SESSION_IDLE_TIMEOUT = pyrogram.Client.MEDIA_SESSION_IDLE_TIMEOUT
+
+    def __init__(self):
+        self.media_session_pools = {}
+        self._media_sessions_locks = {}
+
+
+async def test_reaping_closes_idle_sessions_and_keeps_busy_ones():
+    import time
+
+    now = time.monotonic()
+    client = ReapableClient()
+
+    busy = FakeSession(last_used=now)
+    idle = FakeSession(last_used=now - 10_000)
+    client.media_session_pools[2] = [busy, idle]
+
+    reaped = await client.reap_media_sessions(idle_timeout=300)
+
+    assert reaped == 1
+    assert idle.stopped and not busy.stopped
+    assert client.media_session_pools[2] == [busy]
+
+
+async def test_reaping_forgets_a_datacenter_once_its_pool_is_empty():
+    import time
+
+    client = ReapableClient()
+    client.media_session_pools[2] = [FakeSession(last_used=time.monotonic() - 10_000)]
+
+    await client.reap_media_sessions(idle_timeout=300)
+
+    assert 2 not in client.media_session_pools, (
+        "an emptied pool must be dropped, not left as a stale key"
+    )
+
+
+async def test_reaping_keeps_everything_when_nothing_is_idle():
+    import time
+
+    client = ReapableClient()
+    fresh = [FakeSession(last_used=time.monotonic()) for _ in range(3)]
+    client.media_session_pools[2] = list(fresh)
+
+    assert await client.reap_media_sessions(idle_timeout=300) == 0
+    assert client.media_session_pools[2] == fresh
+
+
+async def test_reaping_spares_a_session_with_a_request_still_in_flight():
+    import time
+
+    client = ReapableClient()
+    stalled = FakeSession(last_used=time.monotonic() - 10_000, results={1: object()})
+    client.media_session_pools[2] = [stalled]
+
+    assert await client.reap_media_sessions(idle_timeout=300) == 0
+    assert not stalled.stopped, (
+        "an RPC blocked on a long flood-wait leaves last_used stale; closing "
+        "the session under it would fail the request"
+    )
+
+
+async def test_invoking_marks_a_session_as_recently_used(monkeypatch):
+    session = make_session()
+    session.is_started.set()
+    session.last_used = 0.0
+
+    monkeypatch.setattr(session, "send", _packed)
+
+    await session.invoke(raw.functions.Ping(ping_id=0))
+
+    assert session.last_used > 0.0
+
+
+async def test_a_keepalive_ping_does_not_count_as_use(monkeypatch):
+    session = make_session()
+    session.connection = RecordingConnection()
+    monkeypatch.setattr(session.loop, "run_in_executor", _packed)
+    session.last_used = 0.0
+
+    await session.send(raw.functions.PingDelayDisconnect(ping_id=0, disconnect_delay=25), False)
+
+    assert session.last_used == 0.0, (
+        "pings must not keep an otherwise idle pooled session alive forever"
+    )
+
+
+CHUNK = 1024 * 1024
+
+
+class ChunkSession:
+
+    def __init__(self, file_size: int):
+        self.file_size = file_size
+        self.served = 0
+
+    async def invoke(self, query, *args, **kwargs):
+        self.served += 1
+        remaining = max(0, self.file_size - query.offset)
+        return raw.types.upload.File(
+            type=raw.types.storage.FilePartial(),
+            mtime=0,
+            bytes=b"\x00" * min(CHUNK, remaining),
+        )
+
+
+def make_download_client(monkeypatch, session):
+    client = pyrogram.Client("buffering", api_id=1, api_hash="x", in_memory=True)
+    client.me = SimpleNamespace(is_bot=False, is_premium=False)
+
+    async def get_session(*args, **kwargs):
+        return session
+
+    async def pool(dc_id, n):
+        return [session] * n
+
+    monkeypatch.setattr(client, "get_session", get_session)
+    monkeypatch.setattr(client, "_get_media_session_pool", pool)
+    return client
+
+
+async def test_a_slow_consumer_does_not_let_the_whole_file_into_memory(monkeypatch):
+    file_size = 400 * CHUNK
+    session = ChunkSession(file_size)
+    client = make_download_client(monkeypatch, session)
+
+    file_id = FileId(file_type=FileType.DOCUMENT, dc_id=2, media_id=1, access_hash=1)
+
+    consumed = 0
+    async for _chunk in client.get_file(file_id, file_size):
+        consumed += 1
+        await asyncio.sleep(0.3)
+        if consumed == 5:
+            break
+
+    read_ahead = session.served - consumed
+
+    assert read_ahead <= 32, (
+        f"workers buffered {read_ahead} chunks ahead of the consumer. The rate "
+        "limiter only caps chunks per second, so a consumer that stays slow "
+        "long enough pulls the whole file into memory unless the read-ahead "
+        "itself is bounded"
+    )
+
+
+class SharedLink:
+
+    def __init__(self, file_size: int, step: float = 0.01):
+        self.file_size = file_size
+        self.step = step
+        self.served = 0
+        self.timeouts = 0
+        self.inflight = {}
+        self.peak = {}
+
+    def session(self, dc_id: int = 2) -> Session:
+        session = Session(
+            DummyClient(), dc_id, b"\x00" * 256, False,
+            is_media=True, crypto_executor=None
+        )
+        session.is_started.set()
+        session.send = self._send_for(session)
+        return session
+
+    def _send_for(self, session):
+        key = id(session)
+
+        async def send(query, wait_response=True, timeout=None, retry=0):
+            live = self.inflight.get(key, 0) + 1
+            self.inflight[key] = live
+            self.peak[key] = max(self.peak.get(key, 0), live)
+            try:
+                await asyncio.sleep(self.step * sum(self.inflight.values()))
+                self.served += 1
+                remaining = max(0, self.file_size - query.offset)
+                return raw.types.upload.File(
+                    type=raw.types.storage.FilePartial(),
+                    mtime=0,
+                    bytes=b"\x00" * min(CHUNK, remaining),
+                )
+            finally:
+                self.inflight[key] -= 1
+
+        return send
+
+
+def link_client(monkeypatch, link, pool):
+    client = pyrogram.Client("link", api_id=1, api_hash="x", in_memory=True)
+    client.me = SimpleNamespace(is_bot=False, is_premium=False)
+
+    async def get_session(*args, **kwargs):
+        return pool[0]
+
+    async def get_pool(dc_id, n):
+        return pool
+
+    monkeypatch.setattr(client, "get_session", get_session)
+    monkeypatch.setattr(client, "_get_media_session_pool", get_pool)
+    return client
+
+
+async def test_concurrent_downloads_cannot_pile_up_on_one_connection(monkeypatch):
+    file_size = 8 * CHUNK
+    link = SharedLink(file_size)
+    pool = [link.session() for _ in range(3)]
+    for session in pool:
+        session._invoke_semaphore = asyncio.Semaphore(4)
+    client = link_client(monkeypatch, link, pool)
+
+    file_id = FileId(file_type=FileType.DOCUMENT, dc_id=2, media_id=1, access_hash=1)
+
+    async def download():
+        async for _ in client.get_file(file_id, file_size):
+            pass
+
+    await asyncio.gather(*(download() for _ in range(4)))
+
+    worst = max(link.peak.values())
+
+    assert worst <= 4, (
+        f"{worst} requests were in flight on a single media connection with 4 "
+        "parallel downloads sharing a 3-session pool"
+    )
+
+
+class SlowLink(SharedLink):
+
+    def _send_for(self, session):
+        async def send(query, wait_response=True, timeout=None, retry=0):
+            self.inflight[id(session)] = self.inflight.get(id(session), 0) + 1
+            session.last_packet_received = time.monotonic()
+            try:
+                needed = self.step * sum(self.inflight.values())
+                await asyncio.sleep(min(needed, timeout))
+                session.last_packet_received = time.monotonic()
+
+                if needed > timeout:
+                    self.timeouts += 1
+                    raise TimeoutError("Request timed out")
+
+                self.served += 1
+                remaining = max(0, self.file_size - query.offset)
+                return raw.types.upload.File(
+                    type=raw.types.storage.FilePartial(),
+                    mtime=0,
+                    bytes=b"\x00" * min(CHUNK, remaining),
+                )
+            finally:
+                self.inflight[id(session)] -= 1
+
+        return send
+
+
+DEADLINE = 0.1
+STEP = 0.004
+PARALLEL_WORKERS = 48
+
+
+def request():
+    return raw.functions.upload.GetFile(
+        location=raw.types.InputDocumentFileLocation(
+            id=1, access_hash=1, file_reference=b"", thumb_size=""
+        ),
+        offset=0,
+        limit=CHUNK,
+    )
+
+
+async def timeouts_for(cap):
+    link = SlowLink(file_size=64 * CHUNK, step=STEP)
+    session = link.session()
+    session._invoke_semaphore = asyncio.Semaphore(cap) if cap else None
+
+    async def one():
+        try:
+            await session.invoke(request(), retries=1, timeout=DEADLINE)
+        except TimeoutError:
+            pass
+
+    await asyncio.gather(*(one() for _ in range(PARALLEL_WORKERS)))
+    return link.timeouts
+
+
+async def test_uncapped_parallel_transfers_breach_their_deadline():
+    assert await timeouts_for(cap=None) > 0
+
+
+async def test_a_capped_connection_meets_its_deadline_at_the_same_load():
+    assert await timeouts_for(cap=4) == 0
+
+
+async def test_media_connections_ship_with_a_cap():
+    session = Session(
+        DummyClient(), 2, b"\x00" * 256, False, is_media=True, crypto_executor=None
+    )
+
+    assert session._invoke_semaphore is not None
+    assert 1 <= Session.MAX_INFLIGHT_MEDIA <= 8, (
+        f"a cap of {Session.MAX_INFLIGHT_MEDIA} parts per connection is outside "
+        "the range that keeps latency under the transfer deadline"
+    )
+
+
+async def test_the_cap_does_not_apply_to_control_connections():
+    session = Session(DummyClient(), 2, b"\x00" * 256, False, crypto_executor=None)
+
+    assert session._invoke_semaphore is None, (
+        "only media connections carry large parts; capping ordinary RPCs would "
+        "throttle the client for nothing"
+    )
+
+
+async def test_a_capped_transfer_still_delivers_the_whole_file(monkeypatch):
+    file_size = 8 * CHUNK
+    link = SharedLink(file_size)
+    pool = [link.session() for _ in range(3)]
+    client = link_client(monkeypatch, link, pool)
+
+    file_id = FileId(file_type=FileType.DOCUMENT, dc_id=2, media_id=1, access_hash=1)
+
+    total = 0
+    async for chunk in client.get_file(file_id, file_size):
+        total += len(chunk)
+
+    assert total == file_size, f"capping cost data: got {total} of {file_size}"
+
+
+async def test_every_chunk_still_arrives_in_order(monkeypatch):
+    file_size = 12 * CHUNK
+    session = ChunkSession(file_size)
+    client = make_download_client(monkeypatch, session)
+
+    file_id = FileId(file_type=FileType.DOCUMENT, dc_id=2, media_id=1, access_hash=1)
+
+    total = 0
+    async for chunk in client.get_file(file_id, file_size):
+        total += len(chunk)
+
+    assert total == file_size, (
+        f"bounding the read-ahead must not lose data: got {total} of {file_size}"
+    )

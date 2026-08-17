@@ -149,23 +149,19 @@ class RecoverGaps:
 
                 for message in diff.new_messages:
                     message_updates_counter += 1
-                    self.dispatcher.updates_queue.put_nowait(
-                        (
-                            raw.types.UpdateNewMessage(
-                                message=message,
-                                pts=local_pts,
-                                pts_count=-1
-                            ),
-                            users,
-                            chats
-                        )
+                    await self.dispatcher.enqueue_update(
+                        raw.types.UpdateNewMessage(
+                            message=message,
+                            pts=local_pts,
+                            pts_count=-1
+                        ),
+                        users,
+                        chats
                     )
 
                 for update in diff.other_updates:
                     other_updates_counter += 1
-                    self.dispatcher.updates_queue.put_nowait(
-                        (update, users, chats)
-                    )
+                    await self.dispatcher.enqueue_update(update, users, chats)
 
                 if isinstance(diff, (raw.types.updates.Difference, raw.types.updates.ChannelDifference)):
                     break

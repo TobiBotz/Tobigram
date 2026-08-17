@@ -32,6 +32,7 @@ import pyrogram
 from pyrogram import StopTransmission
 from pyrogram import raw
 from pyrogram.errors import RPCError
+from pyrogram.session import Session
 
 log = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ POOL_SIZE = 20
 MAX_RETRIES = 16
 STALL_TIMEOUT = 900
 READ_BUFFER = 4 * 1024 * 1024
+MAX_BATCH = 4 * 1024 * 1024
 PROGRESS_INTERVAL = 0.2
 
 
@@ -93,7 +95,10 @@ class SaveFile:
 
                     for attempt in range(MAX_RETRIES):
                         try:
-                            await session.invoke(data)
+                            await session.invoke(
+                                data, timeout=Session.MEDIA_WAIT_TIMEOUT
+                            )
+                            data = None
                             break
                         except StopTransmission:
                             raise
@@ -118,11 +123,10 @@ class SaveFile:
                             await asyncio.sleep(delay)
 
             async def read_batch():
-                batch_size = PART_SIZE * n_workers
-                data = await self.loop.run_in_executor(
+                batch_size = min(PART_SIZE * n_workers, MAX_BATCH)
+                return await self.loop.run_in_executor(
                     self.executor, fp.read, batch_size
                 )
-                return [data[i:i+PART_SIZE] for i in range(0, len(data), PART_SIZE)]
 
             part_size = PART_SIZE
 
@@ -174,7 +178,7 @@ class SaveFile:
             pool = await self._get_media_session_pool(dc_id, pool_size)
 
             n_workers = len(pool) * 2
-            queue = asyncio.Queue(n_workers * 4)
+            queue = asyncio.Queue(n_workers)
             workers = [
                 self.loop.create_task(worker(pool[i % len(pool)]))
                 for i in range(n_workers)
@@ -221,10 +225,10 @@ class SaveFile:
                 next_batch_task = self.loop.create_task(read_batch())
 
                 while True:
-                    chunks = await next_batch_task
+                    batch = await next_batch_task
                     next_batch_task = self.loop.create_task(read_batch())
 
-                    if not chunks:
+                    if not batch:
                         next_batch_task.cancel()
                         if not is_big and not is_missing_part:
                             md5_sum = md5_sum.hexdigest()
@@ -239,7 +243,9 @@ class SaveFile:
 
                     await _check_workers()
 
-                    for chunk in chunks:
+                    for start in range(0, len(batch), part_size):
+                        chunk = batch[start:start + part_size]
+
                         if is_big:
                             rpc = raw.functions.upload.SaveBigFilePart(
                                 file_id=file_id,
@@ -295,8 +301,11 @@ class SaveFile:
                         if not is_big and not is_missing_part:
                             md5_sum.update(chunk)
 
+                        rpc = None
+                        chunk = None
                         file_part += 1
 
+                    batch = None
 
             except StopTransmission:
                 raise

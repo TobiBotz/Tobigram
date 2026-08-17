@@ -11,7 +11,7 @@ def _default_crypto_workers() -> int:
         except ValueError:
             pass
 
-    return min(4, max(1, os.cpu_count() or 1))
+    return min(4, max(2, os.cpu_count() or 1))
 
 
 _crypto_pool = None
