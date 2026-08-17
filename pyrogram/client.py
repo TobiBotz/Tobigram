@@ -26,6 +26,7 @@ import platform
 import re
 import shutil
 import sys
+import weakref
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -72,6 +73,42 @@ from .parser import Parser
 from .session.internals import MsgId
 
 log = logging.getLogger(__name__)
+
+_handler_executor: Optional[ThreadPoolExecutor] = None
+
+
+def get_handler_executor() -> ThreadPoolExecutor:
+    global _handler_executor
+
+    if _handler_executor is None:
+        override = os.environ.get("WZGRAM_HANDLER_WORKERS")
+
+        try:
+            size = max(1, int(override)) if override else 0
+        except ValueError:
+            size = 0
+
+        _handler_executor = ThreadPoolExecutor(
+            size or min(16, max(4, (os.cpu_count() or 1) * 2)),
+            thread_name_prefix="Handler"
+        )
+
+    return _handler_executor
+
+
+_transfer_budgets: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
+
+
+def transfer_budget(size: int) -> asyncio.Semaphore:
+    loop = asyncio.get_event_loop()
+    budget = _transfer_budgets.get(loop)
+
+    if budget is None:
+        budget = asyncio.Semaphore(size)
+        _transfer_budgets[loop] = budget
+
+    return budget
+
 
 class ReadAhead:
     """Borrows read-ahead slots from a client-wide budget and always gives them back.
@@ -349,7 +386,7 @@ class Client(Methods):
     MEDIA_SESSION_IDLE_TIMEOUT = int(os.environ.get("WZGRAM_MEDIA_SESSION_IDLE_TIMEOUT", 300))
     MEDIA_SESSION_REAP_INTERVAL = 60
 
-    MAX_READ_AHEAD_CHUNKS = int(os.environ.get("WZGRAM_MAX_READ_AHEAD", 32))
+    MAX_READ_AHEAD_CHUNKS = int(os.environ.get("WZGRAM_MAX_READ_AHEAD", 64))
 
     DOWNLOAD_POOL_SIZE = 4  # fallback default
     MAX_CONCURRENT_TRANSMISSIONS = 16
@@ -453,7 +490,7 @@ class Client(Methods):
         self.rate_limiter = RateLimiter(rate_limits) if rate_limits else RateLimiter()
         self.auto_no_updates = auto_no_updates
 
-        self.executor = ThreadPoolExecutor(max(1, self.workers // 4), thread_name_prefix="Handler")
+        self.executor = get_handler_executor()
         self.crypto_executor = get_crypto_executor()
 
         self.storage: Storage
@@ -490,7 +527,6 @@ class Client(Methods):
 
         self.save_file_semaphore = asyncio.Semaphore(self.max_concurrent_transmissions)
         self.get_file_semaphore = asyncio.Semaphore(self.max_concurrent_transmissions)
-        self.read_ahead_slots = asyncio.Semaphore(self.MAX_READ_AHEAD_CHUNKS)
 
         self._session_creation_gate = asyncio.Semaphore(4)
 
@@ -525,6 +561,10 @@ class Client(Methods):
             self.loop = None
 
         self.__config: "raw.types.Config" = None
+
+    @property
+    def read_ahead_slots(self) -> asyncio.Semaphore:
+        return transfer_budget(self.MAX_READ_AHEAD_CHUNKS)
 
     @property
     def loop(self) -> asyncio.AbstractEventLoop:
@@ -1436,9 +1476,9 @@ class Client(Methods):
 
                     _write_mode = _write_file is not None and file_size > 0
                     data_ready = asyncio.Event()
+                    buffer_slots = ReadAhead(self.read_ahead_slots)
                     if not _write_mode:
                         received = {}
-                        buffer_slots = ReadAhead(self.read_ahead_slots)
                     else:
                         _write_fd = _write_file.fileno()
                     _done_count = 0
@@ -1451,14 +1491,12 @@ class Client(Methods):
                     async def _worker(session):
                         nonlocal _done_count, _last_rate_adj, _fast_window
                         while True:
-                            if not _write_mode:
-                                await buffer_slots.acquire()
+                            await buffer_slots.acquire()
 
                             try:
                                 offset = work.get_nowait()
                             except asyncio.QueueEmpty:
-                                if not _write_mode:
-                                    buffer_slots.release()
+                                buffer_slots.release()
                                 return
 
                             try:
@@ -1474,8 +1512,7 @@ class Client(Methods):
                                     sleep_threshold=30,
                                 )
                             except BaseException:
-                                if not _write_mode:
-                                    buffer_slots.release()
+                                buffer_slots.release()
                                 raise
 
                             chunk_data = r.bytes
@@ -1484,6 +1521,7 @@ class Client(Methods):
 
                             if _write_mode:
                                 write_at(_write_fd, chunk_data, offset)
+                                buffer_slots.release()
                             else:
                                 received[offset] = chunk_data
 
@@ -1590,8 +1628,7 @@ class Client(Methods):
                         for t in tasks:
                             if not t.done():
                                 t.cancel()
-                        if not _write_mode:
-                            buffer_slots.release_all()
+                        buffer_slots.release_all()
 
                 elif isinstance(r, raw.types.upload.FileCdnRedirect):
 

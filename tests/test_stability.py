@@ -598,12 +598,22 @@ async def test_a_slow_consumer_does_not_let_the_whole_file_into_memory(monkeypat
             break
 
     read_ahead = session.served - consumed
+    budget = pyrogram.Client.MAX_READ_AHEAD_CHUNKS
 
-    assert read_ahead <= 32, (
-        f"workers buffered {read_ahead} chunks ahead of the consumer. The rate "
-        "limiter only caps chunks per second, so a consumer that stays slow "
-        "long enough pulls the whole file into memory unless the read-ahead "
-        "itself is bounded"
+    assert read_ahead <= budget + 8, (
+        f"workers buffered {read_ahead} chunks ahead of the consumer against a "
+        f"budget of {budget}. The rate limiter only caps chunks per second, so "
+        "a consumer that stays slow long enough pulls the whole file into "
+        "memory unless the read-ahead itself is bounded"
+    )
+
+
+def test_the_transfer_budget_fits_a_small_host():
+    budget = pyrogram.Client.MAX_READ_AHEAD_CHUNKS
+
+    assert budget <= 128, (
+        f"a {budget} MiB transfer budget is too much for a 500 MiB host; it is "
+        "shared process-wide, so this is the ceiling for every client together"
     )
 
 
@@ -1017,3 +1027,67 @@ def test_measuring_a_message_costs_a_serialisation():
         "len() on a TLObject is not free: it serialises. This test exists so "
         "the cost is visible if someone adds a len() to the send path."
     )
+
+
+async def test_the_transfer_budget_is_shared_between_clients():
+    a = pyrogram.Client("budget_a", api_id=1, api_hash="x", in_memory=True)
+    b = pyrogram.Client("budget_b", api_id=1, api_hash="x", in_memory=True)
+
+    assert a.read_ahead_slots is b.read_ahead_slots, (
+        "each client holding its own budget means fifteen clients reserve "
+        "fifteen times the memory, which is how a small host runs out"
+    )
+
+
+async def test_a_disk_download_also_draws_on_the_budget(tmp_path):
+    from .e2e import CHUNK, FakeDC, document, make_client
+
+    file_size = 40 * CHUNK
+    dc = FakeDC(file_size, step=0.0005)
+    client = make_client(dc, "diskbudget")
+    budget = client.read_ahead_slots
+    before = budget._value
+    low = [before]
+
+    async def watch():
+        while True:
+            low[0] = min(low[0], budget._value)
+            await asyncio.sleep(0)
+
+    watcher = asyncio.ensure_future(watch())
+    path = tmp_path / "d.bin"
+    with open(path, "w+b") as handle:
+        handle.truncate(file_size)
+        async for _ in client.get_file(document(), file_size, _write_file=handle):
+            pass
+    watcher.cancel()
+    await asyncio.gather(watcher, return_exceptions=True)
+
+    assert low[0] < before, (
+        "writing straight to disk never touched the shared budget, so fifteen "
+        "clients downloading to disk are bounded only per session"
+    )
+    assert budget._value == before
+
+
+async def test_clients_share_one_handler_thread_pool():
+    a = pyrogram.Client("pool_a", api_id=1, api_hash="x", in_memory=True)
+    b = pyrogram.Client("pool_b", api_id=1, api_hash="x", in_memory=True)
+
+    assert a.executor is b.executor, (
+        "a thread pool per client means fifteen pools of blocking workers on a "
+        "host that has a couple of cores"
+    )
+    assert a.executor._max_workers <= 32
+
+
+async def test_terminating_one_client_leaves_the_shared_pool_alive():
+    from pyrogram.methods.auth.terminate import Terminate
+
+    source = Terminate.terminate.__code__.co_consts
+    assert not any(
+        isinstance(c, str) and "shutdown" in c for c in source if isinstance(c, str)
+    )
+
+    a = pyrogram.Client("pool_c", api_id=1, api_hash="x", in_memory=True)
+    assert not a.executor._shutdown

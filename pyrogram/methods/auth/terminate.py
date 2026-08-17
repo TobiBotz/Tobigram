@@ -83,6 +83,3 @@ class Terminate:
 
         if self.rate_limiter is not None:
             await self.rate_limiter.close()
-
-        if self.executor is not None:
-            self.executor.shutdown(wait=False)
