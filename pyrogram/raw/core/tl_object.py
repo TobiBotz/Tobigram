@@ -19,9 +19,12 @@
 import importlib
 from io import BytesIO
 from json import dumps
-from typing import cast, List, Any, Union, Dict
+from struct import Struct
+from typing import List, Any, Union, Dict
 
 from ..all import objects
+
+_constructor = Struct("<I").unpack
 
 _legacy_objects: Dict[int, str] = {
     0xf2355507: "pyrogram.raw.types.ChannelFull",
@@ -37,7 +40,7 @@ class TLObject:
 
     @classmethod
     def read(cls, b: BytesIO, *args: Any) -> Any:
-        constructor_id = int.from_bytes(b.read(4), "little")
+        constructor_id = _constructor(b.read(4))[0]
 
         try:
             obj_class = objects[constructor_id]
@@ -50,7 +53,10 @@ class TLObject:
             module_path, class_name = path.rsplit(".", 1)
             obj_class = getattr(importlib.import_module(module_path), class_name)
 
-        return cast(TLObject, obj_class).read(b, *args)
+        if args:
+            return obj_class.read(b, *args)
+
+        return obj_class.read(b)
 
     def write(self, *args: Any) -> bytes:
         pass

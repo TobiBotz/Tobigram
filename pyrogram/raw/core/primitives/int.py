@@ -17,17 +17,26 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from io import BytesIO
+from struct import Struct
 from typing import Any
 
 from ..tl_object import TLObject
+
+_int_signed = Struct("<i").unpack
+_int_unsigned = Struct("<I").unpack
+_long_signed = Struct("<q").unpack
+_long_unsigned = Struct("<Q").unpack
 
 
 class Int(bytes, TLObject):
     SIZE = 4
 
-    @classmethod
-    def read(cls, data: BytesIO, signed: bool = True, *args: Any) -> int:
-        return int.from_bytes(data.read(cls.SIZE), "little", signed=signed)
+    @staticmethod
+    def read(data: BytesIO, signed: bool = True, *args: Any) -> int:
+        if signed:
+            return _int_signed(data.read(4))[0]
+
+        return _int_unsigned(data.read(4))[0]
 
     def __new__(cls, value: int, signed: bool = True) -> bytes:  # type: ignore
         return value.to_bytes(cls.SIZE, "little", signed=signed)
@@ -36,10 +45,25 @@ class Int(bytes, TLObject):
 class Long(Int):
     SIZE = 8
 
+    @staticmethod
+    def read(data: BytesIO, signed: bool = True, *args: Any) -> int:
+        if signed:
+            return _long_signed(data.read(8))[0]
+
+        return _long_unsigned(data.read(8))[0]
+
 
 class Int128(Int):
     SIZE = 16
 
+    @staticmethod
+    def read(data: BytesIO, signed: bool = True, *args: Any) -> int:
+        return int.from_bytes(data.read(16), "little", signed=signed)
+
 
 class Int256(Int):
     SIZE = 32
+
+    @staticmethod
+    def read(data: BytesIO, signed: bool = True, *args: Any) -> int:
+        return int.from_bytes(data.read(32), "little", signed=signed)

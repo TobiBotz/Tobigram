@@ -44,14 +44,22 @@ class Vector(bytes, TLObject):
         count = Int.read(data)
 
         if t is not None:
-            return List(t.read(data) for _ in range(count))
+            read = t.read
+            return List([read(data) for _ in range(count)])
 
         pos = data.tell()
         left = data.seek(0, 2) - pos
         data.seek(pos)
         size = (left / count) if count else 0
 
-        return List(Vector.read_bare(data, size) for _ in range(count))
+        if size == 4:
+            read = Int.read
+        elif size == 8:
+            read = Long.read
+        else:
+            read = TLObject.read
+
+        return List([read(data) for _ in range(count)])
 
     def __new__(cls, value: list, t: Any = None) -> bytes:  # type: ignore
         return b"".join(

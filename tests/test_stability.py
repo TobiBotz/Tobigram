@@ -1254,3 +1254,126 @@ def test_len_of_a_raw_object_still_measures_its_wire_size():
     entity = raw.types.MessageEntityBold(offset=0, length=1)
 
     assert len(entity) == len(entity.write())
+
+
+def test_int_primitives_read_the_same_values_as_before():
+    from io import BytesIO
+    from pyrogram.raw.core import Int, Int128, Int256, Long
+
+    cases = [
+        (Int, 4, [0, 1, -1, 2 ** 31 - 1, -(2 ** 31)]),
+        (Long, 8, [0, 1, -1, 2 ** 63 - 1, -(2 ** 63)]),
+        (Int128, 16, [0, 1, 2 ** 127 - 1, -(2 ** 127)]),
+        (Int256, 32, [0, 1, 2 ** 255 - 1, -(2 ** 255)]),
+    ]
+
+    for cls, size, values in cases:
+        for value in values:
+            raw_bytes = value.to_bytes(size, "little", signed=True)
+            assert cls.read(BytesIO(raw_bytes)) == value, (cls, value)
+            assert bytes(cls(value)) == raw_bytes, (cls, value)
+
+
+def test_unsigned_int_primitives_still_work():
+    from io import BytesIO
+    from pyrogram.raw.core import Int, Long
+
+    for cls, size, value in ((Int, 4, 2 ** 32 - 1), (Long, 8, 2 ** 64 - 1)):
+        raw_bytes = value.to_bytes(size, "little")
+        assert cls.read(BytesIO(raw_bytes), False) == value
+        assert cls.read(BytesIO(raw_bytes)) == -1
+
+
+def test_bytes_and_string_primitives_round_trip():
+    from io import BytesIO
+    from pyrogram.raw.core import Bytes, String
+
+    for payload in (b"", b"a", b"x" * 253, b"y" * 254, b"z" * 1000):
+        assert Bytes.read(BytesIO(bytes(Bytes(payload)))) == payload
+
+    for text in ("", "hello", "é中文", "x" * 300):
+        assert String.read(BytesIO(bytes(String(text)))) == text
+
+
+def test_a_string_with_invalid_utf8_is_still_replaced():
+    from io import BytesIO
+    from pyrogram.raw.core import Bytes, String
+
+    assert String.read(BytesIO(bytes(Bytes(b"\xff\xfe")))) == "��"
+
+
+def test_bool_primitive_reads_both_values():
+    from io import BytesIO
+    from pyrogram.raw.core import Bool
+
+    assert Bool.read(BytesIO(bytes(Bool(True)))) is True
+    assert Bool.read(BytesIO(bytes(Bool(False)))) is False
+    assert Bool.read(BytesIO(b"\x00\x00\x00\x00")) is False
+
+
+def test_double_primitive_round_trips():
+    import struct
+    from io import BytesIO
+    from pyrogram.raw.core import Double
+
+    for value in (0.0, 1.5, -3.25, 1e300, -1e-300):
+        assert bytes(Double(value)) == struct.pack("d", value), value
+        assert Double.read(BytesIO(bytes(Double(value)))) == value, value
+
+
+def test_a_typed_vector_reads_every_element():
+    from io import BytesIO
+    from pyrogram.raw.core import Int, Vector
+
+    values = [1, -2, 3, -4]
+    buf = bytes(Int(Vector.ID, False)) + bytes(Int(len(values)))
+    buf += b"".join(bytes(Int(v)) for v in values)
+
+    stream = BytesIO(buf)
+    stream.read(4)
+    assert list(Vector.read(stream, Int)) == values
+
+
+def test_a_bare_vector_of_objects_reads_every_element():
+    from io import BytesIO
+    from pyrogram.raw.core import Int, TLObject, Vector
+
+    items = [raw.types.MessageEntityBold(offset=i, length=1) for i in range(3)]
+    buf = bytes(Int(Vector.ID, False)) + bytes(Int(len(items)))
+    buf += b"".join(i.write() for i in items)
+
+    got = TLObject.read(BytesIO(buf))
+    assert [e.offset for e in got] == [0, 1, 2]
+
+
+def test_tlobject_read_still_forwards_extra_arguments():
+    from io import BytesIO
+    from pyrogram.raw.core import TLObject
+
+    seen = []
+
+    class Probe:
+        @staticmethod
+        def read(b, *args):
+            seen.append(args)
+            return "ok"
+
+    from pyrogram.raw.all import objects
+
+    marker = 0x7E571234
+    objects[marker] = Probe
+    try:
+        buf = marker.to_bytes(4, "little")
+        assert TLObject.read(BytesIO(buf)) == "ok"
+        assert TLObject.read(BytesIO(buf), 1, 2) == "ok"
+        assert seen == [(), (1, 2)]
+    finally:
+        objects.pop(marker, None)
+
+
+def test_an_unknown_constructor_still_raises_key_error():
+    from io import BytesIO
+    from pyrogram.raw.core import TLObject
+
+    with pytest.raises(KeyError):
+        TLObject.read(BytesIO((0x0BADF00D).to_bytes(4, "little")))

@@ -23,9 +23,10 @@ from ..tl_object import TLObject
 
 
 class Bytes(bytes, TLObject):
-    @classmethod
-    def read(cls, data: BytesIO, *args: Any) -> bytes:
-        length = int.from_bytes(data.read(1), "little")
+    @staticmethod
+    def read(data: BytesIO, *args: Any) -> bytes:
+        head = data.read(1)
+        length = head[0] if head else 0
 
         if length <= 253:
             x = data.read(length)

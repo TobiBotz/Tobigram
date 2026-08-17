@@ -22,6 +22,9 @@ from typing import Any
 from ..tl_object import TLObject
 
 
+_true_id = (0x997275B5).to_bytes(4, "little")
+
+
 class BoolFalse(bytes, TLObject):
     ID = 0xBC799737
     value = False
@@ -40,9 +43,9 @@ class BoolTrue(BoolFalse):
 
 
 class Bool(bytes, TLObject):
-    @classmethod
-    def read(cls, data: BytesIO, *args: Any) -> bool:
-        return int.from_bytes(data.read(4), "little") == BoolTrue.ID
+    @staticmethod
+    def read(data: BytesIO, *args: Any) -> bool:
+        return data.read(4) == _true_id
 
     def __new__(cls, value: bool) -> bytes:  # type: ignore
         return BoolTrue() if value else BoolFalse()
