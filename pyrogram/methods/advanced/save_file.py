@@ -82,6 +82,8 @@ class SaveFile:
         Raises:
             RPCError: In case of a Telegram RPC error.
         """
+        from pyrogram.client import ReadAhead
+
         async with self.save_file_semaphore:
             if path is None:
                 return None
@@ -93,34 +95,40 @@ class SaveFile:
                     if data is None:
                         return
 
-                    for attempt in range(MAX_RETRIES):
-                        try:
-                            await session.invoke(
-                                data, timeout=Session.MEDIA_WAIT_TIMEOUT
+                    try:
+                        await _send_part(session, data)
+                    finally:
+                        data = None
+                        budget.release()
+
+            async def _send_part(session, data):
+                for attempt in range(MAX_RETRIES):
+                    try:
+                        await session.invoke(
+                            data, timeout=Session.MEDIA_WAIT_TIMEOUT
+                        )
+                        break
+                    except StopTransmission:
+                        raise
+                    except (OSError, TimeoutError, RPCError, asyncio.TimeoutError) as e:
+                        if attempt == MAX_RETRIES - 1:
+                            log.exception(
+                                "Upload part failed after %d attempts",
+                                MAX_RETRIES,
                             )
-                            data = None
-                            break
-                        except StopTransmission:
                             raise
-                        except (OSError, TimeoutError, RPCError, asyncio.TimeoutError) as e:
-                            if attempt == MAX_RETRIES - 1:
-                                log.exception(
-                                    "Upload part failed after %d attempts",
-                                    MAX_RETRIES,
-                                )
-                                raise
-                            delay = min(2 ** attempt, 30)
-                            err_str = str(e)
-                            if "FLOOD" in err_str:
-                                for part in err_str.split():
-                                    if part.isdigit():
-                                        delay = min(int(part), 300)
-                                        break
-                            log.warning(
-                                "Retrying upload part (attempt %d/%d): %s",
-                                attempt + 1, MAX_RETRIES, err_str[:120],
-                            )
-                            await asyncio.sleep(delay)
+                        delay = min(2 ** attempt, 30)
+                        err_str = str(e)
+                        if "FLOOD" in err_str:
+                            for part in err_str.split():
+                                if part.isdigit():
+                                    delay = min(int(part), 300)
+                                    break
+                        log.warning(
+                            "Retrying upload part (attempt %d/%d): %s",
+                            attempt + 1, MAX_RETRIES, err_str[:120],
+                        )
+                        await asyncio.sleep(delay)
 
             async def read_batch():
                 batch_size = min(PART_SIZE * n_workers, MAX_BATCH)
@@ -179,6 +187,7 @@ class SaveFile:
 
             n_workers = len(pool) * 2
             queue = asyncio.Queue(n_workers)
+            budget = ReadAhead(self.read_ahead_slots)
             workers = [
                 self.loop.create_task(worker(pool[i % len(pool)]))
                 for i in range(n_workers)
@@ -263,6 +272,8 @@ class SaveFile:
                             await asyncio.sleep(_next_dispatch - _now)
                         _next_dispatch = max(time.monotonic(), _next_dispatch) + _dispatch_interval
 
+                        await budget.acquire()
+
                         while True:
                             try:
                                 await asyncio.wait_for(queue.put(rpc), timeout=30)
@@ -336,6 +347,7 @@ class SaveFile:
                     await queue.put(None)
 
                 await asyncio.gather(*workers, return_exceptions=True)
+                budget.release_all()
 
                 if isinstance(path, (str, PurePath)):
                     fp.close()

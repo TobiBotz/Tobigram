@@ -1091,3 +1091,38 @@ async def test_terminating_one_client_leaves_the_shared_pool_alive():
 
     a = pyrogram.Client("pool_c", api_id=1, api_hash="x", in_memory=True)
     assert not a.executor._shutdown
+
+
+async def test_uploads_draw_on_the_shared_budget(tmp_path):
+    from types import SimpleNamespace as NS
+    from .e2e import CHUNK, FakeDC, make_client
+
+    size = 8 * CHUNK
+    path = tmp_path / "u.bin"
+    with open(path, "wb") as handle:
+        handle.truncate(size)
+
+    dc = FakeDC(size, step=0.00002)
+    client = make_client(dc, "upbudget", pool=dc.pool(4))
+    client.me = NS(is_bot=False, is_premium=False)
+    await client.storage.open()
+
+    budget = client.read_ahead_slots
+    before = budget._value
+    low = [before]
+
+    async def watch():
+        while True:
+            low[0] = min(low[0], budget._value)
+            await asyncio.sleep(0)
+
+    watcher = asyncio.ensure_future(watch())
+    await client.save_file(str(path))
+    watcher.cancel()
+    await asyncio.gather(watcher, return_exceptions=True)
+
+    assert low[0] < before, (
+        "uploads never touched the shared budget, so fifteen clients uploading "
+        "at once are bounded only per client"
+    )
+    assert budget._value == before, "the upload gave back fewer slots than it took"
