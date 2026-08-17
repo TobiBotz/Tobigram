@@ -25,6 +25,34 @@ from pyrogram import types
 from ..object import Object
 
 
+_ENTITY_META = {}
+
+_PLAIN = 0
+_MENTION_NAME = 1
+_FORMATTED_DATE = 2
+
+
+def _build_entity_meta(cls):
+    if cls is raw.types.InputMessageEntityMentionName:
+        meta = (_MENTION_NAME, enums.MessageEntityType.TEXT_MENTION,
+                False, False, False, False, False)
+    elif cls is raw.types.MessageEntityFormattedDate:
+        meta = (_FORMATTED_DATE, enums.MessageEntityType.DATE_TIME,
+                False, False, False, False, False)
+    else:
+        slots = set()
+
+        for base in cls.__mro__:
+            slots.update(getattr(base, "__slots__", None) or ())
+
+        meta = (_PLAIN, enums.MessageEntityType(cls),
+                "user_id" in slots, "document_id" in slots, "url" in slots,
+                "language" in slots, "collapsed" in slots)
+
+    _ENTITY_META[cls] = meta
+    return meta
+
+
 class MessageEntity(Object):
     """One special entity in a text message.
 
@@ -93,17 +121,31 @@ class MessageEntity(Object):
 
     @staticmethod
     def _parse(client, entity: "raw.base.MessageEntity", users: dict) -> Optional["MessageEntity"]:
+        cls = entity.__class__
+        meta = _ENTITY_META.get(cls)
+
+        if meta is None:
+            meta = _build_entity_meta(cls)
+
+        kind = meta[0]
+        entity_type = meta[1]
         user_id = None
         unix_time = None
         date_time_format = None
+        custom_emoji_id = None
+        url = None
+        language = None
+        expandable = None
 
-        # Special case for InputMessageEntityMentionName -> MessageEntityType.TEXT_MENTION
-        # This happens in case of UpdateShortSentMessage inside send_message() where entities are parsed from the input
-        if isinstance(entity, raw.types.InputMessageEntityMentionName):
-            entity_type = enums.MessageEntityType.TEXT_MENTION
+        if kind == _PLAIN:
+            user_id = entity.user_id if meta[2] else None
+            custom_emoji_id = entity.document_id if meta[3] else None
+            url = entity.url if meta[4] else None
+            language = entity.language if meta[5] else None
+            expandable = entity.collapsed if meta[6] else None
+        elif kind == _MENTION_NAME:
             user_id = entity.user_id.user_id
-        elif isinstance(entity, raw.types.MessageEntityFormattedDate):
-            entity_type = enums.MessageEntityType.DATE_TIME
+        else:
             unix_time = entity.date
 
             if entity.relative:
@@ -123,21 +165,16 @@ class MessageEntity(Object):
                     date_time_format += "t"
                 elif entity.long_time:
                     date_time_format += "T"
-        else:
-            entity_type = enums.MessageEntityType(entity.__class__)
-            user_id = getattr(entity, "user_id", None)
-
-        custom_emoji_id = getattr(entity, "document_id", None)
 
         return MessageEntity(
             type=entity_type,
             offset=entity.offset,
             length=entity.length,
-            url=getattr(entity, "url", None),
-            user=types.User._parse(client, users.get(user_id, None)),
-            language=getattr(entity, "language", None),
+            url=url,
+            user=types.User._parse(client, users.get(user_id)) if user_id is not None else None,
+            language=language,
             custom_emoji_id=str(custom_emoji_id) if custom_emoji_id else None,
-            expandable=getattr(entity, "collapsed", None),
+            expandable=expandable,
             unix_time=unix_time,
             date_time_format=date_time_format or None,
             client=client

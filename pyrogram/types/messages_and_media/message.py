@@ -1021,8 +1021,14 @@ class Message(Object, Update):
                     users.update({i.id: i for i in r})
 
         from_user = types.User._parse(client, users.get(from_id or peer_id))
-        sender_chat = types.Chat._parse(client, message, users, chats, is_chat=False) if not from_user else None
         chat = types.Chat._parse(client, message, users, chats, is_chat=True)
+
+        if from_user:
+            sender_chat = None
+        elif (from_id or peer_id) == (peer_id or from_id):
+            sender_chat = chat
+        else:
+            sender_chat = types.Chat._parse(client, message, users, chats, is_chat=False)
 
         action = message.action
 
@@ -1522,8 +1528,14 @@ class Message(Object, Update):
                     users.update({i.id: i for i in r})
 
         from_user = types.User._parse(client, users.get(from_id or peer_id))
-        sender_chat = types.Chat._parse(client, message, users, chats, is_chat=False) if not from_user else None
         chat = types.Chat._parse(client, message, users, chats, is_chat=True)
+
+        if from_user:
+            sender_chat = None
+        elif (from_id or peer_id) == (peer_id or from_id):
+            sender_chat = chat
+        else:
+            sender_chat = types.Chat._parse(client, message, users, chats, is_chat=False)
 
         entities = types.List(
             filter(

@@ -1126,3 +1126,131 @@ async def test_uploads_draw_on_the_shared_budget(tmp_path):
         "at once are bounded only per client"
     )
     assert budget._value == before, "the upload gave back fewer slots than it took"
+
+
+def entity_cases():
+    return [
+        (raw.types.MessageEntityBold(offset=1, length=2), "BOLD", {}),
+        (raw.types.MessageEntityItalic(offset=0, length=5), "ITALIC", {}),
+        (
+            raw.types.MessageEntityTextUrl(offset=2, length=3, url="https://x.dev"),
+            "TEXT_LINK",
+            {"url": "https://x.dev"},
+        ),
+        (
+            raw.types.MessageEntityPre(offset=0, length=9, language="python"),
+            "PRE",
+            {"language": "python"},
+        ),
+        (
+            raw.types.MessageEntityCustomEmoji(offset=0, length=1, document_id=99),
+            "CUSTOM_EMOJI",
+            {"custom_emoji_id": "99"},
+        ),
+        (
+            raw.types.MessageEntityBlockquote(offset=0, length=4, collapsed=True),
+            "BLOCKQUOTE",
+            {"expandable": True},
+        ),
+    ]
+
+
+def test_every_entity_kind_parses_to_the_same_fields():
+    from pyrogram import enums, types
+
+    for entity, expected_type, expected in entity_cases():
+        parsed = types.MessageEntity._parse(None, entity, {})
+
+        assert parsed.type is getattr(enums.MessageEntityType, expected_type), entity
+        assert parsed.offset == entity.offset
+        assert parsed.length == entity.length
+
+        for field in ("url", "language", "custom_emoji_id", "expandable"):
+            assert getattr(parsed, field) == expected.get(field), (entity, field)
+
+
+def test_a_mention_entity_still_resolves_its_user():
+    from pyrogram import enums, types
+
+    user = raw.types.User(
+        id=7, is_self=False, contact=False, mutual_contact=False, deleted=False,
+        bot=False, bot_chat_history=False, bot_nochats=False, verified=False,
+        restricted=False, min=False, bot_inline_geo=False, support=False,
+        scam=False, apply_min_photo=False, fake=False, bot_attach_menu=False,
+        premium=False, attach_menu_enabled=False, first_name="m", access_hash=1,
+        usernames=[], restriction_reason=[],
+    )
+    entity = raw.types.MessageEntityMentionName(offset=0, length=2, user_id=7)
+    parsed = types.MessageEntity._parse(None, entity, {7: user})
+
+    assert parsed.type is enums.MessageEntityType.TEXT_MENTION
+    assert parsed.user is not None and parsed.user.id == 7
+
+
+def test_an_input_mention_entity_still_resolves_its_user():
+    from pyrogram import enums, types
+
+    entity = raw.types.InputMessageEntityMentionName(
+        offset=0, length=2, user_id=raw.types.InputUser(user_id=7, access_hash=1)
+    )
+    parsed = types.MessageEntity._parse(None, entity, {})
+
+    assert parsed.type is enums.MessageEntityType.TEXT_MENTION
+    assert parsed.user is None
+
+
+def test_a_formatted_date_entity_keeps_its_format_string():
+    from pyrogram import enums, types
+
+    entity = raw.types.MessageEntityFormattedDate(
+        offset=0, length=1, date=1700000000, relative=False, day_of_week=True,
+        short_date=True, long_date=False, short_time=True, long_time=False,
+    )
+    parsed = types.MessageEntity._parse(None, entity, {})
+
+    assert parsed.type is enums.MessageEntityType.DATE_TIME
+    assert parsed.unix_time == 1700000000
+    assert parsed.date_time_format == "wdt"
+
+
+def test_a_relative_formatted_date_entity_is_marked_relative():
+    from pyrogram import types
+
+    entity = raw.types.MessageEntityFormattedDate(
+        offset=0, length=1, date=1, relative=True, day_of_week=False,
+        short_date=False, long_date=False, short_time=False, long_time=False,
+    )
+    assert types.MessageEntity._parse(None, entity, {}).date_time_format == "r"
+
+
+def test_a_raw_object_is_truthy_without_serialising_itself():
+    from pyrogram.raw.core import TLObject
+
+    calls = []
+
+    class Counting(raw.types.MessageEntityBold):
+        def write(self, *args, **kwargs):
+            calls.append(1)
+            return super().write(*args, **kwargs)
+
+    entity = Counting(offset=0, length=1)
+
+    assert bool(entity) is True
+    assert calls == [], (
+        "truthiness fell back to __len__, which serialises the whole object; "
+        "that runs on every `if message.media:` style check in the codebase"
+    )
+    assert isinstance(TLObject.__bool__(entity), bool)
+
+
+def test_an_empty_raw_list_is_still_falsy():
+    from pyrogram.raw.core import List
+
+    assert not List()
+    assert bool(List([1]))
+
+
+def test_len_of_a_raw_object_still_measures_its_wire_size():
+    entity = raw.types.MessageEntityBold(offset=0, length=1)
+
+    assert len(entity) == len(entity.write())
