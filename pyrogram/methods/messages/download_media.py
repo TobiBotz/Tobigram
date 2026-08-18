@@ -25,6 +25,7 @@ from typing import Union, Optional, Callable, BinaryIO
 log = logging.getLogger(__name__)
 
 import pyrogram
+from pyrogram import utils
 from pyrogram import types
 from pyrogram.file_id import FileId, FileType, PHOTO_TYPES
 
@@ -192,4 +193,4 @@ class DownloadMedia:
                     return await downloader
                 except Exception as e:
                     log.exception("Background download failed: %s", e)
-            asyncio.ensure_future(_run_download())
+            utils.run_in_background(_run_download())

@@ -30,6 +30,7 @@ from typing import Optional
 import warpcrypto
 
 import pyrogram
+from pyrogram import utils
 from pyrogram import raw
 from pyrogram.connection import Connection
 from pyrogram.crypto.executor import get_crypto_executor
@@ -404,7 +405,7 @@ class Session:
                 msg_id = msg.body.msg_id
             else:
                 if self.client is not None:
-                    self.loop.create_task(self._run_update(msg.body))
+                    utils.run_in_background(self._run_update(msg.body), self.loop)
 
             if msg_id in self.results:
                 self.results[msg_id].value = getattr(msg.body, "result", msg.body)

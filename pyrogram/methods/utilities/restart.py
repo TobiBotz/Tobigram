@@ -17,6 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyrogram
+from pyrogram import utils
 
 
 class Restart:
@@ -70,6 +71,6 @@ class Restart:
         if block:
             await do_it()
         else:
-            self.loop.create_task(do_it())
+            utils.run_in_background(do_it(), self.loop)
 
         return self

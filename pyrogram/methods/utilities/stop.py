@@ -19,6 +19,7 @@
 import logging
 
 import pyrogram
+from pyrogram import utils
 
 log = logging.getLogger(__name__)
 
@@ -74,6 +75,6 @@ class Stop:
         if block:
             await do_it()
         else:
-            self.loop.create_task(do_it())
+            utils.run_in_background(do_it(), self.loop)
 
         return self

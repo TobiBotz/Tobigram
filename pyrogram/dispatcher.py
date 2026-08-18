@@ -140,7 +140,7 @@ class Dispatcher:
             CallbackQueryHandler: pyrogram.enums.ListenerTypes.CALLBACK_QUERY,
         }
 
-        self.relief_workers = []
+        self.relief_workers = set()
         self.parked = 0
         self.relief_capped = False
 
@@ -389,7 +389,6 @@ class Dispatcher:
                 log.exception(e)
 
         if not self.client.no_updates:
-            self.relief_workers = [t for t in self.relief_workers if not t.done()]
             self.parked = 0
 
             for i in range(self.client.workers + len(self.relief_workers)):
@@ -407,7 +406,7 @@ class Dispatcher:
                         )
                         break
 
-            for i in self.handler_worker_tasks + self.relief_workers:
+            for i in [*self.handler_worker_tasks, *self.relief_workers]:
                 try:
                     await asyncio.wait_for(i, timeout=10)
                 except asyncio.TimeoutError:
@@ -447,7 +446,7 @@ class Dispatcher:
                     lock.release()
 
         try:
-            asyncio.get_running_loop().create_task(fn())
+            utils.run_in_background(fn(), asyncio.get_running_loop())
         except RuntimeError:
             if group not in self.groups:
                 self.groups[group] = []
@@ -476,7 +475,7 @@ class Dispatcher:
                     lock.release()
 
         try:
-            asyncio.get_running_loop().create_task(fn())
+            utils.run_in_background(fn(), asyncio.get_running_loop())
         except RuntimeError:
             if group in self.groups:
                 self.groups[group].remove(handler)
@@ -505,7 +504,6 @@ class Dispatcher:
             lock = entry[1]
 
         self.parked += 1
-        self.relief_workers = [t for t in self.relief_workers if not t.done()]
 
         if not self.relief_capped and len(self.relief_workers) >= self.client.workers * 4:
             self.relief_capped = True
@@ -516,9 +514,11 @@ class Dispatcher:
                 len(self.relief_workers)
             )
 
-        self.relief_workers.append(
-            self.client.loop.create_task(self.handler_worker(lock, relief=True))
-        )
+        relief = self.client.loop.create_task(self.handler_worker(lock, relief=True))
+
+        # a retiring worker takes itself out, so the set never needs sweeping
+        self.relief_workers.add(relief)
+        relief.add_done_callback(self.relief_workers.discard)
 
         return True
 
@@ -531,10 +531,6 @@ class Dispatcher:
 
         while True:
             if relief and self.parked < len(self.relief_workers):
-                self.relief_workers = [
-                    t for t in self.relief_workers
-                    if not t.done() and t is not asyncio.current_task()
-                ]
                 break
 
             if self.client.rate_limiter is not None and not self.client.rate_limiter.is_closed:
