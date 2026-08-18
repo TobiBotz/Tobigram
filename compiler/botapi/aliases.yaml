@@ -257,6 +257,8 @@ botapi:
       message_effect_id: effect_id
       rich_message: rich_text
       thumbnail: thumb
+    sendDocument:
+      disable_content_type_detection: force_document
     sendVideo:
       cover: video_cover
       start_timestamp: video_start_timestamp
@@ -299,6 +301,18 @@ botapi:
       button: switch_webview_text
 
   method_field_unsupported:
+    unbanChatMember:
+      only_if_banned: >-
+        channels.editBanned has no such flag; MTProto clears the restrictions
+        whether or not the user was banned
+    transferGift:
+      star_count: >-
+        payments.transferStarGift takes no fee argument; the cost is fixed by the
+        gift itself
+    sendSticker:
+      emoji: >-
+        the emoji lives on the sticker document, so it cannot be overridden per
+        send
     sendPoll:
       question_entities: carried by question, which accepts a FormattedText holding the entities and parse mode
       question_parse_mode: carried by question, which accepts a FormattedText holding the entities and parse mode
@@ -468,6 +482,9 @@ mtproto:
       query_id: chat_join_request_query_id
     send_invoice:
       effect: message_effect_id
+    edit_user_star_subscription:
+      restore: is_canceled
+      charge_id: telegram_payment_charge_id
     send_message:
       rich_message: rich_text
     send_chat_join_request_web_app:
@@ -483,8 +500,6 @@ mtproto:
     answer_callback_query:
       query_id: callback_query_id
       alert: show_alert
-    edit_user_star_subscription:
-      charge_id: telegram_payment_charge_id
     delete_business_messages:
       id: message_ids
     delete_ephemeral_message:

@@ -55,7 +55,8 @@ class CopyMessage:
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
-        ]] = None
+        ]] = None,
+        reply_parameters: Optional["types.ReplyParameters"] = None
     ) -> "types.Message":
         """Copy messages of any kind.
 
@@ -144,6 +145,10 @@ class CopyMessage:
             paid_message_star_count (``int``, *optional*):
                 The number of Telegram Stars the user agreed to pay to send the messages.
 
+            reply_parameters (:obj:`~pyrogram.types.ReplyParameters`, *optional*):
+                Description of the message to reply to. Takes precedence over
+                *reply_to_message_id* and the quote arguments.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the copied message is returned.
 
@@ -156,9 +161,7 @@ class CopyMessage:
         """
         message: types.Message = await self.get_messages(from_chat_id, message_id)
 
-        reply_parameters = None
-
-        if reply_to_message_id is not None:
+        if reply_parameters is None and reply_to_message_id is not None:
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id,
                 chat_id=reply_to_chat_id,

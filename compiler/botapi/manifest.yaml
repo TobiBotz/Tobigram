@@ -316,6 +316,8 @@ methods:
     - editChatInviteLink
     - editForumTopic
     - editMessageChecklist
+    - editUserStarSubscription
+    - forwardMessages
     - getAvailableGifts
     - getBusinessAccountGifts
     - getBusinessAccountStarBalance
@@ -346,6 +348,7 @@ methods:
     - sendChecklist
     - sendContact
     - sendDice
+    - sendDocument
     - sendGame
     - sendInvoice
     - sendLocation
@@ -356,6 +359,7 @@ methods:
     - sendPoll
     - sendRichMessage
     - sendRichMessageDraft
+    - sendSticker
     - sendVenue
     - sendVideo
     - sendVideoNote
@@ -369,12 +373,14 @@ methods:
     - setManagedBotAccessSettings
     - stopPoll
     - transferBusinessAccountStars
+    - transferGift
+    - unbanChatMember
     - unpinAllChatMessages
     - unpinChatMessage
     - upgradeGift
   pending:
     copyMessage:
-      botapi: [direct_messages_topic_id, message_effect_id, reply_parameters, suggested_post_parameters]
+      botapi: [direct_messages_topic_id, message_effect_id, suggested_post_parameters]
     createChatInviteLink:
       mtproto: [subscription_pricing]
     createForumTopic:
@@ -389,20 +395,7 @@ methods:
       botapi: [inline_message_id]
     editMessageText:
       botapi: [inline_message_id]
-    editUserStarSubscription:
-      mtproto: [restore]
     exportChatInviteLink:
       mtproto: [subscription_pricing]
-    forwardMessages:
-      botapi: [direct_messages_topic_id]
-      mtproto: [with_my_score]
-    sendDocument:
-      botapi: [disable_content_type_detection]
     sendGift:
       botapi: [text_entities, text_parse_mode]
-    sendSticker:
-      botapi: [emoji]
-    transferGift:
-      botapi: [star_count]
-    unbanChatMember:
-      botapi: [only_if_banned]
