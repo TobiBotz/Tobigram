@@ -309,6 +309,7 @@ methods:
     - deleteAllMessageReactions
     - deleteBusinessMessages
     - deleteChatPhoto
+    - deleteEphemeralMessage
     - deleteForumTopic
     - deleteMessageReaction
     - deleteMessages
@@ -316,9 +317,11 @@ methods:
     - editForumTopic
     - editMessageChecklist
     - getAvailableGifts
+    - getBusinessAccountGifts
     - getBusinessAccountStarBalance
     - getBusinessConnection
     - getChat
+    - getChatGifts
     - getChatMember
     - getChatMenuButton
     - getCustomEmojiStickers
@@ -334,6 +337,7 @@ methods:
     - promoteChatMember
     - refundStarPayment
     - replaceManagedBotToken
+    - restrictChatMember
     - revokeChatInviteLink
     - sendAnimation
     - sendAudio
@@ -343,10 +347,17 @@ methods:
     - sendContact
     - sendDice
     - sendGame
+    - sendInvoice
     - sendLocation
     - sendMediaGroup
+    - sendMessage
+    - sendPaidMedia
     - sendPhoto
+    - sendPoll
+    - sendRichMessage
     - sendRichMessageDraft
+    - sendVenue
+    - sendVideo
     - sendVideoNote
     - sendVoice
     - setChatDescription
@@ -370,8 +381,6 @@ methods:
       mtproto: [send_as, title_missing]
     createInvoiceLink:
       botapi: [business_connection_id]
-    deleteEphemeralMessage:
-      botapi: [ephemeral_message_id]
     editMessageCaption:
       botapi: [inline_message_id]
     editMessageMedia:
@@ -387,35 +396,12 @@ methods:
     forwardMessages:
       botapi: [direct_messages_topic_id]
       mtproto: [with_my_score]
-    getBusinessAccountGifts:
-      botapi: [exclude_from_blockchain, exclude_limited_non_upgradable, exclude_limited_upgradable, exclude_unique]
-      mtproto: [exclude_unique]
-    getChatGifts:
-      botapi: [exclude_from_blockchain, exclude_limited_non_upgradable, exclude_limited_upgradable, exclude_unique]
-      mtproto: [exclude_unique]
-    restrictChatMember:
-      botapi: [use_independent_chat_permissions]
     sendDocument:
       botapi: [disable_content_type_detection]
     sendGift:
-      botapi: [text_entities, text_parse_mode, user_id]
-    sendInvoice:
-      mtproto: [background, clear_draft, effect, quick_reply_shortcut, schedule_date, schedule_repeat_period, send_as, update_stickersets_order]
-    sendMessage:
-      mtproto: [rich_message]
-    sendPaidMedia:
-      botapi: [star_count]
-    sendPoll:
-      botapi: [description_entities, description_parse_mode, media, question_entities, question_parse_mode]
-    sendRichMessage:
-      botapi: [allow_paid_broadcast, direct_messages_topic_id, suggested_post_parameters]
-      mtproto: [allow_paid_floodskip, allow_paid_stars, background, clear_draft, invert_media, quick_reply_shortcut, schedule_repeat_period, send_as, suggested_post, update_stickersets_order]
+      botapi: [text_entities, text_parse_mode]
     sendSticker:
       botapi: [emoji]
-    sendVenue:
-      botapi: [google_place_id, google_place_type]
-    sendVideo:
-      botapi: [cover, start_timestamp]
     transferGift:
       botapi: [star_count]
     unbanChatMember:

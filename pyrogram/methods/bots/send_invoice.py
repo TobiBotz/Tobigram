@@ -17,6 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+from datetime import datetime
 from typing import List, Optional, Union
 
 import pyrogram
@@ -74,6 +75,13 @@ class SendInvoice:
         caption_entities: Optional[List["types.MessageEntity"]] = None,
         business_connection_id: Optional[str] = None,
 
+        background: Optional[bool] = None,
+        clear_draft: Optional[bool] = None,
+        update_stickersets_order: Optional[bool] = None,
+        send_as: Optional[Union[int, str]] = None,
+        quick_reply_shortcut: Optional[int] = None,
+        repeat_period: Optional[int] = None,
+        schedule_date: Optional[datetime] = None,
         reply_to_message_id: Optional[int] = None,
     ) -> "types.Message":
         """Use this method to send invoices.
@@ -193,6 +201,27 @@ class SendInvoice:
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
 
+            background (``bool``, *optional*):
+                Send the message in background.
+
+            clear_draft (``bool``, *optional*):
+                Clear the draft of the chat.
+
+            update_stickersets_order (``bool``, *optional*):
+                Move the sticker set to the top of the list.
+
+            send_as (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the chat or channel to send the message as.
+
+            quick_reply_shortcut (``int``, *optional*):
+                Unique identifier of the quick reply shortcut to use.
+
+            repeat_period (``int``, *optional*):
+                Period in seconds for the message to be sent repeatedly.
+
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                Date when the message will be automatically sent.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent invoice message is returned.
 
@@ -263,6 +292,13 @@ class SendInvoice:
             reply_markup=await reply_markup.write(self) if reply_markup else None,
             effect=message_effect_id,
             suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+            background=background,
+            clear_draft=clear_draft,
+            update_stickersets_order=update_stickersets_order,
+            send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+            quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+            schedule_repeat_period=repeat_period,
+            schedule_date=utils.datetime_to_timestamp(schedule_date),
             **await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
         )
 

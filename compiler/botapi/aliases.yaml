@@ -257,6 +257,27 @@ botapi:
       message_effect_id: effect_id
       rich_message: rich_text
       thumbnail: thumb
+    sendVideo:
+      cover: video_cover
+      start_timestamp: video_start_timestamp
+    sendPaidMedia:
+      star_count: stars_amount
+    sendPoll:
+      media: description_media
+    sendGift:
+      user_id: chat_id
+    deleteEphemeralMessage:
+      ephemeral_message_id: message_id
+    getChatGifts:
+      exclude_unique: exclude_upgraded
+      exclude_limited_upgradable: exclude_upgradable
+      exclude_limited_non_upgradable: exclude_non_upgradable
+      exclude_from_blockchain: exclude_hosted
+    getBusinessAccountGifts:
+      exclude_unique: exclude_upgraded
+      exclude_limited_upgradable: exclude_upgradable
+      exclude_limited_non_upgradable: exclude_non_upgradable
+      exclude_from_blockchain: exclude_hosted
     createForumTopic:
       name: title
       icon_custom_emoji_id: icon_emoji_id
@@ -278,6 +299,20 @@ botapi:
       button: switch_webview_text
 
   method_field_unsupported:
+    sendPoll:
+      question_entities: carried by question, which accepts a FormattedText holding the entities and parse mode
+      question_parse_mode: carried by question, which accepts a FormattedText holding the entities and parse mode
+      description_entities: carried by description, which accepts a FormattedText holding the entities and parse mode
+      description_parse_mode: carried by description, which accepts a FormattedText holding the entities and parse mode
+    sendVenue:
+      google_place_id: >-
+        MTProto keeps one provider-agnostic venue id, sent as foursquare_id
+      google_place_type: >-
+        MTProto keeps one provider-agnostic venue type, sent as foursquare_type
+    restrictChatMember:
+      use_independent_chat_permissions: >-
+        chatBannedRights has no grouping flag, so every permission is always
+        independent
     "*":
       receiver_user_id: >-
         no TL field at layer 228; sending on another user's behalf is a Bot API
@@ -379,10 +414,12 @@ mtproto:
       exclude_unupgradable: exclude_non_upgradable
       sort_by_value: sort_by_price
       peer_color_available: exclude_without_colors
+      exclude_unique: exclude_upgraded
     get_business_account_gifts:
       exclude_unupgradable: exclude_non_upgradable
       sort_by_value: sort_by_price
       peer_color_available: exclude_without_colors
+      exclude_unique: exclude_upgraded
 
     messages.sendMedia:
       message: caption
@@ -429,6 +466,10 @@ mtproto:
       query_id: guest_query_id
     answer_chat_join_request_query:
       query_id: chat_join_request_query_id
+    send_invoice:
+      effect: message_effect_id
+    send_message:
+      rich_message: rich_text
     send_chat_join_request_web_app:
       query_id: chat_join_request_query_id
       result: web_app_url
