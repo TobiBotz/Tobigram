@@ -295,12 +295,22 @@ class Coverage:
     # ----------------------------------------------------------- resolution
 
     def wzgram_type(self, name: str) -> Optional[Symbol]:
-        renamed = ((self.aliases.get("botapi") or {}).get("type_rename") or {}).get(name, name)
+        botapi = self.aliases.get("botapi") or {}
+
+        if name in (botapi.get("type_unsupported") or {}):
+            return None
+
+        renamed = (botapi.get("type_rename") or {}).get(name, name)
 
         return self.types.get(renamed)
 
     def wzgram_method(self, name: str) -> Optional[Symbol]:
-        renamed = ((self.aliases.get("botapi") or {}).get("method_rename") or {}).get(name)
+        botapi = self.aliases.get("botapi") or {}
+
+        if name in (botapi.get("method_unsupported") or {}):
+            return None
+
+        renamed = (botapi.get("method_rename") or {}).get(name)
 
         return self.methods.get(renamed or to_snake_case(name))
 
@@ -396,13 +406,19 @@ class Coverage:
 
         return gaps
 
-    def method_mtproto_gaps(self, method: str) -> Optional[List[str]]:
-        """TL parameters the high-level method does not expose."""
-        symbol = self.methods.get(method)
+    def method_mtproto_gaps(self, name: str) -> Optional[List[str]]:
+        """TL parameters the high-level method does not expose.
+
+        Resolution goes through wzgram_method so both axes agree on what counts
+        as implemented; looking the method up directly would still check one a
+        method_unsupported entry has excluded.
+        """
+        symbol = self.wzgram_method(name)
 
         if symbol is None:
             return None
 
+        method = symbol.name
         have = symbol.params
         mtproto = self.aliases.get("mtproto") or {}
         pinned = (mtproto.get("raw_function") or {}).get(method)
@@ -520,7 +536,7 @@ class Coverage:
         if kind == "types":
             return self.type_gaps(name), None
 
-        return self.method_botapi_gaps(name), self.method_mtproto_gaps(to_snake_case(name))
+        return self.method_botapi_gaps(name), self.method_mtproto_gaps(name)
 
     def _check_entity(self, kind: str, name: str, recorded: Optional[dict]) -> List[Finding]:
         botapi, mtproto = self._gaps_for(kind, name)

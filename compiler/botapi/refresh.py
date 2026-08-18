@@ -22,7 +22,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from coverage import MANIFEST_PATH, SPEC_PATH, Coverage, to_snake_case
+from coverage import MANIFEST_PATH, SPEC_PATH, Coverage
 
 SPEC_URL = (
     "https://raw.githubusercontent.com/PaulSonOfLars/"
@@ -64,7 +64,7 @@ def survey(coverage: Coverage) -> dict:
                 botapi, mtproto = coverage.type_gaps(name), None
             else:
                 botapi = coverage.method_botapi_gaps(name)
-                mtproto = coverage.method_mtproto_gaps(to_snake_case(name))
+                mtproto = coverage.method_mtproto_gaps(name)
 
             if botapi is None and mtproto is None:
                 continue

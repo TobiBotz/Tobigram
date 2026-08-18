@@ -94,3 +94,18 @@ def test_the_docstring_axis_actually_reads_docstrings():
         "pass without checking anything"
     )
     assert "text" in documented_params(symbol.doc)
+
+
+def test_unsupported_entries_are_kept_out_of_the_manifest():
+    aliases = COVERAGE.aliases.get("botapi") or {}
+    declared = set(aliases.get("type_unsupported") or {}) | set(
+        aliases.get("method_unsupported") or {}
+    )
+    tracked = set(entities("types")) | set(entities("methods"))
+
+    assert declared, "aliases.yaml should declare the Bot API surface MTProto lacks"
+    assert not declared & tracked, (
+        "these are declared unsupported but still surveyed, so the reason "
+        "recorded against them does nothing: "
+        + ", ".join(sorted(declared & tracked))
+    )
