@@ -67,6 +67,7 @@ botapi:
     Video:
       cover: video_cover
       start_timestamp: video_start_timestamp
+      qualities: alternative_videos
     InputMediaVideo:
       cover: video_cover
       start_timestamp: video_start_timestamp
@@ -83,6 +84,37 @@ botapi:
       user_chat_id: user
     ChatShared:
       chat_id: chat
+    InputRichBlockPhoto:
+      photo: photo_id
+    InputRichBlockVideo:
+      video: video_id
+    InputRichBlockAudio:
+      audio: audio_id
+    InputRichBlockAnimation:
+      animation: video_id
+    InputRichBlockVoiceNote:
+      voice_note: audio_id
+    InputRichBlockCollage:
+      blocks: items
+    InputRichBlockSlideshow:
+      blocks: items
+    InputRichBlockListItem:
+      value: text
+    InputRichBlockTable:
+      is_bordered: bordered
+      is_striped: striped
+      caption: title
+      cells: rows
+    InputRichBlockMap:
+      height: h
+      width: w
+      location: geo
+    Poll:
+      media: description_media
+    PollOptionAdded:
+      option_text: text
+    PollOptionDeleted:
+      option_text: text
     Giveaway:
       country_codes: only_for_countries
       has_public_winners: winners_are_visible
@@ -146,6 +178,38 @@ botapi:
       personal_chat: personal_channel
 
   field_unsupported:
+    SuggestedPostPrice:
+      amount: >-
+        wzgram keeps one class per currency, SuggestedPostPriceStar and
+        SuggestedPostPriceTon, each with its own amount
+      currency: implied by the class, SuggestedPostPriceStar or SuggestedPostPriceTon
+    ChatBoost:
+      source: >-
+        the boost origin is flattened into is_gift, is_giveaway and from_user
+    SuggestedPostPaid:
+      currency: >-
+        implied by which amount is set, star_amount for Stars and amount for TON
+    ChecklistTask:
+      completed_by_chat: completed_by carries whoever completed the task
+      completed_by_user: completed_by carries whoever completed the task
+    Venue:
+      google_place_id: >-
+        MTProto keeps one provider-agnostic venue id, surfaced as foursquare_id
+      google_place_type: >-
+        MTProto keeps one provider-agnostic venue type, surfaced as foursquare_type
+    Poll:
+      question_entities: carried by question, which is a FormattedText and holds the entities
+      description_entities: carried by description, which is a FormattedText and holds the entities
+      explanation_entities: carried by explanation, which is a FormattedText and holds the entities
+    PollOption:
+      text_entities: carried by text, which is a FormattedText and holds the entities
+    InputPollOption:
+      text_entities: carried by text, which is a FormattedText and holds the entities
+      text_parse_mode: text accepts a FormattedText, which carries the parse mode
+    PollOptionAdded:
+      option_text_entities: carried by text, which is a FormattedText and holds the entities
+    PollOptionDeleted:
+      option_text_entities: carried by text, which is a FormattedText and holds the entities
     InputMediaPhoto:
       show_caption_above_media: >-
         inputSingleMedia has no invert_media flag, so MTProto places the caption

@@ -35,6 +35,7 @@ types:
     - Chat
     - ChatAdministratorRights
     - ChatBackground
+    - ChatBoost
     - ChatBoostUpdated
     - ChatJoinRequest
     - ChatLocation
@@ -45,6 +46,7 @@ types:
     - ChatPhoto
     - ChatShared
     - Checklist
+    - ChecklistTask
     - ChecklistTasksAdded
     - ChecklistTasksDone
     - ChosenInlineResult
@@ -95,6 +97,7 @@ types:
     - InputMedia
     - InputMediaAnimation
     - InputMediaAudio
+    - InputMediaDocument
     - InputMediaLink
     - InputMediaLivePhoto
     - InputMediaLocation
@@ -105,20 +108,30 @@ types:
     - InputMediaVoiceNote
     - InputMessageContent
     - InputPollMedia
+    - InputPollOption
     - InputPollOptionMedia
     - InputRichBlock
     - InputRichBlockAnchor
+    - InputRichBlockAnimation
+    - InputRichBlockAudio
     - InputRichBlockBlockQuotation
+    - InputRichBlockCollage
     - InputRichBlockDetails
     - InputRichBlockDivider
     - InputRichBlockFooter
     - InputRichBlockList
+    - InputRichBlockMap
     - InputRichBlockMathematicalExpression
     - InputRichBlockParagraph
+    - InputRichBlockPhoto
     - InputRichBlockPreformatted
     - InputRichBlockPullQuotation
     - InputRichBlockSectionHeading
+    - InputRichBlockSlideshow
+    - InputRichBlockTable
     - InputRichBlockThinking
+    - InputRichBlockVideo
+    - InputRichBlockVoiceNote
     - InputRichMessage
     - InputRichMessageContent
     - InputTextMessageContent
@@ -155,6 +168,10 @@ types:
     - PaidMediaPreview
     - PaidMessagePriceChanged
     - PhotoSize
+    - Poll
+    - PollOption
+    - PollOptionAdded
+    - PollOptionDeleted
     - PreCheckoutQuery
     - ProximityAlertTriggered
     - ReactionType
@@ -227,13 +244,17 @@ types:
     - SuggestedPostApproved
     - SuggestedPostDeclined
     - SuggestedPostInfo
+    - SuggestedPostPaid
     - SuggestedPostParameters
+    - SuggestedPostPrice
     - SuggestedPostRefunded
     - SwitchInlineQueryChosenChat
     - TextQuote
     - User
     - UserRating
     - UsersShared
+    - Venue
+    - Video
     - VideoChatEnded
     - VideoChatScheduled
     - VideoChatStarted
@@ -245,16 +266,12 @@ types:
   pending:
     BusinessBotRights:
       botapi: [can_convert_gifts_to_stars]
-    ChatBoost:
-      botapi: [source]
     ChatFullInfo:
       botapi: [community]
     ChatInviteLink:
       botapi: [subscription_period, subscription_price]
     ChatMemberUpdated:
       botapi: [via_chat_folder_invite_link]
-    ChecklistTask:
-      botapi: [completed_by_chat, completed_by_user]
     ExternalReplyInfo:
       botapi: [live_photo]
     ForumTopic:
@@ -265,50 +282,12 @@ types:
       botapi: [text, text_entities]
     Gift:
       botapi: [background, personal_remaining_count, personal_total_count, remaining_count, total_count]
-    InputMediaDocument:
-      botapi: [disable_content_type_detection]
-    InputPollOption:
-      botapi: [text_entities, text_parse_mode]
-    InputRichBlockAnimation:
-      botapi: [animation]
-    InputRichBlockAudio:
-      botapi: [audio]
-    InputRichBlockCollage:
-      botapi: [blocks]
     InputRichBlockListItem:
-      botapi: [has_checkbox, is_checked, value]
-    InputRichBlockMap:
-      botapi: [height, location, width]
-    InputRichBlockPhoto:
-      botapi: [photo]
-    InputRichBlockSlideshow:
-      botapi: [blocks]
-    InputRichBlockTable:
-      botapi: [caption, cells, is_bordered, is_striped]
-    InputRichBlockVideo:
-      botapi: [video]
-    InputRichBlockVoiceNote:
-      botapi: [voice_note]
+      botapi: [has_checkbox, is_checked]
     InputRichMessageMedia:
       botapi: [id, media]
     LivePhoto:
       botapi: [photo]
-    Poll:
-      botapi: [description_entities, explanation_entities, media, question_entities]
-    PollOption:
-      botapi: [text_entities]
-    PollOptionAdded:
-      botapi: [option_text, option_text_entities]
-    PollOptionDeleted:
-      botapi: [option_text, option_text_entities]
-    SuggestedPostPaid:
-      botapi: [currency]
-    SuggestedPostPrice:
-      botapi: [amount, currency]
-    Venue:
-      botapi: [google_place_id, google_place_type]
-    Video:
-      botapi: [qualities]
 
 methods:
   supported:

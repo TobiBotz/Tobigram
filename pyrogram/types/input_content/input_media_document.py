@@ -58,6 +58,11 @@ class InputMediaDocument(InputMedia):
         caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
             List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
 
+        disable_content_type_detection (``bool``, *optional*):
+            Pass True to disable automatic server-side content type detection for
+            files uploaded from the local machine. Defaults to True, which keeps
+            the historical behaviour of always sending as a file.
+
         file_name (``str``, *optional*):
             File name of the document sent.
             Defaults to file's path basename.
@@ -70,12 +75,14 @@ class InputMediaDocument(InputMedia):
         caption: str = "",
         parse_mode: Optional["enums.ParseMode"] = None,
         caption_entities: Optional[List[MessageEntity]] = None,
-        file_name: Optional[str] = None
+        file_name: Optional[str] = None,
+        disable_content_type_detection: Optional[bool] = None
     ):
         super().__init__(media, caption, parse_mode, caption_entities)
 
         self.thumb = thumb
         self.file_name = file_name
+        self.disable_content_type_detection = disable_content_type_detection
 
     async def write(
         self,
@@ -100,7 +107,10 @@ class InputMediaDocument(InputMedia):
                         file=await client.save_file(
                             self.media, progress=progress, progress_args=progress_args
                         ),
-                        force_file=True,
+                        force_file=(
+                            True if self.disable_content_type_detection is None
+                            else self.disable_content_type_detection
+                        ),
                         thumb=await client.save_file(self.thumb),
                         attributes=[
                             raw.types.DocumentAttributeFilename(
