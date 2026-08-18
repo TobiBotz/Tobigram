@@ -666,6 +666,8 @@ def pyrogram_api():
             ChatPhoto
             ChatMember
             ChatPermissions
+            ChatPrivileges
+            ChatLocation
             ChatInviteLink
             ChatAdminWithInviteLinks
             ChatEvent
@@ -929,6 +931,8 @@ def pyrogram_api():
             ReplyKeyboardRemove
             InlineKeyboardMarkup
             InlineKeyboardButton
+            CopyTextButton
+            SwitchInlineQueryChosenChat
             LoginUrl
             ForceReply
             CallbackQuery

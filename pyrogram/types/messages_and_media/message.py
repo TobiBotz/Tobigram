@@ -8761,6 +8761,9 @@ class Message(Object, Update):
         business_connection_id: Optional[str] = None,
         allow_paid_broadcast: Optional[bool] = None,
         paid_message_star_count: Optional[int] = None,
+        direct_messages_topic_id: Optional[int] = None,
+        effect_id: Optional[int] = None,
+        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
         reply_markup: Optional[Union[
             "types.InlineKeyboardMarkup",
             "types.ReplyKeyboardMarkup",
@@ -8855,6 +8858,15 @@ class Message(Object, Update):
             quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 Special entities like usernames, URLs, bot commands, etc. that appear in the quote text.
 
+            direct_messages_topic_id (``int``, *optional*):
+                Unique identifier of the direct messages topic to copy into.
+
+            effect_id (``int``, *optional*):
+                Unique identifier of the message effect to add to the message.
+
+            suggested_post_parameters (:obj:`~pyrogram.types.SuggestedPostParameters`, *optional*):
+                Parameters of the suggested post.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the copied message is returned.
 
@@ -8893,6 +8905,9 @@ class Message(Object, Update):
                 business_connection_id=business_connection_id,
                 allow_paid_broadcast=allow_paid_broadcast,
                 paid_message_star_count=paid_message_star_count,
+                direct_messages_topic_id=direct_messages_topic_id,
+                effect_id=effect_id,
+                suggested_post_parameters=suggested_post_parameters,
                 reply_markup=self.reply_markup if reply_markup is object else reply_markup
             )
         elif self.media:
@@ -8914,6 +8929,8 @@ class Message(Object, Update):
                 business_connection_id=business_connection_id,
                 allow_paid_broadcast=allow_paid_broadcast,
                 paid_message_star_count=paid_message_star_count,
+                direct_messages_topic_id=direct_messages_topic_id,
+                suggested_post_parameters=suggested_post_parameters,
                 reply_markup=self.reply_markup if reply_markup is object else reply_markup
             )
 
@@ -8943,6 +8960,8 @@ class Message(Object, Update):
                     protect_content=self.has_protected_content if protect_content is None else protect_content,
                     allow_paid_broadcast=allow_paid_broadcast,
                     paid_message_star_count=paid_message_star_count,
+                    direct_messages_topic_id=direct_messages_topic_id,
+                    suggested_post_parameters=suggested_post_parameters,
                     reply_parameters=reply_parameters,
                     reply_markup=self.reply_markup if reply_markup is object else reply_markup,
                     video_cover=video_cover if video_cover is not None else self.video.video_cover.file_id if self.video.video_cover else None,
@@ -8970,6 +8989,9 @@ class Message(Object, Update):
                     schedule_date=schedule_date,
                     allow_paid_broadcast=allow_paid_broadcast,
                     paid_message_star_count=paid_message_star_count,
+                    direct_messages_topic_id=direct_messages_topic_id,
+                    effect_id=effect_id,
+                    suggested_post_parameters=suggested_post_parameters,
                     business_connection_id=business_connection_id
                 )
             elif self.location:
@@ -8983,6 +9005,9 @@ class Message(Object, Update):
                     schedule_date=schedule_date,
                     allow_paid_broadcast=allow_paid_broadcast,
                     paid_message_star_count=paid_message_star_count,
+                    direct_messages_topic_id=direct_messages_topic_id,
+                    effect_id=effect_id,
+                    suggested_post_parameters=suggested_post_parameters,
                     business_connection_id=business_connection_id
                 )
             elif self.venue:
@@ -9000,6 +9025,9 @@ class Message(Object, Update):
                     schedule_date=schedule_date,
                     allow_paid_broadcast=allow_paid_broadcast,
                     paid_message_star_count=paid_message_star_count,
+                    direct_messages_topic_id=direct_messages_topic_id,
+                    effect_id=effect_id,
+                    suggested_post_parameters=suggested_post_parameters,
                     business_connection_id=business_connection_id
                 )
             elif self.poll:
@@ -9025,6 +9053,9 @@ class Message(Object, Update):
                     schedule_date=schedule_date,
                     allow_paid_broadcast=allow_paid_broadcast,
                     paid_message_star_count=paid_message_star_count,
+                    direct_messages_topic_id=direct_messages_topic_id,
+                    effect_id=effect_id,
+                    suggested_post_parameters=suggested_post_parameters,
                 )
             elif self.game:
                 return await self._client.send_game(

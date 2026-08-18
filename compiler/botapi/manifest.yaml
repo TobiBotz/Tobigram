@@ -303,6 +303,7 @@ methods:
     - close
     - closeForumTopic
     - convertGiftToStars
+    - copyMessage
     - createChatInviteLink
     - createForumTopic
     - createInvoiceLink
@@ -387,5 +388,4 @@ methods:
     - unpinChatMessage
     - upgradeGift
   pending:
-    copyMessage:
-      botapi: [direct_messages_topic_id, message_effect_id, suggested_post_parameters]
+    {}

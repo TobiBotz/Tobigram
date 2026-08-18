@@ -56,7 +56,10 @@ class CopyMessage:
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
         ]] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None
+        reply_parameters: Optional["types.ReplyParameters"] = None,
+        direct_messages_topic_id: Optional[int] = None,
+        message_effect_id: Optional[int] = None,
+        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None
     ) -> "types.Message":
         """Copy messages of any kind.
 
@@ -149,6 +152,15 @@ class CopyMessage:
                 Description of the message to reply to. Takes precedence over
                 *reply_to_message_id* and the quote arguments.
 
+            direct_messages_topic_id (``int``, *optional*):
+                Unique identifier of the direct messages topic to copy into.
+
+            message_effect_id (``int``, *optional*):
+                Unique identifier of the message effect to add to the message.
+
+            suggested_post_parameters (:obj:`~pyrogram.types.SuggestedPostParameters`, *optional*):
+                Parameters of the suggested post.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the copied message is returned.
 
@@ -186,5 +198,8 @@ class CopyMessage:
             business_connection_id=business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
+            direct_messages_topic_id=direct_messages_topic_id,
+            effect_id=message_effect_id,
+            suggested_post_parameters=suggested_post_parameters,
             reply_markup=reply_markup
         )

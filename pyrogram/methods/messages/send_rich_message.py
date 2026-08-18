@@ -123,13 +123,15 @@ class SendRichMessage:
                 # Send a rich formatted message
                 await app.send_rich_message(chat_id, "<b>Hello</b> <i>world</i>!")
         """
-        if parse_mode == enums.ParseMode.HTML or parse_mode is None:
-            rich_message = raw.types.InputRichMessageHTML(
-                html=rich_text,
-            )
-        else:
+        parse_mode = parse_mode or self.parse_mode
+
+        if parse_mode == enums.ParseMode.MARKDOWN:
             rich_message = raw.types.InputRichMessageMarkdown(
                 markdown=rich_text,
+            )
+        else:
+            rich_message = raw.types.InputRichMessageHTML(
+                html=rich_text,
             )
 
         r = await self.invoke(
