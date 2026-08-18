@@ -12,6 +12,7 @@ class CustomBuildHook(BuildHookInterface):
             "compiler/api/compiler.py",
             "compiler/errors/compiler.py",
             "compiler/methods/compiler.py",
+            "compiler/botapi/compiler.py",
         ]
         for rel in compilers:
             compiler_path = root / rel

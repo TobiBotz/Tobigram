@@ -1,0 +1,88 @@
+# Bot API and MTProto name reconciliation.
+#
+# rename:      the spec calls it X, wzgram calls it Y
+# unsupported: the spec has it, wzgram deliberately does not, with the reason
+#
+# Lookup order is entity, then raw function (MTProto only), then "*".
+
+botapi:
+  type_rename:
+    PhotoSize: Thumbnail
+
+  type_unsupported:
+    Update: MTProto pushes parsed updates straight to handlers; there is no Update object
+    WebhookInfo: webhooks are a Bot API transport and do not exist over MTProto
+    MessageId: send_* return a full Message, not a bare identifier
+    InaccessibleMessage: MTProto always delivers the message itself
+    MaybeInaccessibleMessage: union of Message and InaccessibleMessage, neither modelled
+    ResponseParameters: MTProto surfaces these as typed RPCError subclasses
+
+  method_rename: {}
+
+  method_unsupported:
+    getUpdates: long polling is a Bot API transport; MTProto pushes updates
+    setWebhook: webhooks do not exist over MTProto
+    deleteWebhook: webhooks do not exist over MTProto
+    getWebhookInfo: webhooks do not exist over MTProto
+
+  field_rename:
+    "*":
+      from: from_user
+      thumbnail: thumbs
+    Message:
+      message_id: id
+    MessageEntity:
+      is_expandable: expandable
+
+  field_unsupported:
+    "*":
+      type: >-
+        Bot API discriminates union members with a type string; wzgram uses a
+        distinct class per member, or an enum, so there is nothing to carry
+
+  method_field_rename:
+    "*":
+      message_effect_id: effect_id
+      rich_message: rich_text
+
+  method_field_unsupported: {}
+
+mtproto:
+  internal:
+    - flags
+    - flags2
+    - random_id
+    - hash
+
+  raw_function: {}
+
+  field_rename:
+    "*":
+      peer: chat_id
+      message: text
+      silent: disable_notification
+      no_webpage: disable_web_page_preview
+      noforwards: protect_content
+      invert_media: show_caption_above_media
+      allow_paid_floodskip: allow_paid_broadcast
+      reply_to: reply_parameters
+      reply_to_msg_id: reply_to_message_id
+      top_msg_id: message_thread_id
+      effect: effect_id
+      allow_paid_stars: paid_message_star_count
+      schedule_repeat_period: repeat_period
+      suggested_post: suggested_post_parameters
+
+    messages.sendMedia:
+      message: caption
+      entities: caption_entities
+
+    messages.sendMultiMedia:
+      message: caption
+      entities: caption_entities
+
+  field_unsupported:
+    messages.sendMedia:
+      media: the sending method builds the media from its own arguments
+    messages.sendMultiMedia:
+      multi_media: the sending method builds the media from its own arguments

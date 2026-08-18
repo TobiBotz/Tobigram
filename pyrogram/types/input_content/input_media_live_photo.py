@@ -64,6 +64,9 @@ class InputMediaLivePhoto(InputMedia):
 
         has_spoiler (``bool``, *optional*):
             Pass True if the photo needs to be covered with a spoiler animation.
+
+        thumb (``str``, *optional*):
+            Thumbnail of the live photo.
     """
 
     def __init__(

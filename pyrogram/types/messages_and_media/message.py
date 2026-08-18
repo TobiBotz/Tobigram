@@ -639,6 +639,18 @@ class Message(Object, Update):
 
         content (``str``, *property*):
             The text or caption content of the message.
+
+        community_chat_added (:obj:`~pyrogram.types.CommunityChatAdded`, *optional*):
+            Service message: a chat was added to the community.
+
+        community_chat_removed (:obj:`~pyrogram.types.CommunityChatRemoved`, *optional*):
+            Service message: a chat was removed from the community.
+
+        scheduled (``bool``, *optional*):
+            True, if the message is a scheduled message that has not been sent yet.
+
+        from_scheduled (``bool``, *optional*):
+            True, if the message was sent by a scheduled message that has now fired.
     """
     # TODO: Migrate media-related params into a MessageContent class (breaking change)
     def __init__(

@@ -74,6 +74,9 @@ class InlineQueryResultAnimation(InlineQueryResult):
 
         input_message_content (:obj:`~pyrogram.types.InputMessageContent`):
             Content of the message to be sent instead of the photo.
+
+        description (``str``, *optional*):
+            Short description of the result.
     """
 
     def __init__(

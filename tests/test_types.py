@@ -4,7 +4,7 @@ from unittest.mock import Mock
 import pytest
 
 import pyrogram
-from pyrogram import enums, types
+from pyrogram import enums, raw, types
 from pyrogram.types import Object
 from pyrogram.types.messages_and_media.message import Str as MessageStr
 from pyrogram.types.user_and_chats.user import Link as UserLink
@@ -833,3 +833,135 @@ class TestCommunity:
     def test_community_chat_removed(self):
         removed = types.CommunityChatRemoved()
         assert removed.community_id is None
+
+
+class TestKeyboardButtonRequests:
+    """The request_* buttons must survive a write/read round trip.
+
+    Their types were exported long before KeyboardButton could carry them, so a
+    constructor argument that never reaches the wire looks correct from the
+    outside.
+    """
+
+    def test_request_users_round_trips(self):
+        button = types.KeyboardButton(
+            text="Pick users",
+            request_users=types.KeyboardButtonRequestUsers(
+                button_id=7,
+                user_is_bot=False,
+                user_is_premium=True,
+                max_quantity=3,
+                request_name=True,
+                request_username=True
+            )
+        )
+
+        raw_button = button.write()
+
+        assert isinstance(raw_button.peer_type, raw.types.RequestPeerTypeUser)
+        assert raw_button.button_id == 7
+        assert raw_button.max_quantity == 3
+
+        parsed = types.KeyboardButton.read(raw_button)
+
+        assert parsed.request_users.button_id == 7
+        assert parsed.request_users.user_is_premium is True
+        assert parsed.request_users.max_quantity == 3
+        assert parsed.request_users.request_name is True
+
+    def test_request_chat_round_trips_a_channel(self):
+        button = types.KeyboardButton(
+            text="Pick a channel",
+            request_chat=types.KeyboardButtonRequestChat(
+                button_id=9,
+                chat_is_channel=True,
+                chat_is_created=True,
+                user_administrator_rights=types.ChatAdministratorRights(
+                    can_post_messages=True
+                )
+            )
+        )
+
+        raw_button = button.write()
+
+        assert isinstance(raw_button.peer_type, raw.types.RequestPeerTypeBroadcast)
+
+        parsed = types.KeyboardButton.read(raw_button)
+
+        assert parsed.request_chat.chat_is_channel is True
+        assert parsed.request_chat.chat_is_created is True
+        assert parsed.request_chat.user_administrator_rights.can_post_messages is True
+
+    def test_request_chat_round_trips_a_group(self):
+        button = types.KeyboardButton(
+            text="Pick a group",
+            request_chat=types.KeyboardButtonRequestChat(
+                button_id=1,
+                chat_is_channel=False,
+                bot_is_member=True
+            )
+        )
+
+        raw_button = button.write()
+
+        assert isinstance(raw_button.peer_type, raw.types.RequestPeerTypeChat)
+        assert types.KeyboardButton.read(raw_button).request_chat.bot_is_member is True
+
+    def test_request_poll_round_trips(self):
+        button = types.KeyboardButton(
+            text="Make a quiz",
+            request_poll=types.KeyboardButtonPollType(is_quiz=True)
+        )
+
+        raw_button = button.write()
+
+        assert isinstance(raw_button, raw.types.KeyboardButtonRequestPoll)
+        assert types.KeyboardButton.read(raw_button).request_poll.is_quiz is True
+
+    def test_request_managed_bot_round_trips(self):
+        button = types.KeyboardButton(
+            text="New bot",
+            request_managed_bot=types.KeyboardButtonRequestManagedBot(
+                button_id=1,
+                suggested_name="Name",
+                suggested_username="username"
+            )
+        )
+
+        raw_button = button.write()
+
+        assert isinstance(raw_button.peer_type, raw.types.RequestPeerTypeCreateBot)
+
+        parsed = types.KeyboardButton.read(raw_button)
+
+        assert parsed.request_managed_bot.suggested_username == "username"
+
+    def test_style_and_icon_round_trip(self):
+        button = types.KeyboardButton(
+            text="Danger",
+            style=enums.ButtonStyle.DANGER,
+            icon_custom_emoji_id="5555"
+        )
+
+        raw_button = button.write()
+
+        assert raw_button.style.bg_danger is True
+
+        parsed = types.KeyboardButton.read(raw_button)
+
+        assert parsed.style == enums.ButtonStyle.DANGER
+        assert parsed.icon_custom_emoji_id == "5555"
+
+    def test_a_plain_button_still_reads_back_as_text(self):
+        assert types.KeyboardButton.read(raw.types.KeyboardButton(text="hi")) == "hi", (
+            "ReplyKeyboardMarkup relies on plain buttons collapsing to a string"
+        )
+
+    def test_contact_and_location_are_unchanged(self):
+        contact = types.KeyboardButton(text="c", request_contact=True)
+        location = types.KeyboardButton(text="l", request_location=True)
+
+        assert isinstance(contact.write(), raw.types.KeyboardButtonRequestPhone)
+        assert isinstance(location.write(), raw.types.KeyboardButtonRequestGeoLocation)
+        assert types.KeyboardButton.read(contact.write()).request_contact is True
+        assert types.KeyboardButton.read(location.write()).request_location is True

@@ -42,6 +42,9 @@ class InputTextMessageContent(InputMessageContent):
 
         link_preview_options (:obj:`~pyrogram.types.LinkPreviewOptions`, *optional*):
             Options used for link preview generation for the message.
+
+        disable_web_page_preview (``bool``, *optional*):
+            True, if link previews should be disabled for this message.
     """
 
     def __init__(

@@ -97,6 +97,9 @@ class MediaArea(Object):
 
         gift (:obj:`~pyrogram.types.Gift`, *optional*):
             Information about this gift.
+
+        venue (:obj:`~pyrogram.types.Venue`, *optional*):
+            Venue the area points at.
     """
 
     def __init__(

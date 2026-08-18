@@ -91,6 +91,10 @@ class ChatPermissions(Object):
 
         can_manage_linked_peers (``bool``, *optional*):
             True, if the user is allowed to manage linked peers (communities).
+
+        can_send_media_messages (``bool``, *optional*):
+            Deprecated. Kept for backwards compatibility; setting it applies to
+            every individual media permission at once.
     """
 
     def __init__(
