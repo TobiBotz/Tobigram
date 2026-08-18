@@ -160,3 +160,82 @@ def test_an_alias_target_is_populated_from_raw_data(entity, spec_field, target):
         f"{entity}.{spec_field} is aliased to {target}, but nothing fills "
         f"{target} from raw data and nothing ever reads it, so it is always None"
     )
+
+
+def test_no_exclusion_masks_a_field_that_exists():
+    """An exclusion must only ever cover a field wzgram genuinely lacks.
+
+    Presence is checked before the unsupported table, so a field that is present
+    counts as satisfied and stays checked. Letting the exclusion win first would
+    mean removing Chat.type went unnoticed, since `type` is excluded globally for
+    the union members that have no such field.
+    """
+    aliases = COVERAGE.aliases.get("botapi") or {}
+    masked = []
+
+    for table, resolve in (
+        ("field_unsupported", COVERAGE.wzgram_type),
+        ("method_field_unsupported", COVERAGE.wzgram_method),
+    ):
+        for entity, fields in (aliases.get(table) or {}).items():
+            if entity == "*":
+                continue
+
+            symbol = resolve(entity)
+
+            if symbol is None:
+                continue
+
+            for field in fields:
+                gaps = (
+                    COVERAGE.type_gaps(entity)
+                    if resolve is COVERAGE.wzgram_type
+                    else COVERAGE.method_botapi_gaps(entity)
+                )
+
+                if gaps is not None and field not in gaps and field in symbol.params:
+                    masked.append(f"{entity}.{field}")
+
+    assert not masked, (
+        "these are excluded yet present, so the exclusion is doing the work "
+        "instead of the field: " + ", ".join(sorted(masked))
+    )
+
+
+def test_every_exclusion_carries_a_reason():
+    aliases = COVERAGE.aliases.get("botapi") or {}
+    blank = []
+
+    for table in ("type_unsupported", "method_unsupported"):
+        blank += [
+            f"{table}.{name}"
+            for name, reason in (aliases.get(table) or {}).items()
+            if not str(reason).strip()
+        ]
+
+    for table in ("field_unsupported", "method_field_unsupported"):
+        for entity, fields in (aliases.get(table) or {}).items():
+            blank += [
+                f"{entity}.{field}"
+                for field, reason in fields.items()
+                if not str(reason).strip()
+            ]
+
+    assert not blank, "excluded without saying why: " + ", ".join(sorted(blank))
+
+
+def test_no_rename_points_at_itself():
+    tables = [
+        (COVERAGE.aliases.get("botapi") or {}).get("field_rename") or {},
+        (COVERAGE.aliases.get("botapi") or {}).get("method_field_rename") or {},
+        (COVERAGE.aliases.get("mtproto") or {}).get("field_rename") or {},
+    ]
+    pointless = [
+        f"{entity}.{source}"
+        for table in tables
+        for entity, mapping in table.items()
+        for source, target in mapping.items()
+        if source == target
+    ]
+
+    assert not pointless, "renamed to itself: " + ", ".join(sorted(pointless))

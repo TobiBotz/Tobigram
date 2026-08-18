@@ -192,8 +192,39 @@ botapi:
     "*":
       message_effect_id: effect_id
       rich_message: rich_text
+      thumbnail: thumb
+    createForumTopic:
+      name: title
+      icon_custom_emoji_id: icon_emoji_id
+    editForumTopic:
+      name: title
+      icon_custom_emoji_id: icon_emoji_id
+      message_thread_id: topic_id
+    closeForumTopic:
+      message_thread_id: topic_id
+    deleteForumTopic:
+      message_thread_id: topic_id
+    reopenForumTopic:
+      message_thread_id: topic_id
+    unpinAllForumTopicMessages:
+      message_thread_id: topic_id
+    sendChatAction:
+      message_thread_id: top_msg_id
+    answerInlineQuery:
+      button: switch_webview_text
 
   method_field_unsupported:
+    "*":
+      receiver_user_id: >-
+        no TL field at layer 228; sending on another user's behalf is a Bot API
+        only concept
+      callback_query_id: >-
+        no TL field at layer 228; answering a callback query with a new message
+        is a Bot API only concept
+    setChatPermissions:
+      use_independent_chat_permissions: >-
+        chatBannedRights has no grouping flag, so every permission is always
+        independent
     promoteChatMember:
       is_anonymous: folded into the privileges argument
       can_manage_chat: folded into the privileges argument
@@ -239,6 +270,56 @@ mtproto:
       schedule_repeat_period: repeat_period
       suggested_post: suggested_post_parameters
 
+
+    approve_suggested_post:
+      msg_id: message_id
+      schedule_date: send_date
+    decline_suggested_post:
+      msg_id: message_id
+      reject_comment: comment
+    pin_chat_message:
+      id: message_id
+      pm_oneside: both_sides
+    unpin_chat_message:
+      id: message_id
+      pm_oneside: both_sides
+    unban_chat_member:
+      channel: chat_id
+      participant: user_id
+    restrict_chat_member:
+      channel: chat_id
+      participant: user_id
+      banned_rights: permissions
+    answer_pre_checkout_query:
+      query_id: pre_checkout_query_id
+      error: error_message
+      success: ok
+    answer_shipping_query:
+      query_id: shipping_query_id
+      error: error_message
+      success: ok
+    answer_inline_query:
+      query_id: inline_query_id
+      gallery: is_gallery
+      private: is_personal
+      switch_pm: switch_pm_text
+      switch_webview: switch_webview_text
+    set_chat_menu_button:
+      button: menu_button
+      user_id: chat_id
+    set_managed_bot_access_settings:
+      bot: user_id
+      add_users: added_user_ids
+      restricted: is_access_restricted
+    get_chat_gifts:
+      exclude_unupgradable: exclude_non_upgradable
+      sort_by_value: sort_by_price
+      peer_color_available: exclude_without_colors
+    get_business_account_gifts:
+      exclude_unupgradable: exclude_non_upgradable
+      sort_by_value: sort_by_price
+      peer_color_available: exclude_without_colors
+
     messages.sendMedia:
       message: caption
       entities: caption_entities
@@ -270,6 +351,29 @@ mtproto:
       video_timestamp: video_start_timestamp
 
   field_unsupported:
+    close_forum_topic:
+      closed: the method exists to close the topic, so it sets this itself
+      hidden: hiding a topic goes through edit_forum_topic
+      icon_emoji_id: changing the icon goes through edit_forum_topic
+      title: renaming goes through edit_forum_topic
+    approve_suggested_post:
+      reject: the method exists to approve, so it never rejects
+      reject_comment: only a rejection carries a comment
+    decline_suggested_post:
+      reject: the method exists to decline, so it sets this itself
+      schedule_date: only an approval can move the publication date
+    pin_chat_message:
+      unpin: the method exists to pin, so it sets this itself
+    unpin_chat_message:
+      unpin: the method exists to unpin, so it sets this itself
+    unban_chat_member:
+      banned_rights: unbanning clears every restriction, so there is nothing to pass
+    answer_inline_query:
+      private: the caller sets is_personal
+    answer_pre_checkout_query:
+      success: derived from whether error_message was given
+    answer_shipping_query:
+      success: derived from whether error_message was given
     export_chat_invite_link:
       title: creating a named link goes through create_chat_invite_link
       usage_limit: creating a limited link goes through create_chat_invite_link

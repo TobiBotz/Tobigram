@@ -426,11 +426,13 @@ class Coverage:
         for field in spec_type.get("fields") or []:
             field_name = field["name"]
 
+            if self._alias("botapi", "field_rename", name, field_name, have=have) in have:
+                continue
+
             if self._unsupported("botapi", "field_unsupported", name, field_name):
                 continue
 
-            if self._alias("botapi", "field_rename", name, field_name, have=have) not in have:
-                gaps.append(field_name)
+            gaps.append(field_name)
 
         return gaps
 
@@ -451,11 +453,13 @@ class Coverage:
         for field in spec_method.get("fields") or []:
             field_name = field["name"]
 
+            if self._alias("botapi", "method_field_rename", name, field_name, have=have) in have:
+                continue
+
             if self._unsupported("botapi", "method_field_unsupported", name, field_name):
                 continue
 
-            if self._alias("botapi", "method_field_rename", name, field_name, have=have) not in have:
-                gaps.append(field_name)
+            gaps.append(field_name)
 
         return gaps
 
@@ -498,28 +502,34 @@ class Coverage:
         for param in info["params"]:
             field_name = param["name"]
 
+            if self._alias("mtproto", "field_rename", method, field_name, scope, have) in have:
+                continue
+
             if field_name in internal:
                 continue
 
             if self._unsupported("mtproto", "field_unsupported", method, field_name, scope):
                 continue
 
-            if self._alias("mtproto", "field_rename", method, field_name, scope, have) not in have:
-                gaps.append(field_name)
+            gaps.append(field_name)
 
         return gaps
 
     def type_field_stats(self, name: str) -> Optional[Tuple[int, List[str]]]:
         """(fields considered, fields missing) for a Bot API type."""
         gaps = self.type_gaps(name)
+        symbol = self.wzgram_type(name)
 
-        if gaps is None:
+        if gaps is None or symbol is None:
             return None
 
         spec_type = self.spec["types"][name]
+        have = self.inherited_params(symbol) | symbol.properties
         considered = sum(
-            0 if self._unsupported("botapi", "field_unsupported", name, f["name"]) else 1
+            1
             for f in spec_type.get("fields") or []
+            if self._alias("botapi", "field_rename", name, f["name"], have=have) in have
+            or not self._unsupported("botapi", "field_unsupported", name, f["name"])
         )
 
         return considered, gaps

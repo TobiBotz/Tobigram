@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from datetime import datetime
 from typing import Union, Optional
 
 import pyrogram
@@ -43,6 +44,15 @@ class SendGame:
         business_connection_id: Optional[str] = None,
         effect_id: Optional[int] = None,
         allow_paid_broadcast: Optional[bool] = None,
+        schedule_date: Optional[datetime] = None,
+        repeat_period: Optional[int] = None,
+        paid_message_star_count: Optional[int] = None,
+        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
+        background: Optional[bool] = None,
+        clear_draft: Optional[bool] = None,
+        update_stickersets_order: Optional[bool] = None,
+        send_as: Optional[Union[int, str]] = None,
+        quick_reply_shortcut: Optional[int] = None,
     ) -> "types.Message":
         """Send a game.
 
@@ -76,6 +86,33 @@ class SendGame:
 
             allow_paid_broadcast (``bool``, *optional*):
                 Pass True to allow the message to be sent ignoring broadcasting limits, for a fee.
+
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                Date when the message will be automatically sent.
+
+            repeat_period (``int``, *optional*):
+                Period in seconds for the message to be sent repeatedly.
+
+            paid_message_star_count (``int``, *optional*):
+                The number of Telegram Stars the user agreed to pay to send the message.
+
+            suggested_post_parameters (:obj:`~pyrogram.types.SuggestedPostParameters`, *optional*):
+                Parameters of the suggested post.
+
+            background (``bool``, *optional*):
+                Send the message in background.
+
+            clear_draft (``bool``, *optional*):
+                Clear the draft of the chat.
+
+            update_stickersets_order (``bool``, *optional*):
+                Move the sticker set to the top of the list.
+
+            send_as (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the chat or channel to send the message as.
+
+            quick_reply_shortcut (``int``, *optional*):
+                Unique identifier of the quick reply shortcut to use.
 
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent game message is returned.
@@ -112,6 +149,15 @@ class SendGame:
                 noforwards=protect_content,
                 effect=effect_id,
                 allow_paid_floodskip=allow_paid_broadcast,
+                schedule_date=utils.datetime_to_timestamp(schedule_date),
+                schedule_repeat_period=repeat_period,
+                allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
+                suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+                background=background,
+                clear_draft=clear_draft,
+                update_stickersets_order=update_stickersets_order,
+                send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None
             ),
             sleep_threshold=60,

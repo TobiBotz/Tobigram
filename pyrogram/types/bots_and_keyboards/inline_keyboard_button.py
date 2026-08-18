@@ -71,6 +71,18 @@ class InlineKeyboardButton(Object):
             Description of the game that will be launched when the user presses the button.
             **NOTE**: This type of button **must** always be the first button in the first row.
 
+        switch_inline_query_chosen_chat (:obj:`~pyrogram.types.SwitchInlineQueryChosenChat`, *optional*):
+            If set, pressing the button prompts the user to select one of their chats of the
+            specified type, opens that chat and inserts the bot username and an optional
+            inline query in the input field.
+
+        copy_text (:obj:`~pyrogram.types.CopyTextButton`, *optional*):
+            Description of the button that copies the specified text to the clipboard.
+
+        pay (``bool``, *optional*):
+            Pass True to send a Pay button. Substrings "⭐" and "XTR" in the button
+            text will be replaced with a Telegram Star icon.
+
         icon_custom_emoji_id (``str``, *optional*):
             Custom emoji ID to use as the button icon, shown in place of the colored background
             on PRIMARY/DANGER/SUCCESS style buttons.
@@ -90,6 +102,9 @@ class InlineKeyboardButton(Object):
         switch_inline_query: Optional[str] = None,
         switch_inline_query_current_chat: Optional[str] = None,
         callback_game: Optional["types.CallbackGame"] = None,
+        switch_inline_query_chosen_chat: Optional["types.SwitchInlineQueryChosenChat"] = None,
+        copy_text: Optional["types.CopyTextButton"] = None,
+        pay: Optional[bool] = None,
         icon_custom_emoji_id: Optional[str] = None,
         style: ButtonStyle = ButtonStyle.DEFAULT
     ):
@@ -104,9 +119,11 @@ class InlineKeyboardButton(Object):
         self.switch_inline_query = switch_inline_query
         self.switch_inline_query_current_chat = switch_inline_query_current_chat
         self.callback_game = callback_game
+        self.switch_inline_query_chosen_chat = switch_inline_query_chosen_chat
+        self.copy_text = copy_text
+        self.pay = pay
         self.icon_custom_emoji_id = icon_custom_emoji_id
         self.style = style
-        # self.pay = pay
 
     @staticmethod
     def _parse_raw_style(style: "raw.base.KeyboardButtonStyle"):
@@ -142,6 +159,20 @@ class InlineKeyboardButton(Object):
                 **InlineKeyboardButton._with_style(b)
             )
 
+        if isinstance(b, raw.types.KeyboardButtonCopy):
+            return InlineKeyboardButton(
+                text=b.text,
+                copy_text=types.CopyTextButton(text=b.copy_text),
+                **InlineKeyboardButton._with_style(b)
+            )
+
+        if isinstance(b, raw.types.KeyboardButtonBuy):
+            return InlineKeyboardButton(
+                text=b.text,
+                pay=True,
+                **InlineKeyboardButton._with_style(b)
+            )
+
         if isinstance(b, raw.types.KeyboardButtonUrl):
             return InlineKeyboardButton(
                 text=b.text,
@@ -165,6 +196,16 @@ class InlineKeyboardButton(Object):
 
         if isinstance(b, raw.types.KeyboardButtonSwitchInline):
             kwargs = InlineKeyboardButton._with_style(b)
+
+            if b.peer_types:
+                return InlineKeyboardButton(
+                    text=b.text,
+                    switch_inline_query_chosen_chat=(
+                        types.SwitchInlineQueryChosenChat._parse(b.query, b.peer_types)
+                    ),
+                    **kwargs
+                )
+
             if b.same_peer:
                 return InlineKeyboardButton(
                     text=b.text,
@@ -219,6 +260,19 @@ class InlineKeyboardButton(Object):
                 style=raw_style
             )
 
+        if self.copy_text is not None:
+            return raw.types.KeyboardButtonCopy(
+                text=self.text,
+                copy_text=self.copy_text.text,
+                style=raw_style
+            )
+
+        if self.pay:
+            return raw.types.KeyboardButtonBuy(
+                text=self.text,
+                style=raw_style
+            )
+
         if self.url is not None:
             return raw.types.KeyboardButtonUrl(
                 text=self.text,
@@ -236,6 +290,16 @@ class InlineKeyboardButton(Object):
             return raw.types.InputKeyboardButtonUserProfile(
                 text=self.text,
                 user_id=await client.resolve_peer(self.user_id),
+                style=raw_style
+            )
+
+        if self.switch_inline_query_chosen_chat is not None:
+            chosen = self.switch_inline_query_chosen_chat
+
+            return raw.types.KeyboardButtonSwitchInline(
+                text=self.text,
+                query=chosen.query or "",
+                peer_types=chosen._peer_types(),
                 style=raw_style
             )
 

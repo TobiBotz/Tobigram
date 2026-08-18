@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -1093,3 +1093,142 @@ class TestInlineResultCaptionPlacement:
         assert "show_caption_above_media" in inspect.signature(
             getattr(types, name).__init__
         ).parameters
+
+
+class TestInlineKeyboardButtonAdditions:
+    """copy_text, pay and switch_inline_query_chosen_chat must reach the wire.
+
+    pay was present in the docstring but its assignment was commented out, so it
+    was accepted and silently dropped.
+    """
+
+    @staticmethod
+    async def written(**kwargs):
+        return await types.InlineKeyboardButton(**kwargs).write(AsyncMock())
+
+    async def test_copy_text_round_trips(self):
+        written = await self.written(
+            text="Copy", copy_text=types.CopyTextButton(text="hello")
+        )
+
+        assert isinstance(written, raw.types.KeyboardButtonCopy)
+        assert written.copy_text == "hello"
+        assert types.InlineKeyboardButton.read(written).copy_text.text == "hello"
+
+    async def test_pay_round_trips(self):
+        written = await self.written(text="Pay", pay=True)
+
+        assert isinstance(written, raw.types.KeyboardButtonBuy)
+        assert types.InlineKeyboardButton.read(written).pay is True
+
+    async def test_chosen_chat_maps_every_peer_type(self):
+        written = await self.written(
+            text="Pick",
+            switch_inline_query_chosen_chat=types.SwitchInlineQueryChosenChat(
+                query="hi",
+                allow_user_chats=True,
+                allow_bot_chats=True,
+                allow_group_chats=True,
+                allow_channel_chats=True
+            )
+        )
+
+        assert {type(p).__name__ for p in written.peer_types} == {
+            "InlineQueryPeerTypePM",
+            "InlineQueryPeerTypeBotPM",
+            "InlineQueryPeerTypeChat",
+            "InlineQueryPeerTypeMegagroup",
+            "InlineQueryPeerTypeBroadcast",
+        }
+
+        parsed = types.InlineKeyboardButton.read(written).switch_inline_query_chosen_chat
+
+        assert parsed.query == "hi"
+        assert parsed.allow_user_chats is True
+        assert parsed.allow_bot_chats is True
+        assert parsed.allow_group_chats is True
+        assert parsed.allow_channel_chats is True
+
+    async def test_a_partial_chosen_chat_leaves_the_rest_unset(self):
+        written = await self.written(
+            text="Pick",
+            switch_inline_query_chosen_chat=types.SwitchInlineQueryChosenChat(
+                allow_channel_chats=True
+            )
+        )
+        parsed = types.InlineKeyboardButton.read(written).switch_inline_query_chosen_chat
+
+        assert parsed.allow_channel_chats is True
+        assert parsed.allow_user_chats is None
+        assert parsed.allow_group_chats is None
+
+    async def test_the_existing_switch_buttons_are_unchanged(self):
+        plain = await self.written(text="x", switch_inline_query="q")
+
+        assert isinstance(plain, raw.types.KeyboardButtonSwitchInline)
+        assert not plain.peer_types
+
+        same_peer = raw.types.KeyboardButtonSwitchInline(
+            text="x", query="q", same_peer=True
+        )
+
+        assert types.InlineKeyboardButton.read(
+            same_peer
+        ).switch_inline_query_current_chat == "q"
+
+
+class TestSendGameSendOptions:
+    """send_game exposed almost none of messages.sendMedia's send options.
+
+    A widened signature proves nothing on its own; each argument has to appear on
+    the raw request.
+    """
+
+    @staticmethod
+    async def sent(**kwargs):
+        from pyrogram.methods.bots.send_game import SendGame
+
+        captured = {}
+
+        async def invoke(query, *args, **kw):
+            captured["query"] = query
+
+            return raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0)
+
+        client = AsyncMock(spec=pyrogram.Client)
+        client.invoke = invoke
+        client.resolve_peer = AsyncMock(return_value=raw.types.InputPeerSelf())
+        client.rnd_id = lambda: 1
+
+        await SendGame.send_game(client, chat_id=1, game_short_name="g", **kwargs)
+
+        return captured["query"]
+
+    async def test_every_send_option_reaches_the_request(self):
+        query = await self.sent(
+            schedule_date=datetime(2030, 1, 1, tzinfo=timezone.utc),
+            repeat_period=3600,
+            paid_message_star_count=5,
+            background=True,
+            clear_draft=True,
+            update_stickersets_order=True,
+            send_as=2,
+            quick_reply_shortcut=7
+        )
+
+        assert query.schedule_date == 1893456000
+        assert query.schedule_repeat_period == 3600
+        assert query.allow_paid_stars == 5
+        assert query.background is True
+        assert query.clear_draft is True
+        assert query.update_stickersets_order is True
+        assert isinstance(query.send_as, raw.types.InputPeerSelf)
+        assert query.quick_reply_shortcut.shortcut_id == 7
+
+    async def test_omitting_them_sends_nothing(self):
+        query = await self.sent()
+
+        assert query.schedule_date is None
+        assert query.send_as is None
+        assert query.quick_reply_shortcut is None
+        assert query.allow_paid_stars is None

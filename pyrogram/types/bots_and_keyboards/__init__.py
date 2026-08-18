@@ -27,6 +27,8 @@ from .bot_command_scope_chat_administrators import BotCommandScopeChatAdministra
 from .bot_command_scope_chat_member import BotCommandScopeChatMember
 from .bot_command_scope_default import BotCommandScopeDefault
 from .callback_game import CallbackGame
+from .copy_text_button import CopyTextButton
+from .switch_inline_query_chosen_chat import SwitchInlineQueryChosenChat
 from .callback_query import CallbackQuery
 from .chat_boost_updated import ChatBoostUpdated
 from .force_reply import ForceReply
@@ -64,6 +66,8 @@ from .web_app_info import WebAppInfo
 __all__ = [
     "BotAccessSettings",
     "CallbackGame",
+    "CopyTextButton",
+    "SwitchInlineQueryChosenChat",
     "CallbackQuery",
     "ChatBoostUpdated",
     "ForceReply",
