@@ -367,6 +367,21 @@ botapi:
       can_manage_direct_messages: folded into the privileges argument
       can_manage_tags: folded into the privileges argument
 
+  enum_value_rename:
+    ChatType:
+      sender: BOT
+
+  enum_value_unsupported:
+    MessageEntityType:
+      expandable_blockquote: >-
+        wzgram keeps one BLOCKQUOTE member and an expandable flag on the entity
+
+  enum_skip:
+    sendGift:
+      text_parse_mode: >-
+        the quoted values in this description are the entity types the text may
+        contain, not the parse modes the field accepts
+
 mtproto:
   internal:
     - flags

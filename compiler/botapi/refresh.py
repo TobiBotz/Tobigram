@@ -66,7 +66,9 @@ def survey(coverage: Coverage) -> dict:
                 botapi = coverage.method_botapi_gaps(name)
                 mtproto = coverage.method_mtproto_gaps(name)
 
-            if botapi is None and mtproto is None:
+            enums_ = coverage.enum_gaps(kind, name)
+
+            if botapi is None and mtproto is None and enums_ is None:
                 continue
 
             gaps = {}
@@ -76,6 +78,9 @@ def survey(coverage: Coverage) -> dict:
 
             if mtproto:
                 gaps["mtproto"] = sorted(mtproto)
+
+            if enums_:
+                gaps["enums"] = sorted(enums_)
 
             if gaps:
                 pending[name] = gaps
@@ -107,7 +112,7 @@ def dump(manifest: dict) -> str:
         for name, gaps in entry["pending"].items():
             lines.append(f"    {name}:")
 
-            for axis in ("botapi", "mtproto"):
+            for axis in ("botapi", "mtproto", "enums"):
                 if gaps.get(axis):
                     lines.append(f"      {axis}: [{', '.join(gaps[axis])}]")
 

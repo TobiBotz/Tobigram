@@ -100,9 +100,13 @@ TYPES_DIR = ROOT / "pyrogram" / "types"
 class Symbol:
     """A class or method as it is written, read without importing anything."""
 
-    __slots__ = ("name", "params", "bases", "properties", "doc", "path", "raw_calls")
+    __slots__ = (
+        "name", "params", "bases", "properties", "doc", "path", "raw_calls",
+        "annotations"
+    )
 
-    def __init__(self, name, params, bases, properties, doc, path, raw_calls=()):
+    def __init__(self, name, params, bases, properties, doc, path, raw_calls=(),
+                 annotations=None):
         self.name = name
         self.params = params
         self.bases = bases
@@ -110,6 +114,7 @@ class Symbol:
         self.doc = doc
         self.path = path
         self.raw_calls = set(raw_calls)
+        self.annotations = annotations or {}
 
 
 def signature_params(node) -> Set[str]:
@@ -117,6 +122,16 @@ def signature_params(node) -> Set[str]:
     names = [a.arg for a in (*args.posonlyargs, *args.args, *args.kwonlyargs)]
 
     return {name for name in names if name not in IGNORED_PARAMS}
+
+
+def signature_annotations(node) -> Dict[str, str]:
+    args = node.args
+
+    return {
+        arg.arg: ast.unparse(arg.annotation)
+        for arg in (*args.posonlyargs, *args.args, *args.kwonlyargs)
+        if arg.annotation is not None
+    }
 
 
 def is_property(node) -> bool:
@@ -197,6 +212,62 @@ def type_names(entries) -> Set[str]:
     return names
 
 
+ENUMS_DIR = ROOT / "pyrogram" / "enums"
+
+# Bot API spells the values a field accepts as quoted literals in its description
+ENUM_LITERAL_RE = re.compile(r"[“\"]([a-z0-9_]+)[”\"]")
+ENUM_REFERENCE_RE = re.compile("(?:enums[.])?([A-Z][A-Za-z0-9_]*)")
+
+
+def index_enums() -> Dict[str, Dict[str, str]]:
+    """Every enum under pyrogram/enums, as {name: {MEMBER: value}}.
+
+    AutoName lowercases the member name, so a member declared with auto() is
+    worth exactly the Bot API literal it should match.
+    """
+    index: Dict[str, Dict[str, str]] = {}
+
+    for path in sorted(ENUMS_DIR.glob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.ClassDef):
+                continue
+
+            members: Dict[str, str] = {}
+
+            for child in node.body:
+                if not isinstance(child, ast.Assign) or len(child.targets) != 1:
+                    continue
+
+                target = child.targets[0]
+
+                if not isinstance(target, ast.Name) or target.id.startswith("_"):
+                    continue
+
+                value = child.value
+
+                if isinstance(value, ast.Constant) and isinstance(value.value, str):
+                    members[target.id] = value.value
+                else:
+                    members[target.id] = target.id.lower()
+
+            if members:
+                index[node.name] = members
+
+    return index
+
+
+def enumerated_values(field: dict) -> List[str]:
+    """The literals a Bot API string field is documented to accept."""
+    if "String" not in field["types"]:
+        return []
+
+    values = sorted(set(ENUM_LITERAL_RE.findall(field.get("description") or "")))
+
+    return values if len(values) >= 2 else []
+
+
 def dotted(node: ast.Attribute) -> Optional[List[str]]:
     parts = []
 
@@ -225,6 +296,7 @@ def index_types() -> Dict[str, Symbol]:
 
             params: Set[str] = set()
             properties: Set[str] = set()
+            annotations: Dict[str, str] = {}
 
             for child in node.body:
                 if not isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -232,12 +304,13 @@ def index_types() -> Dict[str, Symbol]:
 
                 if child.name == "__init__":
                     params = signature_params(child)
+                    annotations = signature_annotations(child)
                 elif is_property(child):
                     properties.add(child.name)
 
             index[node.name] = Symbol(
                 node.name, params, base_names(node), properties,
-                ast.get_docstring(node, clean=False), path
+                ast.get_docstring(node, clean=False), path, annotations=annotations
             )
 
     return index
@@ -263,7 +336,8 @@ def index_methods() -> Dict[str, Symbol]:
 
             index[node.name] = Symbol(
                 node.name, signature_params(node), [], set(),
-                ast.get_docstring(node, clean=False), path, raw_calls_in(node)
+                ast.get_docstring(node, clean=False), path, raw_calls_in(node),
+                annotations=signature_annotations(node)
             )
 
     return index
@@ -295,6 +369,7 @@ class Coverage:
         self._types = None
         self._methods = None
         self._tl = None
+        self._enums = None
 
     # ------------------------------------------------------------------ data
 
@@ -311,6 +386,13 @@ class Coverage:
             self._methods = index_methods()
 
         return self._methods
+
+    @property
+    def enums(self) -> Dict[str, Dict[str, str]]:
+        if self._enums is None:
+            self._enums = index_enums()
+
+        return self._enums
 
     @property
     def tl(self) -> Dict[str, dict]:
@@ -601,6 +683,84 @@ class Coverage:
             for parent in spec_type.get("subtype_of") or []
         )
 
+    def enum_gaps(self, kind: str, name: str) -> Optional[List[str]]:
+        """Documented values a field accepts that the wzgram enum has no member for.
+
+        The enum is found from the parameter's own annotation, so nothing has to
+        be mapped by hand and it keeps up as fields are re-typed.
+        """
+        if kind == "types":
+            spec_entry = self.spec["types"].get(name)
+            symbol = self.wzgram_type(name)
+            rename_table = "field_rename"
+            unsupported_table = "field_unsupported"
+        else:
+            spec_entry = self.spec["methods"].get(name)
+            symbol = self.wzgram_method(name)
+            rename_table = "method_field_rename"
+            unsupported_table = "method_field_unsupported"
+
+        if spec_entry is None or symbol is None:
+            return None
+
+        have = (
+            self.inherited_params(symbol) | symbol.properties
+            if kind == "types" else symbol.params
+        )
+        gaps = []
+
+        for field in spec_entry.get("fields") or []:
+            values = enumerated_values(field)
+
+            if not values:
+                continue
+
+            target = self._alias("botapi", rename_table, name, field["name"], have=have)
+
+            # an exclusion covers a field wzgram lacks; one that is present is
+            # still worth checking, and `type` is excluded globally for the union
+            # members that have no such field
+            if target not in have and self._unsupported(
+                "botapi", unsupported_table, name, field["name"]
+            ):
+                continue
+
+            if self._unsupported("botapi", "enum_skip", name, field["name"]):
+                continue
+
+            annotation = symbol.annotations.get(target)
+
+            if not annotation:
+                continue
+
+            enum = next(
+                (
+                    member for member in ENUM_REFERENCE_RE.findall(annotation)
+                    if member in self.enums
+                ),
+                None
+            )
+
+            if enum is None:
+                continue
+
+            members = self.enums[enum]
+            known = {value.lower() for value in members.values()}
+            known |= {member.lower() for member in members}
+
+            for value in values:
+                member = self._alias("botapi", "enum_value_rename", enum, value)
+
+                if member.lower() in known:
+                    continue
+
+                if self._unsupported("botapi", "enum_value_unsupported", enum, value):
+                    continue
+
+                gaps.append(f"{enum}.{value}")
+
+        return gaps
+
     def report(self) -> dict:
         methods = self.implemented("methods")
         considered = missing = 0
@@ -624,6 +784,25 @@ class Coverage:
             tl_considered += len(symbol.params) + len(gaps)
             tl_missing += len(gaps)
 
+        enum_considered = enum_missing = 0
+
+        for kind, names in (("types", self.implemented("types")),
+                            ("methods", methods)):
+            for name in names:
+                spec_entry = (
+                    self.spec["types"] if kind == "types" else self.spec["methods"]
+                ).get(name) or {}
+                gaps = self.enum_gaps(kind, name)
+
+                if gaps is None:
+                    continue
+
+                enum_considered += sum(
+                    len(enumerated_values(field))
+                    for field in spec_entry.get("fields") or []
+                )
+                enum_missing += len(gaps)
+
         required = {
             name for name in self.required_types()
             if name not in ((self.aliases.get("botapi") or {}).get("type_unsupported") or {})
@@ -646,6 +825,9 @@ class Coverage:
                 "params": (considered - missing, considered),
                 "tl_params": (tl_considered - tl_missing, tl_considered),
                 "incomplete": sum(1 for n in methods if self.method_field_stats(n) and self.method_field_stats(n)[1]),
+            },
+            "enums": {
+                "values": (enum_considered - enum_missing, enum_considered),
             },
             "types": {
                 "required": len(required),
@@ -716,7 +898,7 @@ class Coverage:
 
             for name, recorded in pending.items():
                 recorded = recorded or {}
-                unknown = set(recorded) - {"botapi", "mtproto"}
+                unknown = set(recorded) - {"botapi", "mtproto", "enums"}
 
                 if kind == "types":
                     unknown |= set(recorded) & {"mtproto"}
@@ -732,16 +914,20 @@ class Coverage:
 
         return findings
 
-    def _gaps_for(self, kind: str, name: str) -> Tuple[Optional[List[str]], Optional[List[str]]]:
+    def _gaps_for(self, kind: str, name: str):
         if kind == "types":
-            return self.type_gaps(name), None
+            return self.type_gaps(name), None, self.enum_gaps(kind, name)
 
-        return self.method_botapi_gaps(name), self.method_mtproto_gaps(name)
+        return (
+            self.method_botapi_gaps(name),
+            self.method_mtproto_gaps(name),
+            self.enum_gaps(kind, name)
+        )
 
     def _check_entity(self, kind: str, name: str, recorded: Optional[dict]) -> List[Finding]:
-        botapi, mtproto = self._gaps_for(kind, name)
+        botapi, mtproto, enums_ = self._gaps_for(kind, name)
 
-        if botapi is None and mtproto is None:
+        if botapi is None and mtproto is None and enums_ is None:
             return [Finding(
                 "manifest", f"{kind}/{name}",
                 "cannot be resolved; remove it from the manifest or add an alias"
@@ -749,7 +935,7 @@ class Coverage:
 
         findings = []
 
-        for axis, gaps in (("botapi", botapi), ("mtproto", mtproto)):
+        for axis, gaps in (("botapi", botapi), ("mtproto", mtproto), ("enums", enums_)):
             if gaps is None:
                 continue
 
@@ -780,7 +966,9 @@ class Coverage:
                     + ", ".join(sorted(stale))
                 ))
 
-        if recorded is not None and not any(recorded.get(a) for a in ("botapi", "mtproto")):
+        if recorded is not None and not any(
+            recorded.get(a) for a in ("botapi", "mtproto", "enums")
+        ):
             findings.append(Finding(
                 "manifest", f"{kind}/{name}",
                 "has no remaining gaps; promote it to supported"

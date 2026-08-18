@@ -8,7 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "compiler" / "botapi"))
 
-from coverage import Coverage, documented_params
+from coverage import (
+    ENUM_REFERENCE_RE,
+    Coverage,
+    documented_params,
+    enumerated_values,
+)
 
 COVERAGE = Coverage()
 PACKAGE_SOURCES = [
@@ -239,3 +244,52 @@ def test_no_rename_points_at_itself():
     ]
 
     assert not pointless, "renamed to itself: " + ", ".join(sorted(pointless))
+
+
+def test_the_enum_axis_actually_resolves_enums():
+    """A broken reference pattern makes every enum field silently unresolvable.
+
+    The axis then reports full coverage while checking nothing, which is how it
+    first passed with a corrupted pattern.
+    """
+    assert ENUM_REFERENCE_RE.findall("'enums.MessageEntityType'") == ["MessageEntityType"]
+    assert ENUM_REFERENCE_RE.findall("ButtonStyle") == ["ButtonStyle"]
+
+    symbol = COVERAGE.wzgram_type("MessageEntity")
+
+    assert symbol.annotations.get("type"), "annotations must be captured from the AST"
+    assert "MessageEntityType" in COVERAGE.enums
+
+
+def test_enumerated_values_are_read_from_the_description():
+    field = next(
+        f for f in COVERAGE.spec["types"]["MessageEntity"]["fields"]
+        if f["name"] == "type"
+    )
+
+    assert len(enumerated_values(field)) > 15, (
+        "Bot API only spells a field's accepted values in its description, so "
+        "failing to read them leaves the enum axis with nothing to check"
+    )
+
+
+ENUM_CASES = [
+    (kind, name)
+    for kind in ("types", "methods")
+    for name in COVERAGE.implemented(kind)
+]
+
+
+@pytest.mark.parametrize(
+    "kind,name", ENUM_CASES, ids=[f"{k[:-1]}.{n}" for k, n in ENUM_CASES]
+)
+def test_enum_members_cover_the_documented_values(kind, name):
+    recorded = set(
+        ((COVERAGE.manifest[kind].get("pending") or {}).get(name) or {}).get("enums") or []
+    )
+    gaps = set(COVERAGE.enum_gaps(kind, name) or [])
+
+    assert gaps <= recorded, (
+        f"{name} accepts documented values with no enum member: "
+        + ", ".join(sorted(gaps - recorded))
+    )

@@ -48,6 +48,10 @@ def start():
     print(f"  MTProto params    {have:5} / {total:<5} {pct(have, total)}"
           f"   {total - have} missing")
 
+    have, total = report["enums"]["values"]
+    print(f"  enum values       {have:5} / {total:<5} {pct(have, total)}"
+          f"   {total - have} missing")
+
     print()
     print("Types reachable from those methods")
     print(f"  required          {types['required']:5}")
