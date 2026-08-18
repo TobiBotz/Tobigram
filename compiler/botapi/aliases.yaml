@@ -268,6 +268,8 @@ botapi:
       media: description_media
     sendGift:
       user_id: chat_id
+      text_entities: entities
+      text_parse_mode: parse_mode
     deleteEphemeralMessage:
       ephemeral_message_id: message_id
     getChatGifts:
@@ -301,6 +303,14 @@ botapi:
       button: switch_webview_text
 
   method_field_unsupported:
+    editMessageText:
+      inline_message_id: editing a message sent as an inline query result goes through edit_inline_text, which takes the inline_message_id
+    editMessageCaption:
+      inline_message_id: editing a message sent as an inline query result goes through edit_inline_caption, which takes the inline_message_id
+    editMessageMedia:
+      inline_message_id: editing a message sent as an inline query result goes through edit_inline_media, which takes the inline_message_id
+    editMessageReplyMarkup:
+      inline_message_id: editing a message sent as an inline query result goes through edit_inline_reply_markup, which takes the inline_message_id
     unbanChatMember:
       only_if_banned: >-
         channels.editBanned has no such flag; MTProto clears the restrictions
@@ -482,6 +492,10 @@ mtproto:
       query_id: chat_join_request_query_id
     send_invoice:
       effect: message_effect_id
+    create_chat_invite_link:
+      subscription_pricing: subscription_period
+    export_chat_invite_link:
+      subscription_pricing: subscription_period
     edit_user_star_subscription:
       restore: is_canceled
       charge_id: telegram_payment_charge_id
@@ -514,6 +528,8 @@ mtproto:
       banned_rights: permissions
 
   field_unsupported:
+    create_forum_topic:
+      title_missing: the method always sends a title, so it never marks one absent
     get_me:
       id: the method exists to fetch the current user, so it passes InputUserSelf
     approve_chat_join_request:

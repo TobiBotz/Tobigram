@@ -28,7 +28,8 @@ class CreateForumTopic:
         chat_id: Union[int, str],
         title: str,
         icon_color: Optional[int] = None,
-        icon_emoji_id: Optional[int] = None
+        icon_emoji_id: Optional[int] = None,
+        send_as: Optional[Union[int, str]] = None,
     ) -> "types.ForumTopicCreated":
         """Create a new forum topic.
 
@@ -47,6 +48,10 @@ class CreateForumTopic:
             icon_emoji_id (``int``, *optional*):
                 Unique identifier of the custom emoji shown as the topic icon
 
+            send_as (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the chat or channel to
+                create the topic as.
+
         Returns:
             :obj:`~pyrogram.types.ForumTopicCreated`: On success, a forum_topic_created object is returned.
 
@@ -61,7 +66,8 @@ class CreateForumTopic:
                 title=title,
                 random_id=self.rnd_id(),
                 icon_color=icon_color,
-                icon_emoji_id=icon_emoji_id
+                icon_emoji_id=icon_emoji_id,
+                send_as=await self.resolve_peer(send_as) if send_as is not None else None
             )
         )
 

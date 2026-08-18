@@ -48,6 +48,7 @@ class CreateInvoiceLink:
         send_email_to_provider: Optional[bool] = None,
         is_flexible: Optional[bool] = None,
         terms_url: Optional[str] = None,
+        business_connection_id: Optional[str] = None,
     ) -> str:
         """Create invoice link.
 
@@ -122,6 +123,10 @@ class CreateInvoiceLink:
             is_flexible (``bool``, *optional*):
                 Pass True if the final price depends on the shipping method. Ignored for payments in `Telegram Stars <https://t.me/BotNews/90>`_.
 
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection on behalf of which the
+                link is created.
+
         Returns:
             ``str``: On success, the invoice url is returned.
 
@@ -160,7 +165,8 @@ class CreateInvoiceLink:
                     provider_data=raw.types.DataJSON(data=provider_data or "{}"),
                     start_param=start_parameter,
                 )
-            )
+            ),
+            business_connection_id=business_connection_id
         )
 
         return r.url

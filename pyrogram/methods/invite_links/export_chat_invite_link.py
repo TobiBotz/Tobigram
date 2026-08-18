@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw
@@ -27,6 +27,8 @@ class ExportChatInviteLink:
     async def export_chat_invite_link(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
+        subscription_period: Optional[int] = None,
+        subscription_price: Optional[int] = None,
     ) -> "types.ChatInviteLink":
         """Generate a new primary invite link for a chat; any previously generated primary link is revoked.
 
@@ -46,6 +48,13 @@ class ExportChatInviteLink:
                 Unique identifier for the target chat or username of the target channel/supergroup
                 (in the format @username).
 
+            subscription_period (``int``, *optional*):
+                Number of seconds a subscription bought through this link lasts.
+                Currently must always be 2592000 (30 days).
+
+            subscription_price (``int``, *optional*):
+                Number of Telegram Stars a subscription through this link costs.
+
         Returns:
             ``str``: On success, the new invite link as string is returned.
 
@@ -57,6 +66,10 @@ class ExportChatInviteLink:
         """
         r = await self.invoke(
             raw.functions.messages.ExportChatInvite(
+                subscription_pricing=raw.types.StarsSubscriptionPricing(
+                    period=subscription_period,
+                    amount=subscription_price
+                ) if subscription_period is not None and subscription_price is not None else None,
                 peer=await self.resolve_peer(chat_id),
                 legacy_revoke_permanent=True
             )

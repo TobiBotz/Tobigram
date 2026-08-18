@@ -37,6 +37,7 @@ types:
     - ChatBackground
     - ChatBoost
     - ChatBoostUpdated
+    - ChatInviteLink
     - ChatJoinRequest
     - ChatLocation
     - ChatMember
@@ -268,8 +269,6 @@ types:
       botapi: [can_convert_gifts_to_stars]
     ChatFullInfo:
       botapi: [community]
-    ChatInviteLink:
-      botapi: [subscription_period, subscription_price]
     ChatMemberUpdated:
       botapi: [via_chat_folder_invite_link]
     ExternalReplyInfo:
@@ -304,6 +303,9 @@ methods:
     - close
     - closeForumTopic
     - convertGiftToStars
+    - createChatInviteLink
+    - createForumTopic
+    - createInvoiceLink
     - declineChatJoinRequest
     - declineSuggestedPost
     - deleteAllMessageReactions
@@ -315,8 +317,13 @@ methods:
     - deleteMessages
     - editChatInviteLink
     - editForumTopic
+    - editMessageCaption
     - editMessageChecklist
+    - editMessageMedia
+    - editMessageReplyMarkup
+    - editMessageText
     - editUserStarSubscription
+    - exportChatInviteLink
     - forwardMessages
     - getAvailableGifts
     - getBusinessAccountGifts
@@ -350,6 +357,7 @@ methods:
     - sendDice
     - sendDocument
     - sendGame
+    - sendGift
     - sendInvoice
     - sendLocation
     - sendMediaGroup
@@ -381,21 +389,3 @@ methods:
   pending:
     copyMessage:
       botapi: [direct_messages_topic_id, message_effect_id, suggested_post_parameters]
-    createChatInviteLink:
-      mtproto: [subscription_pricing]
-    createForumTopic:
-      mtproto: [send_as, title_missing]
-    createInvoiceLink:
-      botapi: [business_connection_id]
-    editMessageCaption:
-      botapi: [inline_message_id]
-    editMessageMedia:
-      botapi: [inline_message_id]
-    editMessageReplyMarkup:
-      botapi: [inline_message_id]
-    editMessageText:
-      botapi: [inline_message_id]
-    exportChatInviteLink:
-      mtproto: [subscription_pricing]
-    sendGift:
-      botapi: [text_entities, text_parse_mode]

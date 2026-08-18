@@ -31,7 +31,9 @@ class CreateChatInviteLink:
         name: Optional[str] = None,
         expire_date: Optional[datetime] = None,
         member_limit: Optional[int] = None,
-        creates_join_request: Optional[bool] = None
+        creates_join_request: Optional[bool] = None,
+        subscription_period: Optional[int] = None,
+        subscription_price: Optional[int] = None,
     ) -> "types.ChatInviteLink":
         """Create an additional invite link for a chat.
 
@@ -62,6 +64,13 @@ class CreateChatInviteLink:
                 True, if users joining the chat via the link need to be approved by chat administrators.
                 If True, member_limit can't be specified.
 
+            subscription_period (``int``, *optional*):
+                Number of seconds a subscription bought through this link lasts.
+                Currently must always be 2592000 (30 days).
+
+            subscription_price (``int``, *optional*):
+                Number of Telegram Stars a subscription through this link costs.
+
         Returns:
             :obj:`~pyrogram.types.ChatInviteLink`: On success, the new invite link is returned.
 
@@ -76,6 +85,10 @@ class CreateChatInviteLink:
         """
         r = await self.invoke(
             raw.functions.messages.ExportChatInvite(
+                subscription_pricing=raw.types.StarsSubscriptionPricing(
+                    period=subscription_period,
+                    amount=subscription_price
+                ) if subscription_period is not None and subscription_price is not None else None,
                 peer=await self.resolve_peer(chat_id),
                 expire_date=utils.datetime_to_timestamp(expire_date),
                 usage_limit=member_limit,
