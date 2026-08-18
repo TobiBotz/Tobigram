@@ -31,7 +31,7 @@ METHODS_DIR = Path("pyrogram/methods")
 
 COMBINATOR_RE = re.compile(r"^([\w.]+)#([0-9a-f]+)\s(.*?)=\s([\w<>.]+);$", re.MULTILINE)
 FLAGS_RE = re.compile(r"flags(\d?)\.(\d+)\?")
-PARAM_RE = re.compile(r"([a-z_]+):([\w<>.]+)")
+PARAM_RE = re.compile(r"([a-z_]+):([\w<>.]+\?)?([\w<>.]+)")
 
 
 def parse_tl_functions(tl_path: Path) -> Dict[str, Dict]:
@@ -46,17 +46,12 @@ def parse_tl_functions(tl_path: Path) -> Dict[str, Dict]:
         args_str = args_str.strip()
 
         for p_match in PARAM_RE.finditer(args_str):
-            name, ptype = p_match.groups()
-            flag_match = FLAGS_RE.match(ptype)
-            if flag_match:
-                actual_type = ptype.split("?", 1)[1]
-            else:
-                actual_type = ptype
+            name, flag, actual_type = p_match.groups()
             params.append(
                 {
                     "name": name,
                     "type": actual_type,
-                    "tl_type": ptype,
+                    "tl_type": (flag or "") + actual_type,
                 }
             )
 

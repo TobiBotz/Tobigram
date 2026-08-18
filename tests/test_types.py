@@ -1337,3 +1337,65 @@ class TestPinBusinessConnection:
         await method(client, chat_id=1, message_id=2, business_connection_id="bc1")
 
         assert captured["business_connection_id"] == "bc1"
+
+
+class TestQuizPollSerialises:
+    """A quiz poll could not be sent at all.
+
+    TL layer 228 declares inputMediaPoll.correct_answers as Vector<int>, but
+    send_poll still built it as bytes, so every quiz died in Int.__new__ with
+    "'bytes' object has no attribute 'to_bytes'" the moment the request was
+    serialised.
+    """
+
+    @staticmethod
+    async def sent(**kwargs):
+        from pyrogram.methods.messages.send_poll import SendPoll
+
+        captured = {}
+
+        async def invoke(query, *args, **kw):
+            captured["query"] = query
+
+            return raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0)
+
+        client = AsyncMock()
+        client.invoke = invoke
+        client.resolve_peer = AsyncMock(return_value=raw.types.InputPeerSelf())
+        client.rnd_id = lambda: 1
+        client.parser.parse = AsyncMock(return_value={"message": "q", "entities": []})
+
+        await SendPoll.send_poll(client, chat_id=1, **kwargs)
+
+        return captured["query"]
+
+    async def test_a_single_correct_answer_serialises(self):
+        query = await self.sent(
+            question="Q?",
+            options=["a", "b"],
+            type=enums.PollType.QUIZ,
+            correct_option_id=1,
+            explanation="because"
+        )
+
+        assert query.media.correct_answers == [1]
+        query.write()
+
+    async def test_several_correct_answers_serialise(self):
+        query = await self.sent(
+            question="Q?",
+            options=["a", "b"],
+            type=enums.PollType.QUIZ,
+            correct_option_ids=[0, 1]
+        )
+
+        assert query.media.correct_answers == [0, 1]
+        query.write()
+
+    async def test_the_option_index_stays_bytes(self):
+        query = await self.sent(question="Q?", options=["a", "b"])
+
+        assert [answer.option for answer in query.media.poll.answers] == [b"\x00", b"\x01"], (
+            "pollAnswer.option is still bytes in the schema, unlike correct_answers"
+        )
+        query.write()

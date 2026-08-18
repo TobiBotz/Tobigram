@@ -246,9 +246,9 @@ class SendPoll:
 
         correct = None
         if correct_option_ids is not None:
-            correct = [bytes([cid]) for cid in correct_option_ids]
+            correct = list(correct_option_ids)
         elif correct_option_id is not None:
-            correct = [bytes([correct_option_id])]
+            correct = [correct_option_id]
 
         r = await self.invoke(
             raw.functions.messages.SendMedia(
