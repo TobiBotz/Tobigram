@@ -567,6 +567,15 @@ def pyrogram_api():
             update_profile
             update_status
         """,
+        listeners="""
+        Listeners
+            ask
+            listen
+            register_next_step_handler
+            stop_listening
+            wait_for_callback_query
+            wait_for_message
+        """,
         utilities="""
         Utilities
             add_handler
@@ -1061,6 +1070,11 @@ def pyrogram_api():
             InputRichBlockVoiceNote
             InputRichMessageMedia
         """,
+        listeners="""
+        Listeners
+            Identifier
+            Listener
+        """,
         authorization="""
         Authorization
             SentCode
@@ -1081,6 +1095,7 @@ def pyrogram_api():
             ChatAction
             ChatEventAction
             ChatJoinRequestQueryResult
+            ListenerTypes
             ChatJoinType
             ChatMemberStatus
             ChatMembersFilter
@@ -1217,6 +1232,7 @@ def pyrogram_api():
             Message.answer_voice
             Message.get_media_group
             Message.react
+            Message.wait_for_click
             Message.read
             Message.view
             Message.vote
@@ -1241,6 +1257,9 @@ def pyrogram_api():
         chat="""
         Chat
             Chat.archive
+            Chat.ask
+            Chat.listen
+            Chat.stop_listening
             Chat.unarchive
             Chat.set_title
             Chat.set_description

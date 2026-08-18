@@ -17,10 +17,11 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import asyncio
+import contextvars
 import inspect
 import logging
 from collections import OrderedDict
-from typing import Dict
+from typing import Dict, Optional, Tuple
 
 import pyrogram
 from pyrogram import utils
@@ -91,6 +92,10 @@ from pyrogram.raw.types import (
 
 log = logging.getLogger(__name__)
 
+_current_worker: "contextvars.ContextVar[Optional[Tuple]]" = contextvars.ContextVar(
+    "wzgram_dispatch_worker", default=None
+)
+
 
 class Dispatcher:
     NEW_MESSAGE_UPDATES = (UpdateNewMessage, UpdateNewChannelMessage, UpdateNewScheduledMessage, UpdateNewEphemeralMessage)
@@ -128,6 +133,16 @@ class Dispatcher:
 
         self.updates_queue = asyncio.Queue(maxsize=256)
         self.groups = OrderedDict()
+
+        self.listeners = getattr(client, "listeners", None)
+        self.listener_types = {
+            MessageHandler: pyrogram.enums.ListenerTypes.MESSAGE,
+            CallbackQueryHandler: pyrogram.enums.ListenerTypes.CALLBACK_QUERY,
+        }
+
+        self.relief_workers = []
+        self.parked = 0
+        self.relief_capped = False
 
         async def message_parser(update, users, chats):
             return (
@@ -374,7 +389,10 @@ class Dispatcher:
                 log.exception(e)
 
         if not self.client.no_updates:
-            for i in range(self.client.workers):
+            self.relief_workers = [t for t in self.relief_workers if not t.done()]
+            self.parked = 0
+
+            for i in range(self.client.workers + len(self.relief_workers)):
                 try:
                     self.updates_queue.put_nowait(None)
                 except asyncio.QueueFull:
@@ -389,7 +407,7 @@ class Dispatcher:
                         )
                         break
 
-            for i in self.handler_worker_tasks:
+            for i in self.handler_worker_tasks + self.relief_workers:
                 try:
                     await asyncio.wait_for(i, timeout=10)
                 except asyncio.TimeoutError:
@@ -401,6 +419,9 @@ class Dispatcher:
                         pass
                 except Exception:
                     pass
+
+            self.relief_workers.clear()
+            self.relief_capped = False
 
             if clear_handlers:
                 self.handler_worker_tasks.clear()
@@ -462,8 +483,60 @@ class Dispatcher:
                 if not self.groups[group]:
                     del self.groups[group]
 
-    async def handler_worker(self, lock):
+    def park(self, lock=None) -> bool:
+        """Register that a handler worker is about to block on a listener.
+
+        Handler callbacks are awaited inline in the worker, so a callback that
+        waits for a reply holds its worker for the whole conversation. Left
+        alone, the worker-th concurrent conversation exhausts the pool and no
+        worker is left to deliver the very updates the parked ones are waiting
+        for. Every parked worker is therefore covered one for one by a relief
+        worker sharing its lock — the parked worker is not holding it, so
+        ``locks_list`` never changes and the barrier in ``add_handler`` is
+        untouched. Relief is not capped separately: parked workers cannot
+        outnumber listeners, and those are already bounded process-wide.
+        """
+        if lock is None:
+            entry = _current_worker.get()
+
+            if entry is None or entry[0] is not self:
+                return False
+
+            lock = entry[1]
+
+        self.parked += 1
+        self.relief_workers = [t for t in self.relief_workers if not t.done()]
+
+        if not self.relief_capped and len(self.relief_workers) >= self.client.workers * 4:
+            self.relief_capped = True
+            log.warning(
+                "%s conversations are parked inside handlers. They are covered, "
+                "but a flow that waits this often is cheaper driven from its own "
+                "task or from register_next_step_handler.",
+                len(self.relief_workers)
+            )
+
+        self.relief_workers.append(
+            self.client.loop.create_task(self.handler_worker(lock, relief=True))
+        )
+
+        return True
+
+    def unpark(self):
+        if self.parked:
+            self.parked -= 1
+
+    async def handler_worker(self, lock, relief: bool = False):
+        _current_worker.set((self, lock))
+
         while True:
+            if relief and self.parked < len(self.relief_workers):
+                self.relief_workers = [
+                    t for t in self.relief_workers
+                    if not t.done() and t is not asyncio.current_task()
+                ]
+                break
+
             if self.client.rate_limiter is not None and not self.client.rate_limiter.is_closed:
                 congestion = self.client.rate_limiter.congestion()
                 if congestion > 0.8:
@@ -484,6 +557,16 @@ class Dispatcher:
                     else (None, type(None))
                 )
 
+                consumed = False
+
+                if self.listeners and parsed_update is not None:
+                    listener_type = self.listener_types.get(handler_type)
+
+                    if listener_type is not None:
+                        consumed = await self.listeners.feed(
+                            self.client, listener_type, parsed_update
+                        )
+
                 async with lock:
                     groups_snapshot = list(self.groups.items())
 
@@ -494,7 +577,7 @@ class Dispatcher:
 
                         args = None
 
-                        if isinstance(handler, handler_type):
+                        if not consumed and isinstance(handler, handler_type):
                             try:
                                 if await handler.check(self.client, parsed_update):
                                     args = (parsed_update,)

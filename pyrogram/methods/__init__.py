@@ -27,6 +27,7 @@ from .ephemeral import Ephemeral
 from .decorators import Decorators
 from .folders import Folders
 from .invite_links import InviteLinks
+from .listeners import Listeners
 from .messages import Messages
 from .password import Password
 from .payments import Payments
@@ -50,6 +51,7 @@ class Methods(
     Phone,
     Premium,
     Chats,
+    Listeners,
     Users,
     Stories,
     Messages,

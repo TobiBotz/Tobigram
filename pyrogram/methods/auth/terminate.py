@@ -39,6 +39,8 @@ class Terminate:
         if not self.is_initialized:
             raise ConnectionError("Client is already terminated")
 
+        await self.listeners.close()
+
         if self.takeout_id:
             await self.invoke(raw.functions.account.FinishTakeoutSession())
             log.info("Takeout session %s finished", self.takeout_id)

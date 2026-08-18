@@ -16,14 +16,21 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from .authorization import *
-from .bots_and_keyboards import *
-from .inline_mode import *
-from .input_content import *
-from .list import List
-from .listeners import *
-from .messages_and_media import *
-from .object import Object
-from .update import *
-from .user_and_chats import *
-from .stats import *
+
+from .ask import Ask
+from .listen import Listen
+from .register_next_step_handler import RegisterNextStepHandler
+from .stop_listening import StopListening
+from .wait_for_callback_query import WaitForCallbackQuery
+from .wait_for_message import WaitForMessage
+
+
+class Listeners(
+    Ask,
+    Listen,
+    RegisterNextStepHandler,
+    StopListening,
+    WaitForCallbackQuery,
+    WaitForMessage,
+):
+    pass

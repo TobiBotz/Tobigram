@@ -18,6 +18,19 @@ the main package directly.
 
 .. currentmodule:: pyrogram.Client
 
+Listeners
+---------
+
+.. autosummary::
+    :nosignatures:
+
+    {listeners}
+
+.. toctree::
+    :hidden:
+
+    {listeners}
+
 Utilities
 ---------
 

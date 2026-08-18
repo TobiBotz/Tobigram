@@ -35,6 +35,7 @@ from pyrogram.errors import (
 from pyrogram.parser import Parser
 from pyrogram.parser import utils as parser_utils
 
+from ..listeners.listener import UNSET
 from ..object import Object
 from ..update import Update
 
@@ -9658,4 +9659,58 @@ class Message(Object, Update):
             id=self.id,
             to_lang=translate_to_language_code
         )
+    async def wait_for_click(
+        self,
+        user_id=None,
+        timeout=UNSET,
+        filters=None,
+        alert=True
+    ):
+        """Bound method *wait_for_click* of :obj:`~pyrogram.types.Message`.
 
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            await client.listen(
+                listener_type=enums.ListenerTypes.CALLBACK_QUERY,
+                chat_id=message.chat.id,
+                message_id=message.id
+            )
+
+        Example:
+            .. code-block:: python
+
+                sent = await message.reply("Pick one", reply_markup=keyboard)
+                query = await sent.wait_for_click(timeout=60)
+
+        Parameters:
+            user_id (``int`` | ``str`` | List of ``int`` | ``str``, *optional*):
+                Only accept a click from this user.
+
+            timeout (``float``, *optional*):
+                Seconds to wait before raising ``ListenerTimeout``. Defaults to
+                the client's ``listener_timeout``.
+
+            filters (:obj:`~pyrogram.filters.Filter`, *optional*):
+                Extra filter the callback query has to pass.
+
+            alert (``bool`` | ``str``, *optional*):
+                Answer clicks coming from a user this listener does not expect.
+                Pass a string to set the text.
+
+        Returns:
+            :obj:`~pyrogram.types.CallbackQuery`: The matching callback query.
+
+        Raises:
+            ListenerTimeout: In case nobody clicked in time.
+        """
+        return await self._client.listen(
+            filters=filters,
+            listener_type=enums.ListenerTypes.CALLBACK_QUERY,
+            timeout=timeout,
+            unallowed_click_alert=alert,
+            chat_id=self.chat.id,
+            user_id=user_id,
+            message_id=self.id
+        )

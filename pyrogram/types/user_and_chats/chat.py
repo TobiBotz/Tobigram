@@ -1366,6 +1366,71 @@ class Chat(Object):
     def full_name(self) -> str:
         return " ".join(filter(None, [self.first_name, self.last_name])) or self.title or None
 
+    async def listen(self, *args, **kwargs):
+        """Bound method *listen* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            await client.listen(chat_id=chat.id)
+
+        Example:
+            .. code-block:: python
+
+                await chat.listen()
+
+        Returns:
+            :obj:`~pyrogram.types.Message` | :obj:`~pyrogram.types.CallbackQuery`:
+            The matching update.
+
+        Raises:
+            ListenerTimeout: In case no matching update arrived in time.
+        """
+        return await self._client.listen(*args, chat_id=self.id, **kwargs)
+
+    async def ask(self, text: str, *args, **kwargs):
+        """Bound method *ask* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            await client.ask(chat.id, "What is your name?")
+
+        Example:
+            .. code-block:: python
+
+                await chat.ask("What is your name?")
+
+        Returns:
+            :obj:`~pyrogram.types.Message` | :obj:`~pyrogram.types.CallbackQuery`:
+            The answer, with the prompt attached as ``sent_message``.
+
+        Raises:
+            ListenerTimeout: In case nobody answered in time.
+        """
+        return await self._client.ask(self.id, text, *args, **kwargs)
+
+    async def stop_listening(self, *args, **kwargs):
+        """Bound method *stop_listening* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            await client.stop_listening(chat_id=chat.id)
+
+        Example:
+            .. code-block:: python
+
+                await chat.stop_listening()
+
+        Returns:
+            ``int``: Number of listeners that were stopped.
+        """
+        return await self._client.stop_listening(*args, chat_id=self.id, **kwargs)
+
     async def archive(self):
         """Bound method *archive* of :obj:`~pyrogram.types.Chat`.
 

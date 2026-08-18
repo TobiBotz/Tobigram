@@ -86,6 +86,21 @@ Input Content
 
     {input_content}
 
+Listeners
+---------
+
+.. autosummary::
+    :nosignatures:
+
+    {listeners}
+
+.. toctree::
+    :hidden:
+
+    {listeners}
+
+-----
+
 Authorization
 -------------
 

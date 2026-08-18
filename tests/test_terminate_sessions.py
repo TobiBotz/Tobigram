@@ -6,6 +6,7 @@ import pytest
 import pyrogram
 from pyrogram.methods.auth.terminate import Terminate
 from pyrogram.session import Session
+from pyrogram.types import ListenerRegistry
 
 
 class FakeSession:
@@ -57,6 +58,7 @@ class FakeClient(Terminate):
         self.updates_watchdog_task = None
         self.media_pool_reaper_event = asyncio.Event()
         self.media_pool_reaper_task = None
+        self.listeners = ListenerRegistry(self)
         self.dispatcher = SimpleNamespace(stop=self._noop)
         self.session = FakeSession(self, 1, b"home-key", False)
 

@@ -61,7 +61,7 @@ from pyrogram.methods.rate_limiter import TokenBucket
 from pyrogram.qrlogin import QRLogin
 from pyrogram.session import Auth, Session
 from pyrogram.storage import SQLiteStorage, Storage
-from pyrogram.types import LinkPreviewOptions, TermsOfService, User
+from pyrogram.types import LinkPreviewOptions, ListenerRegistry, TermsOfService, User
 from pyrogram.utils import ainput
 
 from .connection import Connection
@@ -305,6 +305,22 @@ class Client(Methods):
             Set the maximum size of the topic cache.
             Defaults to 1000.
 
+        max_listeners (``int``, *optional*):
+            Set the maximum number of concurrent listeners. The ceiling is shared
+            by every client on the event loop, so fifteen clients do not get
+            fifteen times the budget. Defaults to ``WZGRAM_MAX_LISTENERS`` (1000).
+
+        listener_timeout (``float``, *optional*):
+            Default timeout, in seconds, for :meth:`~pyrogram.Client.listen`.
+            Pass None to wait forever by default. Defaults to 300.
+
+        unallowed_click_alert (``bool``, *optional*):
+            Answer callback queries coming from a user a listener did not expect.
+            Defaults to True.
+
+        unallowed_click_alert_text (``str``, *optional*):
+            Text shown by *unallowed_click_alert*.
+
         storage_engine (:obj:`~pyrogram.storage.Storage`, *optional*):
             Pass an instance of your own implementation of session storage engine.
             Useful when you want to store your session in databases like Mongo, Redis, etc.
@@ -392,6 +408,8 @@ class Client(Methods):
     MAX_CONCURRENT_TRANSMISSIONS = 16
     MAX_MESSAGE_CACHE_SIZE = 1000
     MAX_TOPIC_CACHE_SIZE = 1000
+    LISTENER_TIMEOUT = 300
+    UNALLOWED_CLICK_ALERT_TEXT = "You are not expected to click this button."
 
     mimetypes = MimeTypes()
     mimetypes.readfp(StringIO(mime_types))
@@ -428,6 +446,10 @@ class Client(Methods):
         max_concurrent_transmissions: int = MAX_CONCURRENT_TRANSMISSIONS,
         max_message_cache_size: int = MAX_MESSAGE_CACHE_SIZE,
         max_topic_cache_size: int = MAX_TOPIC_CACHE_SIZE,
+        max_listeners: Optional[int] = None,
+        listener_timeout: Optional[float] = LISTENER_TIMEOUT,
+        unallowed_click_alert: bool = True,
+        unallowed_click_alert_text: str = UNALLOWED_CLICK_ALERT_TEXT,
         storage_engine: Optional[Storage] = None,
         client_platform: "enums.ClientPlatform" = enums.ClientPlatform.OTHER,
         link_preview_options: Optional[LinkPreviewOptions] = None,
@@ -475,6 +497,10 @@ class Client(Methods):
         self.hide_password = hide_password
         self.max_concurrent_transmissions = max_concurrent_transmissions
         self.max_message_cache_size = max_message_cache_size
+        self.max_listeners = max_listeners
+        self.listener_timeout = listener_timeout
+        self.unallowed_click_alert = unallowed_click_alert
+        self.unallowed_click_alert_text = unallowed_click_alert_text
         self.max_topic_cache_size = max_topic_cache_size
         self.client_platform = client_platform
         self.link_preview_options = link_preview_options
@@ -508,6 +534,8 @@ class Client(Methods):
             self.storage = storage_engine
         else:
             self.storage = SQLiteStorage(self.name, workdir=self.workdir)
+
+        self.listeners = ListenerRegistry(self)
 
         self.dispatcher: Dispatcher = Dispatcher(self)
 

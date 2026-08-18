@@ -48,21 +48,32 @@ class Filter:
         return OrFilter(self, other)
 
 
+
+async def check_filter(filter, client: "pyrogram.Client", update: Update):
+    """Run a filter, awaiting it or offloading it depending on how it was written.
+
+    ``create`` accepts a plain ``def`` as readily as a coroutine function, so
+    every caller has to probe before invoking. Missing filters pass.
+    """
+    if not callable(filter):
+        return True
+
+    if inspect.iscoroutinefunction(filter.__call__):
+        return await filter(client, update)
+
+    return await client.loop.run_in_executor(
+        client.executor,
+        filter,
+        client, update
+    )
+
+
 class InvertFilter(Filter):
     def __init__(self, base):
         self.base = base
 
     async def __call__(self, client: "pyrogram.Client", update: Update):
-        if inspect.iscoroutinefunction(self.base.__call__):
-            x = await self.base(client, update)
-        else:
-            x = await client.loop.run_in_executor(
-                client.executor,
-                self.base,
-                client, update
-            )
-
-        return not x
+        return not await check_filter(self.base, client, update)
 
 
 class AndFilter(Filter):
@@ -71,28 +82,12 @@ class AndFilter(Filter):
         self.other = other
 
     async def __call__(self, client: "pyrogram.Client", update: Update):
-        if inspect.iscoroutinefunction(self.base.__call__):
-            x = await self.base(client, update)
-        else:
-            x = await client.loop.run_in_executor(
-                client.executor,
-                self.base,
-                client, update
-            )
+        x = await check_filter(self.base, client, update)
 
         if not x:
             return False
 
-        if inspect.iscoroutinefunction(self.other.__call__):
-            y = await self.other(client, update)
-        else:
-            y = await client.loop.run_in_executor(
-                client.executor,
-                self.other,
-                client, update
-            )
-
-        return x and y
+        return x and await check_filter(self.other, client, update)
 
 
 class OrFilter(Filter):
@@ -101,28 +96,12 @@ class OrFilter(Filter):
         self.other = other
 
     async def __call__(self, client: "pyrogram.Client", update: Update):
-        if inspect.iscoroutinefunction(self.base.__call__):
-            x = await self.base(client, update)
-        else:
-            x = await client.loop.run_in_executor(
-                client.executor,
-                self.base,
-                client, update
-            )
+        x = await check_filter(self.base, client, update)
 
         if x:
             return True
 
-        if inspect.iscoroutinefunction(self.other.__call__):
-            y = await self.other(client, update)
-        else:
-            y = await client.loop.run_in_executor(
-                client.executor,
-                self.other,
-                client, update
-            )
-
-        return x or y
+        return x or await check_filter(self.other, client, update)
 
 
 CUSTOM_FILTER_NAME = "CustomFilter"
