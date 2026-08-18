@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw, types
@@ -29,6 +29,7 @@ class PinChatMessage:
         message_id: int,
         disable_notification: bool = False,
         both_sides: bool = False,
+        business_connection_id: Optional[str] = None,
     ) -> "types.Message":
         """Pin a message in a group, channel or your own chat.
         You must be an administrator in the chat for this to work and must have the "can_pin_messages" admin right in
@@ -51,6 +52,10 @@ class PinChatMessage:
                 Pass True to pin the message for both sides (you and recipient).
                 Applicable to private chats only. Defaults to False.
 
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection on behalf of which the
+                action is taken.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the service message is returned.
 
@@ -69,7 +74,8 @@ class PinChatMessage:
                 id=message_id,
                 silent=disable_notification if disable_notification is not None else None,
                 pm_oneside=not both_sides if both_sides is not None else None
-            )
+            ),
+            business_connection_id=business_connection_id
         )
 
         users = {u.id: u for u in r.users}

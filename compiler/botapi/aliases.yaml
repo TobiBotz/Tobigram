@@ -330,6 +330,7 @@ mtproto:
 
     messages.editMessage:
       id: message_id
+      quick_reply_shortcut_id: quick_reply_shortcut
 
     messages.exportChatInvite:
       title: name
@@ -350,7 +351,81 @@ mtproto:
       drop_media_captions: hide_captions
       video_timestamp: video_start_timestamp
 
+    get_business_connection:
+      connection_id: business_connection_id
+    get_custom_emoji_stickers:
+      document_id: custom_emoji_ids
+    refund_star_payment:
+      charge_id: telegram_payment_charge_id
+    set_chat_description:
+      about: description
+    answer_web_app_query:
+      bot_query_id: web_app_query_id
+    answer_guest_query:
+      query_id: guest_query_id
+    answer_chat_join_request_query:
+      query_id: chat_join_request_query_id
+    send_chat_join_request_web_app:
+      query_id: chat_join_request_query_id
+      result: web_app_url
+    delete_forum_topic:
+      top_msg_id: topic_id
+    delete_message_reaction:
+      msg_id: message_id
+      participant: user_id
+    delete_all_message_reactions:
+      participant: user_id
+    answer_callback_query:
+      query_id: callback_query_id
+      alert: show_alert
+    edit_user_star_subscription:
+      charge_id: telegram_payment_charge_id
+    delete_business_messages:
+      id: message_ids
+    delete_ephemeral_message:
+      id: message_id
+    get_managed_bot_token:
+      bot: user_id
+    replace_managed_bot_token:
+      bot: user_id
+    get_managed_bot_access_settings:
+      bot: user_id
+    set_chat_permissions:
+      banned_rights: permissions
+
   field_unsupported:
+    get_me:
+      id: the method exists to fetch the current user, so it passes InputUserSelf
+    approve_chat_join_request:
+      approved: the method exists to approve, so it sets this itself
+    decline_chat_join_request:
+      approved: the method exists to decline, so it sets this itself
+    delete_business_messages:
+      revoke: business messages are always deleted for everyone
+    get_managed_bot_token:
+      revoke: replacing a token goes through replace_managed_bot_token
+    replace_managed_bot_token:
+      revoke: the method exists to replace the token, so it sets this itself
+    convert_gift_to_stars:
+      stargift: built from business_connection_id and owned_gift_id
+    create_invoice_link:
+      invoice_media: built from the invoice arguments
+    send_rich_message_draft:
+      action: the method exists to save a draft, so it sets this itself
+    export_chat_invite_link:
+      legacy_revoke_permanent: >-
+        replacing the primary link is what the method does, so it is always set
+      title: creating a named link goes through create_chat_invite_link
+      usage_limit: creating a limited link goes through create_chat_invite_link
+      request_needed: creating an approval link goes through create_chat_invite_link
+      expire_date: creating an expiring link goes through create_chat_invite_link
+    create_chat_invite_link:
+      legacy_revoke_permanent: a newly created link never replaces the primary one
+    get_business_account_star_balance:
+      peer: resolved from business_connection_id
+      ton: the TON balance is read with get_business_account_ton_balance
+    get_business_account_gifts:
+      peer: resolved from business_connection_id
     close_forum_topic:
       closed: the method exists to close the topic, so it sets this itself
       hidden: hiding a topic goes through edit_forum_topic
@@ -374,11 +449,6 @@ mtproto:
       success: derived from whether error_message was given
     answer_shipping_query:
       success: derived from whether error_message was given
-    export_chat_invite_link:
-      title: creating a named link goes through create_chat_invite_link
-      usage_limit: creating a limited link goes through create_chat_invite_link
-      request_needed: creating an approval link goes through create_chat_invite_link
-      expire_date: creating an expiring link goes through create_chat_invite_link
     revoke_chat_invite_link:
       title: revoking does not edit the link; use edit_chat_invite_link
       usage_limit: revoking does not edit the link; use edit_chat_invite_link

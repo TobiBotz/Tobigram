@@ -29,6 +29,7 @@ class UnpinChatMessage:
         message_id: int = 0,
         disable_notification: Optional[bool] = None,
         both_sides: Optional[bool] = None,
+        business_connection_id: Optional[str] = None,
     ) -> bool:
         """Unpin a message in a group, channel or your own chat.
         You must be an administrator in the chat for this to work and must have the "can_pin_messages" admin
@@ -43,6 +44,10 @@ class UnpinChatMessage:
             message_id (``int``, *optional*):
                 Identifier of a message to unpin.
                 If not specified, the most recent pinned message (by sending date) will be unpinned.
+
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection on behalf of which the
+                action is taken.
 
         Returns:
             ``bool``: True on success.
@@ -59,7 +64,8 @@ class UnpinChatMessage:
                 silent=disable_notification if disable_notification is not None else None,
                 unpin=True,
                 pm_oneside=both_sides if both_sides is not None else None
-            )
+            ),
+            business_connection_id=business_connection_id
         )
 
         return True

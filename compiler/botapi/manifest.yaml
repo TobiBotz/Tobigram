@@ -312,32 +312,54 @@ types:
 
 methods:
   supported:
+    - answerCallbackQuery
+    - answerChatJoinRequestQuery
+    - answerGuestQuery
     - answerInlineQuery
     - answerPreCheckoutQuery
     - answerShippingQuery
+    - answerWebAppQuery
+    - approveChatJoinRequest
     - approveSuggestedPost
     - banChatMember
     - close
     - closeForumTopic
+    - convertGiftToStars
+    - declineChatJoinRequest
     - declineSuggestedPost
+    - deleteAllMessageReactions
+    - deleteBusinessMessages
     - deleteChatPhoto
+    - deleteForumTopic
+    - deleteMessageReaction
     - deleteMessages
     - editChatInviteLink
     - editForumTopic
+    - editMessageChecklist
     - getAvailableGifts
+    - getBusinessAccountStarBalance
+    - getBusinessConnection
     - getChat
     - getChatMember
     - getChatMenuButton
+    - getCustomEmojiStickers
     - getFile
     - getGameHighScores
+    - getManagedBotAccessSettings
+    - getManagedBotToken
+    - getMe
     - getUserPersonalChatMessages
     - leaveChat
     - logOut
+    - pinChatMessage
     - promoteChatMember
+    - refundStarPayment
+    - replaceManagedBotToken
     - revokeChatInviteLink
     - sendAnimation
     - sendAudio
     - sendChatAction
+    - sendChatJoinRequestWebApp
     - sendChecklist
     - sendContact
     - sendDice
@@ -345,98 +367,55 @@ methods:
     - sendLocation
     - sendMediaGroup
     - sendPhoto
+    - sendRichMessageDraft
     - sendVideoNote
     - sendVoice
+    - setChatDescription
     - setChatMenuButton
+    - setChatPermissions
     - setChatPhoto
     - setChatTitle
     - setGameScore
     - setManagedBotAccessSettings
+    - stopPoll
     - transferBusinessAccountStars
     - unpinAllChatMessages
+    - unpinChatMessage
     - upgradeGift
   pending:
-    answerCallbackQuery:
-      mtproto: [alert, query_id]
-    answerChatJoinRequestQuery:
-      mtproto: [query_id]
-    answerGuestQuery:
-      mtproto: [query_id]
-    answerWebAppQuery:
-      mtproto: [bot_query_id]
-    approveChatJoinRequest:
-      mtproto: [approved]
-    convertGiftToStars:
-      mtproto: [stargift]
     copyMessage:
       botapi: [direct_messages_topic_id, message_effect_id, reply_parameters, suggested_post_parameters]
     createChatInviteLink:
-      mtproto: [legacy_revoke_permanent, subscription_pricing]
+      mtproto: [subscription_pricing]
     createForumTopic:
       mtproto: [send_as, title_missing]
     createInvoiceLink:
       botapi: [business_connection_id]
-      mtproto: [invoice_media]
-    declineChatJoinRequest:
-      mtproto: [approved]
-    deleteAllMessageReactions:
-      mtproto: [participant]
-    deleteBusinessMessages:
-      mtproto: [id, revoke]
     deleteEphemeralMessage:
       botapi: [ephemeral_message_id]
-      mtproto: [id]
-    deleteForumTopic:
-      mtproto: [top_msg_id]
-    deleteMessageReaction:
-      mtproto: [msg_id, participant]
     editMessageCaption:
       botapi: [inline_message_id]
-    editMessageChecklist:
-      mtproto: [quick_reply_shortcut_id, schedule_date, schedule_repeat_period]
     editMessageMedia:
       botapi: [inline_message_id]
     editMessageReplyMarkup:
       botapi: [inline_message_id]
-      mtproto: [quick_reply_shortcut_id, schedule_date, schedule_repeat_period]
     editMessageText:
       botapi: [inline_message_id]
-      mtproto: [quick_reply_shortcut_id, schedule_date, schedule_repeat_period]
     editUserStarSubscription:
-      mtproto: [charge_id, restore]
+      mtproto: [restore]
     exportChatInviteLink:
-      mtproto: [legacy_revoke_permanent, subscription_pricing]
+      mtproto: [subscription_pricing]
     forwardMessages:
       botapi: [direct_messages_topic_id]
       mtproto: [with_my_score]
     getBusinessAccountGifts:
       botapi: [exclude_from_blockchain, exclude_limited_non_upgradable, exclude_limited_upgradable, exclude_unique]
-      mtproto: [exclude_unique, peer]
-    getBusinessAccountStarBalance:
-      mtproto: [peer, ton]
-    getBusinessConnection:
-      mtproto: [connection_id]
+      mtproto: [exclude_unique]
     getChatGifts:
       botapi: [exclude_from_blockchain, exclude_limited_non_upgradable, exclude_limited_upgradable, exclude_unique]
       mtproto: [exclude_unique]
-    getCustomEmojiStickers:
-      mtproto: [document_id]
-    getManagedBotAccessSettings:
-      mtproto: [bot]
-    getManagedBotToken:
-      mtproto: [bot, revoke]
-    getMe:
-      mtproto: [id]
-    pinChatMessage:
-      botapi: [business_connection_id]
-    refundStarPayment:
-      mtproto: [charge_id]
-    replaceManagedBotToken:
-      mtproto: [bot, revoke]
     restrictChatMember:
       botapi: [use_independent_chat_permissions]
-    sendChatJoinRequestWebApp:
-      mtproto: [query_id, result]
     sendDocument:
       botapi: [disable_content_type_detection]
     sendGift:
@@ -452,24 +431,13 @@ methods:
     sendRichMessage:
       botapi: [allow_paid_broadcast, direct_messages_topic_id, suggested_post_parameters]
       mtproto: [allow_paid_floodskip, allow_paid_stars, background, clear_draft, invert_media, quick_reply_shortcut, schedule_repeat_period, send_as, suggested_post, update_stickersets_order]
-    sendRichMessageDraft:
-      mtproto: [action]
     sendSticker:
       botapi: [emoji]
     sendVenue:
       botapi: [google_place_id, google_place_type]
     sendVideo:
       botapi: [cover, start_timestamp]
-    setChatDescription:
-      mtproto: [about]
-    setChatPermissions:
-      mtproto: [banned_rights]
-    stopPoll:
-      botapi: [business_connection_id]
-      mtproto: [quick_reply_shortcut_id, schedule_date, schedule_repeat_period]
     transferGift:
       botapi: [star_count]
     unbanChatMember:
       botapi: [only_if_banned]
-    unpinChatMessage:
-      botapi: [business_connection_id]

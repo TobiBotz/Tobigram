@@ -1232,3 +1232,108 @@ class TestSendGameSendOptions:
         assert query.send_as is None
         assert query.quick_reply_shortcut is None
         assert query.allow_paid_stars is None
+
+
+class TestEditFamilySendOptions:
+    """The editMessage family never exposed messages.editMessage's own options.
+
+    A scheduled message can be rescheduled and a quick reply shortcut retargeted,
+    but neither reached the request.
+    """
+
+    METHODS = {
+        "stop_poll": "pyrogram.methods.messages.stop_poll:StopPoll",
+        "edit_message_reply_markup":
+            "pyrogram.methods.messages.edit_message_reply_markup:EditMessageReplyMarkup",
+        "edit_message_checklist":
+            "pyrogram.methods.messages.edit_message_checklist:EditMessageChecklist",
+    }
+
+    @staticmethod
+    async def sent(dotted, name, **kwargs):
+        import importlib
+
+        module, cls = dotted.split(":")
+        method = getattr(getattr(importlib.import_module(module), cls), name)
+        captured = {}
+
+        async def invoke(query, *args, **kw):
+            captured["query"] = query
+            captured.update(kw)
+
+            return raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0)
+
+        client = AsyncMock()
+        client.invoke = invoke
+        client.resolve_peer = AsyncMock(return_value=raw.types.InputPeerSelf())
+        client.parser.parse = AsyncMock(return_value={"message": "t", "entities": []})
+
+        try:
+            await method(client, chat_id=1, message_id=2, **kwargs)
+        except Exception:
+            # the fake reply carries no updates, so parsing the result fails; the
+            # request has already been captured by then, and a request that never
+            # happened still fails on the missing key
+            pass
+
+        return captured
+
+    REQUIRED = {
+        "edit_message_checklist": dict(
+            checklist=types.InputChecklist(
+                title="t", tasks=[types.InputChecklistTask(id=1, text="a")]
+            )
+        )
+    }
+
+    @pytest.mark.parametrize("name", sorted(METHODS))
+    async def test_schedule_options_reach_the_request(self, name):
+        captured = await self.sent(
+            self.METHODS[name],
+            name,
+            schedule_date=datetime(2030, 1, 1, tzinfo=timezone.utc),
+            repeat_period=60,
+            quick_reply_shortcut=9,
+            **self.REQUIRED.get(name, {})
+        )
+        query = captured["query"]
+
+        assert query.schedule_date == 1893456000
+        assert query.schedule_repeat_period == 60
+        assert query.quick_reply_shortcut_id == 9
+
+    async def test_stop_poll_forwards_the_business_connection(self):
+        captured = await self.sent(
+            self.METHODS["stop_poll"], "stop_poll", business_connection_id="bc1"
+        )
+
+        assert captured["business_connection_id"] == "bc1"
+
+
+class TestPinBusinessConnection:
+    @pytest.mark.parametrize(
+        "dotted,name",
+        [
+            ("pyrogram.methods.chats.pin_chat_message:PinChatMessage", "pin_chat_message"),
+            ("pyrogram.methods.chats.unpin_chat_message:UnpinChatMessage", "unpin_chat_message"),
+        ]
+    )
+    async def test_it_reaches_invoke(self, dotted, name):
+        import importlib
+
+        module, cls = dotted.split(":")
+        method = getattr(getattr(importlib.import_module(module), cls), name)
+        captured = {}
+
+        async def invoke(query, *args, **kw):
+            captured.update(kw)
+
+            return raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0)
+
+        client = AsyncMock(spec=pyrogram.Client)
+        client.invoke = invoke
+        client.resolve_peer = AsyncMock(return_value=raw.types.InputPeerSelf())
+
+        await method(client, chat_id=1, message_id=2, business_connection_id="bc1")
+
+        assert captured["business_connection_id"] == "bc1"

@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Union, List, Optional
 
 import pyrogram
@@ -21,6 +22,9 @@ class EditMessageText:
         rich_text: Optional[str] = None,
         rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
         reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
+        schedule_date: Optional[datetime] = None,
+        repeat_period: Optional[int] = None,
+        quick_reply_shortcut: Optional[int] = None,
     ) -> "types.Message":
         """Edit the text of a message.
 
@@ -65,6 +69,15 @@ class EditMessageText:
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An inline keyboard for the message.
 
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                New date when the scheduled message will be sent.
+
+            repeat_period (``int``, *optional*):
+                New period in seconds for the message to be sent repeatedly.
+
+            quick_reply_shortcut (``int``, *optional*):
+                Unique identifier of the quick reply shortcut the message belongs to.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the edited message is returned.
 
@@ -102,6 +115,9 @@ class EditMessageText:
 
         r = await self.invoke(
             raw.functions.messages.EditMessage(
+                schedule_date=utils.datetime_to_timestamp(schedule_date),
+                schedule_repeat_period=repeat_period,
+                quick_reply_shortcut_id=quick_reply_shortcut,
                 peer=await self.resolve_peer(chat_id),
                 id=message_id,
                 no_webpage=no_webpage,
