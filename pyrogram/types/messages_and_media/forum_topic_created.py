@@ -35,6 +35,9 @@ class ForumTopicCreated(Object):
         icon_color (``int``):
             Color of the topic icon in decimal format.
 
+        is_name_implicit (``bool``, *optional*):
+            True, if the topic has no explicit title and one is derived from its content.
+
         custom_emoji_id (``str``, *optional*):
             Unique identifier of the custom emoji shown as the topic icon.
     """
@@ -44,7 +47,8 @@ class ForumTopicCreated(Object):
         id: int,
         title: str,
         icon_color: int,
-        custom_emoji_id: Optional[str] = None
+        custom_emoji_id: Optional[str] = None,
+        is_name_implicit: Optional[bool] = None
     ):
         super().__init__()
 
@@ -52,6 +56,7 @@ class ForumTopicCreated(Object):
         self.title = title
         self.icon_color = icon_color
         self.custom_emoji_id = custom_emoji_id
+        self.is_name_implicit = is_name_implicit
 
     @staticmethod
     def _parse(message: "raw.base.Message") -> "ForumTopicCreated":
@@ -61,6 +66,7 @@ class ForumTopicCreated(Object):
             id=getattr(message, "id", None),
             title=getattr(message.action, "title", None),
             icon_color=getattr(message.action, "icon_color", None),
-            custom_emoji_id=str(custom_emoji_id) if custom_emoji_id else None
+            custom_emoji_id=str(custom_emoji_id) if custom_emoji_id else None,
+            is_name_implicit=getattr(message.action, "title_missing", None)
         )
 

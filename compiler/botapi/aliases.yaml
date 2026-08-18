@@ -157,6 +157,7 @@ botapi:
       is_ephemeral: ephemeral
     BusinessBotRights:
       can_view_gifts_and_stars: can_view_gifts
+      can_convert_gifts_to_stars: can_sell_gifts
     BusinessIntro:
       message: text
     Community:
@@ -178,6 +179,28 @@ botapi:
       personal_chat: personal_channel
 
   field_unsupported:
+    Gift:
+      total_count: carried by overall_limits, which pairs it with the remaining count
+      remaining_count: carried by overall_limits
+      personal_total_count: carried by user_limits, the per-user purchase limit
+      personal_remaining_count: carried by user_limits
+    Game:
+      text: >-
+        the game TL constructor carries no text; Bot API takes it from the
+        message the game is attached to
+      text_entities: >-
+        the game TL constructor carries no text, so it carries no entities either
+    LivePhoto:
+      photo: >-
+        wzgram models the moving half of a live photo, which MTProto sends as a
+        document; the still frame arrives as the message's own photo
+    InputRichMessageMedia:
+      id: >-
+        wzgram takes the MTProto shape, three vectors of photos, documents and
+        users, rather than one wrapper per referenced item
+      media: >-
+        wzgram takes the MTProto shape, three vectors of photos, documents and
+        users, rather than one wrapper per referenced item
     SuggestedPostPrice:
       amount: >-
         wzgram keeps one class per currency, SuggestedPostPriceStar and

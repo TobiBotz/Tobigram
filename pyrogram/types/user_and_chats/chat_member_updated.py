@@ -48,6 +48,9 @@ class ChatMemberUpdated(Object, Update):
         invite_link (:obj:`~pyrogram.types.ChatInviteLink`, *optional*):
             Chat invite link, which was used by the user to join the chat; for joining by invite link events only.
 
+        via_chat_folder_invite_link (``bool``, *optional*):
+            True, if the user joined through a chat folder invite link.
+
         via_join_request (``bool``, *optional*):
             True, if the user joined the chat after sending a join request and being approved by an administrator.
     """
@@ -62,7 +65,8 @@ class ChatMemberUpdated(Object, Update):
         old_chat_member: Optional["types.ChatMember"] = None,
         new_chat_member: Optional["types.ChatMember"] = None,
         invite_link: Optional["types.ChatInviteLink"] = None,
-        via_join_request: Optional[bool] = None
+        via_join_request: Optional[bool] = None,
+        via_chat_folder_invite_link: Optional[bool] = None
     ):
         super().__init__(client)
 
@@ -73,6 +77,7 @@ class ChatMemberUpdated(Object, Update):
         self.new_chat_member = new_chat_member
         self.invite_link = invite_link
         self.via_join_request = via_join_request
+        self.via_chat_folder_invite_link = via_chat_folder_invite_link
 
     @staticmethod
     def _parse(
@@ -103,6 +108,7 @@ class ChatMemberUpdated(Object, Update):
         return ChatMemberUpdated(
             chat=types.Chat._parse_chat(client, chats[chat_id]),
             from_user=types.User._parse(client, users[update.actor_id]),
+            via_chat_folder_invite_link=getattr(update, "via_chatlist", None),
             date=utils.timestamp_to_datetime(update.date),
             old_chat_member=old_chat_member,
             new_chat_member=new_chat_member,

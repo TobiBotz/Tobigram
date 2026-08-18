@@ -232,25 +232,39 @@ class InputRichBlockListItem(Object):
         text (``str`` | :obj:`~pyrogram.raw.base.RichText`, *optional*):
             Simple text content of the list item.
             Mutually exclusive with *blocks*.
+
+        has_checkbox (``bool``, *optional*):
+            Pass True if the item has a checkbox.
+
+        is_checked (``bool``, *optional*):
+            Pass True if the item has a checked checkbox.
     """
 
     def __init__(
         self,
         blocks: Optional[List[InputRichBlock]] = None,
         text: Optional[Union[str, "raw.base.RichText"]] = None,
+        has_checkbox: Optional[bool] = None,
+        is_checked: Optional[bool] = None,
     ):
         super().__init__()
 
         self.blocks = blocks
         self.text = text
+        self.has_checkbox = has_checkbox
+        self.is_checked = is_checked
 
     def write(self) -> "raw.base.PageListItem":
         if self.blocks:
             return raw.types.PageListItemBlocks(
-                blocks=[b.write() for b in self.blocks]
+                blocks=[b.write() for b in self.blocks],
+                checkbox=self.has_checkbox,
+                checked=self.is_checked
             )
         return raw.types.PageListItemText(
-            text=_to_rich_text(self.text or "")
+            text=_to_rich_text(self.text or ""),
+            checkbox=self.has_checkbox,
+            checked=self.is_checked
         )
 
 

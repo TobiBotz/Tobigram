@@ -297,6 +297,9 @@ class Chat(Object):
         subscription_until_date (:py:obj:`~datetime.datetime`, *optional*):
             Date when the the subscription will end.
 
+        community (:obj:`~pyrogram.types.Community`, *optional*):
+            The community this chat belongs to.
+
         emoji_status (:obj:`~pyrogram.types.EmojiStatus`, *optional*):
             Emoji status shown next to the chat name.
 
@@ -627,6 +630,7 @@ class Chat(Object):
         banned_until_date: Optional[datetime] = None,
         subscription_until_date: Optional[datetime] = None,
         emoji_status: Optional["types.EmojiStatus"] = None,
+        community: Optional["types.Community"] = None,
         join_to_send_messages: Optional[bool] = None,
         location: Optional["types.ChatLocation"] = None,
         reactions_limit: Optional[int] = None,
@@ -771,6 +775,7 @@ class Chat(Object):
         self.banned_until_date = banned_until_date
         self.subscription_until_date = subscription_until_date
         self.emoji_status = emoji_status
+        self.community = community
         self.join_to_send_messages = join_to_send_messages
         self.location = location
         self.reactions_limit = reactions_limit
@@ -1173,6 +1178,13 @@ class Chat(Object):
     ) -> "Chat":
         parsed_chat = Chat._parse_chat_chat(client, chats[chat.id])
         parsed_chat.raw = chat
+
+        community_id = getattr(chats.get(chat.id), "linked_community_id", None)
+
+        if community_id is not None:
+            parsed_chat.community = types.Community._parse(
+                client, chats.get(community_id)
+            )
 
         parsed_chat.description = chat.about or None
 

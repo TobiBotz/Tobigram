@@ -55,6 +55,7 @@ from .game import Game
 from .general_forum_topic_hidden import GeneralForumTopicHidden
 from .general_forum_topic_unhidden import GeneralForumTopicUnhidden
 from .gift import Gift
+from .gift_background import GiftBackground
 from .gift_attribute import GiftAttribute
 from .gift_auction import GiftAuction
 from .gift_auction_state import GiftAuctionState
@@ -258,6 +259,7 @@ __all__ = [
     "GeneralForumTopicHidden",
     "GeneralForumTopicUnhidden",
     "Gift",
+    "GiftBackground",
     "GiftAttribute",
     "GiftAuction",
     "GiftAuctionState",

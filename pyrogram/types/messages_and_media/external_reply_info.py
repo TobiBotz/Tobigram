@@ -68,6 +68,9 @@ class ExternalReplyInfo(Object):
         story (:obj:`~pyrogram.types.Story`, *optional*):
             Message is a forwarded story.
 
+        live_photo (:obj:`~pyrogram.types.LivePhoto`, *optional*):
+            Message is a live photo, information about the live photo.
+
         video (:obj:`~pyrogram.types.Video`, *optional*):
             Message is a video, information about the video.
 
@@ -129,6 +132,7 @@ class ExternalReplyInfo(Object):
         sticker: Optional["types.Sticker"] = None,
         story: Optional["types.Story"] = None,
         video: Optional["types.Video"] = None,
+        live_photo: Optional["types.LivePhoto"] = None,
         video_note: Optional["types.VideoNote"] = None,
         voice: Optional["types.Voice"] = None,
         has_media_spoiler: Optional[bool] = None,
@@ -158,6 +162,7 @@ class ExternalReplyInfo(Object):
         self.sticker = sticker
         self.story = story
         self.video = video
+        self.live_photo = live_photo
         self.video_note = video_note
         self.voice = voice
         self.has_media_spoiler = has_media_spoiler
@@ -193,6 +198,7 @@ class ExternalReplyInfo(Object):
         sticker = None
         story = None
         video = None
+        live_photo = None
         video_note = None
         has_media_spoiler = None
         voice = None
@@ -212,8 +218,22 @@ class ExternalReplyInfo(Object):
 
         if media:
             if isinstance(media, raw.types.MessageMediaPhoto):
+                if media.live_photo:
+                    doc = media.video
+
+                    if isinstance(doc, raw.types.Document):
+                        attributes = {type(i): i for i in doc.attributes}
+
+                        if raw.types.DocumentAttributeVideo in attributes:
+                            live_photo = types.LivePhoto._parse(
+                                client, doc, attributes[raw.types.DocumentAttributeVideo]
+                            )
+
+                    media_type = enums.MessageMediaType.LIVE_PHOTO
+                else:
+                    media_type = enums.MessageMediaType.PHOTO
+
                 photo = types.Photo._parse(client, media.photo, media.ttl_seconds)
-                media_type = enums.MessageMediaType.PHOTO
                 has_media_spoiler = media.spoiler
             elif isinstance(media, raw.types.MessageMediaGeo):
                 location = types.Location._parse(media.geo)
@@ -318,6 +338,7 @@ class ExternalReplyInfo(Object):
             sticker=sticker,
             story=story,
             video=video,
+            live_photo=live_photo,
             video_note=video_note,
             voice=voice,
             has_media_spoiler=has_media_spoiler,

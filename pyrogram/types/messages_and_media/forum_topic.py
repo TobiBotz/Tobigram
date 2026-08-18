@@ -73,6 +73,9 @@ class ForumTopic(Object):
         is_short (``bool``, *optional*):
             True, if the topic is short.
 
+        is_name_implicit (``bool``, *optional*):
+            True, if the topic has no explicit title and one is derived from its content.
+
         is_hidden (``bool``, *optional*):
             True, if the topic is hidden.
 
@@ -99,7 +102,8 @@ class ForumTopic(Object):
         is_pinned: Optional[bool] = None,
         is_short: Optional[bool] = None,
         is_hidden: Optional[bool] = None,
-        is_deleted: Optional[bool] = None
+        is_deleted: Optional[bool] = None,
+        is_name_implicit: Optional[bool] = None
     ):
         super().__init__()
 
@@ -119,6 +123,7 @@ class ForumTopic(Object):
         self.is_pinned = is_pinned
         self.is_short = is_short
         self.is_hidden = is_hidden
+        self.is_name_implicit = is_name_implicit
         self.is_deleted = is_deleted
 
     @staticmethod
@@ -164,5 +169,6 @@ class ForumTopic(Object):
             is_pinned=getattr(forum_topic, "pinned", None),
             is_short=getattr(forum_topic, "short", None),
             is_hidden=getattr(forum_topic, "hidden", None),
+            is_name_implicit=getattr(forum_topic, "title_missing", None),
         )
 

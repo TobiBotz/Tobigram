@@ -103,6 +103,9 @@ class Gift(Object):
         symbol (:obj:`~pyrogram.types.GiftAttribute`, *optional*):
             Symbol of the upgraded gift.
 
+        background (:obj:`~pyrogram.types.GiftBackground`, *optional*):
+            Background the gift is shown on.
+
         backdrop (:obj:`~pyrogram.types.GiftAttribute`, *optional*):
             Backdrop of the upgraded gift.
 
@@ -308,6 +311,7 @@ class Gift(Object):
         model: Optional["types.GiftAttribute"] = None,
         symbol: Optional["types.GiftAttribute"] = None,
         backdrop: Optional["types.GiftAttribute"] = None,
+        background: Optional["types.GiftBackground"] = None,
         original_details: Optional["types.UpgradedGiftOriginalDetails"] = None,
         total_upgraded_count: Optional[int] = None,
         max_upgraded_count: Optional[int] = None,
@@ -395,6 +399,7 @@ class Gift(Object):
         self.model = model
         self.symbol = symbol
         self.backdrop = backdrop
+        self.background = background
         self.original_details = original_details
         self.total_upgraded_count = total_upgraded_count
         self.max_upgraded_count = max_upgraded_count
@@ -566,6 +571,7 @@ class Gift(Object):
             model=model,
             symbol=symbol,
             backdrop=backdrop,
+            background=types.GiftBackground._parse(getattr(star_gift, "background", None)),
             title=star_gift.title,
             name=star_gift.slug,
             unique_gift_number=star_gift.num,

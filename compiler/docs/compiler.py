@@ -770,6 +770,7 @@ def pyrogram_api():
             GeneralForumTopicUnhidden
             Gift
             GiftAttribute
+            GiftBackground
             GiftAuction
             GiftAuctionState
             GiftCollection

@@ -28,6 +28,7 @@ types:
     - BotCommandScopeChatAdministrators
     - BotCommandScopeChatMember
     - BotCommandScopeDefault
+    - BusinessBotRights
     - BusinessConnection
     - BusinessIntro
     - CallbackGame
@@ -37,10 +38,12 @@ types:
     - ChatBackground
     - ChatBoost
     - ChatBoostUpdated
+    - ChatFullInfo
     - ChatInviteLink
     - ChatJoinRequest
     - ChatLocation
     - ChatMember
+    - ChatMemberUpdated
     - ChatOwnerChanged
     - ChatOwnerLeft
     - ChatPermissions
@@ -60,13 +63,19 @@ types:
     - DirectMessagePriceChanged
     - DirectMessagesTopic
     - Document
+    - ExternalReplyInfo
     - ForceReply
+    - ForumTopic
     - ForumTopicClosed
+    - ForumTopicCreated
     - ForumTopicEdited
     - ForumTopicReopened
+    - Game
     - GameHighScore
     - GeneralForumTopicHidden
     - GeneralForumTopicUnhidden
+    - Gift
+    - GiftBackground
     - Giveaway
     - GiveawayCompleted
     - GiveawayCreated
@@ -121,6 +130,7 @@ types:
     - InputRichBlockDivider
     - InputRichBlockFooter
     - InputRichBlockList
+    - InputRichBlockListItem
     - InputRichBlockMap
     - InputRichBlockMathematicalExpression
     - InputRichBlockParagraph
@@ -135,6 +145,7 @@ types:
     - InputRichBlockVoiceNote
     - InputRichMessage
     - InputRichMessageContent
+    - InputRichMessageMedia
     - InputTextMessageContent
     - InputVenueMessageContent
     - Invoice
@@ -146,6 +157,7 @@ types:
     - LabeledPrice
     - Link
     - LinkPreviewOptions
+    - LivePhoto
     - Location
     - LoginUrl
     - ManagedBotCreated
@@ -265,28 +277,7 @@ types:
     - WebAppInfo
     - WriteAccessAllowed
   pending:
-    BusinessBotRights:
-      botapi: [can_convert_gifts_to_stars]
-    ChatFullInfo:
-      botapi: [community]
-    ChatMemberUpdated:
-      botapi: [via_chat_folder_invite_link]
-    ExternalReplyInfo:
-      botapi: [live_photo]
-    ForumTopic:
-      botapi: [is_name_implicit]
-    ForumTopicCreated:
-      botapi: [is_name_implicit]
-    Game:
-      botapi: [text, text_entities]
-    Gift:
-      botapi: [background, personal_remaining_count, personal_total_count, remaining_count, total_count]
-    InputRichBlockListItem:
-      botapi: [has_checkbox, is_checked]
-    InputRichMessageMedia:
-      botapi: [id, media]
-    LivePhoto:
-      botapi: [photo]
+    {}
 
 methods:
   supported:
