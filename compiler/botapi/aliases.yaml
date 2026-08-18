@@ -104,7 +104,100 @@ mtproto:
       message: caption
       entities: caption_entities
 
+    messages.editMessage:
+      id: message_id
+
+    messages.exportChatInvite:
+      title: name
+      usage_limit: member_limit
+      request_needed: creates_join_request
+
+    messages.editExportedChatInvite:
+      link: invite_link
+      title: name
+      usage_limit: member_limit
+      request_needed: creates_join_request
+
+    messages.forwardMessages:
+      from_peer: from_chat_id
+      to_peer: chat_id
+      id: message_ids
+      drop_author: hide_sender_name
+      drop_media_captions: hide_captions
+      video_timestamp: video_start_timestamp
+
   field_unsupported:
+    export_chat_invite_link:
+      title: creating a named link goes through create_chat_invite_link
+      usage_limit: creating a limited link goes through create_chat_invite_link
+      request_needed: creating an approval link goes through create_chat_invite_link
+      expire_date: creating an expiring link goes through create_chat_invite_link
+    revoke_chat_invite_link:
+      title: revoking does not edit the link; use edit_chat_invite_link
+      usage_limit: revoking does not edit the link; use edit_chat_invite_link
+      request_needed: revoking does not edit the link; use edit_chat_invite_link
+      expire_date: revoking does not edit the link; use edit_chat_invite_link
+      revoked: set by the method, which exists to revoke
+    edit_chat_invite_link:
+      revoked: revoking goes through revoke_chat_invite_link
+    send_rich_message:
+      message: the message is passed as rich_text
+      entities: the message is passed as rich_text
+      rich_message: the message is passed as rich_text
+    send_checklist:
+      message: the method builds its own content from its arguments
+      entities: the method builds its own content from its arguments
+    send_contact:
+      message: the method builds its own content from its arguments
+      entities: the method builds its own content from its arguments
+    send_dice:
+      message: the method builds its own content from its arguments
+      entities: the method builds its own content from its arguments
+    send_location:
+      message: the method builds its own content from its arguments
+      entities: the method builds its own content from its arguments
+    send_poll:
+      message: the method builds its own content from its arguments
+      entities: the method builds its own content from its arguments
+    send_sticker:
+      message: the method builds its own content from its arguments
+      entities: the method builds its own content from its arguments
+    send_venue:
+      message: the method builds its own content from its arguments
+      entities: the method builds its own content from its arguments
+    send_video_note:
+      message: the method builds its own content from its arguments
+      entities: the method builds its own content from its arguments
+    send_game:
+      message: the method builds its own content from its arguments
+      entities: the method builds its own content from its arguments
+      invert_media: the method sends no caption, so there is nothing to place above the media
+    send_invoice:
+      invert_media: the method sends no caption, so there is nothing to place above the media
+    edit_message_text:
+      media: edits the text; media is replaced through edit_message_media
+      rich_message: rich text is passed as rich_text
+    edit_message_reply_markup:
+      message: the method builds its own content from its arguments
+      entities: the method builds its own content from its arguments
+      media: the method builds its own content from its arguments
+      rich_message: the method builds its own content from its arguments
+      no_webpage: the method builds its own content from its arguments
+      invert_media: the method builds its own content from its arguments
+    stop_poll:
+      message: the method builds its own content from its arguments
+      entities: the method builds its own content from its arguments
+      media: the method builds its own content from its arguments
+      rich_message: the method builds its own content from its arguments
+      no_webpage: the method builds its own content from its arguments
+      invert_media: the method builds its own content from its arguments
+    edit_message_checklist:
+      message: the method builds its own content from its arguments
+      entities: the method builds its own content from its arguments
+      media: the method builds its own content from its arguments
+      rich_message: the method builds its own content from its arguments
+      no_webpage: the method builds its own content from its arguments
+      invert_media: the method builds its own content from its arguments
     messages.sendMedia:
       media: the sending method builds the media from its own arguments
     messages.sendMultiMedia:

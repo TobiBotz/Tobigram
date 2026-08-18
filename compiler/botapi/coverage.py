@@ -289,7 +289,17 @@ class Coverage:
 
         return self._tl
 
-    def _alias(self, section: str, key: str, entity: str, field: str, scope=()) -> str:
+    def _alias(self, section: str, key: str, entity: str, field: str, scope=(), have=()) -> str:
+        """What the field is called on the wzgram side.
+
+        A name the target already carries verbatim wins over any alias: the
+        global TL table renames `effect` to `effect_id` for send_message, but
+        forward_messages exposes `effect` itself, and aliasing it there would
+        report a parameter that is present as missing.
+        """
+        if field in have:
+            return field
+
         table = (self.aliases.get(section) or {}).get(key) or {}
 
         for name in (entity, *scope, "*"):
@@ -389,7 +399,7 @@ class Coverage:
             if self._unsupported("botapi", "field_unsupported", name, field_name):
                 continue
 
-            if self._alias("botapi", "field_rename", name, field_name) not in have:
+            if self._alias("botapi", "field_rename", name, field_name, have=have) not in have:
                 gaps.append(field_name)
 
         return gaps
@@ -414,7 +424,7 @@ class Coverage:
             if self._unsupported("botapi", "method_field_unsupported", name, field_name):
                 continue
 
-            if self._alias("botapi", "method_field_rename", name, field_name) not in have:
+            if self._alias("botapi", "method_field_rename", name, field_name, have=have) not in have:
                 gaps.append(field_name)
 
         return gaps
@@ -464,7 +474,7 @@ class Coverage:
             if self._unsupported("mtproto", "field_unsupported", method, field_name, scope):
                 continue
 
-            if self._alias("mtproto", "field_rename", method, field_name, scope) not in have:
+            if self._alias("mtproto", "field_rename", method, field_name, scope, have) not in have:
                 gaps.append(field_name)
 
         return gaps

@@ -359,6 +359,7 @@ methods:
     - close
     - deleteChatPhoto
     - deleteMessages
+    - editChatInviteLink
     - getAvailableGifts
     - getChat
     - getChatMember
@@ -369,11 +370,15 @@ methods:
     - leaveChat
     - logOut
     - promoteChatMember
+    - revokeChatInviteLink
+    - sendChecklist
+    - sendDice
     - sendMediaGroup
     - setChatPhoto
     - setChatTitle
     - setGameScore
     - transferBusinessAccountStars
+    - unpinAllChatMessages
     - upgradeGift
   pending:
     answerCallbackQuery:
@@ -403,7 +408,7 @@ methods:
     copyMessage:
       botapi: [direct_messages_topic_id, message_effect_id, reply_parameters, suggested_post_parameters]
     createChatInviteLink:
-      mtproto: [legacy_revoke_permanent, request_needed, subscription_pricing, title, usage_limit]
+      mtproto: [legacy_revoke_permanent, subscription_pricing]
     createForumTopic:
       botapi: [icon_custom_emoji_id, name]
       mtproto: [send_as, title_missing]
@@ -426,29 +431,27 @@ methods:
       mtproto: [top_msg_id]
     deleteMessageReaction:
       mtproto: [msg_id, participant]
-    editChatInviteLink:
-      mtproto: [link, request_needed, revoked, title, usage_limit]
     editForumTopic:
       botapi: [icon_custom_emoji_id, message_thread_id, name]
     editMessageCaption:
       botapi: [inline_message_id]
     editMessageChecklist:
-      mtproto: [entities, id, invert_media, media, message, no_webpage, quick_reply_shortcut_id, rich_message, schedule_date, schedule_repeat_period]
+      mtproto: [quick_reply_shortcut_id, schedule_date, schedule_repeat_period]
     editMessageMedia:
       botapi: [inline_message_id]
     editMessageReplyMarkup:
       botapi: [inline_message_id]
-      mtproto: [entities, id, invert_media, media, message, no_webpage, quick_reply_shortcut_id, rich_message, schedule_date, schedule_repeat_period]
+      mtproto: [quick_reply_shortcut_id, schedule_date, schedule_repeat_period]
     editMessageText:
       botapi: [inline_message_id]
-      mtproto: [id, media, quick_reply_shortcut_id, rich_message, schedule_date, schedule_repeat_period]
+      mtproto: [quick_reply_shortcut_id, schedule_date, schedule_repeat_period]
     editUserStarSubscription:
       mtproto: [charge_id, restore]
     exportChatInviteLink:
-      mtproto: [expire_date, legacy_revoke_permanent, request_needed, subscription_pricing, title, usage_limit]
+      mtproto: [legacy_revoke_permanent, subscription_pricing]
     forwardMessages:
       botapi: [direct_messages_topic_id]
-      mtproto: [drop_author, drop_media_captions, effect, from_peer, id, schedule_repeat_period, to_peer, video_timestamp, with_my_score]
+      mtproto: [with_my_score]
     getBusinessAccountGifts:
       botapi: [exclude_from_blockchain, exclude_limited_non_upgradable, exclude_limited_upgradable, exclude_unique]
       mtproto: [exclude_unique, exclude_unupgradable, peer, peer_color_available, sort_by_value]
@@ -477,36 +480,26 @@ methods:
     restrictChatMember:
       botapi: [use_independent_chat_permissions]
       mtproto: [banned_rights, channel, participant]
-    revokeChatInviteLink:
-      mtproto: [expire_date, link, request_needed, revoked, title, usage_limit]
     sendAnimation:
       botapi: [callback_query_id, receiver_user_id, thumbnail]
     sendAudio:
       botapi: [callback_query_id, receiver_user_id, thumbnail]
     sendChatAction:
       botapi: [message_thread_id]
-      mtproto: [top_msg_id]
     sendChatJoinRequestWebApp:
       mtproto: [query_id, result]
-    sendChecklist:
-      mtproto: [entities, message]
     sendContact:
       botapi: [callback_query_id, receiver_user_id]
-      mtproto: [entities, message]
-    sendDice:
-      mtproto: [entities, message]
     sendDocument:
       botapi: [callback_query_id, disable_content_type_detection, receiver_user_id, thumbnail]
     sendGame:
-      mtproto: [allow_paid_stars, background, clear_draft, entities, invert_media, message, quick_reply_shortcut, schedule_date, schedule_repeat_period, send_as, suggested_post, update_stickersets_order]
+      mtproto: [allow_paid_stars, background, clear_draft, quick_reply_shortcut, schedule_date, schedule_repeat_period, send_as, suggested_post, update_stickersets_order]
     sendGift:
       botapi: [text_entities, text_parse_mode, user_id]
     sendInvoice:
-      botapi: [message_effect_id]
-      mtproto: [background, clear_draft, effect, invert_media, quick_reply_shortcut, schedule_date, schedule_repeat_period, send_as, update_stickersets_order]
+      mtproto: [background, clear_draft, effect, quick_reply_shortcut, schedule_date, schedule_repeat_period, send_as, update_stickersets_order]
     sendLocation:
       botapi: [callback_query_id, receiver_user_id]
-      mtproto: [entities, message]
     sendMessage:
       botapi: [callback_query_id, receiver_user_id]
       mtproto: [rich_message]
@@ -516,24 +509,19 @@ methods:
       botapi: [callback_query_id, receiver_user_id]
     sendPoll:
       botapi: [description_entities, description_parse_mode, media, question_entities, question_parse_mode]
-      mtproto: [entities, message]
     sendRichMessage:
       botapi: [allow_paid_broadcast, direct_messages_topic_id, suggested_post_parameters]
-      mtproto: [allow_paid_floodskip, allow_paid_stars, background, clear_draft, entities, invert_media, message, quick_reply_shortcut, rich_message, schedule_repeat_period, send_as, suggested_post, update_stickersets_order]
+      mtproto: [allow_paid_floodskip, allow_paid_stars, background, clear_draft, invert_media, quick_reply_shortcut, schedule_repeat_period, send_as, suggested_post, update_stickersets_order]
     sendRichMessageDraft:
-      botapi: [rich_message]
       mtproto: [action]
     sendSticker:
       botapi: [callback_query_id, emoji, receiver_user_id]
-      mtproto: [entities, message]
     sendVenue:
       botapi: [callback_query_id, google_place_id, google_place_type, receiver_user_id]
-      mtproto: [entities, message]
     sendVideo:
       botapi: [callback_query_id, cover, receiver_user_id, start_timestamp, thumbnail]
     sendVideoNote:
       botapi: [callback_query_id, receiver_user_id, thumbnail]
-      mtproto: [entities, message]
     sendVoice:
       botapi: [callback_query_id, receiver_user_id]
     setChatDescription:
@@ -547,14 +535,12 @@ methods:
       mtproto: [add_users, bot, restricted]
     stopPoll:
       botapi: [business_connection_id]
-      mtproto: [entities, id, invert_media, media, message, no_webpage, quick_reply_shortcut_id, rich_message, schedule_date, schedule_repeat_period]
+      mtproto: [quick_reply_shortcut_id, schedule_date, schedule_repeat_period]
     transferGift:
       botapi: [star_count]
     unbanChatMember:
       botapi: [only_if_banned]
       mtproto: [banned_rights, channel, participant]
-    unpinAllChatMessages:
-      mtproto: [top_msg_id]
     unpinChatMessage:
       botapi: [business_connection_id]
       mtproto: [id, pm_oneside, unpin]
