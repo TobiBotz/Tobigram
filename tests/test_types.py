@@ -965,3 +965,77 @@ class TestKeyboardButtonRequests:
         assert isinstance(location.write(), raw.types.KeyboardButtonRequestGeoLocation)
         assert types.KeyboardButton.read(contact.write()).request_contact is True
         assert types.KeyboardButton.read(location.write()).request_location is True
+
+
+class TestChatCoverageFields:
+    """Fields added to close Bot API gaps must actually parse, not just exist.
+
+    A constructor argument that no _parse ever populates satisfies a signature
+    check while always being None in practice.
+    """
+
+    @staticmethod
+    def channel(**kwargs):
+        kwargs.setdefault("usernames", [])
+        kwargs.setdefault("restriction_reason", [])
+
+        return raw.types.Channel(
+            id=777,
+            title="Test",
+            photo=raw.types.ChatPhotoEmpty(),
+            date=0,
+            **kwargs
+        )
+
+    def test_join_to_send_messages_is_parsed(self):
+        chat = types.Chat._parse_channel_chat(None, self.channel(join_to_send=True))
+
+        assert chat.join_to_send_messages is True
+
+    def test_emoji_status_is_parsed_for_a_channel(self):
+        chat = types.Chat._parse_channel_chat(
+            None,
+            self.channel(emoji_status=raw.types.EmojiStatus(document_id=555, until=1893456000))
+        )
+
+        assert chat.emoji_status.custom_emoji_id == "555"
+        assert chat.emoji_status.until_date is not None
+
+    def test_emoji_status_is_parsed_for_a_user(self):
+        user = raw.types.User(
+            id=42,
+            first_name="A",
+            usernames=[],
+            restriction_reason=[],
+            emoji_status=raw.types.EmojiStatus(document_id=999)
+        )
+        chat = types.Chat._parse_user_chat(None, user)
+
+        assert chat.emoji_status.custom_emoji_id == "999"
+
+    def test_absent_values_stay_none(self):
+        chat = types.Chat._parse_channel_chat(None, self.channel())
+
+        assert chat.join_to_send_messages is None
+        assert chat.emoji_status is None
+        assert chat.location is None
+
+
+class TestChatLocation:
+    def test_it_parses_a_channel_location(self):
+        location = types.ChatLocation._parse(
+            None,
+            raw.types.ChannelLocation(
+                geo_point=raw.types.GeoPoint(
+                    long=12.5, lat=41.9, access_hash=0, accuracy_radius=50
+                ),
+                address="Rome, Italy"
+            )
+        )
+
+        assert location.address == "Rome, Italy"
+        assert location.location.latitude == 41.9
+        assert location.location.longitude == 12.5
+
+    def test_an_empty_location_is_none(self):
+        assert types.ChatLocation._parse(None, raw.types.ChannelLocationEmpty()) is None

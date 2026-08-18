@@ -1,3 +1,4 @@
+import re
 import sys
 from pathlib import Path
 
@@ -108,4 +109,41 @@ def test_unsupported_entries_are_kept_out_of_the_manifest():
         "these are declared unsupported but still surveyed, so the reason "
         "recorded against them does nothing: "
         + ", ".join(sorted(declared & tracked))
+    )
+
+
+ALIAS_TARGETS = [
+    (entity, spec_field, target)
+    for entity, mapping in (
+        ((COVERAGE.aliases.get("botapi") or {}).get("field_rename") or {}).items()
+    )
+    if entity != "*"
+    for spec_field, target in mapping.items()
+]
+
+
+@pytest.mark.parametrize(
+    "entity,spec_field,target",
+    ALIAS_TARGETS,
+    ids=[f"{e}.{f}" for e, f, _ in ALIAS_TARGETS]
+)
+def test_an_alias_target_is_populated_from_raw_data(entity, spec_field, target):
+    """An alias claims wzgram already exposes the field under another name.
+
+    Pointing at a parameter that no _parse ever fills would satisfy the coverage
+    check while the value is always None, which is worse than recording the gap.
+    """
+    symbol = COVERAGE.wzgram_type(entity)
+
+    if symbol is None:
+        pytest.skip(f"{entity} does not resolve")
+
+    source = symbol.path.read_text(encoding="utf-8")
+    filled = re.search(
+        rf"(?<!self\.)\b{re.escape(target)}\s*=\s*(?!{re.escape(target)}\b)", source
+    )
+
+    assert filled, (
+        f"{entity}.{spec_field} is aliased to {target}, but {symbol.path.name} "
+        f"never assigns {target} from anything"
     )

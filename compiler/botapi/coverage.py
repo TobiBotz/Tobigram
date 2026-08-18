@@ -390,7 +390,7 @@ class Coverage:
         if symbol is None:
             return None
 
-        have = symbol.params
+        have = self.inherited_params(symbol) | symbol.properties
         gaps = []
 
         for field in spec_type.get("fields") or []:

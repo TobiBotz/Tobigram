@@ -38,8 +38,39 @@ botapi:
       message_id: id
     MessageEntity:
       is_expandable: expandable
+    Message:
+      boost_added: chat_boost
+      chat_background_set: chat_set_background
+      direct_messages_topic: direct_messages_topic_id
+      gift_upgrade_sent: gift
+      is_automatic_forward: automatic_forward
+      is_from_offline: from_offline
+      message_auto_delete_timer_changed: set_message_auto_delete_time
+      paid_message_price_changed: paid_messages_price_changed
+      paid_star_count: send_paid_messages_stars
+      unique_gift: gift
+      video_chat_participants_invited: video_chat_members_invited
+    ChatFullInfo:
+      active_usernames: usernames
+      birthdate: birthday
+      business_opening_hours: business_work_hours
+      has_hidden_members: is_members_hidden
+      max_reaction_count: reactions_limit
+      personal_chat: personal_channel
 
   field_unsupported:
+    Message:
+      passport_data: Telegram Passport is not implemented; no SecureValue type exists
+    ChatFullInfo:
+      accent_color_id: carried by reply_color, which pairs it with its background emoji
+      background_custom_emoji_id: carried by reply_color
+      profile_accent_color_id: carried by profile_color
+      profile_background_custom_emoji_id: carried by profile_color
+      emoji_status_custom_emoji_id: carried by emoji_status
+      emoji_status_expiration_date: carried by emoji_status
+      has_private_forwards: private_forward_name carries the name, and its presence implies this
+      has_restricted_voice_and_video_messages: can_send_voice_messages is the same flag, inverted
+      unique_gift_colors: no MTProto equivalent; the TL schema has no gift colour scheme
     "*":
       type: >-
         Bot API discriminates union members with a type string; wzgram uses a

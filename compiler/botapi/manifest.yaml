@@ -32,6 +32,7 @@ types:
     - ChatAdministratorRights
     - ChatBackground
     - ChatBoostUpdated
+    - ChatLocation
     - ChatMember
     - ChatOwnerChanged
     - ChatOwnerLeft
@@ -207,7 +208,7 @@ types:
     ChatBoost:
       botapi: [add_date, boost_id, expiration_date, source]
     ChatFullInfo:
-      botapi: [accent_color_id, active_usernames, background_custom_emoji_id, birthdate, business_opening_hours, community, emoji_status_custom_emoji_id, emoji_status_expiration_date, has_hidden_members, has_private_forwards, has_restricted_voice_and_video_messages, join_to_send_messages, location, max_reaction_count, personal_chat, profile_accent_color_id, profile_background_custom_emoji_id, unique_gift_colors]
+      botapi: [community]
     ChatInviteLink:
       botapi: [subscription_period, subscription_price]
     ChatJoinRequest:
@@ -319,7 +320,7 @@ types:
     Location:
       botapi: [horizontal_accuracy]
     Message:
-      botapi: [boost_added, chat_background_set, direct_messages_topic, gift_upgrade_sent, is_automatic_forward, is_from_offline, is_topic_message, message_auto_delete_timer_changed, paid_message_price_changed, paid_star_count, passport_data, unique_gift, video_chat_participants_invited]
+      botapi: [message_id]
     PaidMediaInfo:
       botapi: [paid_media, star_count]
     Poll:

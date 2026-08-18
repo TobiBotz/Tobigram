@@ -41,6 +41,7 @@ from .chat_invite_link import ChatInviteLink
 from .chat_join_request import ChatJoinRequest
 from .chat_join_result import ChatJoinResult, ChatJoinResultSuccess, ChatJoinResultRequestSent, ChatJoinResultGuardBotApprovalRequired, ChatJoinResultDeclined
 from .chat_joiner import ChatJoiner
+from .chat_location import ChatLocation
 from .chat_member import ChatMember
 from .chat_member_updated import ChatMemberUpdated
 from .chat_permissions import ChatPermissions
@@ -100,6 +101,7 @@ __all__ = [
     "ChatJoinResultGuardBotApprovalRequired",
     "ChatJoinResultDeclined",
     "ChatJoiner",
+    "ChatLocation",
     "ChatMember",
     "ChatMemberUpdated",
     "ChatPermissions",
