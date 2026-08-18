@@ -1,5 +1,5 @@
 from datetime import datetime
-from unittest.mock import Mock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
@@ -1039,3 +1039,57 @@ class TestChatLocation:
 
     def test_an_empty_location_is_none(self):
         assert types.ChatLocation._parse(None, raw.types.ChannelLocationEmpty()) is None
+
+
+class TestInlineResultCaptionPlacement:
+    """show_caption_above_media has to reach inputBotInlineMessageMediaAuto.
+
+    MTProto carries it as invert_media on the inline message, and only there:
+    inputSingleMedia has no such flag, which is why album items cannot have it.
+    """
+
+    PHOTO_FILE_ID = "AgACAgIAAx0CAAGgr9AAAgmZX7b7IPLRl8NcV3EJkzHwI1gwT-oAAq2nMRuBpLlJPJY-URZfhTkgfeqKEAADAQADAgADbQADAZ8BAAEeBA"
+
+    @staticmethod
+    def client():
+        client = AsyncMock()
+        client.parser.parse = AsyncMock(return_value={"message": "cap", "entities": []})
+
+        return client
+
+    @pytest.mark.parametrize("flag,expected", [(True, True), (None, None)])
+    async def test_a_url_result_forwards_the_flag(self, flag, expected):
+        result = types.InlineQueryResultPhoto(
+            photo_url="https://example.com/p.jpg",
+            caption="cap",
+            show_caption_above_media=flag
+        )
+        written = await result.write(self.client())
+
+        assert written.send_message.invert_media is expected
+
+    async def test_a_cached_result_forwards_the_flag(self):
+        result = types.InlineQueryResultCachedPhoto(
+            photo_file_id=self.PHOTO_FILE_ID,
+            caption="cap",
+            show_caption_above_media=True
+        )
+        written = await result.write(self.client())
+
+        assert written.send_message.invert_media is True
+
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "InlineQueryResultPhoto",
+            "InlineQueryResultVideo",
+            "InlineQueryResultCachedPhoto",
+            "InlineQueryResultCachedVideo",
+        ]
+    )
+    def test_every_captioned_inline_result_accepts_it(self, name):
+        import inspect
+
+        assert "show_caption_above_media" in inspect.signature(
+            getattr(types, name).__init__
+        ).parameters

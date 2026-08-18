@@ -11,6 +11,10 @@ sys.path.insert(0, str(ROOT / "compiler" / "botapi"))
 from coverage import Coverage, documented_params
 
 COVERAGE = Coverage()
+PACKAGE_SOURCES = [
+    (path, path.read_text(encoding="utf-8"))
+    for path in sorted((ROOT / "pyrogram").rglob("*.py"))
+]
 
 MANIFEST_FINDINGS = COVERAGE.check_manifest()
 DOCSTRING_FINDINGS = COVERAGE.check_docstrings()
@@ -130,8 +134,9 @@ ALIAS_TARGETS = [
 def test_an_alias_target_is_populated_from_raw_data(entity, spec_field, target):
     """An alias claims wzgram already exposes the field under another name.
 
-    Pointing at a parameter that no _parse ever fills would satisfy the coverage
-    check while the value is always None, which is worse than recording the gap.
+    Pointing at a parameter that nothing fills and nothing reads would satisfy
+    the coverage check while the value is always None, which is worse than
+    leaving the gap recorded.
     """
     symbol = COVERAGE.wzgram_type(entity)
 
@@ -139,11 +144,19 @@ def test_an_alias_target_is_populated_from_raw_data(entity, spec_field, target):
         pytest.skip(f"{entity} does not resolve")
 
     source = symbol.path.read_text(encoding="utf-8")
-    filled = re.search(
-        rf"(?<!self\.)\b{re.escape(target)}\s*=\s*(?!{re.escape(target)}\b)", source
+    name = re.escape(target)
+
+    # filled from raw data by a _parse, or read back by a write()
+    populated = re.search(rf"(?<!self\.)\b{name}\s*=\s*(?!{name}\b)", source)
+    read_back = len(re.findall(rf"self\.{name}\b", source)) > 1
+
+    # input types are filled by the caller and read by whoever sends them
+    read_elsewhere = any(
+        path != symbol.path and re.search(rf"(?<!self)\.{name}\b", text)
+        for path, text in PACKAGE_SOURCES
     )
 
-    assert filled, (
-        f"{entity}.{spec_field} is aliased to {target}, but {symbol.path.name} "
-        f"never assigns {target} from anything"
+    assert populated or read_back or read_elsewhere, (
+        f"{entity}.{spec_field} is aliased to {target}, but nothing fills "
+        f"{target} from raw data and nothing ever reads it, so it is always None"
     )

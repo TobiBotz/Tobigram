@@ -34,11 +34,16 @@ botapi:
     "*":
       from: from_user
       thumbnail: thumbs
-    Message:
-      message_id: id
+      thumbnail_url: thumb_url
+      thumbnail_width: thumb_width
+      thumbnail_height: thumb_height
+      request_id: button_id
+      input_field_placeholder: placeholder
+      horizontal_accuracy: accuracy_radius
     MessageEntity:
       is_expandable: expandable
     Message:
+      message_id: id
       boost_added: chat_boost
       chat_background_set: chat_set_background
       direct_messages_topic: direct_messages_topic_id
@@ -50,6 +55,88 @@ botapi:
       paid_star_count: send_paid_messages_stars
       unique_gift: gift
       video_chat_participants_invited: video_chat_members_invited
+    ForumTopicCreated:
+      name: title
+      icon_custom_emoji_id: custom_emoji_id
+    ForumTopicEdited:
+      name: title
+      icon_custom_emoji_id: custom_emoji_id
+    StarAmount:
+      amount: star_count
+      nanostar_amount: nanostar_count
+    Video:
+      cover: video_cover
+      start_timestamp: video_start_timestamp
+    InputMediaVideo:
+      cover: video_cover
+      start_timestamp: video_start_timestamp
+      thumbnail: thumb
+    ChecklistTasksDone:
+      checklist_message: checklist_message_id
+    ChecklistTasksAdded:
+      checklist_message: checklist_message_id
+    RichTextDateTime:
+      unix_time: date
+    ChatJoinRequest:
+      user_chat_id: from_user
+    BusinessConnection:
+      user_chat_id: user
+    ChatShared:
+      chat_id: chat
+    Giveaway:
+      country_codes: only_for_countries
+      has_public_winners: winners_are_visible
+      only_new_members: only_new_subscribers
+      premium_subscription_month_count: months
+      prize_description: description
+      prize_star_count: stars
+      winner_count: quantity
+      winners_selection_date: until_date
+    ChatBoost:
+      add_date: date
+      boost_id: id
+      expiration_date: expire_date
+    ForumTopic:
+      icon_custom_emoji_id: icon_emoji_id
+      message_thread_id: id
+      name: title
+    DirectMessagePriceChanged:
+      are_direct_messages_enabled: is_enabled
+      direct_message_star_count: paid_message_star_count
+    DirectMessagesTopic:
+      topic_id: id
+    ChatPhoto:
+      big_file_unique_id: big_photo_unique_id
+      small_file_unique_id: small_photo_unique_id
+    Checklist:
+      title_entities: entities
+    InputChecklist:
+      title_entities: entities
+    InputChecklistTask:
+      text_entities: entities
+    ChecklistTask:
+      text_entities: entities
+    PaidMediaInfo:
+      star_count: stars_amount
+      paid_media: media
+    AcceptedGiftTypes:
+      unique_gifts: upgraded_gifts
+    BotCommand:
+      is_ephemeral: ephemeral
+    BusinessBotRights:
+      can_view_gifts_and_stars: can_view_gifts
+    BusinessIntro:
+      message: text
+    Community:
+      name: title
+    User:
+      has_topics_enabled: has_topics
+    InputMediaDocument:
+      thumbnail: thumb
+    InputMediaAnimation:
+      thumbnail: thumb
+    InputMediaAudio:
+      thumbnail: thumb
     ChatFullInfo:
       active_usernames: usernames
       birthdate: birthday
@@ -59,6 +146,31 @@ botapi:
       personal_chat: personal_channel
 
   field_unsupported:
+    InputMediaPhoto:
+      show_caption_above_media: >-
+        inputSingleMedia has no invert_media flag, so MTProto places the caption
+        per message rather than per album item; send_media_group takes it
+    InputMediaVideo:
+      show_caption_above_media: >-
+        inputSingleMedia has no invert_media flag; send_media_group takes it
+    InputMediaAnimation:
+      show_caption_above_media: >-
+        inputSingleMedia has no invert_media flag; send_media_group takes it
+    ChatShared:
+      photo: carried by chat
+      title: carried by chat
+      username: carried by chat
+    ForceReply:
+      force_reply: the class itself is the marker, so there is nothing to carry
+    ReplyKeyboardRemove:
+      remove_keyboard: the class itself is the marker, so there is nothing to carry
+    ReplyParameters:
+      allow_sending_without_reply: >-
+        MTProto always sends when the replied-to message is gone, so there is
+        nothing to opt into
+    User:
+      supports_inline_queries: >-
+        inline_query_placeholder is set only for bots that accept inline queries
     Message:
       passport_data: Telegram Passport is not implemented; no SecureValue type exists
     ChatFullInfo:

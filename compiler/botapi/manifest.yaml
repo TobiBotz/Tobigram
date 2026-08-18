@@ -14,10 +14,12 @@ release_date: 'July 14, 2026'
 
 types:
   supported:
+    - AcceptedGiftTypes
     - Animation
     - Audio
     - Birthdate
     - BotAccessSettings
+    - BotCommand
     - BotCommandScope
     - BotCommandScopeAllChatAdministrators
     - BotCommandScopeAllGroupChats
@@ -26,48 +28,78 @@ types:
     - BotCommandScopeChatAdministrators
     - BotCommandScopeChatMember
     - BotCommandScopeDefault
+    - BusinessConnection
+    - BusinessIntro
     - CallbackGame
     - CallbackQuery
     - Chat
     - ChatAdministratorRights
     - ChatBackground
     - ChatBoostUpdated
+    - ChatJoinRequest
     - ChatLocation
     - ChatMember
     - ChatOwnerChanged
     - ChatOwnerLeft
     - ChatPermissions
+    - ChatPhoto
+    - ChatShared
+    - Checklist
+    - ChecklistTasksAdded
+    - ChecklistTasksDone
     - ChosenInlineResult
+    - Community
     - CommunityChatAdded
     - CommunityChatRemoved
     - Contact
     - Dice
+    - DirectMessagePriceChanged
+    - DirectMessagesTopic
     - Document
+    - ForceReply
     - ForumTopicClosed
+    - ForumTopicEdited
     - ForumTopicReopened
     - GameHighScore
     - GeneralForumTopicHidden
     - GeneralForumTopicUnhidden
+    - Giveaway
     - GiveawayCompleted
     - GiveawayCreated
     - GiveawayWinners
     - InlineKeyboardMarkup
     - InlineQuery
     - InlineQueryResult
+    - InlineQueryResultArticle
     - InlineQueryResultAudio
     - InlineQueryResultCachedAudio
     - InlineQueryResultCachedDocument
+    - InlineQueryResultCachedPhoto
     - InlineQueryResultCachedSticker
+    - InlineQueryResultCachedVideo
     - InlineQueryResultCachedVoice
+    - InlineQueryResultContact
+    - InlineQueryResultDocument
+    - InlineQueryResultLocation
+    - InlineQueryResultPhoto
+    - InlineQueryResultVenue
+    - InlineQueryResultVideo
     - InlineQueryResultVoice
+    - InputChecklist
+    - InputChecklistTask
     - InputContactMessageContent
     - InputInvoiceMessageContent
     - InputLocationMessageContent
     - InputMedia
+    - InputMediaAnimation
+    - InputMediaAudio
     - InputMediaLink
     - InputMediaLivePhoto
+    - InputMediaLocation
+    - InputMediaPhoto
     - InputMediaSticker
     - InputMediaVenue
+    - InputMediaVideo
     - InputMediaVoiceNote
     - InputMessageContent
     - InputPollMedia
@@ -92,9 +124,13 @@ types:
     - Invoice
     - KeyboardButton
     - KeyboardButtonPollType
+    - KeyboardButtonRequestChat
+    - KeyboardButtonRequestManagedBot
+    - KeyboardButtonRequestUsers
     - LabeledPrice
     - Link
     - LinkPreviewOptions
+    - Location
     - LoginUrl
     - ManagedBotCreated
     - ManagedBotUpdated
@@ -103,6 +139,7 @@ types:
     - MenuButtonCommands
     - MenuButtonDefault
     - MenuButtonWebApp
+    - Message
     - MessageEntity
     - MessageOrigin
     - MessageOriginChannel
@@ -112,6 +149,7 @@ types:
     - MessageReactionCountUpdated
     - MessageReactionUpdated
     - OrderInfo
+    - PaidMediaInfo
     - PaidMediaPreview
     - PaidMessagePriceChanged
     - PhotoSize
@@ -119,6 +157,9 @@ types:
     - ProximityAlertTriggered
     - ReactionType
     - RefundedPayment
+    - ReplyKeyboardMarkup
+    - ReplyKeyboardRemove
+    - ReplyParameters
     - RichBlock
     - RichBlockAnchor
     - RichBlockAnimation
@@ -154,6 +195,7 @@ types:
     - RichTextCashtag
     - RichTextCode
     - RichTextCustomEmoji
+    - RichTextDateTime
     - RichTextEmailAddress
     - RichTextHashtag
     - RichTextItalic
@@ -175,6 +217,7 @@ types:
     - ShippingAddress
     - ShippingOption
     - ShippingQuery
+    - StarAmount
     - Sticker
     - Story
     - SuccessfulPayment
@@ -185,7 +228,9 @@ types:
     - SuggestedPostParameters
     - SuggestedPostRefunded
     - TextQuote
+    - User
     - UserRating
+    - UsersShared
     - VideoChatEnded
     - VideoChatScheduled
     - VideoChatStarted
@@ -195,96 +240,32 @@ types:
     - WebAppInfo
     - WriteAccessAllowed
   pending:
-    AcceptedGiftTypes:
-      botapi: [unique_gifts]
-    BotCommand:
-      botapi: [is_ephemeral]
     BusinessBotRights:
-      botapi: [can_convert_gifts_to_stars, can_view_gifts_and_stars]
-    BusinessConnection:
-      botapi: [user_chat_id]
-    BusinessIntro:
-      botapi: [message]
+      botapi: [can_convert_gifts_to_stars]
     ChatBoost:
-      botapi: [add_date, boost_id, expiration_date, source]
+      botapi: [source]
     ChatFullInfo:
       botapi: [community]
     ChatInviteLink:
       botapi: [subscription_period, subscription_price]
-    ChatJoinRequest:
-      botapi: [user_chat_id]
     ChatMemberUpdated:
       botapi: [via_chat_folder_invite_link]
-    ChatPhoto:
-      botapi: [big_file_unique_id, small_file_unique_id]
-    ChatShared:
-      botapi: [chat_id, photo, request_id, title, username]
-    Checklist:
-      botapi: [title_entities]
     ChecklistTask:
-      botapi: [completed_by_chat, completed_by_user, text_entities]
-    ChecklistTasksAdded:
-      botapi: [checklist_message]
-    ChecklistTasksDone:
-      botapi: [checklist_message]
-    Community:
-      botapi: [name]
-    DirectMessagePriceChanged:
-      botapi: [are_direct_messages_enabled, direct_message_star_count]
-    DirectMessagesTopic:
-      botapi: [topic_id]
+      botapi: [completed_by_chat, completed_by_user]
     ExternalReplyInfo:
       botapi: [live_photo]
-    ForceReply:
-      botapi: [force_reply, input_field_placeholder]
     ForumTopic:
-      botapi: [icon_custom_emoji_id, is_name_implicit, message_thread_id, name]
+      botapi: [is_name_implicit]
     ForumTopicCreated:
-      botapi: [icon_custom_emoji_id, is_name_implicit, name]
-    ForumTopicEdited:
-      botapi: [icon_custom_emoji_id, name]
+      botapi: [is_name_implicit]
     Game:
       botapi: [text, text_entities]
     Gift:
       botapi: [background, personal_remaining_count, personal_total_count, remaining_count, total_count]
-    Giveaway:
-      botapi: [country_codes, has_public_winners, only_new_members, premium_subscription_month_count, prize_description, prize_star_count, winner_count, winners_selection_date]
     InlineKeyboardButton:
       botapi: [copy_text, pay, switch_inline_query_chosen_chat]
-    InlineQueryResultArticle:
-      botapi: [thumbnail_height, thumbnail_url, thumbnail_width]
-    InlineQueryResultCachedPhoto:
-      botapi: [show_caption_above_media]
-    InlineQueryResultCachedVideo:
-      botapi: [show_caption_above_media]
-    InlineQueryResultContact:
-      botapi: [thumbnail_height, thumbnail_url, thumbnail_width]
-    InlineQueryResultDocument:
-      botapi: [thumbnail_height, thumbnail_url, thumbnail_width]
-    InlineQueryResultLocation:
-      botapi: [thumbnail_height, thumbnail_url, thumbnail_width]
-    InlineQueryResultPhoto:
-      botapi: [show_caption_above_media, thumbnail_url]
-    InlineQueryResultVenue:
-      botapi: [thumbnail_height, thumbnail_url, thumbnail_width]
-    InlineQueryResultVideo:
-      botapi: [show_caption_above_media, thumbnail_url]
-    InputChecklist:
-      botapi: [title_entities]
-    InputChecklistTask:
-      botapi: [text_entities]
-    InputMediaAnimation:
-      botapi: [show_caption_above_media, thumbnail]
-    InputMediaAudio:
-      botapi: [thumbnail]
     InputMediaDocument:
-      botapi: [disable_content_type_detection, thumbnail]
-    InputMediaLocation:
-      botapi: [horizontal_accuracy]
-    InputMediaPhoto:
-      botapi: [show_caption_above_media]
-    InputMediaVideo:
-      botapi: [cover, show_caption_above_media, start_timestamp, thumbnail]
+      botapi: [disable_content_type_detection]
     InputPollOption:
       botapi: [text_entities, text_parse_mode]
     InputRichBlockAnimation:
@@ -309,20 +290,8 @@ types:
       botapi: [voice_note]
     InputRichMessageMedia:
       botapi: [id, media]
-    KeyboardButtonRequestChat:
-      botapi: [request_id]
-    KeyboardButtonRequestManagedBot:
-      botapi: [request_id]
-    KeyboardButtonRequestUsers:
-      botapi: [request_id]
     LivePhoto:
       botapi: [photo]
-    Location:
-      botapi: [horizontal_accuracy]
-    Message:
-      botapi: [message_id]
-    PaidMediaInfo:
-      botapi: [paid_media, star_count]
     Poll:
       botapi: [description_entities, explanation_entities, media, question_entities]
     PollOption:
@@ -331,28 +300,14 @@ types:
       botapi: [option_text, option_text_entities]
     PollOptionDeleted:
       botapi: [option_text, option_text_entities]
-    ReplyKeyboardMarkup:
-      botapi: [input_field_placeholder]
-    ReplyKeyboardRemove:
-      botapi: [remove_keyboard]
-    ReplyParameters:
-      botapi: [allow_sending_without_reply]
-    RichTextDateTime:
-      botapi: [unix_time]
-    StarAmount:
-      botapi: [amount, nanostar_amount]
     SuggestedPostPaid:
       botapi: [currency]
     SuggestedPostPrice:
       botapi: [amount, currency]
-    User:
-      botapi: [has_topics_enabled, supports_inline_queries]
-    UsersShared:
-      botapi: [request_id]
     Venue:
       botapi: [google_place_id, google_place_type]
     Video:
-      botapi: [cover, qualities, start_timestamp]
+      botapi: [qualities]
 
 methods:
   supported:

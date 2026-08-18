@@ -49,12 +49,42 @@ def load_spec() -> dict:
         return json.load(f)
 
 
+class StrictLoader(yaml.SafeLoader):
+    """Rejects duplicate mapping keys.
+
+    PyYAML keeps the last of a repeated key without complaining, so a second
+    `Message:` block silently discards the first and the renames it held quietly
+    stop applying.
+    """
+
+
+def _no_duplicates(loader, node, deep=False):
+    mapping = {}
+
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+
+        if key in mapping:
+            raise yaml.constructor.ConstructorError(
+                None, None, f"duplicate key {key!r}", key_node.start_mark
+            )
+
+        mapping[key] = loader.construct_object(value_node, deep=deep)
+
+    return mapping
+
+
+StrictLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _no_duplicates
+)
+
+
 def load_yaml(path: Path) -> dict:
     if not path.exists():
         return {}
 
     with open(path, encoding="utf-8") as f:
-        return yaml.safe_load(f) or {}
+        return yaml.load(f, StrictLoader) or {}
 
 
 def to_snake_case(name: str) -> str:
