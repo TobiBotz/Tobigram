@@ -8,6 +8,10 @@
 botapi:
   type_rename:
     PhotoSize: Thumbnail
+    Birthdate: Birthday
+    PaidMessagePriceChanged: PaidMessagesPriceChanged
+    ReactionType: Reaction
+    ChatFullInfo: Chat
 
   type_unsupported:
     Update: MTProto pushes parsed updates straight to handlers; there is no Update object
@@ -16,6 +20,7 @@ botapi:
     InaccessibleMessage: MTProto always delivers the message itself
     MaybeInaccessibleMessage: union of Message and InaccessibleMessage, neither modelled
     ResponseParameters: MTProto surfaces these as typed RPCError subclasses
+    InputFile: uploads take a path or a file object directly, with no wrapper type
 
   method_rename: {}
 
@@ -45,7 +50,25 @@ botapi:
       message_effect_id: effect_id
       rich_message: rich_text
 
-  method_field_unsupported: {}
+  method_field_unsupported:
+    promoteChatMember:
+      is_anonymous: folded into the privileges argument
+      can_manage_chat: folded into the privileges argument
+      can_delete_messages: folded into the privileges argument
+      can_manage_video_chats: folded into the privileges argument
+      can_restrict_members: folded into the privileges argument
+      can_promote_members: folded into the privileges argument
+      can_change_info: folded into the privileges argument
+      can_invite_users: folded into the privileges argument
+      can_post_messages: folded into the privileges argument
+      can_edit_messages: folded into the privileges argument
+      can_pin_messages: folded into the privileges argument
+      can_post_stories: folded into the privileges argument
+      can_edit_stories: folded into the privileges argument
+      can_delete_stories: folded into the privileges argument
+      can_manage_topics: folded into the privileges argument
+      can_manage_direct_messages: folded into the privileges argument
+      can_manage_tags: folded into the privileges argument
 
 mtproto:
   internal:

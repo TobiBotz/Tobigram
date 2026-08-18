@@ -154,6 +154,19 @@ def documented_params(doc: Optional[str]) -> Optional[Set[str]]:
     return found if inside or found else None
 
 
+def type_names(entries) -> Set[str]:
+    """Type names referenced by a spec ``types`` list, unwrapping arrays."""
+    names = set()
+
+    for entry in entries or []:
+        while entry.startswith("Array of "):
+            entry = entry[len("Array of "):]
+
+        names.add(entry)
+
+    return names
+
+
 def dotted(node: ast.Attribute) -> Optional[List[str]]:
     parts = []
 
@@ -455,6 +468,143 @@ class Coverage:
                 gaps.append(field_name)
 
         return gaps
+
+    def type_field_stats(self, name: str) -> Optional[Tuple[int, List[str]]]:
+        """(fields considered, fields missing) for a Bot API type."""
+        gaps = self.type_gaps(name)
+
+        if gaps is None:
+            return None
+
+        spec_type = self.spec["types"][name]
+        considered = sum(
+            0 if self._unsupported("botapi", "field_unsupported", name, f["name"]) else 1
+            for f in spec_type.get("fields") or []
+        )
+
+        return considered, gaps
+
+    def method_field_stats(self, name: str) -> Optional[Tuple[int, List[str]]]:
+        gaps = self.method_botapi_gaps(name)
+
+        if gaps is None:
+            return None
+
+        spec_method = self.spec["methods"][name]
+        considered = sum(
+            0 if self._unsupported("botapi", "method_field_unsupported", name, f["name"]) else 1
+            for f in spec_method.get("fields") or []
+        )
+
+        return considered, gaps
+
+    def implemented(self, kind: str) -> List[str]:
+        entry = self.manifest.get(kind) or {}
+
+        return sorted(set(entry.get("supported") or []) | set(entry.get("pending") or {}))
+
+    def required_types(self) -> Set[str]:
+        """Types reachable from the methods wzgram implements.
+
+        A Bot API type only matters if an implemented method returns it or takes
+        it, directly or through another required type. Judging coverage against
+        the whole spec counts types nothing can ever reach.
+        """
+        pending = []
+
+        for name in self.implemented("methods"):
+            spec_method = self.spec["methods"].get(name) or {}
+            pending.extend(type_names(spec_method.get("returns")))
+
+            for field in spec_method.get("fields") or []:
+                pending.extend(type_names(field["types"]))
+
+        seen: Set[str] = set()
+
+        while pending:
+            name = pending.pop()
+
+            if name in seen or name not in self.spec["types"]:
+                continue
+
+            seen.add(name)
+            spec_type = self.spec["types"][name]
+            pending.extend(spec_type.get("subtypes") or [])
+
+            for field in spec_type.get("fields") or []:
+                pending.extend(type_names(field["types"]))
+
+        return seen
+
+    def absorbed_by_union(self, name: str) -> bool:
+        """Whether a Bot API union member is folded into a flat wzgram class.
+
+        Bot API splits a union into one type per member and tells them apart with
+        a type string; wzgram keeps a single class and an enum, so ChatMember
+        covers all six ChatMember* members. Deciding this from the parent rather
+        than a hand-written list keeps it right as Bot API adds members.
+        """
+        spec_type = self.spec["types"].get(name) or {}
+
+        return any(
+            self.wzgram_type(parent) is not None
+            for parent in spec_type.get("subtype_of") or []
+        )
+
+    def report(self) -> dict:
+        methods = self.implemented("methods")
+        considered = missing = 0
+
+        for name in methods:
+            stats = self.method_field_stats(name)
+
+            if stats:
+                considered += stats[0]
+                missing += len(stats[1])
+
+        tl_considered = tl_missing = 0
+
+        for name in methods:
+            gaps = self.method_mtproto_gaps(name)
+
+            if gaps is None:
+                continue
+
+            symbol = self.wzgram_method(name)
+            tl_considered += len(symbol.params) + len(gaps)
+            tl_missing += len(gaps)
+
+        required = {
+            name for name in self.required_types()
+            if name not in ((self.aliases.get("botapi") or {}).get("type_unsupported") or {})
+            and not self.absorbed_by_union(name)
+        }
+        implemented_types = set(self.implemented("types"))
+        type_considered = type_missing = 0
+
+        for name in sorted(required & implemented_types):
+            stats = self.type_field_stats(name)
+
+            if stats:
+                type_considered += stats[0]
+                type_missing += len(stats[1])
+
+        return {
+            "methods": {
+                "implemented": len(methods),
+                "total": len(self.spec["methods"]),
+                "params": (considered - missing, considered),
+                "tl_params": (tl_considered - tl_missing, tl_considered),
+                "incomplete": sum(1 for n in methods if self.method_field_stats(n) and self.method_field_stats(n)[1]),
+            },
+            "types": {
+                "required": len(required),
+                "implemented": len(required & implemented_types),
+                "absent": sorted(required - implemented_types),
+                "params": (type_considered - type_missing, type_considered),
+                "unreachable": len(set(self.spec["types"]) - required),
+            },
+        }
 
     # --------------------------------------------------------------- checks
 
