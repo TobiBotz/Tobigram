@@ -267,33 +267,36 @@ class SQLiteStorage(Storage):
         )
         await self.conn.commit()
 
+    async def load_session_string(self, session_string: str):
+        data = self._decode_session_string(session_string)
+
+        await self.dc_id(data["dc_id"])
+        await self.test_mode(data["test_mode"])
+        await self.auth_key(data["auth_key"])
+        await self.user_id(data["user_id"])
+        await self.is_bot(data["is_bot"])
+        await self.date(0)
+
+        table = TEST if data["test_mode"] else PROD
+        default_address = table.get(data["dc_id"])
+
+        if data["server_address"]:
+            await self.server_address(data["server_address"])
+            await self.port(data["port"] or (80 if data["test_mode"] else 443))
+        elif default_address is not None:
+            await self.server_address(default_address)
+            await self.port(80 if data["test_mode"] else 443)
+
+        if data["api_id"] is not None:
+            await self.api_id(data["api_id"])
+
     async def open(self):
         if self.in_memory:
             self.conn = await aiosqlite.connect(":memory:", timeout=5)
             await self.create()
 
             if self.session_string:
-                data = self._decode_session_string(self.session_string)
-                await self.dc_id(data["dc_id"])
-                await self.test_mode(data["test_mode"])
-                await self.auth_key(data["auth_key"])
-                await self.user_id(data["user_id"])
-                await self.is_bot(data["is_bot"])
-                await self.date(0)
-
-                if data["api_id"] is not None:
-                    if data["server_address"] is not None:
-                        await self.server_address(data["server_address"])
-                        await self.port(data["port"])
-                    else:
-                        if data["test_mode"]:
-                            await self.server_address(TEST[data["dc_id"]])
-                            await self.port(80)
-                        else:
-                            await self.server_address(PROD[data["dc_id"]])
-                            await self.port(443)
-
-                    await self.api_id(data["api_id"])
+                await self.load_session_string(self.session_string)
 
             await self._ensure_committed()
             return

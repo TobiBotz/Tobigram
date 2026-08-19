@@ -1,9 +1,16 @@
+import asyncio
 import logging
 import struct
+import threading
+import time
 import zlib
+from unittest import mock
 
 import pytest
 
+import pyrogram
+import pyrogram.client
+from pyrogram.utils import ainput
 from pyrogram.storage import Storage, SQLiteStorage
 from pyrogram.storage.storage import WZ_PREFIX
 from pyrogram.storage import sqlite_storage
@@ -361,3 +368,144 @@ class TestSessionStringDecoding:
     def test_an_empty_string_says_so(self):
         with pytest.raises(ValueError, match="empty"):
             Storage._decode_session_string("   ")
+
+
+class TestSessionStringLoading:
+    """A session string has to bring its datacenter address with it.
+
+    Resolving the address was nested inside `if data["api_id"] is not None`, so
+    a legacy string - which carries no api_id - kept whatever address create()
+    had seeded, which is DC 2's. A DC 4 session then offered a DC 4 auth key to
+    DC 2. A v2 string exported before the address was known packs sixteen NUL
+    bytes, which is not None, so it wrote an empty address and port 0.
+    """
+
+    @pytest.mark.parametrize(
+        "kind,expected_api_id",
+        [("legacy_dc4", None), ("v2_dc4", 1234), ("v2_dc4_blank_address", 1234)],
+    )
+    async def test_the_address_always_matches_the_datacenter(self, kind, expected_api_id):
+        if kind == "legacy_dc4":
+            string = Storage._encode(
+                struct.pack(">B?256sQ?", 4, False, AUTH_KEY, USER_ID, True)
+            )
+        else:
+            address = (
+                bytes(16) if kind == "v2_dc4_blank_address"
+                else PROD[4].encode("ascii").ljust(16, bytes(1))[:16]
+            )
+            port = 0 if kind == "v2_dc4_blank_address" else 443
+            body = struct.pack(
+                Storage.SESSION_STRING_FORMAT_V2,
+                2, 4, 1234, False, AUTH_KEY, USER_ID, True, port, address
+            )
+            string = Storage._encode(body + struct.pack("<I", zlib.crc32(body)))
+
+        storage = MemoryStorage("dc4", session_string=string)
+        await storage.open()
+
+        assert await storage.dc_id() == 4
+        assert await storage.server_address() == PROD[4], (
+            "the stored address must belong to the session's own datacenter"
+        )
+        assert await storage.port() == 443
+        assert await storage.api_id() == expected_api_id
+
+    async def test_a_session_with_no_api_id_can_still_be_re_exported(self):
+        """The legacy warning asks the user to re-export; that has to be possible.
+
+        api_id was in the required-fields check, so the one format that cannot
+        carry an api_id was also the one that could never be re-exported.
+        """
+        string = Storage._encode(
+            struct.pack(">B?256sQ?", 2, False, AUTH_KEY, USER_ID, True)
+        )
+        storage = MemoryStorage("legacy", session_string=string)
+        await storage.open()
+
+        exported = await storage.export_session_string()
+        again = Storage._decode_session_string(exported)
+
+        assert again["user_id"] == USER_ID
+        assert again["auth_key"] == AUTH_KEY
+        assert again["dc_id"] == 2
+        assert again["api_id"] == 0, (
+            "an unknown api_id round trips as 0, which load_session treats as "
+            "absent and backfills from the Client"
+        )
+
+    async def test_a_still_incomplete_session_is_refused(self):
+        storage = MemoryStorage("empty")
+        await storage.open()
+
+        with pytest.raises(ValueError, match="required fields are missing"):
+            await storage.export_session_string()
+
+
+class TestApiIdMigrationPrompt:
+    async def test_a_headless_host_is_told_what_to_do_instead_of_spinning(self, monkeypatch):
+        """load_session prompts for a missing api_id in a bare `while True`.
+
+        With no terminal, input() raises EOFError on every pass, the broad
+        except printed it and looped again: 3123 passes in 1.5s, each spawning a
+        thread and writing to stdout, forever.
+        """
+        string = Storage._encode(
+            struct.pack(">B?256sQ?", 2, False, AUTH_KEY, USER_ID, True)
+        )
+        app = pyrogram.Client(
+            "prompt", session_string=string, api_id=None, api_hash=None, in_memory=True
+        )
+        await app.storage.open()
+
+        asked = []
+
+        async def no_terminal(prompt="", **kwargs):
+            asked.append(prompt)
+
+            if len(asked) > 5:
+                raise AssertionError("still spinning on a host with no terminal")
+
+            raise EOFError("EOF when reading a line")
+
+        monkeypatch.setattr(pyrogram.client, "ainput", no_terminal)
+
+        with pytest.raises(AttributeError, match="Pass api_id"):
+            await asyncio.wait_for(app.load_session(), 10)
+
+        assert len(asked) == 1
+
+
+class TestPrompts:
+    async def test_a_cancelled_prompt_does_not_wedge_the_loop(self):
+        """ainput used a `with ThreadPoolExecutor(1)`, whose exit joins the thread.
+
+        A thread parked in input() never returns, so timing out or cancelling a
+        prompt hung on executor shutdown instead of unwinding.
+        """
+        started = threading.Event()
+        release = threading.Event()
+
+        def blocking(_prompt):
+            started.set()
+            release.wait(30)
+            return "late"
+
+        with mock.patch("builtins.input", blocking):
+            task = asyncio.ensure_future(ainput("prompt: "))
+
+            await asyncio.get_running_loop().run_in_executor(None, started.wait, 10)
+
+            task.cancel()
+            start = time.monotonic()
+
+            try:
+                with pytest.raises(asyncio.CancelledError):
+                    await task
+            finally:
+                release.set()
+
+            assert time.monotonic() - start < 5, (
+                "cancelling the prompt waited on the parked thread instead of "
+                "unwinding, so a timed-out prompt wedges the event loop"
+            )

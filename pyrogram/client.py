@@ -1197,6 +1197,11 @@ class Client(Methods):
                             if confirm.lower() == "y":
                                 await self.storage.api_id(value)
                                 break
+                        except EOFError:
+                            raise AttributeError(
+                                "This session predates the stored api_id and there is "
+                                "no terminal to read one from. Pass api_id to Client()."
+                            ) from None
                         except Exception as e:
                             print(e)
 

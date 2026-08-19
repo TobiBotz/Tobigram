@@ -313,24 +313,24 @@ class Storage(ABC):
         port = await self.port()
         server_address = await self.server_address()
 
-        if any(v is None for v in (dc_id, api_id, test_mode, auth_key, user_id, is_bot, port, server_address)):
+        if any(v is None for v in (dc_id, test_mode, auth_key, user_id, is_bot)):
             raise ValueError(
                 "Cannot export session string: some required fields are missing. "
                 "Make sure the client is fully initialized."
             )
 
-        addr_bytes = server_address.encode("ascii").ljust(16, b"\x00")[:16]
+        addr_bytes = (server_address or "").encode("ascii").ljust(16, b"\x00")[:16]
 
         packed = struct.pack(
             self.SESSION_STRING_FORMAT_V2,
             2,
             dc_id,
-            api_id,
+            api_id or 0,
             test_mode,
             auth_key,
             user_id,
             is_bot,
-            port,
+            port or 0,
             addr_bytes,
         )
 
