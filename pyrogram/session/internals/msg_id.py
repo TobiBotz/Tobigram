@@ -26,16 +26,20 @@ log = logging.getLogger(__name__)
 class _MsgIdGenerator:
     _lock = threading.Lock()
     _last_msg_id = 0
+    _base_wall = time.time()
+    _base_mono = time.monotonic()
     time_offset = 0.0
 
     @classmethod
     def now(cls) -> float:
-        return time.time() + cls.time_offset
+        return cls._base_wall + (time.monotonic() - cls._base_mono) + cls.time_offset
 
     @classmethod
     def sync(cls, server_msg_id: int, rejected: bool = False):
         with cls._lock:
-            cls.time_offset = (server_msg_id >> 32) - time.time()
+            cls._base_wall = time.time()
+            cls._base_mono = time.monotonic()
+            cls.time_offset = (server_msg_id >> 32) - cls._base_wall
 
             if rejected:
                 cls._last_msg_id = 0

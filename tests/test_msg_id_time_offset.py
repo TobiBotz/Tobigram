@@ -45,17 +45,23 @@ class FakeConn:
 
 @pytest.fixture
 def clock(monkeypatch):
-    monkeypatch.setattr(msg_id_mod._MsgIdGenerator, "time_offset", 0.0)
-    monkeypatch.setattr(msg_id_mod._MsgIdGenerator, "_last_msg_id", 0)
-
-    state = {"skew": 0.0, "real": time.time()}
+    state = {"skew": 0.0, "real": time.time(), "mono": 10_000.0}
 
     class FakeTime:
         @staticmethod
         def time():
             return state["real"] + state["skew"]
 
+        @staticmethod
+        def monotonic():
+            return state["mono"]
+
     monkeypatch.setattr(msg_id_mod, "time", FakeTime)
+    monkeypatch.setattr(msg_id_mod._MsgIdGenerator, "time_offset", 0.0)
+    monkeypatch.setattr(msg_id_mod._MsgIdGenerator, "_last_msg_id", 0)
+    monkeypatch.setattr(msg_id_mod._MsgIdGenerator, "_base_wall", state["real"])
+    monkeypatch.setattr(msg_id_mod._MsgIdGenerator, "_base_mono", state["mono"])
+
     return state
 
 
@@ -152,17 +158,76 @@ async def test_stop_clears_stored_msg_ids_after_draining_packets(clock):
     )
 
 
-async def test_stale_server_packet_is_still_rejected(clock):
+async def test_a_lone_stale_packet_is_dropped_without_resyncing(clock):
     s = make_session()
     s.stored_msg_ids.append(server_msg_id(clock["real"] - 7200))
+    stale = server_msg_id(clock["real"] - 3600)
 
-    await feed(
-        s,
-        raw.types.Pong(msg_id=1, ping_id=0),
-        server_msg_id(clock["real"] - 3600),
+    await feed(s, raw.types.Pong(msg_id=1, ping_id=0), stale)
+
+    assert not s.connection.closed, "one stale packet must not cost a reconnect"
+    assert stale not in s.stored_msg_ids, "replay protection must still drop it"
+    assert MsgId.time_offset == 0.0, (
+        "a single out-of-window message must never be allowed to move the clock, "
+        "or a replay could drag the whole session out of step"
     )
 
-    assert s.connection.closed, "replay protection must survive the time-offset fix"
+
+async def test_a_wall_clock_step_does_not_move_mtproto_time(clock):
+    before = MsgId.now()
+
+    clock["skew"] = 900.0
+
+    assert abs(MsgId.now() - before) < 1, (
+        "MTProto time must ride the monotonic clock, so an NTP step cannot "
+        "invalidate a time offset that was correct a moment earlier"
+    )
+
+    clock["mono"] += 5
+
+    assert abs(MsgId.now() - before - 5) < 1, "it must still advance in real time"
+
+
+async def test_a_clock_step_mid_connection_does_not_reconnect(clock):
+    s = make_session()
+
+    await feed(s, raw.types.Pong(msg_id=1, ping_id=0), server_msg_id(clock["real"]))
+    await feed(s, raw.types.Pong(msg_id=2, ping_id=0), server_msg_id(clock["real"] + 1))
+
+    clock["skew"] = -600.0
+
+    accepted = server_msg_id(clock["real"] + 2)
+    await feed(s, raw.types.Pong(msg_id=3, ping_id=0), accepted)
+
+    assert not s.connection.closed, (
+        "the host clock stepping under a live session must not tear it down"
+    )
+    assert accepted in s.stored_msg_ids, "traffic must keep flowing across the step"
+
+
+async def test_a_stalled_monotonic_clock_resyncs_after_repeated_breaches(clock):
+    s = make_session()
+
+    await feed(s, raw.types.Pong(msg_id=1, ping_id=0), server_msg_id(clock["real"]))
+
+    resumed = clock["real"] + 3600
+
+    for i in range(Session.MAX_SKEW_BREACHES):
+        await feed(s, raw.types.Pong(msg_id=2 + i, ping_id=0), server_msg_id(resumed + i))
+
+    assert not s.connection.closed, (
+        "a suspended host leaves CLOCK_MONOTONIC behind; that must resync, not reconnect"
+    )
+    assert abs(MsgId.time_offset - 3600) < 5, (
+        f"consecutive breaches must resync the offset, got {MsgId.time_offset}"
+    )
+
+    recovered = server_msg_id(resumed + 10)
+    await feed(s, raw.types.Pong(msg_id=9, ping_id=0), recovered)
+
+    assert recovered in s.stored_msg_ids, (
+        "traffic must be accepted again once the offset has been resynced"
+    )
 
 
 def test_msg_id_shape(clock):

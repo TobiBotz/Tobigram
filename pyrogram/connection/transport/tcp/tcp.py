@@ -40,6 +40,8 @@ class TCP:
     def __init__(self, ipv6: bool, proxy: dict, crypto_executor: Optional[ThreadPoolExecutor] = None, loop: Optional[asyncio.AbstractEventLoop] = None):
         self.socket = None
 
+        self.is_connected = False
+
         self.reader = None
         self.writer = None
 
@@ -119,7 +121,11 @@ class TCP:
         except OSError:
             pass
 
+        self.is_connected = True
+
     async def close(self):
+        self.is_connected = False
+
         try:
             if self.writer is not None:
                 self.writer.close()
@@ -131,6 +137,9 @@ class TCP:
 
     async def send(self, data: bytes):
         async with self.lock:
+            if not self.is_connected:
+                raise OSError("Connection closed")
+
             try:
                 if self.writer is not None:
                     self.writer.write(data)

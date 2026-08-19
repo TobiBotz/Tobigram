@@ -36,7 +36,7 @@ from pyrogram.connection import Connection
 from pyrogram.crypto.executor import get_crypto_executor
 from pyrogram.errors import (
     RPCError, InternalServerError, AuthKeyDuplicated, FloodWait, FloodPremiumWait, ServiceUnavailable,
-    BadMsgNotification, ReplayedMsgId, SecurityCheckMismatch
+    BadMsgNotification, SecurityCheckMismatch
 )
 from pyrogram.raw.all import layer
 from pyrogram.raw.core import TLObject, Message, MsgContainer, Int, FutureSalts
@@ -64,6 +64,9 @@ class Session:
     ACKS_THRESHOLD = 10
     PING_INTERVAL = 5
     STORED_MSG_IDS_MAX_SIZE = 1000 * 2
+    MAX_SKEW_AHEAD = 30
+    MAX_SKEW_BEHIND = 300
+    MAX_SKEW_BREACHES = 3
     MAX_INFLIGHT_PACKETS = int(os.environ.get("WZGRAM_MAX_INFLIGHT_PACKETS", 16))
     MAX_INFLIGHT_MEDIA = int(os.environ.get("WZGRAM_MAX_INFLIGHT_MEDIA", 6))
 
@@ -127,6 +130,10 @@ class Session:
         self._restart_done = asyncio.Event()
         self._restart_done.set()
 
+        self._skew_breaches = 0
+        self._msg_id_floor = 0
+        self._teardown_started = False
+
         self.is_started = asyncio.Event()
         self._start_exc = None
         self._start_active = False
@@ -154,6 +161,9 @@ class Session:
             while True:
                 attempt += 1
                 self._stopping = False
+                self._teardown_started = False
+                self._skew_breaches = 0
+                self._msg_id_floor = 0
                 self.connection = Connection(
                     self.dc_id,
                     self.test_mode,
@@ -274,6 +284,7 @@ class Session:
             self._packet_tasks.clear()
 
         self.stored_msg_ids.clear()
+        self._msg_id_floor = 0
 
         if self.connection:
             await self.connection.close()
@@ -305,6 +316,16 @@ class Session:
             finally:
                 self._restart_done.set()
 
+    async def _teardown(self, reason: str):
+        if self._teardown_started:
+            return
+
+        self._teardown_started = True
+
+        log.warning("Discarding packet and closing connection: %s", reason)
+
+        utils.run_in_background(self._safe_restart(), self.loop)
+
     async def handle_packet(self, packet):
         try:
             msg_id, seq_no, length, body_bytes, total_len = await self.loop.run_in_executor(
@@ -321,13 +342,20 @@ class Session:
 
         self.last_packet_received = time.monotonic()
 
-        # https://core.telegram.org/mtproto/security_guidelines#checking-message-length
-        padding_len = total_len - 16 - length
-        SecurityCheckMismatch.check(12 <= padding_len <= 1024, "12 <= len(padding) <= 1024")
-        SecurityCheckMismatch.check(total_len % 4 == 0, "len(data) % 4 == 0")
+        if self._teardown_started:
+            return
 
-        # https://core.telegram.org/mtproto/security_guidelines#checking-msg-id
-        SecurityCheckMismatch.check(msg_id % 2 != 0, "message.msg_id % 2 != 0")
+        try:
+            # https://core.telegram.org/mtproto/security_guidelines#checking-message-length
+            padding_len = total_len - 16 - length
+            SecurityCheckMismatch.check(12 <= padding_len <= 1024, "12 <= len(padding) <= 1024")
+            SecurityCheckMismatch.check(total_len % 4 == 0, "len(data) % 4 == 0")
+
+            # https://core.telegram.org/mtproto/security_guidelines#checking-msg-id
+            SecurityCheckMismatch.check(msg_id % 2 != 0, "message.msg_id % 2 != 0")
+        except SecurityCheckMismatch as e:
+            await self._teardown(str(e))
+            return
 
         body = TLObject.read(BytesIO(body_bytes))
         message = Message(body, msg_id, seq_no, length)
@@ -352,41 +380,59 @@ class Session:
 
             rejected = is_bad_notification and msg.body.error_code in (16, 17)
 
-            if rejected or not self.stored_msg_ids:
-                MsgId.sync(msg.msg_id, rejected)
+            async with self._handler_lock:
+                if rejected or not self.stored_msg_ids:
+                    MsgId.sync(msg.msg_id, rejected)
 
-            try:
                 if len(self.stored_msg_ids) > Session.STORED_MSG_IDS_MAX_SIZE:
-                    del self.stored_msg_ids[:Session.STORED_MSG_IDS_MAX_SIZE // 2]
+                    cut = Session.STORED_MSG_IDS_MAX_SIZE // 2
+                    self._msg_id_floor = self.stored_msg_ids[cut - 1]
+                    del self.stored_msg_ids[:cut]
+
+                replayed = None
+                skew = None
 
                 if self.stored_msg_ids:
-                    if msg.msg_id < self.stored_msg_ids[0]:
-                        raise ReplayedMsgId("The msg_id is lower than all the stored values")
+                    if msg.msg_id <= self._msg_id_floor:
+                        replayed = "The msg_id is below the replay window"
+                    else:
+                        index = bisect.bisect_left(self.stored_msg_ids, msg.msg_id)
 
-                    index = bisect.bisect_left(self.stored_msg_ids, msg.msg_id)
+                        if index < len(self.stored_msg_ids) and self.stored_msg_ids[index] == msg.msg_id:
+                            replayed = "The msg_id is equal to any of the stored values"
 
-                    if index < len(self.stored_msg_ids) and self.stored_msg_ids[index] == msg.msg_id:
-                        raise ReplayedMsgId("The msg_id is equal to any of the stored values")
+                    if replayed is None and not is_bad_notification:
+                        time_diff = (msg.msg_id >> 32) - MsgId.now()
 
-                    time_diff = (msg.msg_id >> 32) - MsgId.now()
+                        if time_diff > Session.MAX_SKEW_AHEAD or time_diff < -Session.MAX_SKEW_BEHIND:
+                            skew = time_diff
 
-                    if time_diff > 30 and not is_bad_notification:
-                        raise SecurityCheckMismatch("The msg_id belongs to over 30 seconds in the future. "
-                                                    "Most likely the client time has to be synchronized.")
+                if replayed is not None:
+                    log.debug("Discarding message: %s", replayed)
+                    continue
 
-                    if time_diff < -300 and not is_bad_notification:
-                        raise SecurityCheckMismatch("The msg_id belongs to over 300 seconds in the past. "
-                                                    "Most likely the client time has to be synchronized.")
-            except ReplayedMsgId as e:
-                log.debug("Discarding message: %s", e)
-                continue
-            except SecurityCheckMismatch as e:
-                log.warning("Discarding packet and closing connection: %s", e)
-                await self.connection.close()
-                return
-            else:
-                async with self._handler_lock:
-                    bisect.insort(self.stored_msg_ids, msg.msg_id)
+                if skew is not None:
+                    self._skew_breaches += 1
+
+                    log.debug(
+                        "Discarding message %ss out of step (%s/%s)",
+                        int(skew), self._skew_breaches, Session.MAX_SKEW_BREACHES
+                    )
+
+                    if self._skew_breaches >= Session.MAX_SKEW_BREACHES:
+                        self._skew_breaches = 0
+                        MsgId.sync(msg.msg_id)
+
+                        log.warning(
+                            "Client clock is %ss out of step with the server; "
+                            "time offset resynchronised to %.1fs",
+                            int(skew), MsgId.time_offset
+                        )
+
+                    continue
+
+                self._skew_breaches = 0
+                bisect.insort(self.stored_msg_ids, msg.msg_id)
 
             if isinstance(msg.body, (raw.types.MsgDetailedInfo, raw.types.MsgNewDetailedInfo)):
                 self.pending_acks.add(msg.body.answer_msg_id)
@@ -473,7 +519,11 @@ class Session:
                 log.debug("Socket read timed out, continuing")
                 continue
             except Exception:
-                log.exception("Error receiving packet")
+                if self._teardown_started or self._stopping:
+                    log.debug("Receive loop ending after a deliberate teardown")
+                else:
+                    log.exception("Error receiving packet")
+
                 if self.is_started.is_set():
                     await self._safe_restart()
                 break

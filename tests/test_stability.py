@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import socket
 import time
 from types import SimpleNamespace
@@ -107,8 +108,9 @@ async def test_a_msg_id_below_the_replay_window_is_dropped_not_fatal(monkeypatch
     session.connection = RecordingConnection()
 
     recent = MsgId() | 1
-    stale = recent - (1 << 33)  # comfortably below the stored floor
+    stale = recent - (1 << 33)  # comfortably below the pruned floor
     session.stored_msg_ids = [recent]
+    session._msg_id_floor = recent - (1 << 32)
 
     body = raw.types.Pong(msg_id=stale, ping_id=0).write()
     monkeypatch.setattr(session.loop, "run_in_executor", unpacked_as(stale, body))
@@ -119,7 +121,57 @@ async def test_a_msg_id_below_the_replay_window_is_dropped_not_fatal(monkeypatch
     assert session.stored_msg_ids == [recent]
 
 
-async def test_a_clock_skew_mismatch_still_closes_the_connection(monkeypatch):
+async def test_an_out_of_order_msg_id_is_not_mistaken_for_a_replay(monkeypatch):
+    """The oldest msg_id seen so far is not by itself a replay window.
+
+    Rejecting everything below stored_msg_ids[0] discards legitimate messages -
+    an RpcResult among them - whenever the server hands us msg_ids out of
+    ascending order, which a MsgContainer is free to do. The floor only means
+    something once entries have actually been pruned away.
+    """
+    session = make_session()
+    session.connection = RecordingConnection()
+
+    later = MsgId() | 1
+    earlier = later - (1 << 32) - 4
+
+    for msg_id in (later, earlier):
+        body = raw.types.Pong(msg_id=msg_id, ping_id=0).write()
+        monkeypatch.setattr(session.loop, "run_in_executor", unpacked_as(msg_id, body))
+        await session.handle_packet(b"ignored")
+
+    assert session.stored_msg_ids == [earlier, later], (
+        "a msg_id never seen before and inside the time window is not a replay "
+        "merely for arriving after a higher one"
+    )
+    assert not session.connection.closed
+
+
+async def test_pruning_the_window_is_what_arms_the_floor(monkeypatch):
+    session = make_session()
+    session.connection = RecordingConnection()
+
+    base = MsgId() >> 32
+    session.stored_msg_ids = [
+        (base << 32) | (i << 2) | 1
+        for i in range(Session.STORED_MSG_IDS_MAX_SIZE + 1)
+    ]
+    pruned = session.stored_msg_ids[Session.STORED_MSG_IDS_MAX_SIZE // 2 - 1]
+
+    fresh = (base << 32) | ((Session.STORED_MSG_IDS_MAX_SIZE + 8) << 2) | 1
+    body = raw.types.Pong(msg_id=fresh, ping_id=0).write()
+    monkeypatch.setattr(session.loop, "run_in_executor", unpacked_as(fresh, body))
+
+    await session.handle_packet(b"ignored")
+
+    assert session._msg_id_floor == pruned, (
+        "dropping the older half of the window must record what was dropped, or "
+        "those msg_ids become replayable"
+    )
+    assert len(session.stored_msg_ids) == Session.STORED_MSG_IDS_MAX_SIZE // 2 + 2
+
+
+async def test_a_clock_skew_mismatch_drops_the_message_not_the_connection(monkeypatch):
     session = make_session()
     session.connection = RecordingConnection()
 
@@ -131,8 +183,87 @@ async def test_a_clock_skew_mismatch_still_closes_the_connection(monkeypatch):
 
     await session.handle_packet(b"ignored")
 
-    assert session.connection.closed, (
-        "a desynchronised clock invalidates the sequence and must drop the connection"
+    assert not session.connection.closed, (
+        "one skewed packet must cost one message, not a full reconnect and "
+        "handshake that the next packet will trip all over again"
+    )
+    assert future not in session.stored_msg_ids
+    assert session._skew_breaches == 1
+
+
+async def test_a_broken_packet_tears_the_connection_down_exactly_once(monkeypatch, caplog):
+    session = make_session()
+    session.connection = RecordingConnection()
+
+    restarts = []
+
+    async def record_restart():
+        restarts.append(1)
+
+    monkeypatch.setattr(session, "_safe_restart", record_restart)
+
+    body = raw.types.Pong(msg_id=1, ping_id=0).write()
+
+    async def unpack(*args, **kwargs):
+        return 2, 1, len(body), body, 16 + len(body) + 16  # an even msg_id is a violation
+
+    monkeypatch.setattr(session.loop, "run_in_executor", unpack)
+
+    with caplog.at_level(logging.WARNING, logger="pyrogram.session.session"):
+        await asyncio.gather(*(
+            session.handle_packet(b"ignored")
+            for _ in range(Session.MAX_INFLIGHT_PACKETS)
+        ))
+
+    await asyncio.sleep(0)
+
+    assert restarts == [1], (
+        "every packet already decrypted when the connection went bad must not "
+        "queue a restart of its own"
+    )
+    assert len([
+        r for r in caplog.records if "closing connection" in r.getMessage()
+    ]) == 1
+
+
+class ClosingWriter:
+    """Stands in for an asyncio transport, which swallows a write once closed."""
+
+    def __init__(self):
+        self.written = []
+        self.closed = False
+
+    def write(self, data):
+        if not self.closed:
+            self.written.append(data)
+
+    async def drain(self):
+        pass
+
+    def close(self):
+        self.closed = True
+
+    async def wait_closed(self):
+        pass
+
+
+async def test_a_write_to_a_closed_transport_is_refused_not_swallowed():
+    transport = TCP(False, None)
+    transport.writer = ClosingWriter()
+    transport.is_connected = True
+
+    await transport.send(b"before")
+    assert transport.writer.written == [b"before"]
+
+    await transport.close()
+
+    with pytest.raises(OSError):
+        await transport.send(b"after")
+
+    assert transport.writer.written == [b"before"], (
+        "asyncio drops a write to a closed transport and logs it itself, so a "
+        "send that is not refused here is recorded as delivered and then spends "
+        "the whole timeout waiting for a reply to bytes that never left"
     )
 
 
