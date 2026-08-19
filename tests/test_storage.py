@@ -1,8 +1,11 @@
 import logging
+import struct
+import zlib
 
 import pytest
 
 from pyrogram.storage import Storage, SQLiteStorage
+from pyrogram.storage.storage import WZ_PREFIX
 from pyrogram.storage import sqlite_storage
 from pyrogram.storage.memory_storage import MemoryStorage
 from pyrogram.storage.sqlite_storage import PROD
@@ -281,3 +284,80 @@ class TestSQLiteStoragePersistence:
             assert await storage.update_state() == [(1, 2, 3, 4, 5)]
         finally:
             await storage.close()
+
+
+AUTH_KEY = b"K" * 256
+USER_ID = 8305084482
+NEWLINE = chr(10)
+
+
+def packed_v2():
+    return struct.pack(
+        Storage.SESSION_STRING_FORMAT_V2,
+        2, 2, 1234, False, AUTH_KEY, USER_ID, True, 0, bytes(16)
+    )
+
+
+def session_string(kind):
+    """Every wire format wzgram has ever exported."""
+    if kind == "v2_crc":
+        body = packed_v2()
+        return Storage._encode(body + struct.pack("<I", zlib.crc32(body)))
+
+    if kind == "v2":
+        return Storage._encode(packed_v2())
+
+    if kind == "legacy_267":
+        return Storage._encode(struct.pack(">B?256sQ?", 2, False, AUTH_KEY, USER_ID, True))
+
+    if kind == "legacy_271":
+        return Storage._encode(
+            struct.pack(">BI?256sQ?", 2, 1234, False, AUTH_KEY, USER_ID, True)
+        )
+
+    raise AssertionError(kind)
+
+
+class TestSessionStringDecoding:
+    """A session string wzgram itself exported has to keep working.
+
+    The prefixed branch used to try only the CRC format and then raise, so every
+    string exported before the CRC was added - all of which carry the prefix -
+    reported itself as corrupted. Stripping a stray character out of the body
+    raised the same flag, so a legacy string that picked up a newline from a
+    database column or an env var was unreadable too.
+    """
+
+    @pytest.mark.parametrize("kind", ["v2_crc", "v2", "legacy_267", "legacy_271"])
+    @pytest.mark.parametrize("wrap", ["bare", "prefixed", "stray_character"])
+    def test_every_exported_format_decodes(self, kind, wrap):
+        body = session_string(kind)
+        candidate = {
+            "bare": body,
+            "prefixed": WZ_PREFIX + body,
+            "stray_character": body[:40] + NEWLINE + body[40:],
+        }[wrap]
+
+        assert Storage._decode_session_string(candidate)["user_id"] == USER_ID
+
+    def test_a_truncated_string_is_still_refused(self):
+        with pytest.raises(ValueError, match="corrupted"):
+            Storage._decode_session_string(WZ_PREFIX + session_string("v2_crc")[:-8])
+
+    def test_a_repair_is_only_trusted_when_a_checksum_confirms_it(self):
+        """Repair guesses characters, so only the CRC can vouch for the result.
+
+        Accepting a repaired string with no checksum would hand back an auth key
+        assembled from a guess.
+        """
+        with pytest.raises(ValueError, match="corrupted"):
+            Storage._decode_session_string(session_string("v2")[:-8])
+
+    def test_a_dropped_character_is_repaired_when_the_checksum_agrees(self):
+        body = session_string("v2_crc")
+
+        assert Storage._decode_session_string(body[:-1])["user_id"] == USER_ID
+
+    def test_an_empty_string_says_so(self):
+        with pytest.raises(ValueError, match="empty"):
+            Storage._decode_session_string("   ")

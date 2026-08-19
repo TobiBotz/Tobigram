@@ -186,10 +186,67 @@ class Storage(ABC):
         return "".join(clean)
 
     @staticmethod
-    def _strip_prefix(s: str) -> str:
+    def _strip_prefix(s: str) -> Tuple[str, bool]:
         if s.startswith(WZ_PREFIX):
             return s[len(WZ_PREFIX):], True
         return s, False
+
+    @staticmethod
+    def _try_decode_legacy(raw: bytes):
+        if len(raw) not in (263, 267, 271):
+            return None
+
+        log.warning(
+            "Session string uses legacy format (pre-V2). "
+            "This format is deprecated and will be removed in future versions. "
+            "Please re-export your session string."
+        )
+
+        if len(raw) == 271:
+            dc_id, api_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
+                ">BI?256sQ?", raw
+            )
+            return dict(
+                dc_id=dc_id, api_id=api_id, test_mode=test_mode,
+                auth_key=auth_key, user_id=user_id, is_bot=is_bot,
+                port=None, server_address=None,
+            )
+
+        if len(raw) == 267:
+            dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
+                ">B?256sQ?", raw
+            )
+        else:
+            dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
+                ">B?256sI?", raw
+            )
+
+        return dict(
+            dc_id=dc_id, api_id=None, test_mode=test_mode,
+            auth_key=auth_key, user_id=user_id, is_bot=is_bot,
+            port=None, server_address=None,
+        )
+
+    @staticmethod
+    def _try_every_format(raw: bytes, allow_unverified: bool):
+        result = Storage._try_decode_v2_with_crc(raw)
+
+        if result:
+            return result
+
+        if not allow_unverified:
+            return None
+
+        result = Storage._try_decode_v2(raw)
+
+        if result:
+            log.warning(
+                "Session string uses old format without CRC checksum. "
+                "Consider re-exporting for integrity verification."
+            )
+            return result
+
+        return Storage._try_decode_legacy(raw)
 
     @staticmethod
     def _decode_session_string(session_string: str) -> dict:
@@ -197,103 +254,34 @@ class Storage(ABC):
         if not s:
             raise ValueError("Session string is empty")
 
-        body, has_prefix = Storage._strip_prefix(s)
+        body, _ = Storage._strip_prefix(s)
         clean = Storage._validate_char_set(body)
 
-        has_wz_prefix = has_prefix or clean != body
-
-        if has_wz_prefix:
-            for attempt in Storage._repair_attempts(clean):
-                try:
-                    raw = Storage._decode(attempt)
-                except (KeyError, ValueError):
-                    continue
-
-                result = Storage._try_decode_v2_with_crc(raw)
-                if result:
-                    if attempt != clean:
-                        log.info("Session string auto-repaired successfully")
-                    return result
-
-            raise ValueError(
-                "Session string is corrupted: after auto-repair attempts, "
-                "none of the decoded values passed integrity check. "
-                "Please re-export your session string."
-            )
-
         try:
             raw = Storage._decode(clean)
-            result = Storage._try_decode_v2_with_crc(raw)
+        except (KeyError, ValueError):
+            raw = None
+
+        if raw is not None:
+            result = Storage._try_every_format(raw, allow_unverified=True)
+
             if result:
                 return result
-        except (KeyError, ValueError):
-            pass
-
-        try:
-            raw = Storage._decode(clean)
-            result = Storage._try_decode_v2(raw)
-            if result:
-                log.warning(
-                    "Session string uses old format without CRC checksum. "
-                    "Consider re-exporting for integrity verification."
-                )
-                return result
-        except (KeyError, ValueError):
-            pass
-
-        try:
-            raw = Storage._decode(clean)
-            if len(raw) in (263, 267, 271):
-                log.warning(
-                    "Session string uses legacy format (pre-V2). "
-                    "This format is deprecated and will be removed in future versions. "
-                    "Please re-export your session string."
-                )
-                if len(raw) == 271:
-                    dc_id, api_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
-                        ">BI?256sQ?", raw
-                    )
-                    return dict(
-                        dc_id=dc_id, api_id=api_id, test_mode=test_mode,
-                        auth_key=auth_key, user_id=user_id, is_bot=is_bot,
-                        port=None, server_address=None,
-                    )
-                elif len(raw) == 267:
-                    dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
-                        ">B?256sQ?", raw
-                    )
-                    return dict(
-                        dc_id=dc_id, api_id=None, test_mode=test_mode,
-                        auth_key=auth_key, user_id=user_id, is_bot=is_bot,
-                        port=None, server_address=None,
-                    )
-                else:
-                    dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
-                        ">B?256sI?", raw
-                    )
-                    return dict(
-                        dc_id=dc_id, api_id=None, test_mode=test_mode,
-                        auth_key=auth_key, user_id=user_id, is_bot=is_bot,
-                        port=None, server_address=None,
-                    )
-        except (KeyError, ValueError):
-            pass
 
         for attempt in Storage._repair_attempts(clean):
             if attempt == clean:
                 continue
 
-            for candidate in {attempt, WZ_PREFIX + attempt}:
-                for data in {candidate, Storage._strip_prefix(candidate)[0]}:
-                    try:
-                        raw = Storage._decode(data)
-                    except (KeyError, ValueError):
-                        continue
+            try:
+                raw = Storage._decode(attempt)
+            except (KeyError, ValueError):
+                continue
 
-                    result = Storage._try_decode_v2_with_crc(raw)
-                    if result:
-                        log.info("Session string auto-repaired successfully")
-                        return result
+            result = Storage._try_every_format(raw, allow_unverified=False)
+
+            if result:
+                log.info("Session string auto-repaired successfully")
+                return result
 
         raise ValueError(
             "Session string is corrupted: after auto-repair attempts, "

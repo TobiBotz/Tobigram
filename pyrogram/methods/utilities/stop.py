@@ -45,8 +45,8 @@ class Stop:
         Returns:
             :obj:`~pyrogram.Client`: The stopped client itself.
 
-        Raises:
-            ConnectionError: In case you try to stop an already stopped client.
+        Stopping a client that is already stopped does nothing. A client that
+        connected but never finished starting up is still disconnected.
 
         Example:
             .. code-block:: python
@@ -66,11 +66,17 @@ class Stop:
         """
 
         async def do_it():
-            try:
-                await self.terminate()
-                await self.disconnect()
-            except Exception:
-                log.exception("Error while stopping client")
+            if self.is_initialized:
+                try:
+                    await self.terminate()
+                except Exception:
+                    log.exception("Error while terminating client")
+
+            if self.is_connected:
+                try:
+                    await self.disconnect()
+                except Exception:
+                    log.exception("Error while disconnecting client")
 
         if block:
             await do_it()

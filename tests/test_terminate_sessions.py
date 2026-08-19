@@ -1,10 +1,12 @@
 import asyncio
+import logging
 from types import SimpleNamespace
 
 import pytest
 
 import pyrogram
 from pyrogram.methods.auth.terminate import Terminate
+from pyrogram.methods.utilities.stop import Stop
 from pyrogram.session import Session
 from pyrogram.types import ListenerRegistry
 
@@ -141,3 +143,68 @@ async def test_stopping_a_cached_session_does_not_fire_the_disconnect_handler():
 
     await main.stop()
     assert fired == [client]
+
+
+class StoppingClient(Stop):
+    """A client that connected but never finished starting up.
+
+    A bad session string leaves exactly this state: connect() succeeded, start()
+    raised before initialize(), and the caller still has to stop it.
+    """
+
+    def __init__(self, is_initialized, is_connected):
+        self.is_initialized = is_initialized
+        self.is_connected = is_connected
+        self.terminated = False
+        self.disconnected = False
+        self.loop = asyncio.get_event_loop()
+
+    async def terminate(self):
+        if not self.is_initialized:
+            raise ConnectionError("Client is already terminated")
+
+        self.terminated = True
+        self.is_initialized = False
+
+    async def disconnect(self):
+        if not self.is_connected:
+            raise ConnectionError("Client is already disconnected")
+
+        if self.is_initialized:
+            raise ConnectionError("Can not disconnect an initialized client")
+
+        self.disconnected = True
+        self.is_connected = False
+
+
+async def test_stopping_a_half_started_client_still_disconnects_it(caplog):
+    client = StoppingClient(is_initialized=False, is_connected=True)
+
+    with caplog.at_level(logging.ERROR):
+        await client.stop()
+
+    assert client.disconnected, (
+        "terminate raising ConnectionError used to abandon the socket, because "
+        "both calls shared one try block"
+    )
+    assert not caplog.records, (
+        "a client that never finished starting up is not an error to report"
+    )
+
+
+async def test_stopping_a_started_client_does_both():
+    client = StoppingClient(is_initialized=True, is_connected=True)
+
+    await client.stop()
+
+    assert client.terminated and client.disconnected
+
+
+async def test_stopping_an_already_stopped_client_is_quiet(caplog):
+    client = StoppingClient(is_initialized=False, is_connected=False)
+
+    with caplog.at_level(logging.ERROR):
+        await client.stop()
+
+    assert not caplog.records
+    assert not client.terminated and not client.disconnected
