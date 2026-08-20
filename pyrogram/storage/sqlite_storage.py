@@ -170,6 +170,7 @@ class SQLiteStorage(Storage):
     FILE_EXTENSION = ".session"
     _AUTO_COMMIT_INTERVAL = 20
     _AUTO_COMMIT_SECONDS = 5
+    _PEER_CACHE_SIZE = int(os.environ.get("WZGRAM_PEER_CACHE", 4096))
 
     _MISSING = object()
 
@@ -190,6 +191,7 @@ class SQLiteStorage(Storage):
         self.use_wal = use_wal
 
         self._cache: Dict[str, Any] = {}
+        self._peer_cache: Dict[int, Tuple[int, int, str]] = {}
         self._dirty: bool = False
         self._write_count: int = 0
         self._flush_task: Optional[asyncio.Task] = None
@@ -252,6 +254,7 @@ class SQLiteStorage(Storage):
 
         if version == 1:
             await self.conn.execute("DELETE FROM peers;")
+            self._peer_cache.clear()
             await self.conn.commit()
             version += 1
 
@@ -416,9 +419,19 @@ class SQLiteStorage(Storage):
     async def update_peers(self, peers: List[Tuple[int, int, str, str]]):
         if not peers:
             return
+
+        fresh = [p for p in peers if self._peer_cache.get(p[0]) != (p[0], p[1], p[2])]
+
+        if not fresh:
+            return
+
         await self.conn.executemany(
-            "REPLACE INTO peers (id, access_hash, type, phone_number) VALUES (?, ?, ?, ?)", peers
+            "REPLACE INTO peers (id, access_hash, type, phone_number) VALUES (?, ?, ?, ?)", fresh
         )
+
+        for peer_id, access_hash, peer_type, _ in fresh:
+            self._remember_peer((peer_id, access_hash, peer_type))
+
         await self._maybe_commit()
 
     async def update_usernames(self, usernames: List[Tuple[int, List[str]]]):
@@ -454,7 +467,25 @@ class SQLiteStorage(Storage):
 
             await self._maybe_commit()
 
+    def _remember_peer(self, row: Tuple[int, int, str]):
+        """Keep the row, not the InputPeer: callers hand those to the API and are
+        free to mutate them, and a shared instance would be shared mutable state.
+        Rebuilding one costs a microsecond against the ~125us a query costs."""
+        cache = self._peer_cache
+
+        cache.pop(row[0], None)
+        cache[row[0]] = row
+
+        if len(cache) > self._PEER_CACHE_SIZE:
+            for key in list(cache)[:len(cache) - self._PEER_CACHE_SIZE]:
+                del cache[key]
+
     async def get_peer_by_id(self, peer_id: int):
+        row = self._peer_cache.get(peer_id)
+
+        if row is not None:
+            return get_input_peer(*row)
+
         cursor = await self.conn.execute(
             "SELECT id, access_hash, type FROM peers WHERE id = ?", (peer_id,)
         )
@@ -462,6 +493,8 @@ class SQLiteStorage(Storage):
 
         if r is None:
             raise KeyError(f"ID not found: {peer_id}")
+
+        self._remember_peer(tuple(r))
 
         return get_input_peer(*r)
 

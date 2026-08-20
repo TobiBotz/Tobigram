@@ -69,6 +69,7 @@ class Session:
     MAX_SKEW_BREACHES = 3
     MAX_INFLIGHT_PACKETS = int(os.environ.get("WZGRAM_MAX_INFLIGHT_PACKETS", 16))
     MAX_INFLIGHT_MEDIA = int(os.environ.get("WZGRAM_MAX_INFLIGHT_MEDIA", 6))
+    INLINE_CRYPTO_MAX = int(os.environ.get("WZGRAM_INLINE_CRYPTO_MAX", 32 * 1024))
 
     TRANSPORT_ERRORS = Connection.TRANSPORT_ERRORS
 
@@ -333,14 +334,26 @@ class Session:
 
     async def handle_packet(self, packet):
         try:
-            msg_id, seq_no, length, body_bytes, total_len = await self.loop.run_in_executor(
-                self.connection.protocol.crypto_executor,
-                warpcrypto.unpack_message,
-                packet,
-                self.session_id,
-                self.auth_key,
-                self.auth_key_id
-            )
+            # a thread hand-off costs a flat ~110us; a packet this size costs
+            # single-digit microseconds to decrypt, so below the threshold the
+            # executor is pure overhead. Above it a transfer part would stall the
+            # loop for milliseconds, which is what the pool is for.
+            if len(packet) <= Session.INLINE_CRYPTO_MAX:
+                msg_id, seq_no, length, body_bytes, total_len = warpcrypto.unpack_message(
+                    packet,
+                    self.session_id,
+                    self.auth_key,
+                    self.auth_key_id
+                )
+            else:
+                msg_id, seq_no, length, body_bytes, total_len = await self.loop.run_in_executor(
+                    self.connection.protocol.crypto_executor,
+                    warpcrypto.unpack_message,
+                    packet,
+                    self.session_id,
+                    self.auth_key,
+                    self.auth_key_id
+                )
         except Exception as e:
             log.warning("Failed to decrypt packet: %s %s", type(e).__name__, e)
             return
@@ -604,17 +617,28 @@ class Session:
         delivered = False
 
         try:
-            payload = await self.loop.run_in_executor(
-                self.connection.protocol.crypto_executor,
-                warpcrypto.pack_message,
-                message.msg_id,
-                message.seq_no,
-                serialized,
-                self.salt,
-                self.session_id,
-                self.auth_key,
-                self.auth_key_id
-            )
+            if len(serialized) <= Session.INLINE_CRYPTO_MAX:
+                payload = warpcrypto.pack_message(
+                    message.msg_id,
+                    message.seq_no,
+                    serialized,
+                    self.salt,
+                    self.session_id,
+                    self.auth_key,
+                    self.auth_key_id
+                )
+            else:
+                payload = await self.loop.run_in_executor(
+                    self.connection.protocol.crypto_executor,
+                    warpcrypto.pack_message,
+                    message.msg_id,
+                    message.seq_no,
+                    serialized,
+                    self.salt,
+                    self.session_id,
+                    self.auth_key,
+                    self.auth_key_id
+                )
 
             try:
                 await asyncio.wait_for(self.connection.send(payload), timeout=timeout or self.WAIT_TIMEOUT)

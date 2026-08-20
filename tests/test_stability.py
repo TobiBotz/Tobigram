@@ -74,10 +74,11 @@ async def _packed(*args, **kwargs):
 
 
 def unpacked_as(msg_id: int, body: bytes):
+    # small packets are decrypted inline, so the seam is the decrypt call itself
     length = len(body)
     total_len = 16 + length + 16
 
-    async def run(*args, **kwargs):
+    def run(*args, **kwargs):
         return msg_id, 1, length, body, total_len
 
     return run
@@ -91,7 +92,7 @@ async def test_a_replayed_msg_id_is_dropped_without_closing_the_connection(monke
     msg_id |= 1  # msg_id must be odd
     body = raw.types.Pong(msg_id=msg_id, ping_id=0).write()
 
-    monkeypatch.setattr(session.loop, "run_in_executor", unpacked_as(msg_id, body))
+    monkeypatch.setattr(session_mod.warpcrypto, "unpack_message", unpacked_as(msg_id, body))
 
     await session.handle_packet(b"ignored")
     assert session.stored_msg_ids == [msg_id]
@@ -114,7 +115,7 @@ async def test_a_msg_id_below_the_replay_window_is_dropped_not_fatal(monkeypatch
     session._msg_id_floor = recent - (1 << 32)
 
     body = raw.types.Pong(msg_id=stale, ping_id=0).write()
-    monkeypatch.setattr(session.loop, "run_in_executor", unpacked_as(stale, body))
+    monkeypatch.setattr(session_mod.warpcrypto, "unpack_message", unpacked_as(stale, body))
 
     await session.handle_packet(b"ignored")
 
@@ -138,7 +139,7 @@ async def test_an_out_of_order_msg_id_is_not_mistaken_for_a_replay(monkeypatch):
 
     for msg_id in (later, earlier):
         body = raw.types.Pong(msg_id=msg_id, ping_id=0).write()
-        monkeypatch.setattr(session.loop, "run_in_executor", unpacked_as(msg_id, body))
+        monkeypatch.setattr(session_mod.warpcrypto, "unpack_message", unpacked_as(msg_id, body))
         await session.handle_packet(b"ignored")
 
     assert session.stored_msg_ids == [earlier, later], (
@@ -161,7 +162,7 @@ async def test_pruning_the_window_is_what_arms_the_floor(monkeypatch):
 
     fresh = (base << 32) | ((Session.STORED_MSG_IDS_MAX_SIZE + 8) << 2) | 1
     body = raw.types.Pong(msg_id=fresh, ping_id=0).write()
-    monkeypatch.setattr(session.loop, "run_in_executor", unpacked_as(fresh, body))
+    monkeypatch.setattr(session_mod.warpcrypto, "unpack_message", unpacked_as(fresh, body))
 
     await session.handle_packet(b"ignored")
 
@@ -180,7 +181,7 @@ async def test_a_clock_skew_mismatch_drops_the_message_not_the_connection(monkey
 
     future = ((MsgId() >> 32) + 600) << 32 | 1
     body = raw.types.Pong(msg_id=future, ping_id=0).write()
-    monkeypatch.setattr(session.loop, "run_in_executor", unpacked_as(future, body))
+    monkeypatch.setattr(session_mod.warpcrypto, "unpack_message", unpacked_as(future, body))
 
     await session.handle_packet(b"ignored")
 
@@ -205,10 +206,10 @@ async def test_a_broken_packet_tears_the_connection_down_exactly_once(monkeypatc
 
     body = raw.types.Pong(msg_id=1, ping_id=0).write()
 
-    async def unpack(*args, **kwargs):
+    def unpack(*args, **kwargs):
         return 2, 1, len(body), body, 16 + len(body) + 16  # an even msg_id is a violation
 
-    monkeypatch.setattr(session.loop, "run_in_executor", unpack)
+    monkeypatch.setattr(session_mod.warpcrypto, "unpack_message", unpack)
 
     with caplog.at_level(logging.WARNING, logger="pyrogram.session.session"):
         await asyncio.gather(*(
@@ -1179,7 +1180,7 @@ async def test_an_orphaned_slot_would_hold_the_whole_response(monkeypatch):
     msg_id = MsgId() | 1
     payload = b"\x00" * 4096
     body = raw.types.Pong(msg_id=msg_id, ping_id=0).write()
-    monkeypatch.setattr(session.loop, "run_in_executor", unpacked_as(msg_id, body))
+    monkeypatch.setattr(session_mod.warpcrypto, "unpack_message", unpacked_as(msg_id, body))
 
     session.results[msg_id] = Result()
     await session.handle_packet(b"ignored")

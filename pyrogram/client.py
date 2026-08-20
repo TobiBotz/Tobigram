@@ -1059,6 +1059,10 @@ class Client(Methods):
             users = {u.id: u for u in updates.users}
             chats = {c.id: c for c in updates.chats}
 
+            # one write per peer per batch rather than per update: each costs a
+            # thread hand-off into aiosqlite, and only the highest pts matters
+            pending_states = {}
+
             for update in updates.updates:
                 channel_id = getattr(
                     getattr(
@@ -1072,15 +1076,11 @@ class Client(Methods):
                 pts_count = getattr(update, "pts_count", None)
 
                 if pts:
-                    await self.storage.update_state(
-                        (
-                            utils.get_channel_id(channel_id) if channel_id else 0,
-                            pts,
-                            None,
-                            updates.date,
-                            updates.seq
-                        )
-                    )
+                    key = utils.get_channel_id(channel_id) if channel_id else 0
+                    known = pending_states.get(key)
+
+                    if known is None or pts > known[1]:
+                        pending_states[key] = (key, pts, None, updates.date, updates.seq)
 
                 if isinstance(update, raw.types.UpdateChannelTooLong):
                     log.info(update)
@@ -1112,6 +1112,9 @@ class Client(Methods):
                                 chats.update({c.id: c for c in diff.chats})
 
                 await self.dispatcher.enqueue_update(update, users, chats)
+
+            for state in pending_states.values():
+                await self.storage.update_state(state)
         elif isinstance(updates, (raw.types.UpdateShortMessage, raw.types.UpdateShortChatMessage)):
             await self.storage.update_state(
                 (

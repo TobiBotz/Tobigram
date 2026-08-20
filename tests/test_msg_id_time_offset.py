@@ -4,6 +4,7 @@ import time
 import pytest
 
 from pyrogram import raw
+import pyrogram.session.session as session_mod
 from pyrogram.session.internals import msg_id as msg_id_mod
 from pyrogram.session.internals import MsgId
 from pyrogram.session.session import Session
@@ -65,6 +66,13 @@ def clock(monkeypatch):
     return state
 
 
+@pytest.fixture(autouse=True)
+def restore_decrypt():
+    original = session_mod.warpcrypto.unpack_message
+    yield
+    session_mod.warpcrypto.unpack_message = original
+
+
 def server_msg_id(unixtime):
     return (int(unixtime) << 32) | 1
 
@@ -73,10 +81,7 @@ async def feed(session, body, msg_id):
     blob = body.write()
     payload = (msg_id, 1, len(blob), blob, 32 + len(blob))
 
-    async def ret():
-        return payload
-
-    session.loop.run_in_executor = lambda ex, fn, *a: ret()
+    session_mod.warpcrypto.unpack_message = lambda *a, **kw: payload
     await session.handle_packet(b"packet")
 
 
