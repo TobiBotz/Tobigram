@@ -69,11 +69,17 @@ class Start:
                 log.info("Takeout session %s initiated", self.takeout_id)
 
             await self.invoke(raw.functions.updates.GetState())
-        except (Exception, KeyboardInterrupt):
-            await self.disconnect()
-            raise
-        else:
+
+            # inside the try: a failure in either used to leave a connected client
+            # the caller had no way to clean up
             self.me = await self.get_me()
             await self.initialize()
+        except (Exception, KeyboardInterrupt):
+            try:
+                await self.disconnect()
+            except Exception:
+                log.exception("Error disconnecting after a failed start")
 
+            raise
+        else:
             return self

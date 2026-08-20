@@ -22,7 +22,7 @@ from typing import Tuple
 
 import pyrogram
 from pyrogram import raw
-from pyrogram.errors import ChannelInvalid, ChannelPrivate, PersistentTimestampInvalid, PersistentTimestampOutdated
+from pyrogram.errors import ChannelInvalid, ChannelPrivate, PeerIdInvalid, PersistentTimestampInvalid, PersistentTimestampOutdated
 from pyrogram.utils import ZERO_CHANNEL_ID
 
 log = logging.getLogger(__name__)
@@ -64,6 +64,7 @@ class RecoverGaps:
             prev_pts = 0
             stale_attempts = 0
             unusable = False
+            failed = False
 
             while True:
                 try:
@@ -81,7 +82,7 @@ class RecoverGaps:
                             qts=0
                         )
                     )
-                except (ChannelPrivate, ChannelInvalid):
+                except (ChannelPrivate, ChannelInvalid, PeerIdInvalid):
                     unusable = True
                     break
                 except (PersistentTimestampOutdated, PersistentTimestampInvalid) as e:
@@ -97,6 +98,14 @@ class RecoverGaps:
 
                     await asyncio.sleep(stale_attempts)
                     continue
+                except Exception:
+                    # this runs inside dispatcher.start(): one peer that cannot be
+                    # fetched must not stop every peer after it, nor the client
+                    # from coming up at all. The state is kept, so the next start
+                    # tries again.
+                    log.exception("Gap recovery failed for %s", id)
+                    failed = True
+                    break
 
                 if isinstance(diff, raw.types.updates.DifferenceEmpty):
                     await self.storage.update_state(
@@ -181,6 +190,9 @@ class RecoverGaps:
 
                 if isinstance(diff, (raw.types.updates.Difference, raw.types.updates.ChannelDifference)):
                     break
+
+            if failed:
+                continue
 
             if unusable:
                 await self.storage.update_state(id)

@@ -216,7 +216,9 @@ class Session:
                         raise
 
                     backoff = min(e.value, 30)
-                    log.debug(
+                    # an unbounded start logs its way through an outage; at debug
+                    # only, a client that cannot reach Telegram looks hung
+                    (log.warning if attempt >= 3 else log.debug)(
                         "Session start attempt %d flood-limited, retrying in %ss",
                         attempt, backoff
                     )
@@ -229,9 +231,9 @@ class Session:
                         raise
 
                     backoff = min(2 ** (attempt - 1), 30)
-                    log.debug(
-                        "Session start attempt %d failed, retrying in %ss",
-                        attempt, backoff
+                    (log.warning if attempt >= 3 else log.debug)(
+                        "Session start attempt %d failed, retrying in %ss: %s",
+                        attempt, backoff, str(e) or type(e).__name__
                     )
                     await asyncio.sleep(backoff)
                 except RPCError as e:
