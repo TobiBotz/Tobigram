@@ -65,15 +65,21 @@ class TokenBucket:
         return (tokens - self._tokens) / max(self._rate, 0.0001)
 
     async def acquire(self, tokens: float = 1.0):
-        while True:
-            async with self._lock:
+        # The wait is served holding the lock. Sleeping outside it woke every
+        # waiter at once for one token, and a deficit of a fraction of a token
+        # makes that wait microseconds long - a spin, under exactly the load the
+        # limiter exists for. asyncio.Lock hands the lock over in order, so this
+        # is also what makes admission first-come-first-served.
+        async with self._lock:
+            while True:
                 self._refill()
+
                 if self._tokens >= tokens:
                     self._tokens -= tokens
                     self._total_taken += tokens
                     return
-                wait = (tokens - self._tokens) / max(self._rate, 0.0001)
-            await asyncio.sleep(wait)
+
+                await asyncio.sleep((tokens - self._tokens) / max(self._rate, 0.0001))
 
     def congestion(self) -> float:
         if self._burst <= 0:

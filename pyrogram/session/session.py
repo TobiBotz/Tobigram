@@ -301,6 +301,10 @@ class Session:
                 result.value = value
             result.event.set()
 
+    @property
+    def is_restarting(self) -> bool:
+        return self._restart_lock.locked() or self._start_active
+
     async def restart(self):
         if self._restart_lock.locked():
             await self._restart_done.wait()

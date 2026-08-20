@@ -45,6 +45,36 @@ MAX_BATCH = 4 * 1024 * 1024
 PROGRESS_INTERVAL = 0.2
 
 
+async def _stop_workers(queue: asyncio.Queue, workers: list) -> list:
+    """Retire the upload workers and collect what they ended with.
+
+    The sentinels are what the workers exit on, so the happy path must deliver
+    one to each. But ``queue`` is bounded by the worker count, so once the
+    workers are gone there is nobody to make room and an unconditional ``put``
+    waits for a consumer that will never run - with ``save_file_semaphore``
+    still held, which wedges every other upload on the client.
+    """
+    delivered = 0
+
+    for _ in workers:
+        if all(t.done() for t in workers):
+            break
+
+        try:
+            await asyncio.wait_for(queue.put(None), Session.MEDIA_WAIT_TIMEOUT)
+        except asyncio.TimeoutError:
+            break
+
+        delivered += 1
+
+    if delivered < len(workers):
+        for t in workers:
+            if not t.done():
+                t.cancel()
+
+    return await asyncio.gather(*workers, return_exceptions=True)
+
+
 class SaveFile:
     async def save_file(
         self: "pyrogram.Client",
@@ -245,9 +275,10 @@ class SaveFile:
 
                     async def _check_workers():
                         for t in workers:
-                            if t.done():
+                            # asking a cancelled task for its exception re-raises
+                            if t.done() and not t.cancelled():
                                 exc = t.exception()
-                                if exc is not None and not isinstance(exc, asyncio.CancelledError):
+                                if exc is not None:
                                     raise exc
 
                     await _check_workers()
@@ -299,9 +330,7 @@ class SaveFile:
 
                         if is_missing_part:
                             next_batch_task.cancel()
-                            for _ in range(n_workers):
-                                await queue.put(None)
-                            results = await asyncio.gather(*workers, return_exceptions=True)
+                            results = await _stop_workers(queue, workers)
                             for r in results:
                                 if isinstance(r, BaseException) and not isinstance(
                                     r, asyncio.CancelledError
@@ -343,10 +372,7 @@ class SaveFile:
                 if next_batch_task is not None and not next_batch_task.done():
                     next_batch_task.cancel()
 
-                for _ in workers:
-                    await queue.put(None)
-
-                await asyncio.gather(*workers, return_exceptions=True)
+                await _stop_workers(queue, workers)
                 budget.release_all()
 
                 if isinstance(path, (str, PurePath)):

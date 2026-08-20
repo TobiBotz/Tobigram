@@ -21,6 +21,7 @@ import contextvars
 import inspect
 import logging
 from collections import OrderedDict
+from contextlib import asynccontextmanager
 from typing import Dict, Optional, Tuple
 
 import pyrogram
@@ -421,29 +422,45 @@ class Dispatcher:
 
             self.relief_workers.clear()
             self.relief_capped = False
+            self.locks_list.clear()
+            self.handler_worker_tasks.clear()
 
             if clear_handlers:
-                self.handler_worker_tasks.clear()
                 self.groups.clear()
 
             log.info("Stopped %s HandlerTasks", self.client.workers)
 
+    @asynccontextmanager
+    async def _barrier(self):
+        """Hold every worker lock while the handler groups are edited.
+
+        Releases exactly what it acquired: ``locks_list`` is rebuilt on every
+        dispatcher start and cleared on stop, so releasing whatever the list
+        holds at the end can either release a lock this never took or, worse,
+        leave one held and stop the workers for good.
+        """
+        acquired = []
+
+        try:
+            for lock in list(self.locks_list):
+                await lock.acquire()
+                acquired.append(lock)
+
+            yield
+        except Exception as e:
+            log.exception("Failed to edit handlers: %s", e)
+        finally:
+            for lock in acquired:
+                lock.release()
+
     def add_handler(self, handler: Handler, group: int):
         async def fn():
-            try:
-                for lock in self.locks_list:
-                    await lock.acquire()
-
+            async with self._barrier():
                 if group not in self.groups:
                     self.groups[group] = []
                     self.groups = OrderedDict(sorted(self.groups.items()))
 
                 self.groups[group].append(handler)
-            except Exception as e:
-                log.exception("Failed to add handler: %s", e)
-            finally:
-                for lock in self.locks_list:
-                    lock.release()
 
         try:
             utils.run_in_background(fn(), asyncio.get_running_loop())
@@ -455,10 +472,7 @@ class Dispatcher:
 
     def remove_handler(self, handler: Handler, group: int):
         async def fn():
-            try:
-                for lock in self.locks_list:
-                    await lock.acquire()
-
+            async with self._barrier():
                 if group not in self.groups:
                     raise ValueError(
                         f"Group {group} does not exist. Handler was not removed."
@@ -468,11 +482,6 @@ class Dispatcher:
 
                 if not self.groups[group]:
                     del self.groups[group]
-            except Exception as e:
-                log.exception("Failed to remove handler: %s", e)
-            finally:
-                for lock in self.locks_list:
-                    lock.release()
 
         try:
             utils.run_in_background(fn(), asyncio.get_running_loop())
