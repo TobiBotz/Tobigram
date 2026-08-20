@@ -296,13 +296,24 @@ async def test_a_genuine_timeout_is_still_reported_as_one(monkeypatch):
 
 
 class _HandshakeFailingConnection(RecordingConnection):
+    """Refuses the handshake, whichever of send and recv the loop runs first."""
+
     reply = None
 
+    def __init__(self):
+        super().__init__()
+        self.requested = asyncio.Event()
+
+    async def send(self, payload):
+        await super().send(payload)
+        self.requested.set()
+
     async def recv(self):
-        if not self.sent:
-            await asyncio.sleep(3600)
+        await self.requested.wait()
+
         if isinstance(self.reply, BaseException):
             raise self.reply
+
         return self.reply
 
 
@@ -333,7 +344,7 @@ async def test_a_transport_error_during_the_handshake_names_itself(monkeypatch):
     assert "404" in str(error) and "auth key not found" in str(error), (
         f"the transport error the server sent must reach the caller, got {error!r}"
     )
-    assert elapsed < 1, (
+    assert elapsed < Session.START_TIMEOUT, (
         f"the handshake must fail as soon as the server answers, took {elapsed:.2f}s"
     )
 
@@ -344,7 +355,7 @@ async def test_a_drop_during_the_handshake_is_not_a_timeout(monkeypatch):
     assert isinstance(error, ConnectionResetError) and not isinstance(error, TimeoutError), (
         f"a connection lost mid-handshake must raise ConnectionResetError, got {error!r}"
     )
-    assert elapsed < 1, (
+    assert elapsed < Session.START_TIMEOUT, (
         f"the handshake must fail as soon as the socket dies, took {elapsed:.2f}s"
     )
 
