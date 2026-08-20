@@ -579,6 +579,7 @@ class Client(Methods):
         self.updates_watchdog_task = None
         self.updates_watchdog_event = asyncio.Event()
         self.last_update_time = datetime.now()
+        self._last_update_monotonic = time.monotonic()
 
         self.media_pool_reaper_task = None
         self.media_pool_reaper_event = asyncio.Event()
@@ -637,7 +638,9 @@ class Client(Methods):
             else:
                 break
 
-            if datetime.now() - self.last_update_time > timedelta(seconds=self.UPDATES_WATCHDOG_INTERVAL):
+            idle = time.monotonic() - self._last_update_monotonic
+
+            if idle > self.UPDATES_WATCHDOG_INTERVAL:
                 try:
                     await self.invoke(raw.functions.updates.GetState())
                     await self.recover_gaps()
@@ -1042,7 +1045,10 @@ class Client(Methods):
         return is_min
 
     async def handle_updates(self, updates):
+        # the datetime is what callers read; the watchdog measures a duration and
+        # a host clock that steps backwards must not stall it for the step
         self.last_update_time = datetime.now()
+        self._last_update_monotonic = time.monotonic()
 
         if isinstance(updates, (raw.types.Updates, raw.types.UpdatesCombined)):
             is_min = any((

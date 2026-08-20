@@ -93,6 +93,7 @@ class _WatchdogClient:
     def __init__(self, failure):
         self.updates_watchdog_event = asyncio.Event()
         self.last_update_time = datetime.now() - timedelta(days=1)
+        self._last_update_monotonic = time.monotonic() - 86400
         self.failure = failure
         self.calls = 0
 

@@ -16,14 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 import re
-from datetime import datetime
 from importlib import import_module
 from typing import Type, Union, Optional
 
 from pyrogram import raw
 from pyrogram.raw.core import TLObject
 from .exceptions.all import exceptions
+
+log = logging.getLogger(__name__)
 
 
 class RPCError(Exception):
@@ -53,8 +55,10 @@ class RPCError(Exception):
             self.value = value
 
         if is_unknown:
-            with open("unknown_errors.txt", "a", encoding="utf-8") as f:
-                f.write(f"{datetime.now()}\t{value}\t{rpc_name}\n")
+            # this used to append to unknown_errors.txt in the caller's working
+            # directory: unbounded, blocking the event loop, and on a read-only
+            # filesystem the OSError replaced the RPC error being raised
+            log.warning("Unknown RPC error %s caused by %s", value, rpc_name)
 
     @staticmethod
     def raise_it(rpc_error: "raw.types.RpcError", rpc_type: Type[TLObject]):

@@ -420,6 +420,15 @@ class Dispatcher:
                 except Exception:
                     pass
 
+            # a sentinel a cancelled worker never took retires a worker of the
+            # next generation the instant it starts, and parsed updates left
+            # here hold their peer graphs for as long as the client lives
+            while not self.updates_queue.empty():
+                try:
+                    self.updates_queue.get_nowait()
+                except asyncio.QueueEmpty:
+                    break
+
             self.relief_workers.clear()
             self.relief_capped = False
             self.locks_list.clear()
