@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional, Union, TYPE_CHECKING
 
 from pyrogram import raw
 
@@ -54,9 +54,11 @@ class InputRichMessage(Object):
             List of blocks that define the rich message content.
             See `rich message formatting options <https://core.telegram.org/bots/api#rich-message-formatting-options>`__ for more details.
 
-        media (:obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
-            Media referenced by the blocks.
-            Only used together with *blocks*, ignored for *html* and *markdown*.
+        media (:obj:`~pyrogram.types.InputRichMessageMedia` | List of :obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
+            Media the message refers to. With *html* or *markdown*, each entry needs an
+            ``id`` and is referred to from the text as ``tg://photo?id=``,
+            ``tg://video?id=`` or ``tg://audio?id=``. With *blocks*, the entries carry the
+            photo, document and user vectors the blocks index into.
     """
 
     def __init__(
@@ -66,7 +68,7 @@ class InputRichMessage(Object):
         is_rtl: Optional[bool] = None,
         skip_entity_detection: Optional[bool] = None,
         blocks: Optional[List["InputRichBlock"]] = None,
-        media: Optional["InputRichMessageMedia"] = None,
+        media: Optional[Union["InputRichMessageMedia", List["InputRichMessageMedia"]]] = None,
     ):
         super().__init__()
 
@@ -77,28 +79,51 @@ class InputRichMessage(Object):
         self.blocks = blocks
         self.media = media
 
+    @property
+    def _media_list(self) -> List["InputRichMessageMedia"]:
+        if self.media is None:
+            return []
+
+        return list(self.media) if isinstance(self.media, (list, tuple)) else [self.media]
+
+    def write_files(self) -> Optional[List["raw.base.InputRichFile"]]:
+        """Return the ``files`` vector html and markdown rich messages carry."""
+        files = [media.write_file() for media in self._media_list if media.id is not None]
+
+        return files or None
+
     def write(self) -> "raw.base.InputRichMessage":
         if self.html:
             input_rich_message = raw.types.InputRichMessageHTML(
                 html=self.html,
                 rtl=self.is_rtl,
-                noautolink=self.skip_entity_detection
+                noautolink=self.skip_entity_detection,
+                files=self.write_files()
             )
         elif self.markdown:
             input_rich_message = raw.types.InputRichMessageMarkdown(
                 markdown=self.markdown,
                 rtl=self.is_rtl,
-                noautolink=self.skip_entity_detection
+                noautolink=self.skip_entity_detection,
+                files=self.write_files()
             )
         elif self.blocks:
-            photos, documents, users = self.media.write() if self.media else (None, None, None)
+            photos, documents, users = [], [], []
+
+            for media in self._media_list:
+                entry_photos, entry_documents, entry_users = media.write()
+
+                photos.extend(entry_photos or ())
+                documents.extend(entry_documents or ())
+                users.extend(entry_users or ())
+
             input_rich_message = raw.types.InputRichMessage(
                 blocks=[block.write() for block in self.blocks],
                 rtl=self.is_rtl,
                 noautolink=self.skip_entity_detection,
-                photos=photos,
-                documents=documents,
-                users=users,
+                photos=photos or None,
+                documents=documents or None,
+                users=users or None,
             )
         else:
             raise ValueError(

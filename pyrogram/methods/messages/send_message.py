@@ -33,8 +33,9 @@ class SendMessage:
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
         ]] = None,
-        rich_text: Optional[str] = None,
+        rich_text: Optional[Union[str, "types.InputRichMessage"]] = None,
         rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
+        rich_text_media: Optional[List["types.InputRichMessageMedia"]] = None,
         disable_web_page_preview: Optional[bool] = None,
         reply_to_message_id: Optional[int] = None,
         reply_to_chat_id: Optional[Union[int, str]] = None,
@@ -111,11 +112,18 @@ class SendMessage:
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
-            rich_text (``str``, *optional*):
-                Rich text (Markdown or HTML) to render a styled message. Overrides ``text``.
+            rich_text (``str`` | :obj:`~pyrogram.types.InputRichMessage`, *optional*):
+                Rich text (Markdown or HTML) to render a styled message, or a whole
+                :obj:`~pyrogram.types.InputRichMessage` describing it. Overrides ``text``.
 
             rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 Parse mode for ``rich_text``. Defaults to Markdown.
+                Ignored when ``rich_text`` is an :obj:`~pyrogram.types.InputRichMessage`.
+
+            rich_text_media (List of :obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
+                Media ``rich_text`` refers to through ``tg://photo?id=``,
+                ``tg://video?id=`` or ``tg://audio?id=`` links.
+                Ignored when ``rich_text`` is an :obj:`~pyrogram.types.InputRichMessage`.
 
             disable_web_page_preview (``bool``, *optional*):
                 Disables link previews for links in this message.
@@ -176,14 +184,23 @@ class SendMessage:
                 )
 
         if rich_text is not None:
-            if rich_text_parse_mode == enums.ParseMode.HTML:
-                rich_message = raw.types.InputRichMessageHTML(
-                    html=rich_text,
-                )
+            if isinstance(rich_text, types.InputRichMessage):
+                rich_message = rich_text.write()
             else:
-                rich_message = raw.types.InputRichMessageMarkdown(
-                    markdown=rich_text,
-                )
+                files = types.InputRichMessage(
+                    html="_", media=rich_text_media
+                ).write_files() if rich_text_media else None
+
+                if rich_text_parse_mode == enums.ParseMode.HTML:
+                    rich_message = raw.types.InputRichMessageHTML(
+                        html=rich_text,
+                        files=files,
+                    )
+                else:
+                    rich_message = raw.types.InputRichMessageMarkdown(
+                        markdown=rich_text,
+                        files=files,
+                    )
             r = await self.invoke(
                 raw.functions.messages.SendMessage(
                     peer=await self.resolve_peer(chat_id),
@@ -216,7 +233,11 @@ class SendMessage:
                 sleep_threshold=60,
                 business_connection_id=business_connection_id
             )
-            plain_text = rich_text
+            plain_text = (
+                rich_text.html or rich_text.markdown or ""
+                if isinstance(rich_text, types.InputRichMessage)
+                else rich_text
+            )
         else:
             if link_preview_options is None:
                 link_preview_options = self.link_preview_options

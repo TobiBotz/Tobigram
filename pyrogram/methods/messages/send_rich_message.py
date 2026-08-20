@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Union, Optional
+from typing import List, Union, Optional
 
 import pyrogram
 from pyrogram import raw, utils, enums
@@ -10,8 +10,9 @@ class SendRichMessage:
     async def send_rich_message(
         self: "pyrogram.Client",
         chat_id: Union[int, str],
-        rich_text: str,
+        rich_text: Union[str, "types.InputRichMessage"],
         parse_mode: Optional["enums.ParseMode"] = None,
+        media: Optional[List["types.InputRichMessageMedia"]] = None,
         disable_web_page_preview: Optional[bool] = None,
         disable_notification: Optional[bool] = None,
         effect_id: Optional[int] = None,
@@ -46,13 +47,20 @@ class SendRichMessage:
             chat_id (``int`` | ``str``):
                 Unique identifier (int) or username (str) of the target chat.
 
-            rich_text (``str``):
-                Rich text (Markdown or HTML) to render a styled message.
+            rich_text (``str`` | :obj:`~pyrogram.types.InputRichMessage`):
+                Rich text (Markdown or HTML) to render a styled message, or a whole
+                :obj:`~pyrogram.types.InputRichMessage` describing it.
                 See `rich message formatting options <https://core.telegram.org/bots/api#rich-message-formatting-options>`__ for details.
 
             parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
+                Ignored when *rich_text* is an :obj:`~pyrogram.types.InputRichMessage`.
+
+            media (List of :obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
+                Media the text refers to through ``tg://photo?id=``, ``tg://video?id=``
+                or ``tg://audio?id=`` links.
+                Ignored when *rich_text* is an :obj:`~pyrogram.types.InputRichMessage`.
 
             disable_web_page_preview (``bool``, *optional*):
                 Disables link previews for links in this message.
@@ -123,16 +131,24 @@ class SendRichMessage:
                 # Send a rich formatted message
                 await app.send_rich_message(chat_id, "<b>Hello</b> <i>world</i>!")
         """
-        parse_mode = parse_mode or self.parse_mode
-
-        if parse_mode == enums.ParseMode.MARKDOWN:
-            rich_message = raw.types.InputRichMessageMarkdown(
-                markdown=rich_text,
-            )
+        if isinstance(rich_text, types.InputRichMessage):
+            rich_message = rich_text.write()
         else:
-            rich_message = raw.types.InputRichMessageHTML(
-                html=rich_text,
-            )
+            parse_mode = parse_mode or self.parse_mode
+            files = types.InputRichMessage(
+                html="_", media=media
+            ).write_files() if media else None
+
+            if parse_mode == enums.ParseMode.MARKDOWN:
+                rich_message = raw.types.InputRichMessageMarkdown(
+                    markdown=rich_text,
+                    files=files,
+                )
+            else:
+                rich_message = raw.types.InputRichMessageHTML(
+                    html=rich_text,
+                    files=files,
+                )
 
         r = await self.invoke(
             raw.functions.messages.SendMessage(

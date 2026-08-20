@@ -16,30 +16,43 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional
+import re
+from typing import List, Optional, Union
 
-from pyrogram import raw
+from pyrogram import raw, utils
 
 from ..object import Object
+
+ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,64}$")
 
 
 class InputRichMessageMedia(Object):
     """Describes media referenced in a rich message.
 
-    When constructing a rich message using blocks (e.g., :class:`~pyrogram.types.InputRichBlockPhoto`,
-    :class:`~pyrogram.types.InputRichBlockVideo`, :class:`~pyrogram.types.InputRichBlockAudio`), the actual
-    media payloads (photos, documents, users) must be provided separately.
-    This object groups them together so they can be attached to an
-    :class:`~pyrogram.types.InputRichMessage` via the *media* parameter.
+    There are two ways a rich message refers to media, and this object covers both.
 
-    .. note::
+    **By identifier**, for *html* and *markdown* content: set *id* and *media*, and refer
+    to it from the text as ``tg://photo?id=<id>``, ``tg://video?id=<id>`` or
+    ``tg://audio?id=<id>``.
 
-        Media objects in these lists are referenced by their ``id`` field
-        from the corresponding block objects (e.g., the ``photo_id`` of an
-        :class:`~pyrogram.types.InputRichBlockPhoto` must match the ``id`` attribute of the
-        :class:`~pyrogram.raw.types.InputPhoto` in this list).
+    **By position**, for *blocks* content: set *photos*, *documents* and *users*, which
+    the block objects index into (the ``photo_id`` of an
+    :class:`~pyrogram.types.InputRichBlockPhoto` must match the ``id`` attribute of the
+    corresponding :class:`~pyrogram.raw.types.InputPhoto`). MTProto has no identifiers on
+    this side, which is why the two shapes differ.
 
     Parameters:
+        id (``str``, *optional*):
+            Unique identifier of the media used in a ``tg://photo?id=``, ``tg://video?id=``
+            or ``tg://audio?id=`` link. 1-64 characters, only ``A-Z``, ``a-z``, ``0-9``,
+            ``_`` and ``-`` are allowed.
+
+        media (``str`` | :obj:`~pyrogram.raw.base.InputPhoto` | :obj:`~pyrogram.raw.base.InputDocument`, *optional*):
+            The media the identifier refers to, as a file identifier of an already uploaded
+            file or as an input photo or document. A rich message can only refer to media
+            that already exists on Telegram, so a local path or an HTTP URL has to be
+            uploaded first.
+
         photos (List of :obj:`~pyrogram.raw.base.InputPhoto`, *optional*):
             Photos referenced by blocks.
 
@@ -52,15 +65,67 @@ class InputRichMessageMedia(Object):
 
     def __init__(
         self,
+        id: Optional[str] = None,
+        media: Optional[Union[str, "raw.base.InputPhoto", "raw.base.InputDocument"]] = None,
         photos: Optional[List["raw.base.InputPhoto"]] = None,
         documents: Optional[List["raw.base.InputDocument"]] = None,
         users: Optional[List["raw.base.InputUser"]] = None,
     ):
         super().__init__()
 
+        self.id = id
+        self.media = media
         self.photos = photos
         self.documents = documents
         self.users = users
 
     def write(self) -> tuple:
-        return (self.photos, self.documents, self.users)
+        """Return the *(photos, documents, users)* vectors a block rich message carries."""
+        photos = list(self.photos) if self.photos else []
+        documents = list(self.documents) if self.documents else []
+
+        if self.id is not None:
+            file = self.write_file()
+
+            if isinstance(file, raw.types.InputRichFilePhoto):
+                photos.append(file.photo)
+            else:
+                documents.append(file.document)
+
+        return (
+            photos or self.photos,
+            documents or self.documents,
+            self.users,
+        )
+
+    def write_file(self) -> "raw.base.InputRichFile":
+        """Return the ``InputRichFile`` an html or markdown rich message carries."""
+        if not self.id:
+            raise ValueError(
+                "A media referenced from html or markdown needs an id to be "
+                "referenced by: tg://photo?id=<id>"
+            )
+
+        if not ID_PATTERN.match(self.id):
+            raise ValueError(
+                f'Invalid media id "{self.id}": 1-64 characters of A-Z, a-z, 0-9, _ and - only'
+            )
+
+        media = self.media
+
+        if isinstance(media, str):
+            media = utils.get_input_media_from_file_id(media)
+
+        if isinstance(media, (raw.types.InputMediaPhoto, raw.types.InputMediaDocument)):
+            media = media.id
+
+        if isinstance(media, raw.types.InputPhoto):
+            return raw.types.InputRichFilePhoto(id=self.id, photo=media)
+
+        if isinstance(media, raw.types.InputDocument):
+            return raw.types.InputRichFileDocument(id=self.id, document=media)
+
+        raise ValueError(
+            "A rich message can only refer to media that already exists on Telegram. "
+            f'Pass a file identifier, an InputPhoto or an InputDocument, not "{type(media).__name__}"'
+        )

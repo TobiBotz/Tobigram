@@ -194,13 +194,6 @@ botapi:
       photo: >-
         wzgram models the moving half of a live photo, which MTProto sends as a
         document; the still frame arrives as the message's own photo
-    InputRichMessageMedia:
-      id: >-
-        wzgram takes the MTProto shape, three vectors of photos, documents and
-        users, rather than one wrapper per referenced item
-      media: >-
-        wzgram takes the MTProto shape, three vectors of photos, documents and
-        users, rather than one wrapper per referenced item
     SuggestedPostPrice:
       amount: >-
         wzgram keeps one class per currency, SuggestedPostPriceStar and

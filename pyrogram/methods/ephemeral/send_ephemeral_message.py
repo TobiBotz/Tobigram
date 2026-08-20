@@ -41,8 +41,9 @@ class SendEphemeralMessage:
             "types.ForceReply"
         ]] = None,
         query_id: Optional[int] = None,
-        rich_text: Optional[str] = None,
+        rich_text: Optional[Union[str, "types.InputRichMessage"]] = None,
         rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
+        rich_text_media: Optional[List["types.InputRichMessageMedia"]] = None,
         disable_web_page_preview: Optional[bool] = None,
     ) -> "types.Message":
         """Send an ephemeral message visible only to a specific user and the bot in a group.
@@ -77,11 +78,18 @@ class SendEphemeralMessage:
             query_id (``int``, *optional*):
                 Identifier of the guest query to respond to, if this message is a reply to a guest bot query.
 
-            rich_text (``str``, *optional*):
+            rich_text (``str`` | :obj:`~pyrogram.types.InputRichMessage`, *optional*):
                 Rich text (Markdown or HTML) to render a styled message. Overrides ``text``.
 
             rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 Parse mode for ``rich_text``. Defaults to Markdown.
+                Ignored when ``rich_text`` is an :obj:`~pyrogram.types.InputRichMessage`.
+
+            rich_text_media (List of :obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
+                Media ``rich_text`` refers to through ``tg://photo?id=``,
+                ``tg://video?id=`` or ``tg://audio?id=`` links.
+                Ignored when ``rich_text`` is an :obj:`~pyrogram.types.InputRichMessage`.
+
 
             disable_web_page_preview (``bool``, *optional*):
                 Ignored. The ephemeral message RPC has no link preview field,
@@ -97,14 +105,23 @@ class SendEphemeralMessage:
                 await app.send_ephemeral_message(chat_id, user_id, "Hello!")
         """
         if rich_text is not None:
-            if rich_text_parse_mode == enums.ParseMode.HTML:
-                rich_message = raw.types.InputRichMessageHTML(
-                    html=rich_text,
-                )
+            if isinstance(rich_text, types.InputRichMessage):
+                rich_message = rich_text.write()
             else:
-                rich_message = raw.types.InputRichMessageMarkdown(
-                    markdown=rich_text,
-                )
+                files = types.InputRichMessage(
+                    html="_", media=rich_text_media
+                ).write_files() if rich_text_media else None
+
+                if rich_text_parse_mode == enums.ParseMode.HTML:
+                    rich_message = raw.types.InputRichMessageHTML(
+                        html=rich_text,
+                        files=files,
+                    )
+                else:
+                    rich_message = raw.types.InputRichMessageMarkdown(
+                        markdown=rich_text,
+                        files=files,
+                    )
 
             r = await self.invoke(
                 raw.functions.ephemeral.SendMessage(

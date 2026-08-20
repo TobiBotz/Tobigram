@@ -19,8 +19,9 @@ class EditMessageText:
         show_caption_above_media: Optional[bool] = None,
         disable_web_page_preview: Optional[bool] = None,
         business_connection_id: Optional[str] = None,
-        rich_text: Optional[str] = None,
+        rich_text: Optional[Union[str, "types.InputRichMessage"]] = None,
         rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
+        rich_text_media: Optional[List["types.InputRichMessageMedia"]] = None,
         reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
         schedule_date: Optional[datetime] = None,
         repeat_period: Optional[int] = None,
@@ -60,11 +61,18 @@ class EditMessageText:
             business_connection_id (``str``, *optional*):
                 Unique identifier of the business connection.
 
-            rich_text (``str``, *optional*):
+            rich_text (``str`` | :obj:`~pyrogram.types.InputRichMessage`, *optional*):
                 Rich text (Markdown or HTML) to render a styled message. Overrides ``text``.
 
             rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 Parse mode for ``rich_text``. Defaults to Markdown.
+                Ignored when ``rich_text`` is an :obj:`~pyrogram.types.InputRichMessage`.
+
+            rich_text_media (List of :obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
+                Media ``rich_text`` refers to through ``tg://photo?id=``,
+                ``tg://video?id=`` or ``tg://audio?id=`` links.
+                Ignored when ``rich_text`` is an :obj:`~pyrogram.types.InputRichMessage`.
+
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An inline keyboard for the message.
@@ -105,10 +113,17 @@ class EditMessageText:
         invert_media = invert_media if invert_media is not None else (show_caption_above_media if show_caption_above_media is not None else None)
 
         if rich_text is not None:
-            if rich_text_parse_mode == enums.ParseMode.HTML:
-                rich_msg = raw.types.InputRichMessageHTML(html=rich_text)
+            if isinstance(rich_text, types.InputRichMessage):
+                rich_msg = rich_text.write()
             else:
-                rich_msg = raw.types.InputRichMessageMarkdown(markdown=rich_text)
+                files = types.InputRichMessage(
+                    html="_", media=rich_text_media
+                ).write_files() if rich_text_media else None
+
+                if rich_text_parse_mode == enums.ParseMode.HTML:
+                    rich_msg = raw.types.InputRichMessageHTML(html=rich_text, files=files)
+                else:
+                    rich_msg = raw.types.InputRichMessageMarkdown(markdown=rich_text, files=files)
             text_params = {"message": "", "rich_message": rich_msg}
         else:
             text_params = await utils.parse_text_entities(self, text, parse_mode, entities)
