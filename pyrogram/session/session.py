@@ -289,10 +289,7 @@ class Session:
         if self.connection:
             await self.connection.close()
 
-        for result in self.results.values():
-            if result.value is None:
-                result.value = ConnectionLost
-            result.event.set()
+        self._fail_pending()
 
         if self is self.client.session and callable(self.client.disconnect_handler):
             try:
@@ -301,6 +298,12 @@ class Session:
                 log.exception(e)
 
         log.info("Session stopped")
+
+    def _fail_pending(self, value=ConnectionLost):
+        for result in self.results.values():
+            if result.value is None:
+                result.value = value
+            result.event.set()
 
     async def restart(self):
         if self._restart_lock.locked():
@@ -518,24 +521,30 @@ class Session:
             except TimeoutError:
                 log.debug("Socket read timed out, continuing")
                 continue
-            except Exception:
+            except Exception as e:
                 if self._teardown_started or self._stopping:
                     log.debug("Receive loop ending after a deliberate teardown")
                 else:
                     log.exception("Error receiving packet")
+
+                self._fail_pending(ConnectionResetError(str(e) or type(e).__name__))
 
                 if self.is_started.is_set():
                     await self._safe_restart()
                 break
 
             if packet is None or len(packet) <= 4:
+                reason = "Connection closed by the server"
+
                 if packet and len(packet) == 4:
                     error_code = -Int.read(BytesIO(packet))
-
-                    log.warning(
-                        "Server sent transport error: %s (%s)",
+                    reason = "Server sent transport error: {} ({})".format(
                         error_code, Session.TRANSPORT_ERRORS.get(error_code, "unknown error")
                     )
+
+                    log.warning(reason)
+
+                self._fail_pending(ConnectionResetError(reason))
 
                 if self.is_started.is_set():
                     await self._safe_restart()
@@ -613,6 +622,9 @@ class Session:
 
             if result is ConnectionLost:
                 raise ConnectionResetError("Connection lost while awaiting a response")
+
+            if isinstance(result, BaseException):
+                raise ConnectionResetError(str(result))
 
             if result is None:
                 raise TimeoutError("Request timed out")

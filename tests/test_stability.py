@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 import pyrogram
+import pyrogram.session.session as session_mod
 from pyrogram import raw
 from pyrogram.connection.transport.tcp.tcp import TCP
 from pyrogram.connection.transport.tcp.tcp_abridged import TCPAbridged
@@ -292,6 +293,60 @@ async def test_a_genuine_timeout_is_still_reported_as_one(monkeypatch):
 
     with pytest.raises(TimeoutError, match="Request timed out"):
         await session.send(raw.functions.Ping(ping_id=0), timeout=0.05)
+
+
+class _HandshakeFailingConnection(RecordingConnection):
+    reply = None
+
+    async def recv(self):
+        if not self.sent:
+            await asyncio.sleep(3600)
+        if isinstance(self.reply, BaseException):
+            raise self.reply
+        return self.reply
+
+
+async def _failed_handshake(monkeypatch, reply):
+    conn = _HandshakeFailingConnection()
+    conn.reply = reply
+
+    session = make_session()
+    monkeypatch.setattr(session_mod, "Connection", lambda *a, **kw: conn)
+    monkeypatch.setattr(session.loop, "run_in_executor", _packed)
+    monkeypatch.setattr(Session, "START_TIMEOUT", 5)
+
+    started = time.monotonic()
+
+    with pytest.raises(BaseException) as caught:
+        await asyncio.wait_for(session.start(max_attempts=1), timeout=30)
+
+    return caught.value, time.monotonic() - started
+
+
+async def test_a_transport_error_during_the_handshake_names_itself(monkeypatch):
+    error, elapsed = await _failed_handshake(monkeypatch, (-404).to_bytes(4, "little", signed=True))
+
+    assert isinstance(error, ConnectionResetError), (
+        "a server that refuses the handshake must not be reported as a timeout, "
+        f"got {error!r}"
+    )
+    assert "404" in str(error) and "auth key not found" in str(error), (
+        f"the transport error the server sent must reach the caller, got {error!r}"
+    )
+    assert elapsed < 1, (
+        f"the handshake must fail as soon as the server answers, took {elapsed:.2f}s"
+    )
+
+
+async def test_a_drop_during_the_handshake_is_not_a_timeout(monkeypatch):
+    error, elapsed = await _failed_handshake(monkeypatch, ConnectionResetError("peer closed"))
+
+    assert isinstance(error, ConnectionResetError) and not isinstance(error, TimeoutError), (
+        f"a connection lost mid-handshake must raise ConnectionResetError, got {error!r}"
+    )
+    assert elapsed < 1, (
+        f"the handshake must fail as soon as the socket dies, took {elapsed:.2f}s"
+    )
 
 
 async def test_connection_loss_is_retried_by_invoke(monkeypatch):
