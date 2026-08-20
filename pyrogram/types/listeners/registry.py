@@ -18,6 +18,7 @@
 
 import asyncio
 import heapq
+import inspect
 import itertools
 import logging
 import os
@@ -139,7 +140,7 @@ def _consume_exception(future: asyncio.Future):
 
 async def _invoke(client: "pyrogram.Client", callback, update):
     try:
-        if asyncio.iscoroutinefunction(callback):
+        if inspect.iscoroutinefunction(callback):
             await callback(client, update)
         else:
             await client.loop.run_in_executor(client.executor, callback, client, update)

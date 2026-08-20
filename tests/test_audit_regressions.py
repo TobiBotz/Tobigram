@@ -77,6 +77,7 @@ async def test_a_handler_added_across_a_dispatcher_cycle_releases_what_it_took()
 async def test_the_token_bucket_does_not_wake_every_waiter_at_once(monkeypatch):
     import pyrogram.methods.rate_limiter as rate_limiter
 
+    waiters = 8
     bucket = TokenBucket(rate=20, burst=1)
     await bucket.acquire()
 
@@ -95,13 +96,16 @@ async def test_the_token_bucket_does_not_wake_every_waiter_at_once(monkeypatch):
         await bucket.acquire()
         order.append(i)
 
-    await asyncio.gather(*(take(i) for i in range(5)))
+    await asyncio.gather(*(take(i) for i in range(waiters)))
 
-    assert len(sleeps) <= 7, (
+    # one sleep each if the wait is served under the lock, and the sum of
+    # 1..waiters if every waiter wakes for every token. A sleep that lands
+    # short costs a waiter one extra pass, so the bound is not the exact count.
+    assert len(sleeps) <= 2 * waiters, (
         "waiters that sleep outside the lock all wake together and all but one "
-        f"go back to sleep; five waiters cost {len(sleeps)} sleeps"
+        f"go back to sleep; {waiters} waiters cost {len(sleeps)} sleeps"
     )
-    assert order == [0, 1, 2, 3, 4], (
+    assert order == list(range(waiters)), (
         f"admission must be first-come-first-served, got {order}"
     )
 
