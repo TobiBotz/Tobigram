@@ -330,5 +330,8 @@ class SendAnimation:
 
                             return message
 
+                    # a send that succeeded is never re-sent, whatever the answer carried
+                    return None
+
         except StopTransmission:
             return None

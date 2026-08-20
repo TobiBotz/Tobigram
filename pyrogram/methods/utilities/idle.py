@@ -81,13 +81,24 @@ async def idle():
         if task:
             task.cancel()
 
-    for s in (SIGINT, SIGTERM, SIGABRT):
-        signal_fn(s, signal_handler)
+    watched = (SIGINT, SIGTERM, SIGABRT)
+    previous = {}
 
-    while True:
-        task = asyncio.create_task(asyncio.sleep(600))
+    for s in watched:
+        previous[s] = signal_fn(s, signal_handler)
 
-        try:
-            await task
-        except asyncio.CancelledError:
-            break
+    try:
+        while True:
+            task = asyncio.create_task(asyncio.sleep(600))
+
+            try:
+                await task
+            except asyncio.CancelledError:
+                break
+    finally:
+        # left installed, the handler cancels a task that is already done, so the
+        # next Ctrl-C does nothing at all - including during the client.stop()
+        # that Client.run runs right after this returns
+        for s, handler in previous.items():
+            if handler is not None:
+                signal_fn(s, handler)

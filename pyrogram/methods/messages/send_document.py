@@ -276,5 +276,8 @@ class SendDocument:
                                 {i.id: i for i in r.chats},
                                 is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
                             )
+
+                    # a send that succeeded is never re-sent, whatever the answer carried
+                    return None
         except StopTransmission:
             return None

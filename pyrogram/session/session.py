@@ -491,10 +491,30 @@ class Session:
                         ping_id=0, disconnect_delay=self.WAIT_TIMEOUT + 10
                     ), False
                 )
+
+                await self.flush_acks()
             except (OSError, TimeoutError, RPCError):
                 pass
 
         log.info("PingTask stopped")
+
+    async def flush_acks(self):
+        """Send whatever acks are owed, however few.
+
+        handle_packet only flushes once ACKS_THRESHOLD of them pile up, so a link
+        that goes quiet below that mark leaves them owed - and the server keeps
+        re-delivering the updates they belong to for as long as the client runs.
+        """
+        async with self._handler_lock:
+            if not self.pending_acks:
+                return
+
+            ack_ids = list(self.pending_acks)
+            self.pending_acks.clear()
+
+        log.debug("Sending %s acks", len(ack_ids))
+
+        await self.send(raw.types.MsgsAck(msg_ids=ack_ids), False)
 
     async def _run_update(self, body):
         async with self._update_semaphore:

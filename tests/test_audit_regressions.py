@@ -74,21 +74,33 @@ async def test_a_handler_added_across_a_dispatcher_cycle_releases_what_it_took()
     )
 
 
-async def test_the_token_bucket_does_not_wake_every_waiter_at_once(monkeypatch):
+async def test_the_token_bucket_lets_only_one_waiter_wait(monkeypatch):
     import pyrogram.methods.rate_limiter as rate_limiter
 
     waiters = 8
     bucket = TokenBucket(rate=20, burst=1)
     await bucket.acquire()
 
-    sleeps = []
+    # counting sleeps would be counting the platform clock: time.monotonic has a
+    # 15.6ms resolution on Windows before 3.13, so a sleep can report less
+    # elapsed than it took and cost a waiter an extra pass. How many waiters are
+    # asleep at once is what tells the two designs apart, and it is exact.
+    sleeping = 0
+    peak = 0
     real_sleep = asyncio.sleep
 
-    async def counting_sleep(delay, *args, **kwargs):
-        sleeps.append(delay)
-        return await real_sleep(delay, *args, **kwargs)
+    async def tracking_sleep(delay, *args, **kwargs):
+        nonlocal sleeping, peak
 
-    monkeypatch.setattr(rate_limiter.asyncio, "sleep", counting_sleep)
+        sleeping += 1
+        peak = max(peak, sleeping)
+
+        try:
+            return await real_sleep(delay, *args, **kwargs)
+        finally:
+            sleeping -= 1
+
+    monkeypatch.setattr(rate_limiter.asyncio, "sleep", tracking_sleep)
 
     order = []
 
@@ -98,12 +110,10 @@ async def test_the_token_bucket_does_not_wake_every_waiter_at_once(monkeypatch):
 
     await asyncio.gather(*(take(i) for i in range(waiters)))
 
-    # one sleep each if the wait is served under the lock, and the sum of
-    # 1..waiters if every waiter wakes for every token. A sleep that lands
-    # short costs a waiter one extra pass, so the bound is not the exact count.
-    assert len(sleeps) <= 2 * waiters, (
-        "waiters that sleep outside the lock all wake together and all but one "
-        f"go back to sleep; {waiters} waiters cost {len(sleeps)} sleeps"
+    assert peak == 1, (
+        "the wait is served holding the lock, so exactly one waiter is ever "
+        f"asleep; {peak} of {waiters} were, which is every waiter waking for a "
+        "token all but one of them will not get"
     )
     assert order == list(range(waiters)), (
         f"admission must be first-come-first-served, got {order}"

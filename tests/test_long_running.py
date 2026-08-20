@@ -130,3 +130,65 @@ async def test_an_unwritable_working_directory_does_not_replace_the_error(monkey
 
     with pytest.raises(UnknownError):
         _unknown()
+
+
+class _AckRecordingConnection:
+    def __init__(self):
+        self.protocol = None
+
+    async def close(self):
+        pass
+
+
+async def test_pending_acks_are_flushed_even_when_the_link_goes_quiet(monkeypatch):
+    from tests.test_stability import make_session
+
+    monkeypatch.setattr(pyrogram.session.Session, "PING_INTERVAL", 0.05)
+
+    session = make_session()
+    session.connection = _AckRecordingConnection()
+    session.pending_acks = {12345}
+
+    sent = []
+
+    async def record(data, wait_response=True, **kwargs):
+        sent.append(data)
+
+    monkeypatch.setattr(session, "send", record)
+
+    task = asyncio.ensure_future(session.ping_worker())
+    await asyncio.sleep(0.3)
+    session.ping_task_event.set()
+    await asyncio.wait_for(task, timeout=5)
+
+    assert any(isinstance(d, raw.types.MsgsAck) for d in sent), (
+        "acks are only flushed once ACKS_THRESHOLD of them pile up inside "
+        "handle_packet, so a link that goes quiet below that leaves them owed "
+        "and the server re-delivers those updates for as long as the client runs"
+    )
+    assert not session.pending_acks
+
+
+async def test_idle_puts_back_the_signal_handlers_it_took():
+    import signal
+
+    from pyrogram.methods.utilities.idle import idle
+
+    watched = (signal.SIGINT, signal.SIGTERM, signal.SIGABRT)
+    before = {s: signal.getsignal(s) for s in watched}
+
+    task = asyncio.ensure_future(idle())
+    await asyncio.sleep(0.05)
+
+    assert signal.getsignal(signal.SIGINT) is not before[signal.SIGINT], (
+        "idle should have installed its own handler by now"
+    )
+
+    task.cancel()
+    await asyncio.gather(task, return_exceptions=True)
+
+    assert {s: signal.getsignal(s) for s in watched} == before, (
+        "idle leaves its handler installed, so the next Ctrl-C cancels a task "
+        "that is already done and the process can no longer be interrupted - "
+        "including during the client.stop() that Client.run does next"
+    )

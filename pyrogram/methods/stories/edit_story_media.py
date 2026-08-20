@@ -214,6 +214,9 @@ class EditStoryMedia:
                                 {i.id: i for i in r.users},
                                 {i.id: i for i in r.chats}
                             )
+
+                    # a send that succeeded is never re-sent, whatever the answer carried
+                    return None
         except StopTransmission:
             return None
 
