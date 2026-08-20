@@ -638,8 +638,11 @@ class Client(Methods):
                 break
 
             if datetime.now() - self.last_update_time > timedelta(seconds=self.UPDATES_WATCHDOG_INTERVAL):
-                await self.invoke(raw.functions.updates.GetState())
-                await self.recover_gaps()
+                try:
+                    await self.invoke(raw.functions.updates.GetState())
+                    await self.recover_gaps()
+                except Exception:
+                    log.exception("Updates watchdog poll failed")
 
     async def media_pool_reaper(self):
         """Close media sessions that have gone idle since their transfer ended."""
@@ -1625,10 +1628,12 @@ class Client(Methods):
                                 if _done_count >= _total_chunks:
                                     return
                                 for t in tasks:
-                                    if t.done():
+                                    if t.done() and not t.cancelled():
                                         exc = t.exception()
-                                        if exc and not isinstance(exc, asyncio.CancelledError):
+                                        if exc is not None:
                                             raise exc
+                                if all(t.done() for t in tasks):
+                                    return
                                 try:
                                     await asyncio.wait_for(data_ready.wait(), 0.5)
                                 except asyncio.TimeoutError:
@@ -1638,9 +1643,9 @@ class Client(Methods):
                             else:
                                 while offset_bytes not in received:
                                     for t in tasks:
-                                        if t.done():
+                                        if t.done() and not t.cancelled():
                                             exc = t.exception()
-                                            if exc and not isinstance(exc, asyncio.CancelledError):
+                                            if exc is not None:
                                                 raise exc
                                     if all(t.done() for t in tasks):
                                         return

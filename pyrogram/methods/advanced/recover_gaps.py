@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 from typing import Tuple
 
@@ -28,6 +29,8 @@ log = logging.getLogger(__name__)
 
 
 class RecoverGaps:
+    MAX_STALE_TIMESTAMP_RETRIES = 3
+
     async def recover_gaps(self: "pyrogram.Client") -> Tuple[int, int]:
         """Restores updates for the time while the client was offline.
 
@@ -59,6 +62,8 @@ class RecoverGaps:
             id, local_pts, local_qts, local_date, local_seq = local_state
 
             prev_pts = 0
+            stale_attempts = 0
+            unusable = False
 
             while True:
                 try:
@@ -77,9 +82,20 @@ class RecoverGaps:
                         )
                     )
                 except (ChannelPrivate, ChannelInvalid):
-                    await self.storage.update_state(id)
+                    unusable = True
                     break
-                except (PersistentTimestampOutdated, PersistentTimestampInvalid):
+                except (PersistentTimestampOutdated, PersistentTimestampInvalid) as e:
+                    stale_attempts += 1
+
+                    if stale_attempts >= RecoverGaps.MAX_STALE_TIMESTAMP_RETRIES:
+                        log.info(
+                            "Dropping the stored state of %s: %s after %s attempts",
+                            id, e.ID, stale_attempts
+                        )
+                        unusable = True
+                        break
+
+                    await asyncio.sleep(stale_attempts)
                     continue
 
                 if isinstance(diff, raw.types.updates.DifferenceEmpty):
@@ -165,6 +181,10 @@ class RecoverGaps:
 
                 if isinstance(diff, (raw.types.updates.Difference, raw.types.updates.ChannelDifference)):
                     break
+
+            if unusable:
+                await self.storage.update_state(id)
+                continue
 
             await self.storage.update_state(
                 (

@@ -41,6 +41,7 @@ class TCP:
         self.socket = None
 
         self.is_connected = False
+        self.mid_message = False
 
         self.reader = None
         self.writer = None
@@ -162,6 +163,9 @@ class TCP:
                     TCP.TIMEOUT
                 )
             except asyncio.TimeoutError:
+                if received or self.mid_message:
+                    raise OSError("Connection desynchronised mid-message")
+
                 raise TimeoutError("Socket read timed out")
             except OSError:
                 return None
@@ -171,5 +175,6 @@ class TCP:
 
             chunks.append(chunk)
             received += len(chunk)
+            self.mid_message = True
 
         return chunks[0] if len(chunks) == 1 else b"".join(chunks)

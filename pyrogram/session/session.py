@@ -32,7 +32,7 @@ import warpcrypto
 import pyrogram
 from pyrogram import utils
 from pyrogram import raw
-from pyrogram.connection import Connection
+from pyrogram.connection import Connection, transport_error
 from pyrogram.crypto.executor import get_crypto_executor
 from pyrogram.errors import (
     RPCError, InternalServerError, AuthKeyDuplicated, FloodWait, FloodPremiumWait, ServiceUnavailable,
@@ -70,11 +70,7 @@ class Session:
     MAX_INFLIGHT_PACKETS = int(os.environ.get("WZGRAM_MAX_INFLIGHT_PACKETS", 16))
     MAX_INFLIGHT_MEDIA = int(os.environ.get("WZGRAM_MAX_INFLIGHT_MEDIA", 6))
 
-    TRANSPORT_ERRORS = {
-        404: "auth key not found",
-        429: "transport flood",
-        444: "invalid DC"
-    }
+    TRANSPORT_ERRORS = Connection.TRANSPORT_ERRORS
 
     def __init__(
         self,
@@ -533,16 +529,10 @@ class Session:
                     await self._safe_restart()
                 break
 
-            if packet is None or len(packet) <= 4:
-                reason = "Connection closed by the server"
+            reason = transport_error(packet)
 
-                if packet and len(packet) == 4:
-                    error_code = -Int.read(BytesIO(packet))
-                    reason = "Server sent transport error: {} ({})".format(
-                        error_code, Session.TRANSPORT_ERRORS.get(error_code, "unknown error")
-                    )
-
-                    log.warning(reason)
+            if reason is not None:
+                log.warning(reason)
 
                 self._fail_pending(ConnectionResetError(reason))
 

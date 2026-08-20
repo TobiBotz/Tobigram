@@ -46,6 +46,8 @@ class FakeSession:
 class FakeClient:
     get_file = pyrogram.Client.get_file
     handle_download = pyrogram.Client.handle_download
+    read_ahead_slots = pyrogram.Client.read_ahead_slots
+    MAX_READ_AHEAD_CHUNKS = pyrogram.Client.MAX_READ_AHEAD_CHUNKS
 
     def __init__(self, chunks):
         self.get_file_semaphore = asyncio.Semaphore(1)
@@ -94,3 +96,34 @@ async def test_unknown_size_download_is_written(tmp_path, chunks):
 async def test_known_size_download_is_written(tmp_path):
     data = b"x" * 2048
     assert await download(tmp_path, [data], len(data)) == data
+
+
+class ShortAfterFirstSession(FakeSession):
+    """A datacentre that answers every part after the first with a short one."""
+
+    def __init__(self):
+        self.served = 0
+
+    async def invoke(self, query, **kwargs):
+        self.served += 1
+        return raw.types.upload.File(
+            type=raw.types.storage.FileUnknown(),
+            mtime=0,
+            bytes=b"x" * (CHUNK if query.offset == 0 else CHUNK // 2),
+        )
+
+
+async def test_a_download_ends_when_its_workers_do(tmp_path):
+    # every parallel worker retires on its first short part, so offsets are left
+    # unclaimed and the completion count never reaches the chunk count
+    client = FakeClient([])
+    client.session = ShortAfterFirstSession()
+
+    path = await asyncio.wait_for(
+        client.handle_download(
+            (file_id(), str(tmp_path), "out.bin", False, 20 * CHUNK, None, ())
+        ),
+        timeout=10,
+    )
+
+    assert path is not None

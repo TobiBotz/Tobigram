@@ -28,8 +28,32 @@ from ..session.internals import DataCenter, get_dc_address
 log = logging.getLogger(__name__)
 
 
+TRANSPORT_ERRORS = {
+    404: "auth key not found",
+    429: "transport flood",
+    444: "invalid DC"
+}
+
+
+def transport_error(packet: Optional[bytes]) -> Optional[str]:
+    """Describe a packet too short to be a message, or None if it is one."""
+    if packet is not None and len(packet) > 4:
+        return None
+
+    if not packet or len(packet) < 4:
+        return "Connection closed by the server"
+
+    error_code = -int.from_bytes(packet, "little", signed=True)
+
+    return "Server sent transport error: {} ({})".format(
+        error_code, TRANSPORT_ERRORS.get(error_code, "unknown error")
+    )
+
+
 class Connection:
     MAX_CONNECTION_ATTEMPTS = 3
+
+    TRANSPORT_ERRORS = TRANSPORT_ERRORS
 
     def __init__(
         self,
@@ -67,6 +91,8 @@ class Connection:
                 self.loop = asyncio.get_event_loop_policy().get_event_loop()
 
     async def connect(self):
+        last_error = None
+
         for i in range(Connection.MAX_CONNECTION_ATTEMPTS):
             self.protocol = self.protocol_factory(self.ipv6, self.proxy, self.crypto_executor, self.loop)
 
@@ -74,6 +100,7 @@ class Connection:
                 log.info("Connecting...")
                 await self.protocol.connect(self.address)
             except OSError as e:
+                last_error = e
                 log.warning("Unable to connect due to network issues: %s", e)
                 await self.protocol.close()
                 await asyncio.sleep(1)
@@ -86,7 +113,11 @@ class Connection:
                 break
         else:
             log.warning("Connection failed! Trying again...")
-            raise ConnectionError
+            raise ConnectionError(
+                "Connection to DC{} at {}:{} failed: {}".format(
+                    self.dc_id, self.address[0], self.address[1], last_error
+                )
+            ) from last_error
 
     async def close(self):
         if self.protocol is None:
@@ -99,4 +130,6 @@ class Connection:
         await self.protocol.send(data)
 
     async def recv(self) -> Optional[bytes]:
+        self.protocol.mid_message = False
+
         return await self.protocol.recv()

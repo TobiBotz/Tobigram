@@ -77,7 +77,12 @@ class Terminate:
         self.updates_watchdog_event.set()
 
         if self.updates_watchdog_task is not None:
-            await self.updates_watchdog_task
+            try:
+                await self.updates_watchdog_task
+            except Exception:
+                log.exception("Error stopping updates watchdog")
+
+            self.updates_watchdog_task = None
 
         self.updates_watchdog_event.clear()
 

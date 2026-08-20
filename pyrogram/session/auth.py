@@ -27,7 +27,7 @@ from os import urandom
 
 import pyrogram
 from pyrogram import raw
-from pyrogram.connection import Connection
+from pyrogram.connection import Connection, transport_error
 from pyrogram.crypto import aes, rsa, prime
 from pyrogram.errors import SecurityCheckMismatch
 from pyrogram.raw.core import TLObject, Long, Int
@@ -66,9 +66,14 @@ class Auth:
     async def invoke(self, data: TLObject):
         data = self.pack(data)
         await self.connection.send(data)
-        response = BytesIO(await self.connection.recv())
+        response = await self.connection.recv()
 
-        return self.unpack(response)
+        reason = transport_error(response)
+
+        if reason is not None:
+            raise ConnectionResetError(reason)
+
+        return self.unpack(BytesIO(response))
 
     async def create(self):
         """
