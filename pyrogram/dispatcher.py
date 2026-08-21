@@ -472,12 +472,14 @@ class Dispatcher:
                 self.groups[group].append(handler)
 
         try:
-            utils.run_in_background(fn(), asyncio.get_running_loop())
+            loop = asyncio.get_running_loop()
         except RuntimeError:
             if group not in self.groups:
                 self.groups[group] = []
                 self.groups = OrderedDict(sorted(self.groups.items()))
             self.groups[group].append(handler)
+        else:
+            utils.run_in_background(fn(), loop)
 
     def remove_handler(self, handler: Handler, group: int):
         async def fn():
@@ -493,12 +495,14 @@ class Dispatcher:
                     del self.groups[group]
 
         try:
-            utils.run_in_background(fn(), asyncio.get_running_loop())
+            loop = asyncio.get_running_loop()
         except RuntimeError:
             if group in self.groups:
                 self.groups[group].remove(handler)
                 if not self.groups[group]:
                     del self.groups[group]
+        else:
+            utils.run_in_background(fn(), loop)
 
     def park(self, lock=None) -> bool:
         """Register that a handler worker is about to block on a listener.

@@ -1,4 +1,5 @@
 import asyncio
+import gc
 import time
 from datetime import datetime, timedelta
 
@@ -8,6 +9,7 @@ import pyrogram
 import pyrogram.session.auth as auth_mod
 from pyrogram import raw
 from pyrogram.connection.connection import Connection
+from pyrogram.dispatcher import Dispatcher
 from pyrogram.errors import PersistentTimestampInvalid, PersistentTimestampOutdated
 from pyrogram.methods.advanced.recover_gaps import RecoverGaps
 from pyrogram.session.auth import Auth
@@ -170,3 +172,29 @@ async def test_gap_recovery_gives_up_instead_of_spinning(error):
         f"without a bound is a hot loop; it was sent {client.calls} times"
     )
     assert elapsed < 9
+
+
+class _HandlerlessClient:
+    listeners = None
+
+
+def test_registering_a_handler_outside_a_loop_leaves_no_coroutine_behind(recwarn):
+    dispatcher = Dispatcher(_HandlerlessClient())
+    handler = object()
+
+    dispatcher.add_handler(handler, 0)
+
+    assert dispatcher.groups == {0: [handler]}
+
+    dispatcher.remove_handler(handler, 0)
+
+    assert dispatcher.groups == {}
+
+    gc.collect()
+
+    unawaited = [w for w in recwarn.list if "never awaited" in str(w.message)]
+
+    assert not unawaited, (
+        "the coroutine must not be built before the loop it needs is known; "
+        f"got {[str(w.message) for w in unawaited]}"
+    )
