@@ -1399,3 +1399,28 @@ class TestQuizPollSerialises:
             "pollAnswer.option is still bytes in the schema, unlike correct_answers"
         )
         query.write()
+
+
+# ---------------------------------------------------------------------------
+#  GiftAttribute._parse against every StarGiftAttribute constructor
+# ---------------------------------------------------------------------------
+
+async def test_gift_attribute_parses_an_attribute_without_a_rarity():
+    """starGiftAttributeOriginalDetails is the one member carrying no rarity.
+
+    Every other field in the constructor is read through ``getattr``; ``rarity``
+    was read straight off the union, so the branch that handles original
+    details raised AttributeError the moment anything routed one here.
+    """
+    attr = raw.types.StarGiftAttributeOriginalDetails(
+        recipient_id=raw.types.PeerUser(user_id=1),
+        date=0,
+        sender_id=raw.types.PeerUser(user_id=2),
+        message=raw.types.TextWithEntities(text="hi", entities=[]),
+    )
+
+    parsed = await types.GiftAttribute._parse(None, attr, {}, {})
+
+    assert parsed.rarity is None
+    assert parsed.type is enums.GiftAttributeType.ORIGINAL_DETAILS
+    assert parsed.caption == "hi"

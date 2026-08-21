@@ -391,3 +391,92 @@ def test_kwargs_guard_on_all_send_methods():
     
     if failures:
         pytest.fail("\n".join(failures))
+
+
+# ---------------------------------------------------------------------------
+# Layer D:  the legacy reply_* parameters actually reach reply_parameters
+# ---------------------------------------------------------------------------
+
+_LEGACY_REPLY_PARAMS = {
+    "reply_to_message_id",
+    "reply_to_chat_id",
+    "quote_text",
+    "quote_entities",
+}
+
+
+def _methods_taking_legacy_reply_params():
+    root = Path(__file__).resolve().parents[1] / "pyrogram" / "methods"
+
+    for path in sorted(root.rglob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+
+        for node in ast.walk(tree):
+            if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                continue
+
+            args = node.args
+            names = {a.arg for a in args.posonlyargs + args.args + args.kwonlyargs}
+
+            if "reply_parameters" in names and names & _LEGACY_REPLY_PARAMS:
+                yield path, node
+
+
+def _unreachable_statements(node):
+    """Every statement that follows a raise/return/continue/break in its block."""
+    dead = set()
+
+    for sub in ast.walk(node):
+        for field in ("body", "orelse", "finalbody"):
+            block = getattr(sub, field, None)
+
+            if not isinstance(block, list):
+                continue
+
+            stopped = False
+
+            for stmt in block:
+                if stopped:
+                    dead.update(n for n in ast.walk(stmt))
+                elif isinstance(stmt, (ast.Raise, ast.Return, ast.Continue, ast.Break)):
+                    stopped = True
+
+    return dead
+
+
+def test_legacy_reply_params_reach_reply_parameters():
+    """A method that still accepts reply_to_message_id must translate it.
+
+    send_media_group carried the translation nested inside its ``if kwargs:``
+    guard and after the ``raise``, so every one of reply_to_message_id,
+    reply_to_chat_id, quote_text and quote_entities was accepted, documented
+    and silently dropped.
+    """
+    checked = 0
+    failures = []
+
+    for path, node in _methods_taking_legacy_reply_params():
+        checked += 1
+        dead = _unreachable_statements(node)
+
+        live = [
+            sub for sub in ast.walk(node)
+            if isinstance(sub, ast.Assign)
+            and sub not in dead
+            and any(
+                isinstance(t, ast.Name) and t.id == "reply_parameters"
+                for t in sub.targets
+            )
+        ]
+
+        if not live:
+            failures.append(
+                f"{path.name}:{node.lineno}: {node.name} accepts "
+                f"{sorted({a.arg for a in node.args.args} & _LEGACY_REPLY_PARAMS)} "
+                "but never assigns reply_parameters on a reachable path"
+            )
+
+    assert checked >= 20, f"only found {checked} methods; the scan stopped working"
+
+    if failures:
+        pytest.fail("\n".join(failures))

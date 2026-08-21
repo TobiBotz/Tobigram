@@ -138,7 +138,6 @@ class GiftAttribute(Object):
         sticker = None
         from_user = None
         to_user = None
-        rarity = None
 
         if hasattr(attr, "document"):
             doc = attr.document
@@ -160,7 +159,7 @@ class GiftAttribute(Object):
             name=getattr(attr, "name", None),
             backdrop_id=getattr(attr, "backdrop_id", None),
             type=enums.GiftAttributeType(type(attr)),
-            rarity=types.UpgradedGiftAttributeRarity._parse(attr.rarity),
+            rarity=types.UpgradedGiftAttributeRarity._parse(getattr(attr, "rarity", None)),
             date=utils.timestamp_to_datetime(getattr(attr, "date", None)),
             caption=caption,
             caption_entities=caption_entities,
