@@ -73,7 +73,9 @@ app.run()
 pip install wzgram
 ```
 
-For better performance:
+Requires Python 3.10+. On Linux and macOS, `wzgram[fast]` also pulls in
+[uvloop](https://github.com/MagicStack/uvloop); call `uvloop.install()` yourself to use it
+(see the Speedups guide):
 
 ```bash
 pip install wzgram[fast]

@@ -37,6 +37,12 @@ including **Gifts**, **Stories**, **Topics**, **Business Accounts**, and more.
 
 .. toctree::
     :maxdepth: 2
+    :caption: Features
+
+    features/index
+
+.. toctree::
+    :maxdepth: 2
     :caption: API Reference
 
     api/methods/index
@@ -45,27 +51,46 @@ including **Gifts**, **Stories**, **Topics**, **Business Accounts**, and more.
 
 .. toctree::
     :maxdepth: 2
-    :caption: Topics
+    :caption: Concepts
 
-    topics/advanced-usage
-    topics/client-settings
-    topics/comparison-with-other-forks
-    topics/faq
-    topics/create-filters
-    topics/debugging
-    topics/message-identifiers
-    topics/more-on-updates
     topics/mtproto-vs-botapi
+    topics/message-identifiers
+    topics/text-formatting
+    topics/serializing
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Updates & Filters
+
+    topics/use-filters
+    topics/create-filters
+    topics/more-on-updates
+    topics/smart-plugins
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Configuration
+
+    topics/client-settings
+    topics/storage-engines
     topics/proxy
     topics/scheduling
-    topics/serializing
-    topics/smart-plugins
-    topics/speedups
-    topics/storage-engines
-    topics/synchronous
     topics/test-servers
-    topics/text-formatting
-    topics/use-filters
+    topics/synchronous
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Advanced
+
+    topics/advanced-usage
+    topics/speedups
     topics/voice-calls
+    topics/debugging
+
+.. toctree::
+    :maxdepth: 2
+    :caption: Help
+
+    topics/faq
 
 .. _wzgram: https://github.com/rjriajul/wzgram
