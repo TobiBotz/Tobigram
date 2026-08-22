@@ -17,8 +17,13 @@ authorization process from scratch each time, wzgram needs to store the generate
 Different Storage Engines
 -------------------------
 
-wzgram offers two different types of storage engines: a **File Storage** and a **Memory Storage**.
-These engines are well integrated in the framework and require a minimal effort to set up. Here's how they work:
+wzgram ships four kinds of storage engine. Two keep the session on the machine that is
+running — a **File Storage** and a **Memory Storage**, both backed by SQLite — and two keep
+it somewhere that outlives the machine: a **Remote Storage** (MongoDB or Redis) and a
+**Hybrid Storage**, which is a local cache in front of a remote one.
+
+Start with File Storage. Reach for the others when the host is ephemeral, or when several
+deployments need to look at the same sessions.
 
 File Storage
 ^^^^^^^^^^^^
@@ -96,31 +101,133 @@ and what a string is safe to be stored in.
     way. Keep it out of version control, and revoke it by terminating the session from a
     logged-in client rather than by deleting the string.
 
-Custom Storages
----------------
+Remote Storage
+--------------
 
-:obj:`~pyrogram.storage.Storage` is the abstract base every engine implements. Pass an
-instance of your own subclass as the ``storage_engine`` argument of :obj:`~pyrogram.Client`
-and wzgram will keep the session wherever you decide.
+A file on disk is the wrong place for a session when the host is replaced on every deploy.
+:obj:`~pyrogram.storage.MongoStorage` and :obj:`~pyrogram.storage.RedisStorage` keep it in a
+database instead, so a container that restarts resumes with its peers already warm.
 
-Writing one
-^^^^^^^^^^^
+Drivers are optional and imported only when the storage is opened:
 
-Subclass :obj:`~pyrogram.storage.Storage` and implement its interface, then pass an instance
-as ``storage_engine``. The built-in ``SQLiteStorage`` is already async — it runs on
-``aiosqlite``, a core dependency — so a custom engine is for putting the session somewhere
-else entirely: Redis, Postgres, a secrets manager, a row in an existing table.
+.. code-block:: bash
 
-Two things a custom engine has to get right, because the built-in one does:
+    $ pip install "wzgram[mongo]"      # motor
+    $ pip install "wzgram[redis]"      # redis
 
--   ``SQLiteStorage.VERSION`` is a schema version. If your engine persists a schema of its
-    own, version it too and migrate on open.
--   Writes should be batched but bounded **by time as well as by count**. A write left in an
-    open transaction until the batch fills is lost when the process is killed, and the
-    update state among them is what stops gap recovery restarting from a stale pts.
+.. code-block:: python
 
-Example of Telethon Storage
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    from pyrogram import Client
+    from pyrogram.storage import MongoStorage
+
+    app = Client(
+        "my_account",
+        api_id=api_id, api_hash=api_hash,
+        storage_engine=MongoStorage("my_account", "mongodb://localhost:27017"),
+    )
+
+    app.run()
+
+Both engines take either a connection URI, which they own and close, or an
+already-created client to share with the rest of your program:
+
+.. code-block:: python
+
+    from motor.motor_asyncio import AsyncIOMotorClient
+    from pyrogram.storage import MongoStorage, RedisStorage
+
+    MongoStorage("my_account", AsyncIOMotorClient(uri), database="sessions")
+    RedisStorage("my_account", redis_client, prefix="bots:my_account")
+
+.. warning::
+
+    In Redis, an evicted session key is a lost login. Peers are a cache and can be evicted
+    safely, but the session hash cannot — run the database with
+    ``maxmemory-policy noeviction``, or give wzgram a database of its own. Opening the
+    storage logs a warning when the server reports any other policy.
+
+Coming from pyrofork's MongoStorage? Its documents carry no ``server_address`` or ``port``.
+:meth:`MongoStorage.import_pyrofork() <pyrogram.storage.MongoStorage.import_pyrofork>` reads
+that layout once and writes wzgram's, resolving the address from the datacenter id.
+
+Hybrid Storage
+--------------
+
+A remote database is durable, but it is also a network round trip, and ``resolve_peer`` runs
+on every single send. :obj:`~pyrogram.storage.HybridStorage` puts a local SQLite cache in
+front of any backend:
+
+.. code-block:: python
+
+    from pyrogram import Client
+    from pyrogram.storage import HybridStorage, MongoStorage
+
+    app = Client(
+        "my_account",
+        storage_engine=HybridStorage(
+            "my_account",
+            backend=MongoStorage("my_account", "mongodb://localhost:27017"),
+        ),
+    )
+
+    app.run()
+
+What it does:
+
+- **Reads are local.** On ``open()`` the backend is copied into the cache; after that every
+  peer lookup and every session attribute is answered without touching the network.
+- **Writes are mirrored in the background.** They land in the cache immediately and reach the
+  backend through a bounded queue drained by a background task, coalesced by key.
+- **A remote outage is not a client outage.** A failed write is retried with backoff and
+  logged; reads keep working and the client keeps running.
+- **Under pressure, the right writes survive.** When the queue is full, peer writes are
+  dropped oldest-first — losing one costs a single lookup. Session attributes and update
+  state are never dropped: losing those costs the login, or restarts gap recovery from a
+  stale pts.
+
+The trade-off is honest and worth stating: the last writes live only in the cache until the
+writer drains. ``close()`` flushes them, bounded by ``flush_timeout``; a SIGKILL does not.
+
+Pass ``cache_in_memory=False`` to keep the cache in a file, which survives a restart and
+skips the bulk load on open.
+
+Writing your own engine
+-----------------------
+
+Subclass :obj:`~pyrogram.storage.RemoteStorage` rather than
+:obj:`~pyrogram.storage.Storage`: it implements the whole contract on top of a handful of
+primitives, and it brings the two caches that keep the hot path off the network.
+
+.. csv-table::
+    :header: Primitive, What it does
+    :widths: 40 60
+
+    "``_connect()`` / ``_disconnect()``", "open and close the driver"
+    "``_load_session()``", "the session as a dict, or None if there is none yet"
+    "``_save_session(fields)``", "upsert those fields"
+    "``_upsert_peers(rows)``", "``(id, access_hash, type, phone_number)`` tuples"
+    "``_fetch_peer(peer_id)``", "``(id, access_hash, type, last_update_on)`` or None"
+    "``_fetch_peer_by_username(username)``", "same shape"
+    "``_fetch_peer_by_phone(number)``", "same shape"
+    "``_replace_usernames(rows)``", "delete-then-insert per peer id"
+    "``_load_states()`` / ``_save_state(t)`` / ``_delete_state(id)``", "update state"
+    "``_purge(remove_peers)``", "what ``delete()`` does"
+
+Three rules the base already follows, and a hand-written engine has to keep:
+
+-   **Session attributes are read once**, then served from memory. ``dc_id()`` runs on every
+    send; it must not be a round trip.
+-   **``update_peers`` skips peers whose access hash has not changed.** Every ``invoke``
+    feeds ``r.users`` and ``r.chats`` back through ``fetch_peers``, so without that filter
+    the same unchanged peers are rewritten on every RPC.
+-   **The username TTL is enforced on read**, not by an expiry feature of the store. A
+    backend that drops the row itself would disagree with what SQLite does with a stale one.
+
+Version your layout with a ``VERSION`` constant and implement ``_load_version`` /
+``_save_version`` / ``_migrate``, so a change of shape can migrate rather than corrupt.
+
+Reusing a Telethon session
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 To reuse a Telethon session (the two formats are not compatible on their own), there is a
 community `storage engine <https://gist.github.com/KurimuzonAkuma/3991606c259facef95d0c8afb676bd85>`_

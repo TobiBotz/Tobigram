@@ -69,6 +69,12 @@ dev = [
 fast = [
     "uvloop<=0.22.1; sys_platform == 'darwin' or sys_platform == 'linux'",
 ]
+mongo = [
+    "motor>=3.5",
+]
+redis = [
+    "redis>=5.0",
+]
 docs = [
     "sphinx>=7",
     "furo>=2023",

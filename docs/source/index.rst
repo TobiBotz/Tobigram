@@ -70,6 +70,7 @@ New here? :doc:`intro/install` then :doc:`intro/quickstart`.
     api/bound-methods/index
     api/handlers
     api/filters
+    api/storage
     api/errors
 
 .. toctree::

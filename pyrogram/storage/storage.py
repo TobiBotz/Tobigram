@@ -1,3 +1,21 @@
+#  Pyrogram - Telegram MTProto API Client Library for Python
+#  Copyright (C) 2017-present Dan <https://github.com/delivrance>
+#
+#  This file is part of Pyrogram.
+#
+#  Pyrogram is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Pyrogram is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+
 import logging
 import struct
 import zlib
@@ -11,6 +29,21 @@ log = logging.getLogger(__name__)
 SESSION_STRING_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 SESSION_STRING_DECODE = {c: i for i, c in enumerate(SESSION_STRING_ALPHABET)}
 WZ_PREFIX = "WZ_"
+
+TEST = {
+    1: "149.154.175.10",
+    2: "149.154.167.40",
+    3: "149.154.175.117"
+}
+
+PROD = {
+    1: "149.154.175.53",
+    2: "149.154.167.51",
+    3: "149.154.175.100",
+    4: "149.154.167.91",
+    5: "91.108.56.130",
+    203: "91.105.192.100"
+}
 
 
 class Storage(ABC):
@@ -302,6 +335,35 @@ class Storage(ABC):
                 pair = c1 + c2
                 yield pair + s
                 yield s + pair
+
+    async def load_session_string(self, session_string: str) -> None:
+        """Fill this storage in from an exported session string.
+
+        Every accessor it calls is part of the abstract surface, so this works
+        for any engine - a remote one included - and is the partner of
+        :meth:`export_session_string`.
+        """
+        data = self._decode_session_string(session_string)
+
+        await self.dc_id(data["dc_id"])
+        await self.test_mode(data["test_mode"])
+        await self.auth_key(data["auth_key"])
+        await self.user_id(data["user_id"])
+        await self.is_bot(data["is_bot"])
+        await self.date(0)
+
+        table = TEST if data["test_mode"] else PROD
+        default_address = table.get(data["dc_id"])
+
+        if data["server_address"]:
+            await self.server_address(data["server_address"])
+            await self.port(data["port"] or (80 if data["test_mode"] else 443))
+        elif default_address is not None:
+            await self.server_address(default_address)
+            await self.port(80 if data["test_mode"] else 443)
+
+        if data["api_id"] is not None:
+            await self.api_id(data["api_id"])
 
     async def export_session_string(self) -> str:
         dc_id = await self.dc_id()

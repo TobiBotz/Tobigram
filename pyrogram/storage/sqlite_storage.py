@@ -1,15 +1,31 @@
+#  Pyrogram - Telegram MTProto API Client Library for Python
+#  Copyright (C) 2017-present Dan <https://github.com/delivrance>
+#
+#  This file is part of Pyrogram.
+#
+#  Pyrogram is free software: you can redistribute it and/or modify
+#  it under the terms of the GNU Lesser General Public License as published
+#  by the Free Software Foundation, either version 3 of the License, or
+#  (at your option) any later version.
+#
+#  Pyrogram is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU Lesser General Public License for more details.
+#
+#  You should have received a copy of the GNU Lesser General Public License
+#  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+
 import aiosqlite
 import asyncio
 import logging
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
-from pyrogram import raw
-
-from .. import utils
-from .storage import Storage
+from .caching import PEER_CACHE_SIZE, PeerRowCache, SessionAttrCache, get_input_peer
+from .storage import PROD, TEST, Storage
 
 try:
     import fcntl
@@ -100,43 +116,6 @@ CREATE TABLE update_state
 );
 """
 
-TEST = {
-    1: "149.154.175.10",
-    2: "149.154.167.40",
-    3: "149.154.175.117"
-}
-
-PROD = {
-    1: "149.154.175.53",
-    2: "149.154.167.51",
-    3: "149.154.175.100",
-    4: "149.154.167.91",
-    5: "91.108.56.130",
-    203: "91.105.192.100"
-}
-
-
-def get_input_peer(peer_id: int, access_hash: int, peer_type: str):
-    if peer_type in ["user", "bot"]:
-        return raw.types.InputPeerUser(
-            user_id=peer_id,
-            access_hash=access_hash
-        )
-
-    if peer_type == "group":
-        return raw.types.InputPeerChat(
-            chat_id=-peer_id
-        )
-
-    if peer_type in ["direct", "channel", "forum", "supergroup"]:
-        return raw.types.InputPeerChannel(
-            channel_id=utils.get_channel_id(peer_id),
-            access_hash=access_hash
-        )
-
-    raise ValueError(f"Invalid peer type: {peer_type}")
-
-
 def _try_lock(path: Path) -> Optional[object]:
     if fcntl is None:
         return None
@@ -170,9 +149,7 @@ class SQLiteStorage(Storage):
     FILE_EXTENSION = ".session"
     _AUTO_COMMIT_INTERVAL = 20
     _AUTO_COMMIT_SECONDS = 5
-    _PEER_CACHE_SIZE = int(os.environ.get("WZGRAM_PEER_CACHE", 4096))
-
-    _MISSING = object()
+    _PEER_CACHE_SIZE = PEER_CACHE_SIZE
 
     def __init__(
         self,
@@ -190,8 +167,8 @@ class SQLiteStorage(Storage):
         self.in_memory = in_memory
         self.use_wal = use_wal
 
-        self._cache: Dict[str, Any] = {}
-        self._peer_cache: Dict[int, Tuple[int, int, str]] = {}
+        self._cache = SessionAttrCache()
+        self._peer_cache = PeerRowCache(self._PEER_CACHE_SIZE)
         self._dirty: bool = False
         self._write_count: int = 0
         self._flush_task: Optional[asyncio.Task] = None
@@ -308,29 +285,6 @@ class SQLiteStorage(Storage):
         )
         await self.conn.commit()
 
-    async def load_session_string(self, session_string: str):
-        data = self._decode_session_string(session_string)
-
-        await self.dc_id(data["dc_id"])
-        await self.test_mode(data["test_mode"])
-        await self.auth_key(data["auth_key"])
-        await self.user_id(data["user_id"])
-        await self.is_bot(data["is_bot"])
-        await self.date(0)
-
-        table = TEST if data["test_mode"] else PROD
-        default_address = table.get(data["dc_id"])
-
-        if data["server_address"]:
-            await self.server_address(data["server_address"])
-            await self.port(data["port"] or (80 if data["test_mode"] else 443))
-        elif default_address is not None:
-            await self.server_address(default_address)
-            await self.port(80 if data["test_mode"] else 443)
-
-        if data["api_id"] is not None:
-            await self.api_id(data["api_id"])
-
     async def open(self):
         if self.in_memory:
             self.conn = await aiosqlite.connect(":memory:", timeout=5)
@@ -376,7 +330,7 @@ class SQLiteStorage(Storage):
         if row:
             keys = ["dc_id", "server_address", "port", "api_id",
                     "test_mode", "auth_key", "date", "user_id", "is_bot"]
-            self._cache = dict(zip(keys, row))
+            self._cache.load(dict(zip(keys, row)))
 
     async def save(self):
         await self._write_attr("date", int(time.time()))
@@ -420,7 +374,7 @@ class SQLiteStorage(Storage):
         if not peers:
             return
 
-        fresh = [p for p in peers if self._peer_cache.get(p[0]) != (p[0], p[1], p[2])]
+        fresh = [p for p in peers if not self._peer_cache.matches(p[0], p[1], p[2])]
 
         if not fresh:
             return
@@ -430,7 +384,7 @@ class SQLiteStorage(Storage):
         )
 
         for peer_id, access_hash, peer_type, _ in fresh:
-            self._remember_peer((peer_id, access_hash, peer_type))
+            self._peer_cache.remember((peer_id, access_hash, peer_type))
 
         await self._maybe_commit()
 
@@ -467,19 +421,6 @@ class SQLiteStorage(Storage):
 
             await self._maybe_commit()
 
-    def _remember_peer(self, row: Tuple[int, int, str]):
-        """Keep the row, not the InputPeer: callers hand those to the API and are
-        free to mutate them, and a shared instance would be shared mutable state.
-        Rebuilding one costs a microsecond against the ~125us a query costs."""
-        cache = self._peer_cache
-
-        cache.pop(row[0], None)
-        cache[row[0]] = row
-
-        if len(cache) > self._PEER_CACHE_SIZE:
-            for key in list(cache)[:len(cache) - self._PEER_CACHE_SIZE]:
-                del cache[key]
-
     async def get_peer_by_id(self, peer_id: int):
         row = self._peer_cache.get(peer_id)
 
@@ -494,7 +435,7 @@ class SQLiteStorage(Storage):
         if r is None:
             raise KeyError(f"ID not found: {peer_id}")
 
-        self._remember_peer(tuple(r))
+        self._peer_cache.remember(tuple(r))
 
         return get_input_peer(*r)
 
@@ -531,19 +472,17 @@ class SQLiteStorage(Storage):
         if self.conn is None:
             raise ConnectionError("Database is not open")
         if attr in self._cache:
-            value = self._cache[attr]
-            return None if value is self._MISSING else value
+            return self._cache.get(attr)
         cursor = await self.conn.execute(f"SELECT {attr} FROM sessions LIMIT 1")
         row = await cursor.fetchone()
-        value = row[0] if row else self._MISSING
-        self._cache[attr] = value
-        return None if value is self._MISSING else value
+        self._cache.remember(attr, row[0] if row else None)
+        return self._cache.get(attr)
 
     async def _write_attr(self, attr: str, value: Any):
         if self.conn is None:
             raise ConnectionError("Database is not open")
         await self.conn.execute(f"UPDATE sessions SET {attr} = ?", (value,))
-        self._cache[attr] = value
+        self._cache.set(attr, value)
         await self._maybe_commit()
 
     async def dc_id(self, value: int = object):

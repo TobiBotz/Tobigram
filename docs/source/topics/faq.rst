@@ -184,6 +184,29 @@ It should not: transfer budgets are process-wide, not per client, so fifteen cli
 reserve fifteen times the buffers. If memory is still high, lower
 ``WZGRAM_MAX_READ_AHEAD``. See :doc:`/features/performance`.
 
+Can I keep sessions in a database instead of a file?
+------------------------------------------------------
+
+Yes. :obj:`~pyrogram.storage.MongoStorage` and :obj:`~pyrogram.storage.RedisStorage` keep
+the session in a database, and :obj:`~pyrogram.storage.HybridStorage` puts a local cache in
+front of either so reads never pay network latency:
+
+.. code-block:: python
+
+    from pyrogram import Client
+    from pyrogram.storage import HybridStorage, MongoStorage
+
+    app = Client(
+        "my_account",
+        storage_engine=HybridStorage(
+            "my_account",
+            backend=MongoStorage("my_account", "mongodb://localhost:27017"),
+        ),
+    )
+
+Install the driver with ``pip install "wzgram[mongo]"`` or ``pip install "wzgram[redis]"``.
+See :doc:`storage-engines`.
+
 Where can I get help?
 ---------------------
 

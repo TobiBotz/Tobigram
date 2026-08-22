@@ -58,9 +58,13 @@ Where the session lives
     ``workdir``, "the parent dir", "where that file is written"
     ``in_memory``, ``None``, "keep the session in memory only, discarded on stop"
     ``session_string``, ``None``, "resume from an exported string instead of a file"
-    ``storage_engine``, ``None``, "a :obj:`~pyrogram.storage.Storage` subclass of your own"
+    ``storage_engine``, ``None``, "another engine: MongoDB, Redis, hybrid, or your own"
 
-See :doc:`storage-engines` and :doc:`/features/session-strings`.
+See :doc:`storage-engines` for the remote and hybrid engines, and
+:doc:`/features/session-strings` for moving a session as text.
+
+An explicit ``storage_engine`` wins over ``session_string``: the string is loaded *into*
+that engine rather than replacing it.
 
 Logging in without prompts
 --------------------------
