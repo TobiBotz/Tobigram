@@ -6,6 +6,12 @@ This page contains example scripts to show you what wzgram looks like in practic
 Every script is working right away (provided you correctly set up your credentials), meaning you can simply copy-paste
 and run. The only things you have to change are session names and target chats, where applicable.
 
+.. note::
+
+    These scripts assume the session has already been authorized. A **first** login also
+    needs ``api_id`` and ``api_hash`` passed to :obj:`~pyrogram.Client`, bots included — see
+    :doc:`../auth`.
+
 The examples listed below can be treated as building blocks for your own applications and are meant to be simple enough
 to give you a basic idea.
 
@@ -34,7 +40,9 @@ to give you a basic idea.
     :doc:`ephemeral_message_bot`, "Reply in a group so that only one user sees it"
     :doc:`rich_message`, "Send a structured document as a single message"
 
-For more advanced examples, see https://github.com/ColinShark/wzgram-Snippets.
+Each :doc:`feature page </features/index>` carries a working example of its own, and
+:doc:`/topics/advanced-usage` covers calling raw TL functions directly when no high-level
+method exists yet.
 
 .. toctree::
     :hidden:

@@ -19,6 +19,15 @@ variety of decorations that can also be nested in order to combine multiple styl
 
 `The official BOT API style HTML formatting is also supported <https://core.telegram.org/bots/api#html-style>`__
 
+.. tip::
+
+    The default parse mode, :obj:`~pyrogram.enums.ParseMode.DEFAULT`, understands **both**
+    syntaxes in one message, so ``**bold**`` and ``<blockquote>`` can sit side by side.
+    :obj:`~pyrogram.enums.ParseMode.MARKDOWN` and :obj:`~pyrogram.enums.ParseMode.HTML` are
+    the strict modes: each escapes the other's syntax, so a tag inside strict Markdown is
+    sent as literal text. :obj:`~pyrogram.enums.ParseMode.DISABLED` sends everything as
+    written.
+
 
 -----
 
@@ -148,6 +157,13 @@ Markdown Style
 To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.MARKDOWN` to the *parse_mode* parameter when using
 :meth:`~pyrogram.Client.send_message`. Use the following syntax in your message:
 
+.. note::
+
+    There is no Markdown syntax for **blockquotes** or **custom emoji**. A leading ``>`` is
+    sent as a literal ``>``, and ``![emoji](tg://emoji?id=...)`` parses as a text link. Use
+    ``<blockquote>`` and ``<tg-emoji>`` instead — in HTML mode, or mixed into the default
+    combined mode.
+
 .. code-block:: text
 
     **bold**
@@ -157,23 +173,6 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.MARKDOWN` to the
     --underline--
 
     ~~strike~~
-
-    >blockquote
-
-    |>escaped blockquote 
-
-    >Fist line of multi line blockquote 
-    >Block quotation continued
-    >Block quotation continued
-    >Block quotation continued
-    >The last line of the block quotation
-
-    **>The expandable block quotation started right after the previous block quotation
-    >It is separated from the previous block quotation by expandable syntax 
-    >Expandable block quotation continued
-    >Hidden by default part of the expandable block quotation started
-    >Expandable block quotation continued
-    >The last line of the expandable block quotation with the expandability mark||
 
     `inline fixed-width code`
 
@@ -205,29 +204,11 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.MARKDOWN` to the
             "~~strike~~, "
             "||spoiler||, "
             "[URL](https://rjriajul.github.io/wzgram/), "
-            "![👍](tg://emoji?id=5469770542288478598)"
             "`code`, "
             "```py"
             "for i in range(10):\n"
             "    print(i)"
             "```\n"
-
-            ">blockquote\n"
-
-            "|>escaped blockquote\n"
-
-            ">Fist line of multi line blockquote\n"
-            ">Block quotation continued\n"
-            ">Block quotation continued\n"
-            ">Block quotation continued\n"
-            ">The last line of the block quotation"
-
-            "**>The expandable block quotation started right after the previous block quotation\n"
-            ">It is separated from the previous block quotation by expandable syntax\n"
-            ">Expandable block quotation continued\n"
-            ">Hidden by default part of the expandable block quotation started\n"
-            ">Expandable block quotation continued\n"
-            ">The last line of the expandable block quotation with the expandability mark||"
 
         ),
         parse_mode=ParseMode.MARKDOWN

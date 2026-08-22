@@ -24,7 +24,7 @@ like :meth:`~pyrogram.Client.send_audio`, :meth:`~pyrogram.Client.send_document`
     async def main():
         async with app:
             await app.send_message(
-                chat_id="@PyrogramChat",  # Edit this
+                chat_id="me",  # Edit this
                 text="This is a ReplyKeyboardMarkup example",
                 reply_markup=ReplyKeyboardMarkup(
                     [
@@ -38,7 +38,7 @@ like :meth:`~pyrogram.Client.send_audio`, :meth:`~pyrogram.Client.send_document`
             )
 
             await app.send_message(
-                chat_id="@PyrogramChat",  # Edit this
+                chat_id="me",  # Edit this
                 text="This is a InlineKeyboardMarkup example",
                 reply_markup=InlineKeyboardMarkup(
                     [

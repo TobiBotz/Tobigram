@@ -16,7 +16,7 @@ This example demonstrates a basic API usage
     async def main():
         async with app:
             # Send a message, Markdown is enabled by default
-            await app.send_message(chat_id="me", text="Hi there! I'm using **Pyrogram**")
+            await app.send_message(chat_id="me", text="Hi there! I'm using **wzgram**")
 
 
     app.run(main())

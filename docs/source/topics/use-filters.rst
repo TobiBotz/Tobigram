@@ -105,6 +105,6 @@ More handlers using different filters can also live together.
         print("This is the /help command")
 
 
-    @app.on_message(filters.chat("wzgramChat"))
-    async def from_pyrogramchat(client, message):
-        print("New message in @wzgramChat")
+    @app.on_message(filters.chat("my_channel"))
+    async def from_my_channel(client, message):
+        print("New message in @my_channel")

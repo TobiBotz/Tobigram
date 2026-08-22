@@ -147,6 +147,8 @@ This default loading behaviour is usually enough, but sometimes you want to have
 exclude) and in which exact order to load plugins. The way to do this is to make use of ``include`` and ``exclude``
 directives in the dictionary passed as Client argument. Here's how they work:
 
+- ``enabled`` defaults to ``True``; pass ``enabled=False`` to keep the configuration around
+  while loading nothing, which is handy behind a feature flag.
 - If both ``include`` and ``exclude`` are omitted, all plugins are loaded as described above.
 - If ``include`` is given, only the specified plugins will be loaded, in the order they are passed.
 - If ``exclude`` is given, the plugins specified here will be unloaded.
