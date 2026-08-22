@@ -58,7 +58,7 @@ Update propagation
 
 Registering multiple handlers, each in a different group, becomes useful when you want to handle the same update more
 than once. Any incoming update will be sequentially processed by all of your registered functions by respecting the
-groups priority policy described above. Even in case any handler raises an unhandled exception, Pyrogram will still
+groups priority policy described above. Even in case any handler raises an unhandled exception, wzgram will still
 continue to propagate the same update to the next groups until all the handlers are done. Example:
 
 .. code-block:: python
@@ -220,3 +220,56 @@ The output of both (equivalent) examples will be:
     0
     1
     2
+
+Handler errors
+--------------
+
+An exception raised inside a handler does not stop the client and does not stop the other
+handlers: it is logged and the dispatcher moves on. To do something about it yourself,
+register an error handler:
+
+.. code-block:: python
+
+    from pyrogram.errors import FloodWait
+
+
+    @app.on_error(exceptions=FloodWait)
+    async def flood(exception, handler, client, *args):
+        print(f"{handler} hit a flood wait of {exception.value}s")
+
+The callback receives *(exception, handler, client, \*args)*, where ``args`` is whatever the
+failing handler was called with. ``exceptions`` narrows it to one type or a list of types;
+omit it to catch every ``Exception``.
+
+Workers and blocking
+--------------------
+
+Handlers run inside a pool of dispatcher workers — ``workers`` on :obj:`~pyrogram.Client`,
+defaulting to the CPU count plus four. Each callback is awaited *inside* its worker, so a
+handler that blocks holds that worker for as long as it runs, and a handler that blocks the
+event loop holds up everything. Push slow synchronous work into a thread:
+
+.. code-block:: python
+
+    result = await asyncio.to_thread(expensive_call, message.text)
+
+See :doc:`synchronous` for the details.
+
+Updates consumed by listeners
+-----------------------------
+
+:meth:`~pyrogram.Client.listen` and :meth:`~pyrogram.Client.ask` consume the update they
+match: it is delivered to the waiter and **not** to your handlers, so the answer to a
+question cannot re-trigger the command that asked it. Raw update handlers still see it.
+
+A handler that awaits a conversation parks its worker for the duration; wzgram covers each
+parked worker with a relief worker so the pool cannot be starved. See
+:doc:`/features/listeners`.
+
+The update queue
+----------------
+
+Between the connection and the workers sits a bounded queue. If handlers cannot keep up, the
+queue fills, and updates are dropped with a log line rather than growing memory without
+limit. Long-running work belongs in a task or a thread, not in the handler body — see
+:doc:`/features/performance` for the rest of the backpressure chain.

@@ -1,7 +1,7 @@
 Proxy Settings
 ==============
 
-Pyrogram supports proxies with and without authentication. This feature allows Pyrogram to exchange data with Telegram
+wzgram supports proxies with and without authentication. This feature allows wzgram to exchange data with Telegram
 through an intermediate SOCKS 4/5 or HTTP (CONNECT) proxy server.
 
 
@@ -10,7 +10,7 @@ through an intermediate SOCKS 4/5 or HTTP (CONNECT) proxy server.
 Usage
 -----
 
-To use Pyrogram with a proxy, use the *proxy* parameter in the Client class. If your proxy doesn't require authorization
+To use wzgram with a proxy, use the *proxy* parameter in the Client class. If your proxy doesn't require authorization
 you can omit ``username`` and ``password``.
 
 .. code-block:: python

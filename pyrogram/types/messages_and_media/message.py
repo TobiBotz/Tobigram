@@ -391,7 +391,7 @@ class Message(Object, Update):
 
         matches (List of regex Matches, *optional*):
             A list containing all `Match Objects <https://docs.python.org/3/library/re.html#match-objects>`_ that match
-            the text of this message. Only applicable when using :obj:`Filters.regex <pyrogram.Filters.regex>`.
+            the text of this message. Only applicable when using :meth:`filters.regex() <pyrogram.filters.regex>`.
 
         command (List of ``str``, *optional*):
             A list containing the command and its arguments, if any.
@@ -4420,7 +4420,7 @@ class Message(Object, Update):
                 The number of Telegram Stars the user agreed to pay to send the messages.
 
         Returns:
-            On success, a :obj:`~pyrogram.types.Messages` object is returned containing all the
+            On success, a list of :obj:`~pyrogram.types.Message` objects is returned containing all the
             single messages sent.
 
         Raises:
@@ -4516,7 +4516,7 @@ class Message(Object, Update):
                 The number of Telegram Stars the user agreed to pay to send the messages.
 
         Returns:
-            On success, a :obj:`~pyrogram.types.Messages` object is returned containing all the
+            On success, a list of :obj:`~pyrogram.types.Message` objects is returned containing all the
             single messages sent.
 
         Raises:

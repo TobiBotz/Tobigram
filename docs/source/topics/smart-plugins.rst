@@ -1,9 +1,9 @@
 Smart Plugins
 =============
 
-Pyrogram embeds a smart, lightweight yet powerful plugin system that is meant to further simplify the organization
+wzgram embeds a smart, lightweight yet powerful plugin system that is meant to further simplify the organization
 of large projects and to provide a way for creating pluggable (modular) components that can be easily shared across
-different Pyrogram applications with minimal boilerplate code.
+different wzgram applications with minimal boilerplate code.
 
 .. tip::
 
@@ -24,7 +24,7 @@ after importing your modules, like this:
     This is an example application that replies in private chats with two messages: one containing the same
     text message you sent and the other containing the reversed text message.
 
-    Example: *"Pyrogram"* replies with *"Pyrogram"* and *"margoryP"*
+    Example: *"wzgram"* replies with *"wzgram"* and *"margoryP"*
 
 .. code-block:: text
 
@@ -75,7 +75,7 @@ So, what if you could? Smart Plugins solve this issue by taking care of handlers
 Using Smart Plugins
 -------------------
 
-Setting up your Pyrogram project to accommodate Smart Plugins is pretty straightforward:
+Setting up your wzgram project to accommodate Smart Plugins is pretty straightforward:
 
 #. Create a new folder to store all the plugins (e.g.: "plugins", "handlers", ...).
 #. Put your python files full of plugins inside. Organize them as you wish.
@@ -123,8 +123,8 @@ The first important thing to note is the new ``plugins`` folder. You can put *an
 each file can contain *any decorated function* (handlers) with one limitation: within a single module (file) you must
 use different names for each decorated function.
 
-The second thing is telling Pyrogram where to look for your plugins: you can use the Client parameter "plugins";
-the *root* value must match the name of your plugins root folder. Your Pyrogram Client instance will **automatically**
+The second thing is telling wzgram where to look for your plugins: you can use the Client parameter "plugins";
+the *root* value must match the name of your plugins root folder. Your wzgram Client instance will **automatically**
 scan the folder upon starting to search for valid handlers and register them for you.
 
 Then you'll notice you can now use decorators. That's right, you can apply the usual decorators to your callback

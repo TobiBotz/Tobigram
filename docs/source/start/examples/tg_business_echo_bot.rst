@@ -3,8 +3,10 @@ business_echo_bot
 
 This simple echo bot replies to every private business message.
 
-It uses the :meth:`~pyrogram.Client.on_message` decorator to register a :obj:`~pyrogram.handlers.MessageHandler` and applies two filters on it:
-``filters.business`` and ``filters.private`` to make sure it will reply to private business messages only.
+It uses the :meth:`~pyrogram.Client.on_business_message` decorator to register a
+:obj:`~pyrogram.handlers.BusinessMessageHandler`. Business messages have their own handler:
+they never reach :meth:`~pyrogram.Client.on_message`, so a bot can serve its own chats and a
+connected account's chats without the two streams mixing.
 
 .. include:: /_includes/usable-by/bots.rst
 
@@ -15,7 +17,7 @@ It uses the :meth:`~pyrogram.Client.on_message` decorator to register a :obj:`~p
     app = Client("my_account")
 
 
-    @app.on_message(filters.business & filters.private)
+    @app.on_business_message(filters.private)
     async def echo(client, message):
         await message.copy(message.chat.id)
 
@@ -23,4 +25,4 @@ It uses the :meth:`~pyrogram.Client.on_message` decorator to register a :obj:`~p
     app.run()  # Automatically start() and idle()
 
 
-You can explore more :doc:`advanced usages <../../topics/advanced-usage>` by directly working with the **raw Telegram API**.
+See :doc:`/features/business-accounts` for connections, permissions and account management.

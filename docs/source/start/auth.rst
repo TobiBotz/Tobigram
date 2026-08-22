@@ -1,7 +1,7 @@
 Authorization
 =============
 
-Once a :doc:`project is set up <setup>`, you will still have to follow a few steps before you can actually use Pyrogram to make
+Once a :doc:`project is set up <setup>`, you will still have to follow a few steps before you can actually use wzgram to make
 API calls. This section provides all the information you need in order to authorize yourself as user or bot.
 
 
@@ -11,7 +11,7 @@ User Authorization
 ------------------
 
 In order to use the API, Telegram requires that users be authorized via their phone numbers.
-Pyrogram automatically manages this process, all you need to do is create an instance of the
+wzgram automatically manages this process, all you need to do is create an instance of the
 :class:`~pyrogram.Client` class by passing to it a ``name`` of your choice (e.g.: "my_account") and call
 the :meth:`~pyrogram.Client.run` method:
 
@@ -37,7 +37,7 @@ authorized or via SMS:
     Enter phone code: 12345
     Logged in successfully
 
-After successfully authorizing yourself, a new file called ``my_account.session`` will be created allowing Pyrogram to
+After successfully authorizing yourself, a new file called ``my_account.session`` will be created allowing wzgram to
 execute API calls with your identity. This file is personal and will be loaded again when you restart your app.
 You can now remove the api_id and api_hash values from the code as they are not needed anymore.
 
@@ -51,7 +51,7 @@ Bot Authorization
 
 Bots are a special kind of users that are authorized via their tokens (instead of phone numbers), which are created by
 the `Bot Father`_. Bot tokens replace the users' phone numbers only — you still need to
-:doc:`configure a Telegram API key <../start/setup>` with Pyrogram, even when using bots.
+:doc:`configure a Telegram API key <../start/setup>` with wzgram, even when using bots.
 
 The authorization process is automatically managed. All you need to do is choose a ``name`` (can be anything,
 usually your bot username) and pass your bot token using the ``bot_token`` parameter. The session file will be named
@@ -72,6 +72,77 @@ after the session name, which will be ``my_bot.session`` for the example below.
     )
 
     app.run()
+
+Two-step verification
+---------------------
+
+If your account has a password set, wzgram asks for it after the code. Pass it up front to
+skip the prompt, and set ``hide_password=True`` to keep it off the screen while it is typed:
+
+.. code-block:: python
+
+    app = Client(
+        "my_account",
+        api_id=api_id, api_hash=api_hash,
+        phone_number="+11234567890",
+        password="my two-step password",
+        hide_password=True,
+    )
+
+Logging in without a terminal
+-----------------------------
+
+``phone_number``, ``phone_code`` and ``password`` can all be supplied as arguments, which is
+what makes a first login possible where nobody can type. A prompt on a host with no terminal
+**fails immediately** rather than retrying — that is deliberate, and it means a misconfigured
+container reports the problem instead of hanging.
+
+For a host where you cannot receive the code at all, authorize once somewhere you can, then
+move the session as a string:
+
+.. code-block:: python
+
+    async with Client("my_account", api_id, api_hash) as app:
+        print(await app.export_session_string())
+
+See :doc:`/features/session-strings`.
+
+QR code login
+-------------
+
+:meth:`~pyrogram.Client.authorize_qr` logs in by showing a QR code to scan from an already
+authorized device, the way Telegram Desktop does. It needs the ``qrcode`` package:
+
+.. code-block:: bash
+
+    $ pip install qrcode
+
+It is not part of the normal :meth:`~pyrogram.Client.start` flow — that one asks for a phone
+number — so drive the login yourself:
+
+.. code-block:: python
+
+    import asyncio
+
+    from pyrogram import Client
+
+
+    async def main():
+        app = Client("my_account", api_id, api_hash)
+
+        if not await app.connect():        # False means not authorized yet
+            await app.authorize_qr()       # prints a QR code to the terminal
+
+        await app.initialize()
+        print(await app.get_me())
+        await app.stop()
+
+
+    asyncio.run(main())
+
+Scan the printed code from **Settings → Privacy and Security → Active Sessions → Scan QR
+Code** on a device that is already logged in. The code refreshes itself until it is scanned
+or the login is confirmed.
 
 .. _Country Code: https://en.wikipedia.org/wiki/List_of_country_calling_codes
 .. _Bot Father: https://t.me/botfather

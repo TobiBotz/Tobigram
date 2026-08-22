@@ -1,9 +1,9 @@
 Welcome to wzgram's documentation!
 ===================================
 
-`wzgram`_ is an elegant, modern and asynchronous Telegram MTProto API framework
-for Python. It is a fork of Pyrogram with support for the latest Telegram features
-including **Gifts**, **Stories**, **Topics**, **Business Accounts**, and more.
+`wzgram`_ is an elegant, modern and asynchronous Telegram MTProto API framework for Python.
+It is a fork of Pyrogram and a **drop-in replacement** — the distribution is ``wzgram``, the
+import stays ``pyrogram``, and existing code runs unchanged.
 
 .. code-block:: python
 
@@ -16,6 +16,25 @@ including **Gifts**, **Stories**, **Topics**, **Business Accounts**, and more.
         await message.reply("Hello from wzgram!")
 
     app.run()
+
+-----
+
+What you get
+------------
+
+-   **Up to date with Telegram.** Every parameter of every implemented method and type is
+    checked against Bot API 10.2 and the TL schema at build time. :doc:`features/index`
+    walks what Telegram has shipped, in the order it shipped it — business accounts, paid
+    media, gifts, stories, checklists, suggested posts, rich messages, ephemeral messages.
+-   **Conversations without state machines.** :doc:`features/listeners` waits for the next
+    message or button press inline, inside the handler that asked for it.
+-   **Built to stay up.** Client-side :doc:`rate limiting <features/rate-limiting>`, bounded
+    memory on every transfer path, Rust cryptography, and a hot path measured rather than
+    guessed — see :doc:`features/performance`.
+-   **Portable sessions.** Checksummed :doc:`session strings <features/session-strings>` that
+    survive being copy-pasted, with every legacy format still decodable.
+
+New here? :doc:`intro/install` then :doc:`intro/quickstart`.
 
 .. toctree::
     :maxdepth: 2
@@ -45,9 +64,13 @@ including **Gifts**, **Stories**, **Topics**, **Business Accounts**, and more.
     :maxdepth: 2
     :caption: API Reference
 
+    api/client
     api/methods/index
     api/types/index
     api/bound-methods/index
+    api/handlers
+    api/filters
+    api/errors
 
 .. toctree::
     :maxdepth: 2

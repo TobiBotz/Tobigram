@@ -1,7 +1,7 @@
 Examples
 ========
 
-This page contains example scripts to show you how Pyrogram looks like.
+This page contains example scripts to show you what wzgram looks like in practice.
 
 Every script is working right away (provided you correctly set up your credentials), meaning you can simply copy-paste
 and run. The only things you have to change are session names and target chats, where applicable.
@@ -29,9 +29,12 @@ to give you a basic idea.
     :doc:`bot_keyboards`, "Send normal and inline keyboards using regular bots"
     :doc:`send_voice`, "Download audio file and reupload as Voice Message with waveforms"
     :doc:`raw_updates`, "Handle raw updates (old, should be avoided)"
-    :doc:`tg_guest_message_echo_bot`, "Reply to guest messages (e.g., Telegram guest users)"
+    :doc:`tg_guest_message_echo_bot`, "Reply to guest messages, without joining the chat"
+    :doc:`conversation_bot`, "Ask questions and wait for the answers inline"
+    :doc:`ephemeral_message_bot`, "Reply in a group so that only one user sees it"
+    :doc:`rich_message`, "Send a structured document as a single message"
 
-For more advanced examples, see https://github.com/ColinShark/Pyrogram-Snippets.
+For more advanced examples, see https://github.com/ColinShark/wzgram-Snippets.
 
 .. toctree::
     :hidden:
@@ -50,3 +53,6 @@ For more advanced examples, see https://github.com/ColinShark/Pyrogram-Snippets.
     send_voice
     raw_updates
     tg_guest_message_echo_bot
+    conversation_bot
+    ephemeral_message_bot
+    rich_message

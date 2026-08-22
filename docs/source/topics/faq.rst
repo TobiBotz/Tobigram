@@ -44,8 +44,10 @@ Yes. wzgram is built with Hatch and fully compatible with uv:
 Do I need an API ID and hash?
 ------------------------------
 
-For user accounts, yes. Get them at https://my.telegram.org/apps.
-For bot accounts, you only need a bot token from @BotFather.
+Yes, for both. Get them at https://my.telegram.org/apps. A bot additionally needs its
+token from `@BotFather <https://t.me/botfather>`_, but the API key is still required for
+the first authorization — wzgram raises ``AttributeError`` without it. Once a session
+exists, neither is needed again.
 
 How do I start a Client?
 -------------------------
@@ -54,23 +56,33 @@ How do I start a Client?
 
     from pyrogram import Client
 
-    app = Client("my_account")
-    await app.start()
-    await app.send_message("me", "Hello!")
-    await app.stop()
+    async with Client("my_account") as app:
+        await app.send_message("me", "Hello!")
+
+The context manager starts and stops the client for you. Doing it by hand is
+``await app.start()`` and ``await app.stop()``.
 
 Can I use wzgram synchronously?
 -------------------------------
 
-Yes. The Client can be used as a context manager:
+No. wzgram is async-only — there is no wrapper that lets you call methods without
+``await``. Use :py:func:`asyncio.run` or :meth:`~pyrogram.Client.run`:
 
 .. code-block:: python
 
+    import asyncio
+
     from pyrogram import Client
 
-    app = Client("my_account")
-    with app:
-        app.send_message("me", "Hello!")
+
+    async def main():
+        async with Client("my_account") as app:
+            await app.send_message("me", "Hello!")
+
+
+    asyncio.run(main())
+
+See :doc:`synchronous` for calling wzgram from code that is not async.
 
 How do I handle progress for uploads and downloads?
 ----------------------------------------------------
@@ -125,9 +137,12 @@ away messages, greeting messages, working hours, and locations.
 Does wzgram support Rich Text (styled messages)?
 --------------------------------------------------
 
-Yes. You can send rich text messages using Markdown or HTML via the
-``rich_text`` and ``rich_text_parse_mode`` parameters on
-:meth:`~pyrogram.Client.send_message`.
+Yes, and there are two different things under that name. Message-level formatting —
+bold, spoilers, custom emoji, formatted dates — is covered in :doc:`text-formatting`.
+Full documents with headings, lists and tables are :doc:`rich messages
+</features/rich-messages>`, sent with ``rich_text`` on
+:meth:`~pyrogram.Client.send_message` or with
+:meth:`~pyrogram.Client.send_rich_message`.
 
 How do I enable debug logging?
 -------------------------------
@@ -142,6 +157,32 @@ For more verbose output:
 .. code-block:: python
 
     logging.getLogger("pyrogram").setLevel(logging.DEBUG)
+
+Can I wait for a user's reply without a handler?
+--------------------------------------------------
+
+Yes, with :meth:`~pyrogram.Client.ask` and :meth:`~pyrogram.Client.listen`:
+
+.. code-block:: python
+
+    answer = await message.chat.ask("What is your name?", timeout=60)
+    await answer.reply(f"Hello, {answer.text}!")
+
+See :doc:`/features/listeners`.
+
+How do I avoid FloodWait?
+--------------------------
+
+Every client already runs a token-bucket rate limiter that paces requests below Telegram's
+limits, and ``sleep_threshold`` decides how long a ``FloodWait`` wzgram sits out for you
+rather than raising. See :doc:`/features/rate-limiting`.
+
+Why does my bot use so much memory with many clients?
+-------------------------------------------------------
+
+It should not: transfer budgets are process-wide, not per client, so fifteen clients do not
+reserve fifteen times the buffers. If memory is still high, lower
+``WZGRAM_MAX_READ_AHEAD``. See :doc:`/features/performance`.
 
 Where can I get help?
 ---------------------

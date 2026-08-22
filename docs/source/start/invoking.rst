@@ -1,7 +1,7 @@
 Invoking Methods
 ================
 
-At this point, we have successfully :doc:`installed Pyrogram <../intro/install>` and :doc:`authorized <auth>` our
+At this point, we have successfully :doc:`installed wzgram <../intro/install>` and :doc:`authorized <auth>` our
 account; we are now aiming towards the core of the framework.
 
 
@@ -10,7 +10,7 @@ account; we are now aiming towards the core of the framework.
 Basic Usage
 -----------
 
-Making API calls with Pyrogram is very simple. Here's a basic example we are going to examine step by step:
+Making API calls with wzgram is very simple. Here's a basic example we are going to examine step by step:
 
 .. code-block:: python
 
@@ -51,7 +51,7 @@ Step-by-step
             async with app:
                 await app.send_message(chat_id="me", text="Hi!")
 
-#.  Finally, we tell Python to schedule our ``main()`` async function by using Pyrogram's :meth:`~pyrogram.Client.run`
+#.  Finally, we tell Python to schedule our ``main()`` async function by using wzgram's :meth:`~pyrogram.Client.run`
     method.
 
     .. code-block:: python

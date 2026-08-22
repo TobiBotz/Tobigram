@@ -1,84 +1,121 @@
 Synchronous Usage
 =================
 
-Pyrogram is an asynchronous framework and as such is subject to the asynchronous rules. It can, however, run in
-synchronous mode (also known as non-asynchronous or sync/non-async for short). This mode exists mainly as a convenience
-way for invoking methods without the need of ``async``/``await`` keywords and the extra boilerplate, but **it's not the
-intended way to use the framework**.
-
-You can use Pyrogram in this synchronous mode when you want to write something short and contained without the
-async boilerplate or in case you want to combine Pyrogram with other libraries that are not async.
+wzgram is asynchronous. Every API method is a coroutine, and there is no synchronous mode:
+calling ``app.send_message(...)`` without awaiting it returns a coroutine object and sends
+nothing.
 
 .. warning::
 
-    You have to be very careful when using the framework in its synchronous, non-native form, especially when combined
-    with other non-async libraries because thread blocking operations that clog the asynchronous event loop underneath
-    will make the program run erratically.
+    Older Pyrogram versions shipped a compatibility layer that wrapped every method so it
+    could be called without ``await`` — ``with app:`` instead of ``async with app:``. wzgram
+    does not have it. Code relying on it fails quietly: the coroutine is created, never
+    scheduled, and Python warns that it was never awaited.
+
+What to write instead is below, and none of it is more code than the sync form was.
 
 
 -----
 
-Synchronous Invocations
------------------------
+A script that does one thing
+----------------------------
 
-The following is a standard example of running asynchronous functions with Python's asyncio.
-Pyrogram is being used inside the main function with its asynchronous interface.
+:py:func:`asyncio.run` is the whole bridge. It starts an event loop, runs your coroutine and
+shuts the loop down:
 
 .. code-block:: python
 
     import asyncio
+
     from pyrogram import Client
 
 
     async def main():
-        app = Client("my_account")
-
-        async with app:
-            await app.send_message(chat_id="me", text="Hi!")
+        async with Client("my_account") as app:
+            await app.send_message("me", "Hi!")
 
 
     asyncio.run(main())
 
-To run Pyrogram synchronously, use the non-async context manager as shown in the following example.
-As you can see, the non-async example becomes less cluttered.
+A program that stays running
+----------------------------
+
+:meth:`~pyrogram.Client.run` does the same thing for you and then blocks, keeping the client
+online until you stop it:
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from pyrogram import Client, filters
 
     app = Client("my_account")
 
-    with app:
-        app.send_message(chat_id="me", text="Hi!")
 
-Synchronous handlers
---------------------
+    @app.on_message(filters.private)
+    async def echo(client, message):
+        await message.reply(message.text)
 
-You can also have synchronous handlers; you only need to define the callback function without using ``async def`` and
-invoke API methods by not placing ``await`` in front of them. Mixing ``def`` and ``async def`` handlers together is also
-possible.
+
+    app.run()
+
+:meth:`~pyrogram.Client.run` also accepts a coroutine, which covers the one-shot case without
+writing the ``asyncio.run`` yourself:
+
+.. code-block:: python
+
+    app = Client("my_account")
+
+
+    async def main():
+        async with app:
+            await app.send_message("me", "Hi!")
+
+
+    app.run(main())
+
+Calling from synchronous code
+-----------------------------
+
+When wzgram has to live inside something that is not async — a Django view, a Flask route, a
+worker in a thread pool — run the client in its own loop and hand work to it:
+
+.. code-block:: python
+
+    import asyncio
+    import threading
+
+    from pyrogram import Client
+
+    loop = asyncio.new_event_loop()
+    threading.Thread(target=loop.run_forever, daemon=True).start()
+
+    app = Client("my_account")
+    asyncio.run_coroutine_threadsafe(app.start(), loop).result()
+
+
+    def send(chat_id, text):
+        """Callable from ordinary synchronous code."""
+        future = asyncio.run_coroutine_threadsafe(
+            app.send_message(chat_id, text), loop
+        )
+        return future.result(timeout=30)
+
+:py:func:`asyncio.run_coroutine_threadsafe` is the supported way across a thread boundary.
+Do not call :py:func:`asyncio.run` per request — each call builds and tears down a loop, and
+the client belongs to the loop it was started on.
+
+Blocking calls inside handlers
+------------------------------
+
+A handler that blocks — a synchronous HTTP request, a heavy computation, ``time.sleep`` —
+stops the event loop, and with it every other handler, the ping worker and the receive loop.
+Push that work to a thread:
 
 .. code-block:: python
 
     @app.on_message()
-    async def handler1(client, message):
-        await message.forward("me")
+    async def handler(client, message):
+        result = await asyncio.to_thread(expensive_blocking_call, message.text)
+        await message.reply(result)
 
-    @app.on_edited_message()
-    def handler2(client, message):
-        message.forward("me")
-
-uvloop usage
-------------
-
-When using Pyrogram in its synchronous mode combined with uvloop, you need to call ``uvloop.install()`` before importing
-Pyrogram.
-
-.. code-block:: python
-
-    import uvloop
-    uvloop.install()
-
-    from pyrogram import Client
-
-    ...
+This is the same reason wzgram runs crypto above ``WZGRAM_INLINE_CRYPTO_MAX`` in a thread
+pool — see :doc:`/features/performance`.

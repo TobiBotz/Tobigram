@@ -71,7 +71,7 @@ class GetChatGifts:
                 Pass True to exclude upgraded gifts.
 
             exclude_without_colors (``bool``, *optional*):
-                Pass True to exclude gifts that can't be used in :meth:`~pyrogram.Client.set_upgraded_gift_colors`.
+                Pass True to exclude gifts that carry no colors of their own.
 
             exclude_hosted (``bool``, *optional*):
                 Pass True to exclude gifts that are just hosted and are not owned by the owner.

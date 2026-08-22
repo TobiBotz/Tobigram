@@ -58,7 +58,7 @@ class GetInlineBotResults:
                 Useful for location-based results only.
 
         Returns:
-            :obj:`BotResults <pyrogram.api.types.messages.BotResults>`: On Success.
+            :obj:`BotResults <pyrogram.raw.types.messages.BotResults>`: On Success.
 
         Raises:
             TimeoutError: In case the bot fails to answer within 10 seconds.

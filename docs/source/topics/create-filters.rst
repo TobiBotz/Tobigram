@@ -1,7 +1,7 @@
 Creating Filters
 ================
 
-Pyrogram already provides lots of built-in :class:`~pyrogram.filters` to work with, but in case you can't find a
+wzgram already provides lots of built-in :class:`~pyrogram.filters` to work with, but in case you can't find a
 specific one for your needs or want to build a custom filter by yourself you can use
 :meth:`filters.create() <pyrogram.filters.create>`.
 
@@ -23,7 +23,7 @@ button:
 
     await app.send_message(
         chat_id="username",  # Change this to your username or id
-        text="Pyrogram custom filter test",
+        text="wzgram custom filter test",
         reply_markup=InlineKeyboardMarkup(
             [[InlineKeyboardButton("Press me", "pyrogram")]]
         )

@@ -4,8 +4,8 @@ Scheduling Tasks
 Scheduling tasks means executing one or more functions periodically at pre-defined intervals or after a delay. This is
 useful, for example, to send recurring messages to specific chats or users.
 
-This page will show examples on how to integrate Pyrogram with ``apscheduler`` in both asynchronous and
-non-asynchronous contexts. For more detailed information, you can visit and learn from the library documentation.
+This page shows how to integrate wzgram with ``apscheduler``. For more detail, see the
+library's own documentation.
 
 
 -----
@@ -38,10 +38,15 @@ Asynchronously
     scheduler.start()
     app.run()
 
-Non-Asynchronously
-^^^^^^^^^^^^^^^^^^
+From a background thread
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+``BackgroundScheduler`` runs jobs in threads, and a wzgram method called from a thread has
+no running loop to await on. Hand the coroutine to the client's loop instead:
 
 .. code-block:: python
+
+    import asyncio
 
     from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -51,7 +56,9 @@ Non-Asynchronously
 
 
     def job():
-        app.send_message(chat_id="me", text="Hi!")
+        asyncio.run_coroutine_threadsafe(
+            app.send_message(chat_id="me", text="Hi!"), app.loop
+        )
 
 
     scheduler = BackgroundScheduler()
@@ -59,3 +66,26 @@ Non-Asynchronously
 
     scheduler.start()
     app.run()
+
+``AsyncIOScheduler`` is the better fit whenever you can use it — it needs none of this. See
+:doc:`synchronous` for the general rule about crossing a thread boundary.
+
+Telegram-side scheduling
+------------------------
+
+For a message that should be sent at a fixed time, the server can hold it for you: every
+``send_*`` method takes a ``schedule_date``, and no process has to stay running.
+
+.. code-block:: python
+
+    from datetime import datetime, timedelta
+
+    await app.send_message(
+        chat_id="me",
+        text="Sent an hour from now",
+        schedule_date=datetime.now() + timedelta(hours=1),
+    )
+
+:meth:`~pyrogram.Client.get_scheduled_messages`,
+:meth:`~pyrogram.Client.send_scheduled_messages` and
+:meth:`~pyrogram.Client.delete_scheduled_messages` manage what is queued.
