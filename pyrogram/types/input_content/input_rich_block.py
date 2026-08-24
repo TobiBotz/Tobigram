@@ -27,6 +27,16 @@ from ..object import Object
 def _to_rich_text(text: Union[str, "raw.base.RichText"]) -> "raw.base.RichText":
     if isinstance(text, str):
         return raw.types.TextConcat(texts=[raw.types.TextPlain(text=text)])
+
+    if not isinstance(text, raw.core.TLObject):
+        # the parsed types.RichText family describes a message that arrived; it has
+        # no write(), so passing one here used to fail with AttributeError from
+        # inside the request being serialised, several frames from the call site
+        raise TypeError(
+            f"a rich block takes plain text or a raw.types.Text* object, "
+            f"not {type(text).__name__}"
+        )
+
     return text
 
 

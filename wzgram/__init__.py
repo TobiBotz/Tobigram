@@ -55,7 +55,17 @@ class WzgramFinder:
         return importlib.util.spec_from_loader(fullname, self)
 
     def create_module(self, spec):
-        return importlib.import_module("pyrogram." + spec.name[len(self.PREFIX):])
+        target = "pyrogram." + spec.name[len(self.PREFIX):]
+
+        try:
+            return importlib.import_module(target)
+        except ModuleNotFoundError as e:
+            if e.name != target:
+                raise
+
+            raise ModuleNotFoundError(
+                f"No module named {spec.name!r}", name=spec.name
+            ) from None
 
     def exec_module(self, module):
         pass

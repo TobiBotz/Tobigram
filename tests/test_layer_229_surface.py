@@ -398,6 +398,73 @@ class TestGiftsAndCommunities:
         assert enums.MessageServiceType.COMMUNITY_CHAT_JOINED
 
 
+class TestParsedTextIsRefusedOnInput:
+    """A parsed RichText has no write(), and it used to be found by serialising one.
+
+    The high-level types describe a message that arrived. Handing one to an input
+    block failed with AttributeError from inside the request, several frames away
+    from the call that was actually wrong.
+    """
+
+    @pytest.mark.parametrize(
+        "block",
+        [
+            lambda text: types.InputRichBlockParagraph(text=text),
+            lambda text: types.InputRichBlockPullQuotation(text=text),
+            lambda text: types.InputRichBlockExpandableBlockQuotation(text=text),
+        ],
+    )
+    def test_it_raises_where_it_is_written(self, block):
+        with pytest.raises(TypeError, match="raw.types.Text"):
+            block(types.RichTextBold(text="x")).write()
+
+    def test_a_rich_button_refuses_one_too(self):
+        with pytest.raises(TypeError, match="raw.types.Text"):
+            types.RichMessageButton(text=types.RichTextBold(text="x"), url="u").write()
+
+    def test_plain_text_and_raw_text_still_pass(self):
+        assert types.InputRichBlockParagraph(text="hi").write().text
+        assert types.InputRichBlockParagraph(
+            text=raw.types.TextBold(text=raw.types.TextPlain(text="hi"))
+        ).write().text
+
+    async def test_a_plain_text_button_round_trips(self):
+        """TextPlain parses back to str, which is the one shape that survives."""
+
+        page = raw.types.PageButton(
+            text=raw.types.TextPlain(text="Go"),
+            type=raw.types.InlineButtonTypeUrl(url="u"),
+        )
+        parsed = await types.RichMessageButton._parse(Mock(), page)
+
+        assert parsed.write().write()
+
+
+class TestCommunityLookupIsGuarded:
+    """chats is keyed by id across every peer kind, so a community id can miss."""
+
+    def test_a_non_community_resolves_to_nothing(self):
+        channel = raw.types.Channel(
+            id=42, title="T", photo=raw.types.ChatPhotoEmpty(), date=0
+        )
+        action = raw.types.MessageActionChatJoinedViaCommunity(community_id=42)
+
+        parsed = types.CommunityChatJoined._parse(Mock(), action, {42: channel})
+
+        assert parsed.community_id == 42
+        assert parsed.community is None
+
+    def test_a_community_still_resolves(self):
+        community = raw.types.Community(
+            id=42, title="T", date=0, photo=raw.types.ChatPhotoEmpty()
+        )
+        action = raw.types.MessageActionChatJoinedViaCommunity(community_id=42)
+
+        parsed = types.CommunityChatJoined._parse(Mock(), action, {42: community})
+
+        assert parsed.community.title == "T"
+
+
 class TestForceReply:
     async def test_an_inline_markup_carries_it(self):
         markup = types.InlineKeyboardMarkup(

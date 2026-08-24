@@ -77,10 +77,13 @@ greet everyone without posting anything the whole group sees:
 
     await app.send_ephemeral_message(
         chat_id=group_id,
-        receiver_id="me",
+        receiver_id=user_id,
         text="Welcome! Read the rules before posting.",
         welcome=True,
     )
+
+The RPC still takes a receiver even for a template, so pass one; the stored message is
+shown to everyone who arrives regardless of who it names.
 
 The stored templates are listed and removed separately from ordinary ephemeral messages,
 because they outlive the send:

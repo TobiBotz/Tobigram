@@ -81,7 +81,9 @@ class Community(Object):
 
     @staticmethod
     def _parse(client, community: "raw.types.Community") -> Optional["Community"]:
-        if community is None:
+        # the chats map of an update is keyed by id across every peer kind, so a
+        # lookup by community id can hand back a Channel
+        if not isinstance(community, raw.types.Community):
             return None
 
         return Community(

@@ -19,7 +19,7 @@
 from typing import Dict, Optional, Union
 
 import pyrogram
-from pyrogram import raw, types, utils
+from pyrogram import raw, types
 
 from ..object import Object
 from ..update import Update
