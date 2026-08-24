@@ -14,7 +14,7 @@
 
 </div>
 
-wzgram is a **drop-in replacement** for Pyrogram — your existing `from pyrogram import ...` code works without changes, with access to the latest Telegram features including **Gifts, Stories, Topics, Business Accounts**, and more.
+wzgram is a **drop-in replacement** for Pyrogram — your existing `from pyrogram import ...` code works without changes, with access to the latest Telegram features including **Gifts, Stories, Topics, Business Accounts**, and more. `from wzgram import ...` works too, and resolves to the same module rather than a second copy of it.
 
 ```python
 from pyrogram import Client, filters
@@ -34,7 +34,7 @@ app.run()
 
 ### Key Features
 
-- **Drop-in Replacement** — Use `from pyrogram import ...`; existing codebases migrate with zero import changes.
+- **Drop-in Replacement** — Use `from pyrogram import ...` or `from wzgram import ...`; existing codebases migrate with zero import changes.
 - **Up-to-Date** — Supports Gifts, Stories, Topics, Business Accounts, Giveaways, and the latest Telegram layer.
 - **Async Natively** — Fully `async`/`await` throughout. Also usable synchronously via `app.run()` for convenience.
 - **Type-hinted** — Every type and method is annotated for excellent editor support.
