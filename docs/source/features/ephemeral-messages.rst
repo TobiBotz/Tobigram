@@ -129,6 +129,29 @@ of the chat, which is what an inline correction or a per-message hint wants.
         anchor=True,
     )
 
+Editing one
+-----------
+
+*Bot API 10.3 — August 2026*
+
+Layer 229 added ``ephemeral.editMessage``; before it an ephemeral message could only be
+sent and deleted. Four methods edit one, and each names the receiver again, because the
+message only ever existed for them:
+
+.. code-block:: python
+
+    await app.edit_ephemeral_message_text(chat_id, receiver_id, sent.id, "Updated")
+    await app.edit_ephemeral_message_caption(chat_id, receiver_id, sent.id, "New caption")
+    await app.edit_ephemeral_message_media(chat_id, receiver_id, sent.id, InputMediaPhoto("new.jpg"))
+    await app.edit_ephemeral_message_reply_markup(chat_id, receiver_id, sent.id, markup)
+
+Pass ``welcome=True`` when the message being edited is a stored welcome template rather
+than one that was delivered once.
+
+Unlike :meth:`~pyrogram.Client.send_ephemeral_message`, the text form takes a built
+:obj:`~pyrogram.types.InputRichMessage` as ``rich_message`` rather than a string: a rich
+message that has to be composed is composed once and edited many times.
+
 Deleting one
 ------------
 
@@ -147,7 +170,8 @@ Gotchas
 
 - ``disable_web_page_preview`` is accepted and **ignored**. The RPC behind ephemeral
   messages has no link preview field; the parameter is kept so existing call sites do not
-  break.
+  break. ``edit_ephemeral_message_text`` takes no such parameter at all, for the same
+  reason.
 - These messages are not in the chat history. Do not expect
   :meth:`~pyrogram.Client.get_messages` to find one, and do not build a flow that needs to
   read it back — hold what you need in your own state.

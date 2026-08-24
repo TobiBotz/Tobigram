@@ -19,13 +19,264 @@
 import io
 import os
 import re
-from typing import Union, Optional
+from typing import Optional, Tuple, Union
 
 import pyrogram
 from pyrogram import raw
 from pyrogram import types
 from pyrogram import utils
 from pyrogram.file_id import FileType
+
+
+async def resolve_input_media(
+    client: "pyrogram.Client",
+    chat_id: Union[int, str],
+    media: "types.InputMedia"
+) -> Tuple["raw.base.InputMedia", Optional[str], Optional[list]]:
+    """The InputMedia an edit sends, uploading it first if it is a local file.
+
+    edit_message_media and edit_ephemeral_message_media differ only in the RPC they
+    hand this to, and it is two hundred lines of media handling either way.
+    """
+
+    caption = media.caption
+    parse_mode = media.parse_mode
+
+    message, entities = None, None
+
+    if caption is not None:
+        message, entities = (await client.parser.parse(caption, parse_mode)).values()
+
+    if isinstance(media, types.InputMediaPhoto):
+        if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
+            uploaded_media = await client.invoke(
+                raw.functions.messages.UploadMedia(
+                    peer=await client.resolve_peer(chat_id),
+                    media=raw.types.InputMediaUploadedPhoto(
+                        file=await client.save_file(media.media),
+                        spoiler=media.has_spoiler
+                    )
+                )
+            )
+
+            media = raw.types.InputMediaPhoto(
+                id=raw.types.InputPhoto(
+                    id=uploaded_media.photo.id,
+                    access_hash=uploaded_media.photo.access_hash,
+                    file_reference=uploaded_media.photo.file_reference
+                ),
+                spoiler=media.has_spoiler
+            )
+        elif re.match("^https?://", media.media):
+            media = raw.types.InputMediaPhotoExternal(
+                url=media.media,
+                spoiler=media.has_spoiler
+            )
+        else:
+            media = utils.get_input_media_from_file_id(media.media, FileType.PHOTO)
+    elif isinstance(media, types.InputMediaVideo):
+        vcover_file = None
+        vcover_media = None
+
+        if media.video_cover is not None:
+            if isinstance(media.video_cover, str):
+                if os.path.isfile(media.video_cover):
+                    vcover_media = await client.invoke(
+                        raw.functions.messages.UploadMedia(
+                            peer=await client.resolve_peer(chat_id),
+                            media=raw.types.InputMediaUploadedPhoto(
+                                file=await client.save_file(media.video_cover)
+                            )
+                        )
+                    )
+                elif re.match("^https?://", media.video_cover):
+                    vcover_media = await client.invoke(
+                        raw.functions.messages.UploadMedia(
+                            peer=await client.resolve_peer(chat_id),
+                            media=raw.types.InputMediaPhotoExternal(
+                                url=media.video_cover
+                            )
+                        )
+                    )
+                else:
+                    vcover_file = utils.get_input_media_from_file_id(media.video_cover, FileType.PHOTO).id
+            else:
+                vcover_media = await client.invoke(
+                    raw.functions.messages.UploadMedia(
+                        peer=await client.resolve_peer(chat_id),
+                        media=raw.types.InputMediaUploadedPhoto(
+                            file=await client.save_file(media.video_cover)
+                        )
+                    )
+                )
+
+            if vcover_media:
+                vcover_file = raw.types.InputPhoto(
+                    id=vcover_media.photo.id,
+                    access_hash=vcover_media.photo.access_hash,
+                    file_reference=vcover_media.photo.file_reference
+                )
+
+        if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
+            uploaded_media = await client.invoke(
+                raw.functions.messages.UploadMedia(
+                    peer=await client.resolve_peer(chat_id),
+                    media=raw.types.InputMediaUploadedDocument(
+                        mime_type=client.guess_mime_type(media.media) or "video/mp4",
+                        thumb=await client.save_file(media.thumb),
+                        spoiler=media.has_spoiler,
+                        file=await client.save_file(media.media),
+                        video_cover=vcover_file,
+                        video_timestamp=media.video_start_timestamp,
+                        attributes=[
+                            raw.types.DocumentAttributeVideo(
+                                supports_streaming=media.supports_streaming or None,
+                                duration=media.duration,
+                                w=media.width,
+                                h=media.height
+                            ),
+                            raw.types.DocumentAttributeFilename(
+                                file_name=file_name or os.path.basename(media.media)
+                            )
+                        ]
+                    )
+                )
+            )
+
+            media = raw.types.InputMediaDocument(
+                id=raw.types.InputDocument(
+                    id=uploaded_media.document.id,
+                    access_hash=uploaded_media.document.access_hash,
+                    file_reference=uploaded_media.document.file_reference
+                ),
+                spoiler=media.has_spoiler,
+                video_cover=vcover_file,
+                video_timestamp=media.video_start_timestamp
+            )
+        elif re.match("^https?://", media.media):
+            media = raw.types.InputMediaDocumentExternal(
+                url=media.media,
+                spoiler=media.has_spoiler,
+                video_cover=vcover_file,
+                video_timestamp=media.video_start_timestamp
+            )
+        else:
+            media = utils.get_input_media_from_file_id(
+                media.media, FileType.VIDEO,
+                video_cover=vcover_file,
+                video_start_timestamp=media.video_start_timestamp
+            )
+    elif isinstance(media, types.InputMediaAudio):
+        if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
+            media = await client.invoke(
+                raw.functions.messages.UploadMedia(
+                    peer=await client.resolve_peer(chat_id),
+                    media=raw.types.InputMediaUploadedDocument(
+                        mime_type=client.guess_mime_type(media.media) or "audio/mpeg",
+                        thumb=await client.save_file(media.thumb),
+                        file=await client.save_file(media.media),
+                        attributes=[
+                            raw.types.DocumentAttributeAudio(
+                                duration=media.duration,
+                                performer=media.performer,
+                                title=media.title
+                            ),
+                            raw.types.DocumentAttributeFilename(
+                                file_name=file_name or os.path.basename(media.media)
+                            )
+                        ]
+                    )
+                )
+            )
+
+            media = raw.types.InputMediaDocument(
+                id=raw.types.InputDocument(
+                    id=media.document.id,
+                    access_hash=media.document.access_hash,
+                    file_reference=media.document.file_reference
+                )
+            )
+        elif re.match("^https?://", media.media):
+            media = raw.types.InputMediaDocumentExternal(
+                url=media.media
+            )
+        else:
+            media = utils.get_input_media_from_file_id(media.media, FileType.AUDIO)
+    elif isinstance(media, types.InputMediaAnimation):
+        if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
+            uploaded_media = await client.invoke(
+                raw.functions.messages.UploadMedia(
+                    peer=await client.resolve_peer(chat_id),
+                    media=raw.types.InputMediaUploadedDocument(
+                        mime_type=client.guess_mime_type(media.media) or "video/mp4",
+                        thumb=await client.save_file(media.thumb),
+                        spoiler=media.has_spoiler,
+                        file=await client.save_file(media.media),
+                        attributes=[
+                            raw.types.DocumentAttributeVideo(
+                                supports_streaming=True,
+                                duration=media.duration,
+                                w=media.width,
+                                h=media.height
+                            ),
+                            raw.types.DocumentAttributeFilename(
+                                file_name=file_name or os.path.basename(media.media)
+                            ),
+                            raw.types.DocumentAttributeAnimated()
+                        ]
+                    )
+                )
+            )
+
+            media = raw.types.InputMediaDocument(
+                id=raw.types.InputDocument(
+                    id=uploaded_media.document.id,
+                    access_hash=uploaded_media.document.access_hash,
+                    file_reference=uploaded_media.document.file_reference
+                ),
+                spoiler=media.has_spoiler
+            )
+        elif re.match("^https?://", media.media):
+            media = raw.types.InputMediaDocumentExternal(
+                url=media.media,
+                spoiler=media.has_spoiler
+            )
+        else:
+            media = utils.get_input_media_from_file_id(media.media, FileType.ANIMATION)
+    elif isinstance(media, types.InputMediaDocument):
+        if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
+            media = await client.invoke(
+                raw.functions.messages.UploadMedia(
+                    peer=await client.resolve_peer(chat_id),
+                    media=raw.types.InputMediaUploadedDocument(
+                        mime_type=client.guess_mime_type(media.media) or "application/zip",
+                        thumb=await client.save_file(media.thumb),
+                        file=await client.save_file(media.media),
+                        attributes=[
+                            raw.types.DocumentAttributeFilename(
+                                file_name=file_name or os.path.basename(media.media)
+                            )
+                        ]
+                    )
+                )
+            )
+
+            media = raw.types.InputMediaDocument(
+                id=raw.types.InputDocument(
+                    id=media.document.id,
+                    access_hash=media.document.access_hash,
+                    file_reference=media.document.file_reference
+                )
+            )
+        elif re.match("^https?://", media.media):
+            media = raw.types.InputMediaDocumentExternal(
+                url=media.media
+            )
+        else:
+            media = utils.get_input_media_from_file_id(media.media, FileType.DOCUMENT)
+
+    return media, message, entities
+
 
 
 class EditMessageMedia:
@@ -84,241 +335,7 @@ class EditMessageMedia:
                 await app.edit_message_media(chat_id, message_id,
                     InputMediaAudio("new_audio.mp3"))
         """
-        caption = media.caption
-        parse_mode = media.parse_mode
-
-        message, entities = None, None
-
-        if caption is not None:
-            message, entities = (await self.parser.parse(caption, parse_mode)).values()
-
-        if isinstance(media, types.InputMediaPhoto):
-            if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
-                uploaded_media = await self.invoke(
-                    raw.functions.messages.UploadMedia(
-                        peer=await self.resolve_peer(chat_id),
-                        media=raw.types.InputMediaUploadedPhoto(
-                            file=await self.save_file(media.media),
-                            spoiler=media.has_spoiler
-                        )
-                    )
-                )
-
-                media = raw.types.InputMediaPhoto(
-                    id=raw.types.InputPhoto(
-                        id=uploaded_media.photo.id,
-                        access_hash=uploaded_media.photo.access_hash,
-                        file_reference=uploaded_media.photo.file_reference
-                    ),
-                    spoiler=media.has_spoiler
-                )
-            elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaPhotoExternal(
-                    url=media.media,
-                    spoiler=media.has_spoiler
-                )
-            else:
-                media = utils.get_input_media_from_file_id(media.media, FileType.PHOTO)
-        elif isinstance(media, types.InputMediaVideo):
-            vcover_file = None
-            vcover_media = None
-
-            if media.video_cover is not None:
-                if isinstance(media.video_cover, str):
-                    if os.path.isfile(media.video_cover):
-                        vcover_media = await self.invoke(
-                            raw.functions.messages.UploadMedia(
-                                peer=await self.resolve_peer(chat_id),
-                                media=raw.types.InputMediaUploadedPhoto(
-                                    file=await self.save_file(media.video_cover)
-                                )
-                            )
-                        )
-                    elif re.match("^https?://", media.video_cover):
-                        vcover_media = await self.invoke(
-                            raw.functions.messages.UploadMedia(
-                                peer=await self.resolve_peer(chat_id),
-                                media=raw.types.InputMediaPhotoExternal(
-                                    url=media.video_cover
-                                )
-                            )
-                        )
-                    else:
-                        vcover_file = utils.get_input_media_from_file_id(media.video_cover, FileType.PHOTO).id
-                else:
-                    vcover_media = await self.invoke(
-                        raw.functions.messages.UploadMedia(
-                            peer=await self.resolve_peer(chat_id),
-                            media=raw.types.InputMediaUploadedPhoto(
-                                file=await self.save_file(media.video_cover)
-                            )
-                        )
-                    )
-
-                if vcover_media:
-                    vcover_file = raw.types.InputPhoto(
-                        id=vcover_media.photo.id,
-                        access_hash=vcover_media.photo.access_hash,
-                        file_reference=vcover_media.photo.file_reference
-                    )
-
-            if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
-                uploaded_media = await self.invoke(
-                    raw.functions.messages.UploadMedia(
-                        peer=await self.resolve_peer(chat_id),
-                        media=raw.types.InputMediaUploadedDocument(
-                            mime_type=self.guess_mime_type(media.media) or "video/mp4",
-                            thumb=await self.save_file(media.thumb),
-                            spoiler=media.has_spoiler,
-                            file=await self.save_file(media.media),
-                            video_cover=vcover_file,
-                            video_timestamp=media.video_start_timestamp,
-                            attributes=[
-                                raw.types.DocumentAttributeVideo(
-                                    supports_streaming=media.supports_streaming or None,
-                                    duration=media.duration,
-                                    w=media.width,
-                                    h=media.height
-                                ),
-                                raw.types.DocumentAttributeFilename(
-                                    file_name=file_name or os.path.basename(media.media)
-                                )
-                            ]
-                        )
-                    )
-                )
-
-                media = raw.types.InputMediaDocument(
-                    id=raw.types.InputDocument(
-                        id=uploaded_media.document.id,
-                        access_hash=uploaded_media.document.access_hash,
-                        file_reference=uploaded_media.document.file_reference
-                    ),
-                    spoiler=media.has_spoiler,
-                    video_cover=vcover_file,
-                    video_timestamp=media.video_start_timestamp
-                )
-            elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaDocumentExternal(
-                    url=media.media,
-                    spoiler=media.has_spoiler,
-                    video_cover=vcover_file,
-                    video_timestamp=media.video_start_timestamp
-                )
-            else:
-                media = utils.get_input_media_from_file_id(
-                    media.media, FileType.VIDEO,
-                    video_cover=vcover_file,
-                    video_start_timestamp=media.video_start_timestamp
-                )
-        elif isinstance(media, types.InputMediaAudio):
-            if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
-                media = await self.invoke(
-                    raw.functions.messages.UploadMedia(
-                        peer=await self.resolve_peer(chat_id),
-                        media=raw.types.InputMediaUploadedDocument(
-                            mime_type=self.guess_mime_type(media.media) or "audio/mpeg",
-                            thumb=await self.save_file(media.thumb),
-                            file=await self.save_file(media.media),
-                            attributes=[
-                                raw.types.DocumentAttributeAudio(
-                                    duration=media.duration,
-                                    performer=media.performer,
-                                    title=media.title
-                                ),
-                                raw.types.DocumentAttributeFilename(
-                                    file_name=file_name or os.path.basename(media.media)
-                                )
-                            ]
-                        )
-                    )
-                )
-
-                media = raw.types.InputMediaDocument(
-                    id=raw.types.InputDocument(
-                        id=media.document.id,
-                        access_hash=media.document.access_hash,
-                        file_reference=media.document.file_reference
-                    )
-                )
-            elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaDocumentExternal(
-                    url=media.media
-                )
-            else:
-                media = utils.get_input_media_from_file_id(media.media, FileType.AUDIO)
-        elif isinstance(media, types.InputMediaAnimation):
-            if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
-                uploaded_media = await self.invoke(
-                    raw.functions.messages.UploadMedia(
-                        peer=await self.resolve_peer(chat_id),
-                        media=raw.types.InputMediaUploadedDocument(
-                            mime_type=self.guess_mime_type(media.media) or "video/mp4",
-                            thumb=await self.save_file(media.thumb),
-                            spoiler=media.has_spoiler,
-                            file=await self.save_file(media.media),
-                            attributes=[
-                                raw.types.DocumentAttributeVideo(
-                                    supports_streaming=True,
-                                    duration=media.duration,
-                                    w=media.width,
-                                    h=media.height
-                                ),
-                                raw.types.DocumentAttributeFilename(
-                                    file_name=file_name or os.path.basename(media.media)
-                                ),
-                                raw.types.DocumentAttributeAnimated()
-                            ]
-                        )
-                    )
-                )
-
-                media = raw.types.InputMediaDocument(
-                    id=raw.types.InputDocument(
-                        id=uploaded_media.document.id,
-                        access_hash=uploaded_media.document.access_hash,
-                        file_reference=uploaded_media.document.file_reference
-                    ),
-                    spoiler=media.has_spoiler
-                )
-            elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaDocumentExternal(
-                    url=media.media,
-                    spoiler=media.has_spoiler
-                )
-            else:
-                media = utils.get_input_media_from_file_id(media.media, FileType.ANIMATION)
-        elif isinstance(media, types.InputMediaDocument):
-            if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
-                media = await self.invoke(
-                    raw.functions.messages.UploadMedia(
-                        peer=await self.resolve_peer(chat_id),
-                        media=raw.types.InputMediaUploadedDocument(
-                            mime_type=self.guess_mime_type(media.media) or "application/zip",
-                            thumb=await self.save_file(media.thumb),
-                            file=await self.save_file(media.media),
-                            attributes=[
-                                raw.types.DocumentAttributeFilename(
-                                    file_name=file_name or os.path.basename(media.media)
-                                )
-                            ]
-                        )
-                    )
-                )
-
-                media = raw.types.InputMediaDocument(
-                    id=raw.types.InputDocument(
-                        id=media.document.id,
-                        access_hash=media.document.access_hash,
-                        file_reference=media.document.file_reference
-                    )
-                )
-            elif re.match("^https?://", media.media):
-                media = raw.types.InputMediaDocumentExternal(
-                    url=media.media
-                )
-            else:
-                media = utils.get_input_media_from_file_id(media.media, FileType.DOCUMENT)
+        media, message, entities = await resolve_input_media(self, chat_id, media)
 
         r = await self.invoke(
             raw.functions.messages.EditMessage(

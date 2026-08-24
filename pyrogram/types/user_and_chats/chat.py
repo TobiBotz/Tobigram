@@ -163,6 +163,9 @@ class Chat(Object):
         has_visible_history (``bool``, *optional*):
             True, if new chat members will have access to old messages; available only to chat administrators.
 
+        has_welcome_messages (``bool``, *optional*):
+            True, if the chat has welcome messages stored for it.
+
         has_aggressive_anti_spam_enabled (``bool``, *optional*):
             True, if aggressive anti-spam checks are enabled in the supergroup. The field is only available to chat administrators.
 
@@ -590,6 +593,7 @@ class Chat(Object):
         folder_id: Optional[int] = None,
         has_protected_content: Optional[bool] = None,
         has_visible_history: Optional[bool] = None,
+        has_welcome_messages: Optional[bool] = None,
         has_aggressive_anti_spam_enabled: Optional[bool] = None,
         has_automatic_translation: Optional[bool] = None,
         has_forum_tabs: Optional[bool] = None,
@@ -735,6 +739,7 @@ class Chat(Object):
         self.folder_id = folder_id
         self.has_protected_content = has_protected_content
         self.has_visible_history = has_visible_history
+        self.has_welcome_messages = has_welcome_messages
         self.has_aggressive_anti_spam_enabled = has_aggressive_anti_spam_enabled
         self.has_automatic_translation = has_automatic_translation
         self.has_forum_tabs = has_forum_tabs
@@ -1195,6 +1200,7 @@ class Chat(Object):
         parsed_chat.can_set_username = chat.can_set_username
         parsed_chat.can_schedule_messages = chat.has_scheduled
         parsed_chat.is_translations_disabled = chat.translations_disabled
+        parsed_chat.has_welcome_messages = chat.has_welcome_messages
 
         if isinstance(chat.exported_invite, raw.types.ChatInviteExported):
             parsed_chat.invite_link = chat.exported_invite.link
@@ -1238,6 +1244,7 @@ class Chat(Object):
         parsed_chat.can_set_username = channel.can_set_username
         parsed_chat.can_set_sticker_set = channel.can_set_stickers
         parsed_chat.has_visible_history = channel.hidden_prehistory
+        parsed_chat.has_welcome_messages = channel.has_welcome_messages
         parsed_chat.can_set_location = channel.can_set_location
         parsed_chat.can_schedule_messages = channel.has_scheduled
         parsed_chat.can_view_stats = channel.can_view_stats

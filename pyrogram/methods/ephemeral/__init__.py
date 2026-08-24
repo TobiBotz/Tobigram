@@ -21,6 +21,10 @@ from .delete_ephemeral_message import DeleteEphemeralMessage
 from .get_welcome_messages import GetWelcomeMessages
 from .delete_welcome_message import DeleteWelcomeMessage
 from .delete_all_welcome_messages import DeleteAllWelcomeMessages
+from .edit_ephemeral_message_text import EditEphemeralMessageText
+from .edit_ephemeral_message_caption import EditEphemeralMessageCaption
+from .edit_ephemeral_message_media import EditEphemeralMessageMedia
+from .edit_ephemeral_message_reply_markup import EditEphemeralMessageReplyMarkup
 
 
 class Ephemeral(
@@ -29,5 +33,9 @@ class Ephemeral(
     GetWelcomeMessages,
     DeleteWelcomeMessage,
     DeleteAllWelcomeMessages,
+    EditEphemeralMessageText,
+    EditEphemeralMessageCaption,
+    EditEphemeralMessageMedia,
+    EditEphemeralMessageReplyMarkup,
 ):
     pass

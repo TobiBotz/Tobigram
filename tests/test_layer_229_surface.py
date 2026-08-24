@@ -29,6 +29,7 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
+import pyrogram
 from pyrogram import enums, raw, types
 from pyrogram.dispatcher import Dispatcher
 from pyrogram.handlers import MessageGenerationStoppedHandler
@@ -396,6 +397,153 @@ class TestGiftsAndCommunities:
 
         assert parsed.community_id == 42
         assert enums.MessageServiceType.COMMUNITY_CHAT_JOINED
+
+
+class TestEditEphemeralMessage:
+    """ephemeral.editMessage is new in layer 229.
+
+    Before it there was no way to edit an ephemeral message over MTProto at all,
+    which is why four Bot API methods had no wzgram counterpart. All four go
+    through one RPC and differ only in which of its optional fields they fill.
+    """
+
+    METHODS = (
+        "edit_ephemeral_message_text",
+        "edit_ephemeral_message_caption",
+        "edit_ephemeral_message_media",
+        "edit_ephemeral_message_reply_markup",
+    )
+
+    @pytest.mark.parametrize("method", METHODS)
+    def test_each_one_exists(self, method):
+        assert hasattr(pyrogram.Client, method)
+
+    def test_they_share_one_invoke(self):
+        """Four copies of a request is how one of them ends up missing a field."""
+
+        sources = [
+            inspect.getsource(getattr(pyrogram.Client, m)) for m in self.METHODS
+        ]
+        builds = [s for s in sources if "raw.functions.ephemeral.EditMessage(" in s]
+
+        assert not builds, "the RPC belongs in edit_ephemeral, not in each method"
+
+        for source in sources:
+            assert "edit_ephemeral(" in source
+
+    @staticmethod
+    def _client(text=""):
+        client = AsyncMock()
+        client.invoke.return_value = Mock(updates=[], users=[], chats=[])
+        client.parser.parse = AsyncMock(
+            return_value={"message": text or None, "entities": None}
+        )
+
+        return client
+
+    async def test_the_text_form_sends_text(self):
+        client = self._client("hello")
+
+        await pyrogram.Client.edit_ephemeral_message_text(
+            client, 1, 2, 3, "hello"
+        )
+
+        request = client.invoke.await_args.args[0]
+
+        assert isinstance(request, raw.functions.ephemeral.EditMessage)
+        assert request.id == 3
+        assert request.message == "hello"
+        assert request.rich_message is None
+
+    async def test_the_text_form_prefers_a_rich_message(self):
+        client = self._client()
+
+        await pyrogram.Client.edit_ephemeral_message_text(
+            client, 1, 2, 3, "ignored",
+            rich_message=types.InputRichMessage(html="<b>hi</b>")
+        )
+
+        request = client.invoke.await_args.args[0]
+
+        assert request.message is None
+        assert isinstance(request.rich_message, raw.types.InputRichMessageHTML)
+
+    async def test_the_caption_form_carries_the_flag(self):
+        client = self._client("cap")
+
+        await pyrogram.Client.edit_ephemeral_message_caption(
+            client, 1, 2, 3, "cap", show_caption_above_media=True
+        )
+
+        request = client.invoke.await_args.args[0]
+
+        assert request.message == "cap"
+        assert request.invert_media is True
+
+    async def test_the_reply_markup_form_sends_nothing_else(self):
+        client = self._client()
+
+        await pyrogram.Client.edit_ephemeral_message_reply_markup(client, 1, 2, 3)
+
+        request = client.invoke.await_args.args[0]
+
+        assert request.message is None
+        assert request.media is None
+        assert request.rich_message is None
+        assert request.reply_markup is None
+
+    async def test_it_reads_the_ephemeral_update(self):
+        """The answer carries UpdateEditEphemeralMessage, not UpdateEditMessage."""
+
+        from pyrogram.methods.ephemeral.edit_ephemeral_message import edit_ephemeral
+
+        message = raw.types.EphemeralMessage(
+            id=11,
+            from_id=raw.types.PeerUser(user_id=1),
+            receiver_id=2,
+            date=0,
+            message="edited",
+            out=True,
+        )
+        client = AsyncMock()
+        client.invoke.return_value = Mock(
+            updates=[raw.types.UpdateEditEphemeralMessage(message=message)],
+            users=[_raw_user(1), _raw_user(2)],
+            chats=[],
+        )
+
+        parsed = await edit_ephemeral(client, 1, 2, 11, message="edited")
+
+        assert parsed.id == 11
+        assert parsed.text == "edited"
+
+    def test_the_media_form_reuses_the_shared_resolver(self):
+        """Two hundred lines of upload handling, not two copies of it."""
+
+        from pyrogram.methods.messages.edit_message_media import resolve_input_media
+
+        assert inspect.iscoroutinefunction(resolve_input_media)
+
+        for method in ("edit_message_media", "edit_ephemeral_message_media"):
+            source = inspect.getsource(getattr(pyrogram.Client, method))
+
+            assert "resolve_input_media(" in source
+            assert "raw.functions.messages.UploadMedia(" not in source
+
+
+class TestChatWelcomeMessagesFlag:
+    def test_a_full_channel_carries_it(self):
+        assert "has_welcome_messages" in inspect.getsource(
+            types.Chat._parse_full_channel
+        )
+
+    def test_a_full_chat_carries_it(self):
+        assert "has_welcome_messages" in inspect.getsource(types.Chat._parse_full_chat)
+
+    def test_it_is_a_documented_parameter(self):
+        doc = types.Chat.__doc__
+
+        assert "has_welcome_messages (``bool``, *optional*):" in doc
 
 
 class TestParsedTextIsRefusedOnInput:

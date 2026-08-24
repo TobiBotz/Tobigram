@@ -291,6 +291,18 @@ botapi:
       text_parse_mode: parse_mode
     deleteEphemeralMessage:
       ephemeral_message_id: message_id
+    editEphemeralMessageText:
+      ephemeral_message_id: message_id
+      receiver_user_id: receiver_id
+    editEphemeralMessageCaption:
+      ephemeral_message_id: message_id
+      receiver_user_id: receiver_id
+    editEphemeralMessageMedia:
+      ephemeral_message_id: message_id
+      receiver_user_id: receiver_id
+    editEphemeralMessageReplyMarkup:
+      ephemeral_message_id: message_id
+      receiver_user_id: receiver_id
     getChatGifts:
       exclude_unique: exclude_upgraded
       exclude_limited_upgradable: exclude_upgradable
@@ -330,6 +342,10 @@ botapi:
       inline_message_id: editing a message sent as an inline query result goes through edit_inline_media, which takes the inline_message_id
     editMessageReplyMarkup:
       inline_message_id: editing a message sent as an inline query result goes through edit_inline_reply_markup, which takes the inline_message_id
+    editEphemeralMessageText:
+      link_preview_options: >-
+        ephemeral.editMessage has no no_webpage field, so a link preview cannot be
+        turned off any more than send_ephemeral_message can turn one off
     unbanChatMember:
       only_if_banned: >-
         channels.editBanned has no such flag; MTProto clears the restrictions
@@ -665,6 +681,15 @@ mtproto:
     edit_message_text:
       media: edits the text; media is replaced through edit_message_media
       rich_message: rich text is passed as rich_text
+    edit_message_media:
+      message: the caption travels on the InputMedia, as media.caption
+      entities: the caption travels on the InputMedia, as media.parse_mode
+      no_webpage: replacing the media leaves no text to preview a link from
+      invert_media: moving the caption above the media goes through edit_message_caption
+      rich_message: rich content is edited through edit_message_text
+      schedule_date: rescheduling goes through edit_message_text
+      schedule_repeat_period: rescheduling goes through edit_message_text
+      quick_reply_shortcut_id: quick replies are edited through edit_message_text
     edit_message_reply_markup:
       message: the method builds its own content from its arguments
       entities: the method builds its own content from its arguments

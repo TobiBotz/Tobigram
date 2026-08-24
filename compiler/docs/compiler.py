@@ -382,6 +382,10 @@ def pyrogram_api():
             get_welcome_messages
             delete_welcome_message
             delete_all_welcome_messages
+            edit_ephemeral_message_text
+            edit_ephemeral_message_caption
+            edit_ephemeral_message_media
+            edit_ephemeral_message_reply_markup
             delete_messages
             delete_participant_reaction
             delete_participant_reactions

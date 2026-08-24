@@ -319,6 +319,10 @@ methods:
     - deleteMessageReaction
     - deleteMessages
     - editChatInviteLink
+    - editEphemeralMessageCaption
+    - editEphemeralMessageMedia
+    - editEphemeralMessageReplyMarkup
+    - editEphemeralMessageText
     - editForumTopic
     - editMessageCaption
     - editMessageChecklist
