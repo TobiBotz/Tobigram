@@ -16,18 +16,21 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+import json
+import re
 import sys
-import urllib.request
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from coverage import MANIFEST_PATH, SPEC_PATH, Coverage
+from coverage import MANIFEST_PATH, SPEC_PATH, Coverage, load_spec
 
-SPEC_URL = (
-    "https://raw.githubusercontent.com/PaulSonOfLars/"
-    "telegram-bot-api-spec/main/api.min.json"
-)
+API_URL = "https://core.telegram.org/bots/api"
+
+VERSION_RE = re.compile(r"^Bot API \d+\.\d+$")
+
+MIN_METHODS = 100
+MIN_TYPES = 100
 
 HEADER = """\
 # Bot API coverage manifest.
@@ -43,11 +46,70 @@ HEADER = """\
 """
 
 
-def download():
-    print(f"Fetching {SPEC_URL}")
-    payload = urllib.request.urlopen(SPEC_URL).read()
-    SPEC_PATH.write_bytes(payload)
-    print(f"  wrote {SPEC_PATH.relative_to(SPEC_PATH.parents[3])} ({len(payload)} bytes)")
+def scrape() -> dict:
+    try:
+        import scrape as scraper
+    except ImportError as e:
+        raise SystemExit(
+            f"the scraper needs {e.name}: uv sync --extra botapi, or pass --offline "
+            f"to re-survey the vendored copy of the spec"
+        ) from None
+
+    print(f"Scraping {API_URL}")
+    spec = scraper.retrieve_info(API_URL)
+
+    if scraper.verify_type_parameters(spec) or scraper.verify_method_parameters(spec):
+        raise SystemExit("the scraped schema does not validate; see the log above")
+
+    return spec
+
+
+def sanity_check(spec: dict):
+    """Refuse a scrape that would replace the vendored spec with something worse.
+
+    The spec is vendored so that a Bot API release cannot spontaneously turn the
+    build red. Overwriting it with a redirect, an error page or a spec whose
+    shape has changed under the scraper gives up exactly that, and the damage is
+    only visible a compiler run later.
+    """
+
+    version = spec.get("version") or ""
+
+    if not VERSION_RE.match(version):
+        raise SystemExit(f"scraped version {version!r} is not a Bot API version")
+
+    methods, types = len(spec.get("methods") or {}), len(spec.get("types") or {})
+
+    if methods < MIN_METHODS or types < MIN_TYPES:
+        raise SystemExit(
+            f"scraped {methods} methods and {types} types, which is too few to be "
+            f"the whole page"
+        )
+
+    if not SPEC_PATH.exists():
+        return
+
+    current = load_spec()
+    vendored = len(current.get("methods") or {}), len(current.get("types") or {})
+
+    if methods < vendored[0] or types < vendored[1]:
+        raise SystemExit(
+            f"scraped {methods} methods and {types} types against the vendored "
+            f"{vendored[0]} and {vendored[1]}; Bot API does not remove them, so the page "
+            f"or the scraper has changed shape"
+        )
+
+
+def write(spec: dict):
+    sanity_check(spec)
+
+    current = load_spec()["version"] if SPEC_PATH.exists() else None
+    SPEC_PATH.write_text(json.dumps(spec), encoding="utf-8")
+
+    print(f"  {spec['version']} ({spec['release_date']})"
+          f"{'' if current is None else f', was {current}'}")
+    print(f"  wrote {SPEC_PATH.relative_to(SPEC_PATH.parents[3])} "
+          f"({SPEC_PATH.stat().st_size} bytes)")
 
 
 def survey(coverage: Coverage) -> dict:
@@ -124,7 +186,7 @@ def dump(manifest: dict) -> str:
 
 def start(fetch: bool = True):
     if fetch:
-        download()
+        write(scrape())
 
     coverage = Coverage()
     print(f"Surveying against {coverage.spec['version']}")

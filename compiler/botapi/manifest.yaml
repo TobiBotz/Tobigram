@@ -9,8 +9,8 @@
 # Absent Bot API types and methods are deliberate and are not listed here.
 # Regenerate the pending section with: uv run poe botapi-refresh
 
-version: 'Bot API 10.2'
-release_date: 'July 14, 2026'
+version: 'Bot API 10.3'
+release_date: 'August 24, 2026'
 
 types:
   supported:
@@ -34,7 +34,6 @@ types:
     - CallbackGame
     - CallbackQuery
     - Chat
-    - ChatAdministratorRights
     - ChatBackground
     - ChatBoost
     - ChatBoostUpdated
@@ -80,8 +79,6 @@ types:
     - GiveawayCompleted
     - GiveawayCreated
     - GiveawayWinners
-    - InlineKeyboardButton
-    - InlineKeyboardMarkup
     - InlineQuery
     - InlineQueryResult
     - InlineQueryResultArticle
@@ -139,7 +136,6 @@ types:
     - InputRichBlockPullQuotation
     - InputRichBlockSectionHeading
     - InputRichBlockSlideshow
-    - InputRichBlockTable
     - InputRichBlockThinking
     - InputRichBlockVideo
     - InputRichBlockVoiceNote
@@ -167,7 +163,6 @@ types:
     - MenuButtonCommands
     - MenuButtonDefault
     - MenuButtonWebApp
-    - Message
     - MessageEntity
     - MessageOrigin
     - MessageOriginChannel
@@ -189,7 +184,6 @@ types:
     - ProximityAlertTriggered
     - ReactionType
     - RefundedPayment
-    - ReplyKeyboardMarkup
     - ReplyKeyboardRemove
     - ReplyParameters
     - RichBlock
@@ -212,7 +206,6 @@ types:
     - RichBlockPullQuotation
     - RichBlockSectionHeading
     - RichBlockSlideshow
-    - RichBlockTable
     - RichBlockTableCell
     - RichBlockThinking
     - RichBlockVideo
@@ -277,7 +270,20 @@ types:
     - WebAppInfo
     - WriteAccessAllowed
   pending:
-    {}
+    ChatAdministratorRights:
+      botapi: [can_send_welcome_messages]
+    InlineKeyboardButton:
+      botapi: [disabled]
+    InlineKeyboardMarkup:
+      botapi: [force_reply]
+    InputRichBlockTable:
+      botapi: [is_compact]
+    Message:
+      botapi: [community_chat_joined]
+    ReplyKeyboardMarkup:
+      botapi: [force_reply]
+    RichBlockTable:
+      botapi: [is_compact]
 
 methods:
   supported:
@@ -335,35 +341,20 @@ methods:
     - leaveChat
     - logOut
     - pinChatMessage
-    - promoteChatMember
     - refundStarPayment
     - replaceManagedBotToken
     - restrictChatMember
     - revokeChatInviteLink
-    - sendAnimation
-    - sendAudio
     - sendChatAction
     - sendChatJoinRequestWebApp
     - sendChecklist
-    - sendContact
     - sendDice
-    - sendDocument
     - sendGame
     - sendGift
     - sendInvoice
-    - sendLocation
     - sendMediaGroup
-    - sendMessage
     - sendPaidMedia
-    - sendPhoto
     - sendPoll
-    - sendRichMessage
-    - sendRichMessageDraft
-    - sendSticker
-    - sendVenue
-    - sendVideo
-    - sendVideoNote
-    - sendVoice
     - setChatDescription
     - setChatMenuButton
     - setChatPermissions
@@ -379,4 +370,33 @@ methods:
     - unpinChatMessage
     - upgradeGift
   pending:
-    {}
+    promoteChatMember:
+      botapi: [can_send_welcome_messages]
+    sendAnimation:
+      botapi: [ephemeral_message_parameters]
+    sendAudio:
+      botapi: [ephemeral_message_parameters]
+    sendContact:
+      botapi: [ephemeral_message_parameters]
+    sendDocument:
+      botapi: [ephemeral_message_parameters]
+    sendLocation:
+      botapi: [ephemeral_message_parameters]
+    sendMessage:
+      botapi: [ephemeral_message_parameters]
+    sendPhoto:
+      botapi: [ephemeral_message_parameters]
+    sendRichMessage:
+      botapi: [ephemeral_message_parameters]
+    sendRichMessageDraft:
+      botapi: [can_stop, keep_on_stop]
+    sendSticker:
+      botapi: [ephemeral_message_parameters]
+    sendVenue:
+      botapi: [ephemeral_message_parameters]
+    sendVideo:
+      botapi: [ephemeral_message_parameters]
+    sendVideoNote:
+      botapi: [ephemeral_message_parameters]
+    sendVoice:
+      botapi: [ephemeral_message_parameters]

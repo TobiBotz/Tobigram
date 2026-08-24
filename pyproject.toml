@@ -79,6 +79,11 @@ docs = [
     "sphinx>=7",
     "furo>=2023",
 ]
+botapi = [
+    "requests>=2.32",
+    "beautifulsoup4>=4.12",
+    "html5lib>=1.1",
+]
 
 [tool.hatch.version]
 path = "pyrogram/__init__.py"
@@ -107,7 +112,7 @@ venv = "uv sync --frozen"
 venv-dev = "uv sync --frozen --extra dev"
 api = { shell = "uv run python3 compiler/api/compiler.py && uv run python3 compiler/errors/compiler.py && uv run python3 compiler/methods/compiler.py" }
 botapi = "uv run python3 compiler/botapi/compiler.py"
-botapi-refresh = "uv run python3 compiler/botapi/refresh.py"
+botapi-refresh = "uv run --extra botapi python3 compiler/botapi/refresh.py"
 docs = { shell = "uv run python3 compiler/docs/compiler.py && uv run sphinx-build -b dirhtml docs/source docs/build -j auto" }
 docs-archive = { shell = "cd docs/build && zip -r docs.zip html/" }
 build = "uv build"
