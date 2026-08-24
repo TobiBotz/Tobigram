@@ -140,7 +140,7 @@ class SendPaidMedia:
         Example:
             .. code-block:: python
 
-                from pyrogram.types import InputMediaPhoto, InputMediaVideo
+                from wzgram.types import InputMediaPhoto, InputMediaVideo
 
                 await app.send_paid_media(
                     chat_id,

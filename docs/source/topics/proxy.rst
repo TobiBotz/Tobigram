@@ -15,7 +15,7 @@ you can omit ``username`` and ``password``.
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     proxy = {
         "scheme": "socks5",  # "socks4", "socks5" and "http" are supported

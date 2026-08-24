@@ -10,8 +10,8 @@ It uses the :meth:`~pyrogram.Client.on_inline_query` decorator to register an :o
 
 .. code-block:: python
 
-    from pyrogram import Client
-    from pyrogram.types import (InlineQueryResultArticle, InputTextMessageContent,
+    from wzgram import Client
+    from wzgram.types import (InlineQueryResultArticle, InputTextMessageContent,
                                 InlineKeyboardMarkup, InlineKeyboardButton)
 
     app = Client("my_bot", bot_token="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11")

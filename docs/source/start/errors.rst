@@ -6,7 +6,7 @@ wzgram errors all live inside the ``errors`` package:
 
 .. code-block:: python
 
-    from pyrogram import errors
+    from wzgram import errors
 
 
 -----
@@ -19,7 +19,7 @@ This error is raised every time a method call against Telegram's API was unsucce
 
 .. code-block:: python
 
-    from pyrogram.errors import RPCError
+    from wzgram.errors import RPCError
 
 .. warning::
 
@@ -34,7 +34,7 @@ provides categories of errors, which are named after the common HTTP errors and 
 
 .. code-block:: python
 
-    from pyrogram.errors import BadRequest, Forbidden, ...
+    from wzgram.errors import BadRequest, Forbidden, ...
 
 -   ``303 - SeeOther``
 -   ``400 - BadRequest``
@@ -52,7 +52,7 @@ issue. For example:
 
 .. code-block:: python
 
-    from pyrogram.errors import FloodWait
+    from wzgram.errors import FloodWait
 
 These errors subclass directly from the category of errors they belong to, which in turn subclass from the father
 ``RPCError``, thus building a class of error hierarchy such as this:
@@ -106,7 +106,7 @@ The value is stored in the ``value`` attribute of the exception object:
 .. code-block:: python
 
     import asyncio
-    from pyrogram.errors import FloodWait
+    from wzgram.errors import FloodWait
 
     ...
         try:

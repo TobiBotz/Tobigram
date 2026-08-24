@@ -8,8 +8,8 @@ message.
 
 .. code-block:: python
 
-    from pyrogram import Client
-    from pyrogram.types import (
+    from wzgram import Client
+    from wzgram.types import (
         InputRichMessage,
         InputRichBlockSectionHeading,
         InputRichBlockParagraph,

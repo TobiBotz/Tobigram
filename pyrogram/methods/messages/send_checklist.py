@@ -107,7 +107,7 @@ class SendChecklist:
         Example:
             .. code-block:: python
 
-                from pyrogram.types import InputChecklist, InputChecklistTask
+                from wzgram.types import InputChecklist, InputChecklistTask
 
                 checklist = InputChecklist(
                     title="Shopping List",

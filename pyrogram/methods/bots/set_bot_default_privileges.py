@@ -49,7 +49,7 @@ class SetBotDefaultPrivileges:
         Example:
             .. code-block:: python
 
-                from pyrogram.types import ChatPrivileges
+                from wzgram.types import ChatPrivileges
 
                 await app.set_bot_default_privileges(
                     ChatPrivileges(

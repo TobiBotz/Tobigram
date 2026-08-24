@@ -12,7 +12,7 @@ connected account's chats without the two streams mixing.
 
 .. code-block:: python
 
-    from pyrogram import Client, filters
+    from wzgram import Client, filters
 
     app = Client("my_account")
 

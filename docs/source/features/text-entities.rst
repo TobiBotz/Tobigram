@@ -24,7 +24,7 @@ In HTML it is ``tg-time``:
 
 .. code-block:: python
 
-    from pyrogram.enums import ParseMode
+    from wzgram.enums import ParseMode
 
     await app.send_message(
         chat_id="me",
@@ -75,8 +75,8 @@ Styled buttons
 
 .. code-block:: python
 
-    from pyrogram import enums
-    from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    from wzgram import enums
+    from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
     await app.send_message(
         chat_id="me",

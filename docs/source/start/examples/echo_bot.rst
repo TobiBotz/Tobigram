@@ -10,7 +10,7 @@ It uses the :meth:`~pyrogram.Client.on_message` decorator to register a :obj:`~p
 
 .. code-block:: python
 
-    from pyrogram import Client, filters
+    from wzgram import Client, filters
 
     app = Client("my_account")
 

@@ -104,7 +104,7 @@ class SendMediaGroup:
         Example:
             .. code-block:: python
 
-                from pyrogram.types import InputMediaPhoto, InputMediaVideo
+                from wzgram.types import InputMediaPhoto, InputMediaVideo
 
                 await app.send_media_group(
                     "me",

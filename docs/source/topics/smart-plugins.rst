@@ -47,8 +47,8 @@ after importing your modules, like this:
 
     .. code-block:: python
 
-        from pyrogram import Client, filters
-        from pyrogram.handlers import MessageHandler
+        from wzgram import Client, filters
+        from wzgram.handlers import MessageHandler
 
         from handlers import echo, echo_reversed
 
@@ -96,7 +96,7 @@ Setting up your wzgram project to accommodate Smart Plugins is pretty straightfo
 
     .. code-block:: python
 
-        from pyrogram import Client, filters
+        from wzgram import Client, filters
 
 
         @Client.on_message(filters.text & filters.private)
@@ -112,7 +112,7 @@ Setting up your wzgram project to accommodate Smart Plugins is pretty straightfo
 
     .. code-block:: python
 
-        from pyrogram import Client
+        from wzgram import Client
 
         plugins = dict(root="plugins")
 

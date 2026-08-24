@@ -21,7 +21,7 @@ it through :meth:`~pyrogram.Client.on_business_connection`:
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     app = Client("my_bot")
 
@@ -87,7 +87,7 @@ Business chat links are deep links that open a chat with a message already typed
 
 .. code-block:: python
 
-    from pyrogram import raw
+    from wzgram import raw
 
     link = await app.create_business_chat_link(
         raw.types.InputBusinessChatLink(

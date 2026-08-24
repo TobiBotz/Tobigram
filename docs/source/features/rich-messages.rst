@@ -22,7 +22,7 @@ differently, which is the one thing worth understanding before you start.
 
 .. code-block:: python
 
-    from pyrogram.types import InputRichMessage
+    from wzgram.types import InputRichMessage
 
     await app.send_rich_message(
         chat_id="me",
@@ -35,7 +35,7 @@ differently, which is the one thing worth understanding before you start.
 
 .. code-block:: python
 
-    from pyrogram.types import (
+    from wzgram.types import (
         InputRichMessage,
         InputRichBlockSectionHeading,
         InputRichBlockParagraph,
@@ -110,7 +110,7 @@ refers to it with a ``tg://`` link:
 
 .. code-block:: python
 
-    from pyrogram.types import InputRichMessage, InputRichMessageMedia
+    from wzgram.types import InputRichMessage, InputRichMessageMedia
 
     await app.send_rich_message(
         chat_id="me",
@@ -151,8 +151,8 @@ button does — ``url``, ``callback_data``, ``web_app``, ``login_url``, the
 
 .. code-block:: python
 
-    from pyrogram import enums
-    from pyrogram.types import InputRichBlockButtons, RichMessageButton
+    from wzgram import enums
+    from wzgram.types import InputRichBlockButtons, RichMessageButton
 
     InputRichBlockButtons(
         buttons=[

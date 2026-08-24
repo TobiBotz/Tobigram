@@ -5,7 +5,7 @@ send_voice
 
 .. code-block:: python
 
-    from pyrogram import Client, filters
+    from wzgram import Client, filters
 
     app = Client("my_account")
 

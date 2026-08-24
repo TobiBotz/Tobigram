@@ -50,7 +50,7 @@ async def idle():
         .. code-block:: python
 
             import asyncio
-            from pyrogram import Client, idle
+            from wzgram import Client, idle
 
 
             async def main():

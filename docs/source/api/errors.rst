@@ -7,7 +7,7 @@ low-level protocol errors from the MTProto session.
 
 .. code-block:: python
 
-    from pyrogram.errors import FloodWait, RPCError
+    from wzgram.errors import FloodWait, RPCError
 
     try:
         await app.send_message("me", "Hi")

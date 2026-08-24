@@ -82,7 +82,7 @@ class SendResoldGift:
                 )
 
                 # Buy ton gift
-                from pyrogram import utils
+                from wzgram import utils
 
                 await app.send_resold_gift(
                     gift_link="https://t.me/nft/NekoHelmet-9215",

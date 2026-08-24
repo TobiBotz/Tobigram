@@ -31,7 +31,7 @@ The most elegant way to register a message handler is by using the :meth:`~pyrog
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     app = Client("my_account")
 
@@ -58,8 +58,8 @@ function and registers it in your Client. It is useful in case you want to progr
 
 .. code-block:: python
 
-    from pyrogram import Client
-    from pyrogram.handlers import MessageHandler
+    from wzgram import Client
+    from wzgram.handlers import MessageHandler
 
 
     async def my_function(client, message):

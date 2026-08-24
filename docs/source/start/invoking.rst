@@ -14,7 +14,7 @@ Making API calls with wzgram is very simple. Here's a basic example we are going
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     app = Client("my_account")
 
@@ -33,7 +33,7 @@ Step-by-step
 
     .. code-block:: python
 
-        from pyrogram import Client
+        from wzgram import Client
 
 #.  Now instantiate a new Client object, "my_account" is a session name of your choice.
 
@@ -70,7 +70,7 @@ Below there's the same example as above, but without the use of the context mana
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     app = Client("my_account")
 
@@ -93,7 +93,7 @@ be instantiated inside the main function.
 .. code-block:: python
 
     import asyncio
-    from pyrogram import Client
+    from wzgram import Client
 
 
     async def main():

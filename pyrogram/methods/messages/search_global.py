@@ -69,7 +69,7 @@ class SearchGlobal:
         Example:
             .. code-block:: python
 
-                from pyrogram import enums
+                from wzgram import enums
 
                 # Search for "pyrogram". Get the first 50 results
                 async for message in app.search_global("pyrogram", limit=50):

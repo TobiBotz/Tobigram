@@ -70,7 +70,7 @@ class InputMediaVoiceNote(InputMedia):
     Example:
         .. code-block:: python
 
-            from pyrogram.types import InputMediaVoiceNote
+            from wzgram.types import InputMediaVoiceNote
 
             # Send a voice note by file path
             voice = InputMediaVoiceNote(media="voice.ogg", duration=30)

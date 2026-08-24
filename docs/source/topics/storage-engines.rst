@@ -37,7 +37,7 @@ To use this type of engine, simply pass any name of your choice to the ``name`` 
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     async with Client("my_account") as app:
         print(await app.get_me())
@@ -54,7 +54,7 @@ In case you don't want to have any session file saved to disk, you can use an in
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     async with Client("my_account", in_memory=True) as app:
         print(await app.get_me())
@@ -70,7 +70,7 @@ In case you want to use an in-memory storage, but also want to keep access to th
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     async with Client("my_account", in_memory=True) as app:
         print(await app.export_session_string())
@@ -80,7 +80,7 @@ login using the same session; the storage used will still be in-memory:
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     session_string = "...ZnUIFD8jsjXTb8g_vpxx48k1zkov9sapD-tzjz-S4WZv70M..."
 
@@ -117,8 +117,8 @@ Drivers are optional and imported only when the storage is opened:
 
 .. code-block:: python
 
-    from pyrogram import Client
-    from pyrogram.storage import MongoStorage
+    from wzgram import Client
+    from wzgram.storage import MongoStorage
 
     app = Client(
         "my_account",
@@ -134,7 +134,7 @@ already-created client to share with the rest of your program:
 .. code-block:: python
 
     from motor.motor_asyncio import AsyncIOMotorClient
-    from pyrogram.storage import MongoStorage, RedisStorage
+    from wzgram.storage import MongoStorage, RedisStorage
 
     MongoStorage("my_account", AsyncIOMotorClient(uri), database="sessions")
     RedisStorage("my_account", redis_client, prefix="bots:my_account")
@@ -159,8 +159,8 @@ front of any backend:
 
 .. code-block:: python
 
-    from pyrogram import Client
-    from pyrogram.storage import HybridStorage, MongoStorage
+    from wzgram import Client
+    from wzgram.storage import HybridStorage, MongoStorage
 
     app = Client(
         "my_account",
@@ -236,7 +236,7 @@ libraries.
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
     from .tele_storage import TelethonStorage  # assumes that the path downloaded is accurate
 
     workdir = Path(__file__).parent

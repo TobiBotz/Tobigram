@@ -70,7 +70,7 @@ class EditMessageMedia:
         Example:
             .. code-block:: python
 
-                from pyrogram.types import InputMediaPhoto, InputMediaVideo, InputMediaAudio
+                from wzgram.types import InputMediaPhoto, InputMediaVideo, InputMediaAudio
 
                 # Replace the current media with a local photo
                 await app.edit_message_media(chat_id, message_id,

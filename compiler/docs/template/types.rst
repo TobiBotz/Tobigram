@@ -7,7 +7,7 @@ are only returned by other methods. You also don't need to import them, unless y
 
 .. code-block:: python
 
-    from pyrogram.types import User, Message, ...
+    from wzgram.types import User, Message, ...
 
 .. note::
 
@@ -123,7 +123,7 @@ This page lists all available enums from the ``pyrogram.enums`` package.
 
 .. code-block:: python
 
-    from pyrogram.enums import ParseMode, ChatAction, ...
+    from wzgram.enums import ParseMode, ChatAction, ...
 
 .. currentmodule:: pyrogram.enums
 

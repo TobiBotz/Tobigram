@@ -10,7 +10,7 @@ It uses the :meth:`~pyrogram.Client.on_guest_message` decorator to register a
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     app = Client("my_account")
 

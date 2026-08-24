@@ -8,7 +8,7 @@ class, and they compose with ``&`` (and), ``|`` (or) and ``~`` (not):
 
 .. code-block:: python
 
-    from pyrogram import filters
+    from wzgram import filters
 
     @app.on_message(filters.text & filters.private & ~filters.bot)
     async def only_humans_in_dm(client, message):

@@ -11,8 +11,8 @@ cannot re-trigger the command that asked it.
 
 .. code-block:: python
 
-    from pyrogram import Client, filters
-    from pyrogram.errors import ListenerTimeout
+    from wzgram import Client, filters
+    from wzgram.errors import ListenerTimeout
 
     app = Client("my_bot")
 

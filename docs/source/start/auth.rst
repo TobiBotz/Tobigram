@@ -17,7 +17,7 @@ the :meth:`~pyrogram.Client.run` method:
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     api_id = 12345
     api_hash = "0123456789abcdef0123456789abcdef"
@@ -59,7 +59,7 @@ after the session name, which will be ``my_bot.session`` for the example below.
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     api_id = 12345
     api_hash = "0123456789abcdef0123456789abcdef"
@@ -124,7 +124,7 @@ number — so drive the login yourself:
 
     import asyncio
 
-    from pyrogram import Client
+    from wzgram import Client
 
 
     async def main():
@@ -154,7 +154,7 @@ or the login is confirmed.
 
     .. code-block:: python
 
-        from pyrogram import Client
+        from wzgram import Client
 
         app = Client("my_account")
         app.run()

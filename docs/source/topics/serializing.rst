@@ -34,6 +34,9 @@ still pretty much readable, this format is not intended for humans. The advantag
 serialize your object, you can use ``eval()`` to get back the original structure; just make sure to ``import pyrogram``,
 as the process requires the package to be in scope.
 
+``repr`` names ``pyrogram`` because that is the package — ``import wzgram`` binds the alias, not
+the name the repr uses, so this is the one example that must import ``pyrogram`` itself.
+
 .. code-block:: python
 
     import pyrogram

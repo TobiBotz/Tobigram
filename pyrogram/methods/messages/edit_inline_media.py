@@ -65,7 +65,7 @@ class EditInlineMedia:
         Example:
             .. code-block:: python
 
-                from pyrogram.types import InputMediaPhoto, InputMediaVideo, InputMediaAudio
+                from wzgram.types import InputMediaPhoto, InputMediaVideo, InputMediaAudio
 
                 # Bots only
 

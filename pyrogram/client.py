@@ -976,7 +976,7 @@ class Client(Methods):
         Example:
             .. code-block:: python
 
-                from pyrogram import enums
+                from wzgram import enums
 
                 # Default combined mode: Markdown + HTML
                 await app.send_message("me", "1. **markdown** and <i>html</i>")

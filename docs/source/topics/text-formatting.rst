@@ -95,7 +95,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.HTML` to the *pa
 
 .. code-block:: python
 
-    from pyrogram.enums import ParseMode
+    from wzgram.enums import ParseMode
 
     await app.send_message(
         chat_id="me",
@@ -193,7 +193,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.MARKDOWN` to the
 
 .. code-block:: python
 
-    from pyrogram.enums import ParseMode
+    from wzgram.enums import ParseMode
 
     await app.send_message(
         chat_id="me",
@@ -234,7 +234,7 @@ If you don't like this behaviour you can always choose to only enable either Mar
 
 .. code-block:: python
 
-    from pyrogram.enums import ParseMode
+    from wzgram.enums import ParseMode
 
     await app.send_message(chat_id="me", text="**bold**, <i>italic</i>", parse_mode=ParseMode.MARKDOWN)
     await app.send_message(chat_id="me", text="**bold**, <i>italic</i>", parse_mode=ParseMode.HTML)
@@ -250,7 +250,7 @@ The text will be sent as-is.
 
 .. code-block:: python
 
-    from pyrogram.enums import ParseMode
+    from wzgram.enums import ParseMode
 
     await app.send_message(chat_id="me", text="**bold**, <i>italic</i>", parse_mode=ParseMode.DISABLED)
 
@@ -337,7 +337,7 @@ with raw HTML or Markdown text, which is parsed server-side:
 
 .. code-block:: python
 
-    from pyrogram.types import InputRichMessage
+    from wzgram.types import InputRichMessage
 
     rich = InputRichMessage(
         html="<b>bold</b> <tg-emoji emoji-id=5469770542288478598>👍</tg-emoji>"

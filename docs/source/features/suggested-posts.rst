@@ -22,7 +22,7 @@ send into a proposal:
 .. code-block:: python
 
     from datetime import datetime, timedelta
-    from pyrogram.types import SuggestedPostParameters, SuggestedPostPriceStar
+    from wzgram.types import SuggestedPostParameters, SuggestedPostPriceStar
 
     await app.send_photo(
         chat_id=channel_direct_messages_id,

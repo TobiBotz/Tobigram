@@ -23,7 +23,7 @@ Asynchronously
 
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-    from pyrogram import Client
+    from wzgram import Client
 
     app = Client("my_account")
 
@@ -50,7 +50,7 @@ no running loop to await on. Hand the coroutine to the client's loop instead:
 
     from apscheduler.schedulers.background import BackgroundScheduler
 
-    from pyrogram import Client
+    from wzgram import Client
 
     app = Client("my_account")
 

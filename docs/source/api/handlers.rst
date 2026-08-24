@@ -8,8 +8,8 @@ handlers are built at runtime.
 
 .. code-block:: python
 
-    from pyrogram import Client, filters
-    from pyrogram.handlers import MessageHandler
+    from wzgram import Client, filters
+    from wzgram.handlers import MessageHandler
 
 
     async def echo(client, message):

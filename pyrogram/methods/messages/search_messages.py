@@ -117,7 +117,7 @@ class SearchMessages:
         Example:
             .. code-block:: python
 
-                from pyrogram import enums
+                from wzgram import enums
 
                 # Search for text messages in chat. Get the last 120 results
                 async for message in app.search_messages(chat_id, query="hello", limit=120):

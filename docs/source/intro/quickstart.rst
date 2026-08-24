@@ -38,7 +38,7 @@ Save this as ``hello.py``:
 
     import asyncio
 
-    from pyrogram import Client
+    from wzgram import Client
 
     api_id = 12345
     api_hash = "0123456789abcdef0123456789abcdef"
@@ -82,7 +82,7 @@ Sending is half of it. To *respond* to things, register a handler and let the cl
 
 .. code-block:: python
 
-    from pyrogram import Client, filters
+    from wzgram import Client, filters
 
     app = Client("my_account", api_id, api_hash)
 

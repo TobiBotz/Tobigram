@@ -25,7 +25,7 @@ listen and ask
 
 .. code-block:: python
 
-    from pyrogram import filters
+    from wzgram import filters
 
     reply = await app.ask(
         chat_id=user_id,
@@ -74,7 +74,7 @@ Two errors end a wait, and the difference matters:
 
 .. code-block:: python
 
-    from pyrogram.errors import ListenerTimeout
+    from wzgram.errors import ListenerTimeout
 
     try:
         answer = await message.chat.ask("Still there?", timeout=30)

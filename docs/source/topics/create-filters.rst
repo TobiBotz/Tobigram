@@ -19,7 +19,7 @@ button:
 
 .. code-block:: python
 
-    from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
     await app.send_message(
         chat_id="username",  # Change this to your username or id
@@ -42,7 +42,7 @@ queries containing "pyrogram" as data:
 
 .. code-block:: python
 
-    from pyrogram import filters
+    from wzgram import filters
 
     async def func(_, __, query):
         return query.data == "pyrogram"
@@ -72,7 +72,7 @@ This is how a dynamic custom filter looks like:
 
 .. code-block:: python
 
-    from pyrogram import filters
+    from wzgram import filters
 
     def dynamic_data_filter(data):
         async def func(flt, _, query):

@@ -21,7 +21,7 @@ Sending one
 
 .. code-block:: python
 
-    from pyrogram import Client, filters
+    from wzgram import Client, filters
 
     app = Client("my_bot")
 
@@ -49,7 +49,7 @@ carry buttons; ``reply_parameters``, so it can quote the message that triggered 
 
 .. code-block:: python
 
-    from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
     await app.send_ephemeral_message(
         chat_id=group_id,
@@ -103,7 +103,7 @@ Sending or managing them needs the ``can_send_welcome_messages`` administrator r
 
 .. code-block:: python
 
-    from pyrogram.types import ChatPrivileges
+    from wzgram.types import ChatPrivileges
 
     await app.promote_chat_member(
         group_id, bot_id,

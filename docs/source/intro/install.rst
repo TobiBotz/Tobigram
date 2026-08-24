@@ -1,18 +1,21 @@
 Install Guide
 =============
 
-wzgram is a drop-in replacement for Pyrogram. The package on PyPI is called **wzgram**, and
-the module you import is ``pyrogram`` — existing code keeps working unchanged. ``wzgram`` is
-importable under its own name too, and the two are the same module rather than two copies of
-it, so ``wzgram.types.Message is pyrogram.types.Message``:
+Import ``wzgram``:
 
 .. code-block:: python
 
-    from pyrogram import Client, filters   # what every Pyrogram codebase already says
-    from wzgram import Client, filters     # the same Client, under the distribution name
+    from wzgram import Client, filters
 
-Prefer ``pyrogram`` in code you may want to run against either library. Classes keep
-``pyrogram`` as their canonical module either way, so that is what tracebacks and reprs show.
+``pyrogram`` still imports, and resolves to the same module rather than a second copy of it,
+so ``wzgram.types.Message is pyrogram.types.Message`` and an existing Pyrogram codebase runs
+unchanged. Use it only for that — new code should say ``wzgram``.
+
+.. note::
+
+    The *package* is still ``pyrogram``, and that is deliberate: it is what makes wzgram a
+    drop-in replacement. Tracebacks, ``repr()`` and the ``.. module::`` targets in this
+    documentation all name ``pyrogram``, because that is where the classes live.
 
 wzgram requires **Python 3.10 or newer**. Nothing else has to be installed by hand: the Rust
 crypto backend and the SQLite driver come with it as wheels.

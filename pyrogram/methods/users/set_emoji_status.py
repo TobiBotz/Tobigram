@@ -41,7 +41,7 @@ class SetEmojiStatus:
         Example:
             .. code-block:: python
 
-                from pyrogram import types
+                from wzgram import types
 
                 await app.set_emoji_status(types.EmojiStatus(custom_emoji_id=1234567890987654321))
         """

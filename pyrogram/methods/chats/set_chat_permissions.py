@@ -49,7 +49,7 @@ class SetChatPermissions:
         Example:
             .. code-block:: python
 
-                from pyrogram.types import ChatPermissions
+                from wzgram.types import ChatPermissions
 
                 # Completely restrict chat
                 await app.set_chat_permissions(chat_id, ChatPermissions())

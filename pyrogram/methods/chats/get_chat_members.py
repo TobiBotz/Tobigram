@@ -96,7 +96,7 @@ class GetChatMembers:
         Example:
             .. code-block:: python
 
-                from pyrogram import enums
+                from wzgram import enums
 
                 # Get members
                 async for member in app.get_chat_members(chat_id):

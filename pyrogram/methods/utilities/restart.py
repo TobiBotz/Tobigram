@@ -48,7 +48,7 @@ class Restart:
         Example:
             .. code-block:: python
 
-                from pyrogram import Client
+                from wzgram import Client
 
                 app = Client("my_account")
 

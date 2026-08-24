@@ -7,7 +7,7 @@ import stays ``pyrogram``, and existing code runs unchanged.
 
 .. code-block:: python
 
-    from pyrogram import Client, filters
+    from wzgram import Client, filters
 
     app = Client("my_account")
 

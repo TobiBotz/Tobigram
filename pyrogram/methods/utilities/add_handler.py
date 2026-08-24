@@ -50,8 +50,8 @@ class AddHandler:
         Example:
             .. code-block:: python
 
-                from pyrogram import Client
-                from pyrogram.handlers import MessageHandler
+                from wzgram import Client
+                from wzgram.handlers import MessageHandler
 
                 async def hello(client, message):
                     print(message)

@@ -58,7 +58,7 @@ class SendChatAction:
         Example:
             .. code-block:: python
 
-                from pyrogram import enums
+                from wzgram import enums
 
                 # Send "typing" chat action
                 await app.send_chat_action(chat_id, enums.ChatAction.TYPING)

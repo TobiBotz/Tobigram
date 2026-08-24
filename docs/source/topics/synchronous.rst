@@ -27,7 +27,7 @@ shuts the loop down:
 
     import asyncio
 
-    from pyrogram import Client
+    from wzgram import Client
 
 
     async def main():
@@ -45,7 +45,7 @@ online until you stop it:
 
 .. code-block:: python
 
-    from pyrogram import Client, filters
+    from wzgram import Client, filters
 
     app = Client("my_account")
 
@@ -83,7 +83,7 @@ worker in a thread pool — run the client in its own loop and hand work to it:
     import asyncio
     import threading
 
-    from pyrogram import Client
+    from wzgram import Client
 
     loop = asyncio.new_event_loop()
     threading.Thread(target=loop.run_forever, daemon=True).start()

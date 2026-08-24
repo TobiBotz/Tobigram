@@ -7,7 +7,7 @@ This example uses ``filters`` to make it only work for specific messages in a sp
 
 .. code-block:: python
 
-    from pyrogram import Client, filters
+    from wzgram import Client, filters
 
     # Target chat. Can also be a list of multiple chat ids/usernames
     TARGET = -100123456789

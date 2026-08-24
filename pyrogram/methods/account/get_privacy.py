@@ -39,7 +39,7 @@ class GetPrivacy:
         Example:
             .. code-block:: python
 
-                from pyrogram import enums
+                from wzgram import enums
 
                 await app.get_privacy(enums.PrivacyKey.PHONE_NUMBER)
         """

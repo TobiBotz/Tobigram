@@ -42,7 +42,7 @@ class ImportContacts:
         Example:
             .. code-block:: python
 
-                from pyrogram.types import InputPhoneContact
+                from wzgram.types import InputPhoneContact
 
                 await app.import_contacts([
                     InputPhoneContact("+1-123-456-7890", "Foo"),

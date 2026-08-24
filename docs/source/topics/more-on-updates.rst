@@ -124,7 +124,7 @@ Example with ``raise StopPropagation``:
 
 .. code-block:: python
 
-    from pyrogram import StopPropagation
+    from wzgram import StopPropagation
 
     @app.on_message(filters.private)
     async def _(client, message):
@@ -193,7 +193,7 @@ Example with ``raise ContinuePropagation``:
 
 .. code-block:: python
 
-    from pyrogram import ContinuePropagation
+    from wzgram import ContinuePropagation
 
     @app.on_message(filters.private)
     async def _(client, message):
@@ -230,7 +230,7 @@ register an error handler:
 
 .. code-block:: python
 
-    from pyrogram.errors import FloodWait
+    from wzgram.errors import FloodWait
 
 
     @app.on_error(exceptions=FloodWait)

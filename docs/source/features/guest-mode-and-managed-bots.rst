@@ -27,7 +27,7 @@ addressed to:
 
 .. code-block:: python
 
-    from pyrogram.types import InlineQueryResultArticle, InputTextMessageContent
+    from wzgram.types import InlineQueryResultArticle, InputTextMessageContent
 
     @app.on_guest_message()
     async def guest(client, message):

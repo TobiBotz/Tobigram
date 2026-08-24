@@ -88,7 +88,7 @@ class AnswerInlineQuery:
         Example:
             .. code-block:: python
 
-                from pyrogram.types import InlineQueryResultArticle, InputTextMessageContent
+                from wzgram.types import InlineQueryResultArticle, InputTextMessageContent
 
                 await app.answer_inline_query(
                     inline_query_id,

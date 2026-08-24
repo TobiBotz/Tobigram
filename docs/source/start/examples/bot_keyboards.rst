@@ -13,8 +13,8 @@ like :meth:`~pyrogram.Client.send_audio`, :meth:`~pyrogram.Client.send_document`
 
 .. code-block:: python
 
-    from pyrogram import Client
-    from pyrogram.types import (ReplyKeyboardMarkup, InlineKeyboardMarkup,
+    from wzgram import Client
+    from wzgram.types import (ReplyKeyboardMarkup, InlineKeyboardMarkup,
                                 InlineKeyboardButton)
 
     # Create a client using your bot token

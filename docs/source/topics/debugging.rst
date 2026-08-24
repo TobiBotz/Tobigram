@@ -99,7 +99,7 @@ And to check if an object is an instance of a given class, you use the built-in 
 .. code-block:: python
     :name: this-py
 
-    from pyrogram.enums import UserStatus
+    from wzgram.enums import UserStatus
 
     status = me.status
     print(isinstance(status, UserStatus))

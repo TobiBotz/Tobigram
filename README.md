@@ -14,10 +14,10 @@
 
 </div>
 
-wzgram is a **drop-in replacement** for Pyrogram — your existing `from pyrogram import ...` code works without changes, with access to the latest Telegram features including **Gifts, Stories, Topics, Business Accounts**, and more. `from wzgram import ...` works too, and resolves to the same module rather than a second copy of it.
+wzgram is a **drop-in replacement** for Pyrogram, with access to the latest Telegram features including **Gifts, Stories, Topics, Business Accounts**, and more. Import `wzgram`; `from pyrogram import ...` still resolves to the same module rather than a second copy of it, so an existing Pyrogram codebase runs unchanged.
 
 ```python
-from pyrogram import Client, filters
+from wzgram import Client, filters
 
 app = Client("my_account")
 
@@ -34,7 +34,7 @@ app.run()
 
 ### Key Features
 
-- **Drop-in Replacement** — Use `from pyrogram import ...` or `from wzgram import ...`; existing codebases migrate with zero import changes.
+- **Drop-in Replacement** — New code says `from wzgram import ...`; existing `from pyrogram import ...` codebases migrate with zero changes, since both names are one module.
 - **Up-to-Date** — Supports Gifts, Stories, Topics, Business Accounts, Giveaways, and the latest Telegram layer.
 - **Async Natively** — Fully `async`/`await` throughout. Also usable synchronously via `app.run()` for convenience.
 - **Type-hinted** — Every type and method is annotated for excellent editor support.
@@ -44,8 +44,8 @@ app.run()
 ### Example with Inline Keyboard
 
 ```python
-from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from wzgram import Client, filters
+from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 app = Client("my_bot")
 

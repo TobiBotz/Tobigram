@@ -54,7 +54,7 @@ How do I start a Client?
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     async with Client("my_account") as app:
         await app.send_message("me", "Hello!")
@@ -72,7 +72,7 @@ No. wzgram is async-only — there is no wrapper that lets you call methods with
 
     import asyncio
 
-    from pyrogram import Client
+    from wzgram import Client
 
 
     async def main():
@@ -193,8 +193,8 @@ front of either so reads never pay network latency:
 
 .. code-block:: python
 
-    from pyrogram import Client
-    from pyrogram.storage import HybridStorage, MongoStorage
+    from wzgram import Client
+    from wzgram.storage import HybridStorage, MongoStorage
 
     app = Client(
         "my_account",

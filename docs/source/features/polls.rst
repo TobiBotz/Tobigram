@@ -15,7 +15,7 @@ Sending a poll
 
 .. code-block:: python
 
-    from pyrogram import enums
+    from wzgram import enums
 
     await app.send_poll(
         chat_id="me",

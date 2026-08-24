@@ -56,7 +56,7 @@ class SetBotCommands:
         Example:
             .. code-block:: python
 
-                from pyrogram.types import BotCommand
+                from wzgram.types import BotCommand
 
                 # Set new commands
                 await app.set_bot_commands([

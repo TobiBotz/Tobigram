@@ -58,7 +58,7 @@ class SetPrivacy:
         Example:
             .. code-block:: python
 
-                from pyrogram import enums, types
+                from wzgram import enums, types
 
                 # Prevent everyone from seeing your phone number
                 await app.set_privacy(enums.PrivacyKey.PHONE_NUMBER, [types.InputPrivacyRuleDisallowAll()])

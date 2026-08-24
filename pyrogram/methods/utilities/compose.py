@@ -51,7 +51,7 @@ async def compose(
         .. code-block:: python
 
             import asyncio
-            from pyrogram import Client, compose
+            from wzgram import Client, compose
 
 
             async def main():

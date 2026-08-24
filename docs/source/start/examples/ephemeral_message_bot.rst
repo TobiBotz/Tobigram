@@ -10,8 +10,8 @@ message id to fetch later, nothing for anyone else to read.
 
 .. code-block:: python
 
-    from pyrogram import Client, filters
-    from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    from wzgram import Client, filters
+    from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
     app = Client("my_bot")
 

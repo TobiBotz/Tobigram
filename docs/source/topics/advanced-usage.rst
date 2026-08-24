@@ -45,8 +45,8 @@ Here's some examples:
 
     .. code-block:: python
 
-        from pyrogram import Client
-        from pyrogram.raw import functions
+        from wzgram import Client
+        from wzgram.raw import functions
 
         async with Client("my_account") as app:
             await app.invoke(
@@ -60,8 +60,8 @@ Here's some examples:
 
     .. code-block:: python
 
-        from pyrogram import Client
-        from pyrogram.raw import functions, types
+        from wzgram import Client
+        from wzgram.raw import functions, types
 
         async with Client("my_account") as app:
             # Set online status
@@ -74,8 +74,8 @@ Here's some examples:
 
     .. code-block:: python
 
-        from pyrogram import Client
-        from pyrogram.raw import functions, types
+        from wzgram import Client
+        from wzgram.raw import functions, types
 
         async with Client("my_account") as app:
             r = await app.invoke(

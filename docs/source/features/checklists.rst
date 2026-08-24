@@ -18,7 +18,7 @@ A checklist is sent with :meth:`~pyrogram.Client.send_checklist` and built from
 
 .. code-block:: python
 
-    from pyrogram.types import InputChecklist, InputChecklistTask
+    from wzgram.types import InputChecklist, InputChecklistTask
 
     await app.send_checklist(
         chat_id="me",

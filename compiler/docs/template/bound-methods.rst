@@ -7,7 +7,7 @@ some of the required arguments.
 
 .. code-block:: python
 
-    from pyrogram import Client
+    from wzgram import Client
 
     app = Client("my_account")
 

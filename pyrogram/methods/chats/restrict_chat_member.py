@@ -62,7 +62,7 @@ class RestrictChatMember:
             .. code-block:: python
 
                 from datetime import datetime, timedelta
-                from pyrogram.types import ChatPermissions
+                from wzgram.types import ChatPermissions
 
                 # Completely restrict chat member (mute) forever
                 await app.restrict_chat_member(chat_id, user_id, ChatPermissions())

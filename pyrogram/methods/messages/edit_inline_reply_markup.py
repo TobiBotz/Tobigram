@@ -48,7 +48,7 @@ class EditInlineReplyMarkup:
         Example:
             .. code-block:: python
 
-                from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+                from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
                 # Bots only
                 await app.edit_inline_reply_markup(
