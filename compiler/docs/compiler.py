@@ -768,6 +768,7 @@ def pyrogram_api():
             ContactRegistered
             DirectMessagePriceChanged
             DirectMessagesTopic
+            EphemeralMessageParameters
             ExternalReplyInfo
             FactCheck
             FormattedText

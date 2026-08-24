@@ -84,6 +84,7 @@ from .mask_position import MaskPosition
 from .media_area import MediaArea
 from .message import Message, Str
 from .message_content import MessageContent
+from .ephemeral_message_parameters import EphemeralMessageParameters
 from .message_entity import MessageEntity
 from .message_generation_stopped import MessageGenerationStopped
 from .message_origin import MessageOrigin
@@ -297,6 +298,7 @@ __all__ = [
     "Message",
     "Str",
     "MessageContent",
+    "EphemeralMessageParameters",
     "MessageEntity",
     "MessageGenerationStopped",
     "MessageOrigin",

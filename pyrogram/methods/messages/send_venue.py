@@ -23,6 +23,8 @@ import pyrogram
 from pyrogram import raw, utils
 from pyrogram import types
 
+from ..ephemeral.as_ephemeral import as_ephemeral
+
 
 class SendVenue:
     async def send_venue(
@@ -61,24 +63,9 @@ class SendVenue:
             "types.ReplyKeyboardMarkup",
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
-        ]] = None
+        ]] = None,
+        ephemeral_message_parameters: Optional["types.EphemeralMessageParameters"] = None,
     ) -> "types.Message":
-        if reply_parameters is None:
-            if reply_to_message_id is not None:
-                reply_parameters = types.ReplyParameters(
-                    message_id=reply_to_message_id,
-                    chat_id=reply_to_chat_id,
-                    quote=quote_text,
-                    quote_entities=quote_entities,
-                )
-            elif quote_text is not None:
-                reply_parameters = types.ReplyParameters(
-                    message_id=None,
-                    chat_id=reply_to_chat_id,
-                    quote=quote_text,
-                    quote_entities=quote_entities,
-                )
-
         """Send information about a venue.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -125,6 +112,15 @@ class SendVenue:
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
+            ephemeral_message_parameters (:obj:`~pyrogram.types.EphemeralMessageParameters`, *optional*):
+                Send the message as an ephemeral message, visible only to the user it
+                names and absent from the chat's history, rather than as an ordinary one.
+                The ephemeral RPC has no field for *silent*, *background*, *clear_draft*,
+                *schedule_date*, *repeat_period*, *send_as*, *effect_id*,
+                *quick_reply_shortcut*, *allow_paid_broadcast*,
+                *paid_message_star_count*, *suggested_post_parameters* or
+                *update_stickersets_order*; any of those that is set is logged and
+                dropped.
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent venue message is returned.
 
@@ -135,8 +131,24 @@ class SendVenue:
                     "me", latitude, longitude,
                     "Venue title", "Venue address")
         """
+
+        if reply_parameters is None:
+            if reply_to_message_id is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=reply_to_message_id,
+                    chat_id=reply_to_chat_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+            elif quote_text is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=None,
+                    chat_id=reply_to_chat_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
         r = await self.invoke(
-            raw.functions.messages.SendMedia(
+            await as_ephemeral(self, ephemeral_message_parameters, raw.functions.messages.SendMedia(
                 peer=await self.resolve_peer(chat_id),
                 media=raw.types.InputMediaVenue(
                     geo_point=raw.types.InputGeoPoint(
@@ -173,7 +185,7 @@ class SendVenue:
                 quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 entities=None
-            ),
+            )),
             sleep_threshold=60,
             business_connection_id=business_connection_id
         )
@@ -181,7 +193,8 @@ class SendVenue:
         for i in r.updates:
             if isinstance(i, (raw.types.UpdateNewMessage,
                               raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+                              raw.types.UpdateNewScheduledMessage,
+                              raw.types.UpdateNewEphemeralMessage)):
                 return await types.Message._parse(
                     self, i.message,
                     {i.id: i for i in r.users},

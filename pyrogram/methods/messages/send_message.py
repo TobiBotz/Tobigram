@@ -5,6 +5,8 @@ import pyrogram
 from pyrogram import raw, utils, enums
 from pyrogram import types
 
+from ..ephemeral.as_ephemeral import as_ephemeral
+
 
 class SendMessage:
     async def send_message(
@@ -46,6 +48,7 @@ class SendMessage:
         update_stickersets_order: Optional[bool] = None,
         send_as: Optional[Union[int, str]] = None,
         quick_reply_shortcut: Optional[int] = None,
+        ephemeral_message_parameters: Optional["types.EphemeralMessageParameters"] = None,
     ) -> "types.Message":
         """Send text messages.
 
@@ -155,6 +158,15 @@ class SendMessage:
             quick_reply_shortcut (``int``, *optional*):
                 Shortcut ID for quick reply.
 
+            ephemeral_message_parameters (:obj:`~pyrogram.types.EphemeralMessageParameters`, *optional*):
+                Send the message as an ephemeral message, visible only to the user it
+                names and absent from the chat's history, rather than as an ordinary one.
+                The ephemeral RPC has no field for *silent*, *background*, *clear_draft*,
+                *schedule_date*, *repeat_period*, *send_as*, *effect_id*,
+                *quick_reply_shortcut*, *allow_paid_broadcast*,
+                *paid_message_star_count*, *suggested_post_parameters* or
+                *update_stickersets_order*; any of those that is set is logged and
+                dropped.
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent message is returned.
 
@@ -202,7 +214,7 @@ class SendMessage:
                         files=files,
                     )
             r = await self.invoke(
-                raw.functions.messages.SendMessage(
+                await as_ephemeral(self, ephemeral_message_parameters, raw.functions.messages.SendMessage(
                     peer=await self.resolve_peer(chat_id),
                     silent=disable_notification if disable_notification is not None else None,
                     no_webpage=disable_web_page_preview if disable_web_page_preview is not None else None,
@@ -229,7 +241,7 @@ class SendMessage:
                     update_stickersets_order=update_stickersets_order,
                     send_as=await self.resolve_peer(send_as) if send_as is not None else None,
                     quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
-                ),
+                )),
                 sleep_threshold=60,
                 business_connection_id=business_connection_id
             )
@@ -257,7 +269,7 @@ class SendMessage:
 
             plain_text, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
             r = await self.invoke(
-                raw.functions.messages.SendMessage(
+                await as_ephemeral(self, ephemeral_message_parameters, raw.functions.messages.SendMessage(
                     peer=await self.resolve_peer(chat_id),
                     no_webpage=no_webpage,
                     silent=disable_notification if disable_notification is not None else None,
@@ -284,7 +296,7 @@ class SendMessage:
                     update_stickersets_order=update_stickersets_order,
                     send_as=await self.resolve_peer(send_as) if send_as is not None else None,
                     quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
-                ),
+                )),
                 sleep_threshold=60,
                 business_connection_id=business_connection_id
             )
@@ -319,7 +331,8 @@ class SendMessage:
         for i in r.updates:
             if isinstance(i, (raw.types.UpdateNewMessage,
                               raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+                              raw.types.UpdateNewScheduledMessage,
+                              raw.types.UpdateNewEphemeralMessage)):
                 return await types.Message._parse(
                     self, i.message,
                     {i.id: i for i in r.users},

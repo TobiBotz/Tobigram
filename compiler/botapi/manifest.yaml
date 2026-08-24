@@ -65,6 +65,7 @@ types:
     - DirectMessagesTopic
     - DisabledButton
     - Document
+    - EphemeralMessageParameters
     - ExternalReplyInfo
     - ForceReply
     - ForumTopic
@@ -355,17 +356,30 @@ methods:
     - replaceManagedBotToken
     - restrictChatMember
     - revokeChatInviteLink
+    - sendAnimation
+    - sendAudio
     - sendChatAction
     - sendChatJoinRequestWebApp
     - sendChecklist
+    - sendContact
     - sendDice
+    - sendDocument
     - sendGame
     - sendGift
     - sendInvoice
+    - sendLocation
     - sendMediaGroup
+    - sendMessage
     - sendPaidMedia
+    - sendPhoto
     - sendPoll
+    - sendRichMessage
     - sendRichMessageDraft
+    - sendSticker
+    - sendVenue
+    - sendVideo
+    - sendVideoNote
+    - sendVoice
     - setChatDescription
     - setChatMenuButton
     - setChatPermissions
@@ -381,29 +395,4 @@ methods:
     - unpinChatMessage
     - upgradeGift
   pending:
-    sendAnimation:
-      botapi: [ephemeral_message_parameters]
-    sendAudio:
-      botapi: [ephemeral_message_parameters]
-    sendContact:
-      botapi: [ephemeral_message_parameters]
-    sendDocument:
-      botapi: [ephemeral_message_parameters]
-    sendLocation:
-      botapi: [ephemeral_message_parameters]
-    sendMessage:
-      botapi: [ephemeral_message_parameters]
-    sendPhoto:
-      botapi: [ephemeral_message_parameters]
-    sendRichMessage:
-      botapi: [ephemeral_message_parameters]
-    sendSticker:
-      botapi: [ephemeral_message_parameters]
-    sendVenue:
-      botapi: [ephemeral_message_parameters]
-    sendVideo:
-      botapi: [ephemeral_message_parameters]
-    sendVideoNote:
-      botapi: [ephemeral_message_parameters]
-    sendVoice:
-      botapi: [ephemeral_message_parameters]
+    {}

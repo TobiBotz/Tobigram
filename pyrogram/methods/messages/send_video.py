@@ -27,6 +27,8 @@ from pyrogram import StopTransmission, enums
 from pyrogram import raw
 from pyrogram import types
 from pyrogram import utils
+
+from ..ephemeral.as_ephemeral import as_ephemeral
 from pyrogram.errors import FilePartMissing
 from pyrogram.file_id import FileType
 
@@ -80,6 +82,7 @@ class SendVideo:
         quick_reply_shortcut: Optional[int] = None,
         progress: Optional[Callable] = None,
         progress_args: tuple = (),
+        ephemeral_message_parameters: Optional["types.EphemeralMessageParameters"] = None,
         **kwargs
     ) -> Optional["types.Message"]:
         """Send video files.
@@ -188,6 +191,15 @@ class SendVideo:
                 Extra custom arguments as defined in the ``progress_args`` parameter.
                 You can either keep ``*args`` or add every single extra argument in your function signature.
 
+            ephemeral_message_parameters (:obj:`~pyrogram.types.EphemeralMessageParameters`, *optional*):
+                Send the message as an ephemeral message, visible only to the user it
+                names and absent from the chat's history, rather than as an ordinary one.
+                The ephemeral RPC has no field for *silent*, *background*, *clear_draft*,
+                *schedule_date*, *repeat_period*, *send_as*, *effect_id*,
+                *quick_reply_shortcut*, *allow_paid_broadcast*,
+                *paid_message_star_count*, *suggested_post_parameters* or
+                *update_stickersets_order*; any of those that is set is logged and
+                dropped.
         Returns:
             :obj:`~pyrogram.types.Message` | ``None``: On success, the sent video message is returned, otherwise, in
             case the upload is deliberately stopped with :meth:`~pyrogram.Client.stop_transmission`, None is returned.
@@ -345,7 +357,7 @@ class SendVideo:
                     text_params = await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
 
                     r = await self.invoke(
-                        raw.functions.messages.SendMedia(
+                        await as_ephemeral(self, ephemeral_message_parameters, raw.functions.messages.SendMedia(
                             peer=await self.resolve_peer(chat_id),
                             media=media,
                             silent=disable_notification if disable_notification is not None else None,
@@ -371,7 +383,7 @@ class SendVideo:
                             quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                             reply_markup=await reply_markup.write(self) if reply_markup else None,
                             **text_params
-                        ),
+                        )),
                         sleep_threshold=60,
                         business_connection_id=business_connection_id
                     )
@@ -381,7 +393,8 @@ class SendVideo:
                     for i in r.updates:
                         if isinstance(i, (raw.types.UpdateNewMessage,
                                           raw.types.UpdateNewChannelMessage,
-                                          raw.types.UpdateNewScheduledMessage)):
+                                          raw.types.UpdateNewScheduledMessage,
+                                          raw.types.UpdateNewEphemeralMessage)):
                             return await types.Message._parse(
                                 self, i.message,
                                 {i.id: i for i in r.users},

@@ -129,6 +129,51 @@ of the chat, which is what an inline correction or a per-message hint wants.
         anchor=True,
     )
 
+From any send method
+--------------------
+
+*Bot API 10.3 — August 2026*
+
+Bot API 10.3 sends an ephemeral message by adding ``ephemeral_message_parameters`` to an
+ordinary send method rather than by calling a separate one, so every send method takes it —
+:meth:`~pyrogram.Client.send_message` and the twelve that send media:
+
+.. code-block:: python
+
+    from wzgram.types import EphemeralMessageParameters
+
+    await app.send_photo(
+        chat_id, "chart.png", caption="Only you can see this",
+        ephemeral_message_parameters=EphemeralMessageParameters(
+            receiver_user_id=user_id
+        ),
+    )
+
+Answering a callback query with one is what the other two fields are for:
+
+.. code-block:: python
+
+    @app.on_callback_query()
+    async def pressed(client, query):
+        await client.send_message(
+            query.message.chat.id, "Only you can see this",
+            ephemeral_message_parameters=EphemeralMessageParameters(
+                receiver_user_id=query.from_user.id,
+                callback_query_id=query.id,
+                replace_callback_query_message=True,
+            ),
+        )
+
+``replace_callback_query_message`` anchors the ephemeral message to the message the button
+was on, which is how a client shows one in place of another. It must be False for a callback
+query that came from an ephemeral message — edit those with
+:meth:`~pyrogram.Client.edit_ephemeral_message_text` instead.
+
+The RPC behind ephemeral messages is not ``messages.sendMedia`` and has fewer fields, so
+``disable_notification``, ``schedule_date``, ``send_as``, ``effect_id`` and the rest of that
+family have nowhere to go. They are **logged and dropped** rather than silently ignored —
+watch for ``ephemeral.sendMessage has no field for …`` in your log.
+
 Editing one
 -----------
 

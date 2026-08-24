@@ -399,6 +399,192 @@ class TestGiftsAndCommunities:
         assert enums.MessageServiceType.COMMUNITY_CHAT_JOINED
 
 
+SEND_METHODS = (
+    "send_message",
+    "send_photo",
+    "send_audio",
+    "send_document",
+    "send_video",
+    "send_animation",
+    "send_voice",
+    "send_video_note",
+    "send_location",
+    "send_venue",
+    "send_contact",
+    "send_sticker",
+    "send_rich_message",
+)
+
+
+class TestEphemeralMessageParameters:
+    """Bot API 10.3 sends an ephemeral message from an ordinary send method.
+
+    MTProto has a separate RPC, so every send method has to route to it. A method
+    that accepts the parameter and still calls messages.sendMedia sends the message
+    to the whole chat — the opposite of what was asked for, and no error.
+    """
+
+    @staticmethod
+    def _client():
+        client = AsyncMock()
+        client.rnd_id = Mock(return_value=1)
+        client.link_preview_options = None
+        client.parser.parse = AsyncMock(
+            return_value={"message": "hi", "entities": None}
+        )
+        client.resolve_peer = AsyncMock(
+            return_value=raw.types.InputPeerUser(user_id=7, access_hash=0)
+        )
+        client.invoke.return_value = Mock(updates=[], users=[], chats=[])
+
+        return client
+
+    @pytest.mark.parametrize("method", SEND_METHODS)
+    def test_every_send_method_accepts_it(self, method):
+        parameters = inspect.signature(
+            getattr(pyrogram.Client, method)
+        ).parameters
+
+        assert "ephemeral_message_parameters" in parameters
+
+    @pytest.mark.parametrize("method", SEND_METHODS)
+    def test_every_send_method_documents_it(self, method):
+        doc = getattr(pyrogram.Client, method).__doc__ or ""
+
+        assert "ephemeral_message_parameters (" in doc
+
+    @pytest.mark.parametrize("method", SEND_METHODS)
+    def test_every_request_is_routed(self, method):
+        """A request built and then sent unrouted goes to the whole chat."""
+
+        source = inspect.getsource(getattr(pyrogram.Client, method))
+        builds = source.count("raw.functions.messages.Send")
+        routed = source.count("as_ephemeral(self, ephemeral_message_parameters,")
+
+        assert builds and builds == routed, (
+            f"{method} builds {builds} send request(s) and routes {routed}"
+        )
+
+    @pytest.mark.parametrize("method", SEND_METHODS)
+    def test_every_method_reads_the_ephemeral_update(self, method):
+        """The answer carries UpdateNewEphemeralMessage, so the parse must accept it."""
+
+        source = inspect.getsource(getattr(pyrogram.Client, method))
+
+        assert "raw.types.UpdateNewEphemeralMessage" in source
+
+    async def test_it_routes_to_the_ephemeral_rpc(self):
+        client = self._client()
+
+        await pyrogram.Client.send_message(
+            client, 1, "hi",
+            ephemeral_message_parameters=types.EphemeralMessageParameters(
+                receiver_user_id=7,
+                callback_query_id="42",
+                replace_callback_query_message=True,
+            ),
+        )
+
+        request = client.invoke.await_args.args[0]
+
+        assert type(request).__module__.endswith("ephemeral.send_message")
+        assert request.query_id == 42
+        assert request.anchor is True
+        assert request.message == "hi"
+
+    async def test_without_it_nothing_changes(self):
+        client = self._client()
+
+        await pyrogram.Client.send_message(client, 1, "hi")
+
+        request = client.invoke.await_args.args[0]
+
+        assert type(request).__module__.endswith("messages.send_message")
+
+    async def test_a_field_the_rpc_has_no_place_for_is_logged(self, caplog):
+        """Accepted and silently dropped is the failure this repo keeps fixing."""
+
+        client = self._client()
+
+        with caplog.at_level("WARNING"):
+            await pyrogram.Client.send_message(
+                client, 1, "hi", disable_notification=True,
+                ephemeral_message_parameters=types.EphemeralMessageParameters(
+                    receiver_user_id=7
+                ),
+            )
+
+        assert "silent" in caplog.text
+
+    async def test_a_supported_field_is_not_reported_dropped(self, caplog):
+        client = self._client()
+
+        with caplog.at_level("WARNING"):
+            await pyrogram.Client.send_message(
+                client, 1, "hi",
+                ephemeral_message_parameters=types.EphemeralMessageParameters(
+                    receiver_user_id=7
+                ),
+            )
+
+        assert not caplog.text
+
+    async def test_the_media_survives_the_translation(self):
+        from pyrogram.methods.ephemeral.as_ephemeral import as_ephemeral
+
+        media = raw.types.InputMediaGeoPoint(
+            geo_point=raw.types.InputGeoPoint(lat=1.0, long=2.0)
+        )
+        request = raw.functions.messages.SendMedia(
+            peer=raw.types.InputPeerChat(chat_id=1),
+            media=media,
+            message="cap",
+            random_id=5,
+            reply_markup=None,
+            reply_to=None,
+            invert_media=True,
+            noforwards=True,
+        )
+        client = AsyncMock()
+        client.resolve_peer = AsyncMock(
+            return_value=raw.types.InputPeerUser(user_id=7, access_hash=0)
+        )
+
+        translated = await as_ephemeral(
+            client, types.EphemeralMessageParameters(receiver_user_id=7), request
+        )
+
+        assert translated.media is media
+        assert translated.message == "cap"
+        assert translated.random_id == 5
+        assert translated.invert_media is True
+        assert translated.noforwards is True
+
+    async def test_no_parameters_hands_the_request_straight_back(self):
+        from pyrogram.methods.ephemeral.as_ephemeral import as_ephemeral
+
+        request = object()
+
+        assert await as_ephemeral(Mock(), None, request) is request
+
+
+class TestMisplacedDocstrings:
+    """A docstring that is not the first statement is not a docstring.
+
+    send_location and send_venue put the legacy reply_parameters block above theirs,
+    so help(), Sphinx and the coverage gate's docstring axis all saw nothing — and the
+    axis passes silently when there is no docstring to check.
+    """
+
+    @pytest.mark.parametrize("method", SEND_METHODS)
+    def test_every_send_method_has_a_real_docstring(self, method):
+        doc = getattr(pyrogram.Client, method).__doc__
+
+        assert doc, f"{method} has a docstring the interpreter cannot see"
+        assert "Parameters:" in doc
+        assert "Returns:" in doc
+
+
 class TestEditEphemeralMessage:
     """ephemeral.editMessage is new in layer 229.
 

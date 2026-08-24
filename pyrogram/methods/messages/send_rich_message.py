@@ -5,6 +5,8 @@ import pyrogram
 from pyrogram import raw, utils, enums
 from pyrogram import types
 
+from ..ephemeral.as_ephemeral import as_ephemeral
+
 
 class SendRichMessage:
     async def send_rich_message(
@@ -38,6 +40,7 @@ class SendRichMessage:
         suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
         show_caption_above_media: Optional[bool] = None,
         business_connection_id: Optional[str] = None,
+        ephemeral_message_parameters: Optional["types.EphemeralMessageParameters"] = None,
     ) -> "types.Message":
         """Send a rich formatted message.
 
@@ -122,6 +125,15 @@ class SendRichMessage:
             show_caption_above_media (``bool``, *optional*):
                 Pass True, if the caption must be shown above the message media.
 
+            ephemeral_message_parameters (:obj:`~pyrogram.types.EphemeralMessageParameters`, *optional*):
+                Send the message as an ephemeral message, visible only to the user it
+                names and absent from the chat's history, rather than as an ordinary one.
+                The ephemeral RPC has no field for *silent*, *background*, *clear_draft*,
+                *schedule_date*, *repeat_period*, *send_as*, *effect_id*,
+                *quick_reply_shortcut*, *allow_paid_broadcast*,
+                *paid_message_star_count*, *suggested_post_parameters* or
+                *update_stickersets_order*; any of those that is set is logged and
+                dropped.
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent rich message is returned.
 
@@ -151,7 +163,7 @@ class SendRichMessage:
                 )
 
         r = await self.invoke(
-            raw.functions.messages.SendMessage(
+            await as_ephemeral(self, ephemeral_message_parameters, raw.functions.messages.SendMessage(
                 peer=await self.resolve_peer(chat_id),
                 message="",
                 random_id=self.rnd_id(),
@@ -178,7 +190,7 @@ class SendRichMessage:
                 allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
                 suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                 invert_media=show_caption_above_media,
-            ),
+            )),
             sleep_threshold=60,
             business_connection_id=business_connection_id,
         )
@@ -186,7 +198,8 @@ class SendRichMessage:
         for i in r.updates:
             if isinstance(i, (raw.types.UpdateNewMessage,
                               raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+                              raw.types.UpdateNewScheduledMessage,
+                              raw.types.UpdateNewEphemeralMessage)):
                 return await types.Message._parse(
                     self, i.message,
                     {i.id: i for i in r.users},
