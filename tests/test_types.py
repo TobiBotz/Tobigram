@@ -858,9 +858,9 @@ class TestKeyboardButtonRequests:
 
         raw_button = button.write()
 
-        assert isinstance(raw_button.peer_type, raw.types.RequestPeerTypeUser)
-        assert raw_button.button_id == 7
-        assert raw_button.max_quantity == 3
+        assert isinstance(raw_button.type.peer_type, raw.types.RequestPeerTypeUser)
+        assert raw_button.type.button_id == 7
+        assert raw_button.type.max_quantity == 3
 
         parsed = types.KeyboardButton.read(raw_button)
 
@@ -884,7 +884,7 @@ class TestKeyboardButtonRequests:
 
         raw_button = button.write()
 
-        assert isinstance(raw_button.peer_type, raw.types.RequestPeerTypeBroadcast)
+        assert isinstance(raw_button.type.peer_type, raw.types.RequestPeerTypeBroadcast)
 
         parsed = types.KeyboardButton.read(raw_button)
 
@@ -904,7 +904,7 @@ class TestKeyboardButtonRequests:
 
         raw_button = button.write()
 
-        assert isinstance(raw_button.peer_type, raw.types.RequestPeerTypeChat)
+        assert isinstance(raw_button.type.peer_type, raw.types.RequestPeerTypeChat)
         assert types.KeyboardButton.read(raw_button).request_chat.bot_is_member is True
 
     def test_request_poll_round_trips(self):
@@ -915,7 +915,7 @@ class TestKeyboardButtonRequests:
 
         raw_button = button.write()
 
-        assert isinstance(raw_button, raw.types.KeyboardButtonRequestPoll)
+        assert isinstance(raw_button.type, raw.types.ButtonTypeRequestPoll)
         assert types.KeyboardButton.read(raw_button).request_poll.is_quiz is True
 
     def test_request_managed_bot_round_trips(self):
@@ -930,7 +930,7 @@ class TestKeyboardButtonRequests:
 
         raw_button = button.write()
 
-        assert isinstance(raw_button.peer_type, raw.types.RequestPeerTypeCreateBot)
+        assert isinstance(raw_button.type.peer_type, raw.types.RequestPeerTypeCreateBot)
 
         parsed = types.KeyboardButton.read(raw_button)
 
@@ -953,7 +953,11 @@ class TestKeyboardButtonRequests:
         assert parsed.icon_custom_emoji_id == "5555"
 
     def test_a_plain_button_still_reads_back_as_text(self):
-        assert types.KeyboardButton.read(raw.types.KeyboardButton(text="hi")) == "hi", (
+        plain = raw.types.KeyboardButton(
+            text="hi", type=raw.types.ButtonTypeDefault()
+        )
+
+        assert types.KeyboardButton.read(plain) == "hi", (
             "ReplyKeyboardMarkup relies on plain buttons collapsing to a string"
         )
 
@@ -961,8 +965,8 @@ class TestKeyboardButtonRequests:
         contact = types.KeyboardButton(text="c", request_contact=True)
         location = types.KeyboardButton(text="l", request_location=True)
 
-        assert isinstance(contact.write(), raw.types.KeyboardButtonRequestPhone)
-        assert isinstance(location.write(), raw.types.KeyboardButtonRequestGeoLocation)
+        assert isinstance(contact.write().type, raw.types.ButtonTypeRequestPhone)
+        assert isinstance(location.write().type, raw.types.ButtonTypeRequestGeoLocation)
         assert types.KeyboardButton.read(contact.write()).request_contact is True
         assert types.KeyboardButton.read(location.write()).request_location is True
 
@@ -1111,14 +1115,14 @@ class TestInlineKeyboardButtonAdditions:
             text="Copy", copy_text=types.CopyTextButton(text="hello")
         )
 
-        assert isinstance(written, raw.types.KeyboardButtonCopy)
-        assert written.copy_text == "hello"
+        assert isinstance(written.type, raw.types.InlineButtonTypeCopy)
+        assert written.type.copy_text == "hello"
         assert types.InlineKeyboardButton.read(written).copy_text.text == "hello"
 
     async def test_pay_round_trips(self):
         written = await self.written(text="Pay", pay=True)
 
-        assert isinstance(written, raw.types.KeyboardButtonBuy)
+        assert isinstance(written.type, raw.types.InlineButtonTypeBuy)
         assert types.InlineKeyboardButton.read(written).pay is True
 
     async def test_chosen_chat_maps_every_peer_type(self):
@@ -1133,7 +1137,7 @@ class TestInlineKeyboardButtonAdditions:
             )
         )
 
-        assert {type(p).__name__ for p in written.peer_types} == {
+        assert {type(p).__name__ for p in written.type.peer_types} == {
             "InlineQueryPeerTypePM",
             "InlineQueryPeerTypeBotPM",
             "InlineQueryPeerTypeChat",
@@ -1165,16 +1169,166 @@ class TestInlineKeyboardButtonAdditions:
     async def test_the_existing_switch_buttons_are_unchanged(self):
         plain = await self.written(text="x", switch_inline_query="q")
 
-        assert isinstance(plain, raw.types.KeyboardButtonSwitchInline)
-        assert not plain.peer_types
+        assert isinstance(plain.type, raw.types.InlineButtonTypeSwitchInline)
+        assert not plain.type.peer_types
 
-        same_peer = raw.types.KeyboardButtonSwitchInline(
-            text="x", query="q", same_peer=True
+        same_peer = raw.types.KeyboardInlineButton(
+            text="x",
+            type=raw.types.InlineButtonTypeSwitchInline(
+                query="q", same_peer=True
+            )
         )
 
         assert types.InlineKeyboardButton.read(
             same_peer
         ).switch_inline_query_current_chat == "q"
+
+
+def _raw_user(user_id, first_name):
+    return raw.types.User(
+        id=user_id, first_name=first_name, usernames=[], restriction_reason=[]
+    )
+
+
+def _ephemeral_message(*, out, peer_id=None):
+    return raw.types.EphemeralMessage(
+        id=11,
+        from_id=raw.types.PeerUser(user_id=1),
+        receiver_id=2,
+        date=0,
+        message="hi",
+        out=out,
+        peer_id=peer_id
+    )
+
+
+class TestEphemeralMessageWithoutAPeer:
+    """Layer 229 made ephemeral.peer_id optional.
+
+    An ephemeral message sent outside a chat carries no peer at all, and the
+    chat parser prefers peer_id, so it resolved the chat off a None and handed
+    back a Message whose chat was None.
+    """
+
+    users = {1: _raw_user(1, "Sender"), 2: _raw_user(2, "Receiver")}
+
+    async def test_an_outgoing_message_is_a_chat_with_the_receiver(self):
+        parsed = await types.Message._parse(
+            Mock(), _ephemeral_message(out=True), self.users, {}
+        )
+
+        assert parsed.chat is not None, "a message with no peer still has a counterpart"
+        assert parsed.chat.id == 2
+        assert parsed.receiver_user.id == 2
+
+    async def test_an_incoming_message_is_a_chat_with_the_sender(self):
+        parsed = await types.Message._parse(
+            Mock(), _ephemeral_message(out=False), self.users, {}
+        )
+
+        assert parsed.chat is not None
+        assert parsed.chat.id == 1
+
+    async def test_a_message_with_a_peer_still_uses_it(self):
+        message = _ephemeral_message(out=True, peer_id=raw.types.PeerUser(user_id=1))
+        parsed = await types.Message._parse(Mock(), message, self.users, {})
+
+        assert parsed.chat.id == 1
+
+
+class TestEphemeralCallbackQuery:
+    """updateEphemeralBotCallbackQuery is new in layer 229.
+
+    Without it a bot never sees a press on a button it attached to an ephemeral
+    message, and its chat_instance is optional, so stringifying it unguarded
+    yields the string "None".
+    """
+
+    async def test_the_dispatcher_routes_it(self):
+        from pyrogram.dispatcher import Dispatcher
+
+        assert raw.types.UpdateEphemeralBotCallbackQuery in Dispatcher.CALLBACK_QUERY_UPDATES
+
+    async def test_it_parses_with_no_chat_instance(self):
+        update = raw.types.UpdateEphemeralBotCallbackQuery(
+            query_id=5,
+            user_id=2,
+            msg_id=11,
+            data=b"payload",
+            message=_ephemeral_message(out=False)
+        )
+        users = {1: _raw_user(1, "Sender"), 2: _raw_user(2, "Receiver")}
+
+        parsed = await types.CallbackQuery._parse(Mock(), update, users, {})
+
+        assert parsed.id == "5"
+        assert parsed.data == "payload"
+        assert parsed.chat_instance is None
+        assert parsed.message.id == 11
+
+
+class TestButtonTypeUnions:
+    """Layer 229 moved every button's payload behind a type union.
+
+    A reply button now carries ButtonType and an inline one InlineButtonType, so
+    the fields the parsers used to read off the button itself moved one level
+    down and the two families no longer share a row type.
+    """
+
+    @staticmethod
+    async def written(**kwargs):
+        return await types.InlineKeyboardButton(**kwargs).write(AsyncMock())
+
+    async def test_an_inline_row_is_not_a_reply_row(self):
+        markup = await types.InlineKeyboardMarkup(
+            inline_keyboard=[[types.InlineKeyboardButton(text="x", callback_data="d")]]
+        ).write(AsyncMock())
+
+        assert isinstance(markup.rows[0], raw.types.KeyboardInlineButtonRow), (
+            "ReplyInlineMarkup takes KeyboardInlineButtonRow, and a KeyboardButtonRow "
+            "there only fails when the request is serialised"
+        )
+        assert isinstance(markup.rows[0].buttons[0], raw.types.KeyboardInlineButton)
+
+    async def test_a_button_with_no_action_is_disabled_rather_than_dropped(self):
+        written = await self.written(text="x")
+
+        assert isinstance(written.type, raw.types.InlineButtonTypeDisabled)
+        assert types.InlineKeyboardButton.read(written).text == "x"
+
+    async def test_login_url_round_trips_through_the_type_union(self):
+        written = await self.written(
+            text="Log in",
+            login_url=types.LoginUrl(url="https://example.org", forward_text="go")
+        )
+
+        assert isinstance(written.type, raw.types.InputInlineButtonTypeUrlAuth)
+        assert written.type.url == "https://example.org"
+        assert written.type.fwd_text == "go"
+
+        incoming = raw.types.KeyboardInlineButton(
+            text="Log in",
+            type=raw.types.InlineButtonTypeUrlAuth(
+                url="https://example.org", fwd_text="go", button_id=3
+            )
+        )
+        parsed = types.InlineKeyboardButton.read(incoming).login_url
+
+        assert parsed.url == "https://example.org"
+        assert parsed.forward_text == "go"
+        assert parsed.button_id == 3
+
+    def test_a_reply_button_keeps_its_text_beside_the_type(self):
+        written = types.KeyboardButton(
+            text="Pick users",
+            request_users=types.KeyboardButtonRequestUsers(button_id=4, max_quantity=2)
+        ).write()
+
+        assert written.text == "Pick users"
+        assert written.type.button_id == 4, (
+            "button_id lives on the ButtonType now, not on the KeyboardButton"
+        )
+        assert types.KeyboardButton.read(written).request_users.button_id == 4
 
 
 class TestSendGameSendOptions:

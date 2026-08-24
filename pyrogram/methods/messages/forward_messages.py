@@ -49,6 +49,7 @@ class ForwardMessages:
         business_connection_id: Optional[str] = None,
         direct_messages_topic_id: Optional[int] = None,
         with_my_score: Optional[bool] = None,
+        from_ephemeral: Optional[bool] = None,
     ) -> Union["types.Message", List["types.Message"]]:
         """Forward messages of any kind.
 
@@ -118,6 +119,10 @@ class ForwardMessages:
             with_my_score (``bool``, *optional*):
                 Include the sender's game score when forwarding a game message.
 
+            from_ephemeral (``bool``, *optional*):
+                Pass True when the messages being forwarded are ephemeral messages
+                rather than messages of the source chat.
+
         Returns:
             :obj:`~pyrogram.types.Message` | List of :obj:`~pyrogram.types.Message`: In case *message_ids* was not
             a list, a single message is returned, otherwise a list of messages is returned.
@@ -162,6 +167,7 @@ class ForwardMessages:
                 ),
                 suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
                 with_my_score=with_my_score,
+                from_ephemeral=from_ephemeral,
                 quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
             ),
             sleep_threshold=60,

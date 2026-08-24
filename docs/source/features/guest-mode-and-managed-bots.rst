@@ -35,7 +35,7 @@ addressed to:
             message.guest_query_id,
             InlineQueryResultArticle(
                 title="Layer",
-                input_message_content=InputTextMessageContent("Currently layer 228."),
+                input_message_content=InputTextMessageContent("Currently layer 229."),
             ),
         )
 

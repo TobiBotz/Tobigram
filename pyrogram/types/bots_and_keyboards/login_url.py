@@ -74,16 +74,15 @@ class LoginUrl(Object):
         self.button_id = button_id
 
     @staticmethod
-    def read(b: "raw.types.KeyboardButtonUrlAuth") -> "LoginUrl":
+    def read(t: "raw.types.InlineButtonTypeUrlAuth") -> "LoginUrl":
         return LoginUrl(
-            url=b.url,
-            forward_text=b.fwd_text,
-            button_id=b.button_id
+            url=t.url,
+            forward_text=t.fwd_text,
+            button_id=t.button_id
         )
 
-    def write(self, text: str, bot: "raw.types.InputUser"):
-        return raw.types.InputKeyboardButtonUrlAuth(
-            text=text,
+    def write(self, bot: "raw.types.InputUser"):
+        return raw.types.InputInlineButtonTypeUrlAuth(
             url=self.url,
             bot=bot,
             fwd_text=self.forward_text,

@@ -120,22 +120,22 @@ class KeyboardButton(Object):
         self.style = style
 
     @staticmethod
-    def _read_peer(b: "raw.types.KeyboardButtonRequestPeer", styling: dict) -> "KeyboardButton":
-        peer_type = b.peer_type
+    def _read_peer(text: str, t: "raw.base.ButtonType", styling: dict) -> "KeyboardButton":
+        peer_type = t.peer_type
         requested = {
-            "request_name": getattr(b, "name_requested", None),
-            "request_username": getattr(b, "username_requested", None),
-            "request_photo": getattr(b, "photo_requested", None)
+            "request_name": getattr(t, "name_requested", None),
+            "request_username": getattr(t, "username_requested", None),
+            "request_photo": getattr(t, "photo_requested", None)
         }
 
         if isinstance(peer_type, raw.types.RequestPeerTypeUser):
             return KeyboardButton(
-                text=b.text,
+                text=text,
                 request_users=types.KeyboardButtonRequestUsers(
-                    button_id=b.button_id,
+                    button_id=t.button_id,
                     user_is_bot=peer_type.bot,
                     user_is_premium=peer_type.premium,
-                    max_quantity=b.max_quantity,
+                    max_quantity=t.max_quantity,
                     **requested
                 ),
                 **styling
@@ -143,9 +143,9 @@ class KeyboardButton(Object):
 
         if isinstance(peer_type, raw.types.RequestPeerTypeCreateBot):
             return KeyboardButton(
-                text=b.text,
+                text=text,
                 request_managed_bot=types.KeyboardButtonRequestManagedBot(
-                    button_id=b.button_id,
+                    button_id=t.button_id,
                     suggested_name=peer_type.suggested_name,
                     suggested_username=peer_type.suggested_username
                 ),
@@ -155,9 +155,9 @@ class KeyboardButton(Object):
         is_broadcast = isinstance(peer_type, raw.types.RequestPeerTypeBroadcast)
 
         return KeyboardButton(
-            text=b.text,
+            text=text,
             request_chat=types.KeyboardButtonRequestChat(
-                button_id=b.button_id,
+                button_id=t.button_id,
                 chat_is_channel=is_broadcast,
                 chat_is_forum=None if is_broadcast else peer_type.forum,
                 chat_has_username=peer_type.has_username,
@@ -172,7 +172,7 @@ class KeyboardButton(Object):
                 request_title=requested["request_name"],
                 request_username=requested["request_username"],
                 request_photo=requested["request_photo"],
-                max_quantity=b.max_quantity
+                max_quantity=t.max_quantity
             ),
             **styling
         )
@@ -182,39 +182,41 @@ class KeyboardButton(Object):
         styling = types.InlineKeyboardButton._with_style(b)
         plain = styling["style"] == ButtonStyle.DEFAULT and styling["icon_custom_emoji_id"] is None
 
-        if isinstance(b, raw.types.KeyboardButton):
+        t = b.type
+
+        if isinstance(t, raw.types.ButtonTypeDefault):
             return b.text if plain else KeyboardButton(text=b.text, **styling)
 
-        if isinstance(b, raw.types.KeyboardButtonRequestPhone):
+        if isinstance(t, raw.types.ButtonTypeRequestPhone):
             return KeyboardButton(
                 text=b.text,
                 request_contact=True,
                 **styling
             )
 
-        if isinstance(b, raw.types.KeyboardButtonRequestGeoLocation):
+        if isinstance(t, raw.types.ButtonTypeRequestGeoLocation):
             return KeyboardButton(
                 text=b.text,
                 request_location=True,
                 **styling
             )
 
-        if isinstance(b, raw.types.KeyboardButtonRequestPoll):
+        if isinstance(t, raw.types.ButtonTypeRequestPoll):
             return KeyboardButton(
                 text=b.text,
-                request_poll=types.KeyboardButtonPollType(is_quiz=b.quiz),
+                request_poll=types.KeyboardButtonPollType(is_quiz=t.quiz),
                 **styling
             )
 
-        if isinstance(b, (raw.types.KeyboardButtonRequestPeer,
-                          raw.types.InputKeyboardButtonRequestPeer)):
-            return KeyboardButton._read_peer(b, styling)
+        if isinstance(t, (raw.types.ButtonTypeRequestPeer,
+                          raw.types.InputButtonTypeRequestPeer)):
+            return KeyboardButton._read_peer(b.text, t, styling)
 
-        if isinstance(b, raw.types.KeyboardButtonSimpleWebView):
+        if isinstance(t, raw.types.ButtonTypeSimpleWebView):
             return KeyboardButton(
                 text=b.text,
                 web_app=types.WebAppInfo(
-                    url=b.url
+                    url=t.url
                 ),
                 **styling
             )
@@ -255,35 +257,36 @@ class KeyboardButton(Object):
 
         return request, peer_type, request.request_title
 
-    def write(self):
-        style = types.InlineKeyboardButton._to_raw_style(self)
-
+    def _to_raw_type(self) -> "raw.base.ButtonType":
         if self.request_contact:
-            return raw.types.KeyboardButtonRequestPhone(text=self.text, style=style)
-        elif self.request_location:
-            return raw.types.KeyboardButtonRequestGeoLocation(text=self.text, style=style)
-        elif self.request_poll:
-            return raw.types.KeyboardButtonRequestPoll(
-                text=self.text,
-                quiz=self.request_poll.is_quiz,
-                style=style
-            )
-        elif self.request_users or self.request_chat or self.request_managed_bot:
+            return raw.types.ButtonTypeRequestPhone()
+
+        if self.request_location:
+            return raw.types.ButtonTypeRequestGeoLocation()
+
+        if self.request_poll:
+            return raw.types.ButtonTypeRequestPoll(quiz=self.request_poll.is_quiz)
+
+        if self.request_users or self.request_chat or self.request_managed_bot:
             request, peer_type, name_requested = self._peer_request()
 
-            return raw.types.InputKeyboardButtonRequestPeer(
-                text=self.text,
+            return raw.types.InputButtonTypeRequestPeer(
                 button_id=request.button_id,
                 peer_type=peer_type,
                 max_quantity=getattr(request, "max_quantity", 1),
                 name_requested=name_requested,
                 username_requested=getattr(request, "request_username", None),
-                photo_requested=getattr(request, "request_photo", None),
-                style=style
+                photo_requested=getattr(request, "request_photo", None)
             )
-        elif self.web_app:
-            return raw.types.KeyboardButtonSimpleWebView(
-                text=self.text, url=self.web_app.url, style=style
-            )
-        else:
-            return raw.types.KeyboardButton(text=self.text, style=style)
+
+        if self.web_app:
+            return raw.types.ButtonTypeSimpleWebView(url=self.web_app.url)
+
+        return raw.types.ButtonTypeDefault()
+
+    def write(self):
+        return raw.types.KeyboardButton(
+            text=self.text,
+            type=self._to_raw_type(),
+            style=types.InlineKeyboardButton._to_raw_style(self)
+        )

@@ -121,6 +121,8 @@ class CallbackQuery(Object, Update):
 
             if callback_query.reply_to_message:
                 reply_to_message = await types.Message._parse(client, callback_query.reply_to_message, users, chats)
+        elif isinstance(callback_query, raw.types.UpdateEphemeralBotCallbackQuery):
+            message = await types.Message._parse(client, callback_query.message, users, chats)
 
         # Try to decode callback query data into string. If that fails, fallback to bytes instead of decoding by
         # ignoring/replacing errors, this way, button clicks will still work.
@@ -134,7 +136,11 @@ class CallbackQuery(Object, Update):
             from_user=types.User._parse(client, users[callback_query.user_id]),
             message=message,
             inline_message_id=inline_message_id,
-            chat_instance=str(callback_query.chat_instance),
+            chat_instance=(
+                str(callback_query.chat_instance)
+                if callback_query.chat_instance is not None
+                else None
+            ),
             data=data,
             game_short_name=getattr(callback_query, "game_short_name", None),
             client=client,

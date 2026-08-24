@@ -2031,7 +2031,17 @@ class Message(Object, Update):
 
         if isinstance(message, raw.types.EphemeralMessage):
             from_user = types.User._parse(client, users.get(utils.get_raw_peer_id(message.from_id)))
-            chat = types.Chat._parse(client, message, users, chats, is_chat=True)
+
+            if message.peer_id is not None:
+                chat = types.Chat._parse(client, message, users, chats, is_chat=True)
+            else:
+                counterpart = (
+                    message.receiver_id
+                    if message.out
+                    else utils.get_raw_peer_id(message.from_id)
+                )
+                chat = types.Chat._parse_user_chat(client, users.get(counterpart))
+
             receiver_user = types.User._parse(client, users.get(message.receiver_id))
 
             entities = types.List(
