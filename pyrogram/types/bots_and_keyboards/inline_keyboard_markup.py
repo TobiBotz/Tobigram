@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List
+from typing import List, Optional
 
 import pyrogram
 from pyrogram import raw
@@ -30,12 +30,22 @@ class InlineKeyboardMarkup(Object):
     Parameters:
         inline_keyboard (List of List of :obj:`~pyrogram.types.InlineKeyboardButton`):
             List of button rows, each represented by a List of InlineKeyboardButton objects.
+
+        force_reply (``bool``, *optional*):
+            Pass True if the reply interface must be shown to the user, as if they had manually
+            selected the bot's message and tapped 'Reply'. The value cannot be changed by editing
+            the keyboard.
     """
 
-    def __init__(self, inline_keyboard: List[List["types.InlineKeyboardButton"]]):
+    def __init__(
+        self,
+        inline_keyboard: List[List["types.InlineKeyboardButton"]],
+        force_reply: Optional[bool] = None
+    ):
         super().__init__()
 
         self.inline_keyboard = inline_keyboard
+        self.force_reply = force_reply
 
     @staticmethod
     def read(o):
@@ -50,7 +60,8 @@ class InlineKeyboardMarkup(Object):
             inline_keyboard.append(row)
 
         return InlineKeyboardMarkup(
-            inline_keyboard=inline_keyboard
+            inline_keyboard=inline_keyboard,
+            force_reply=o.force_reply
         )
 
     async def write(self, client: "pyrogram.Client"):
@@ -64,7 +75,7 @@ class InlineKeyboardMarkup(Object):
 
             rows.append(raw.types.KeyboardInlineButtonRow(buttons=buttons))
 
-        return raw.types.ReplyInlineMarkup(rows=rows)
+        return raw.types.ReplyInlineMarkup(rows=rows, force_reply=self.force_reply or None)
 
         # There seems to be a Python issues with nested async comprehensions.
         # See: https://bugs.python.org/issue33346

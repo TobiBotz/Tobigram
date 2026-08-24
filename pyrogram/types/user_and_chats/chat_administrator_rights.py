@@ -92,6 +92,10 @@ class ChatAdministratorRights(Object):
 
         can_manage_linked_peers (``bool``, *optional*):
             True, if the administrator can manage linked peers (communities).
+
+        can_send_welcome_messages (``bool``, *optional*):
+            True, if the administrator can manage chat welcome messages, or send them
+            directly in the case of bots.
     """
 
     def __init__(
@@ -115,6 +119,7 @@ class ChatAdministratorRights(Object):
         can_manage_direct_messages: bool = False,  # Channels only
         can_manage_tags: bool = False, # Groups and supergroups only
         can_manage_linked_peers: bool = False,
+        can_send_welcome_messages: bool = False,
     ):
         super().__init__(None)
 
@@ -136,6 +141,7 @@ class ChatAdministratorRights(Object):
         self.can_manage_direct_messages: bool = can_manage_direct_messages
         self.can_manage_tags: bool = can_manage_tags
         self.can_manage_linked_peers: bool = can_manage_linked_peers
+        self.can_send_welcome_messages: bool = can_send_welcome_messages
 
     @staticmethod
     def _parse(admin_rights: "raw.base.ChatAdminRights") -> "ChatAdministratorRights":
@@ -161,6 +167,7 @@ class ChatAdministratorRights(Object):
             can_manage_direct_messages=admin_rights.manage_direct_messages,
             can_manage_tags=admin_rights.manage_ranks,
             can_manage_linked_peers=admin_rights.manage_linked_peers,
+            can_send_welcome_messages=admin_rights.manage_welcome_messages,
         )
 
 ChatPrivileges = ChatAdministratorRights

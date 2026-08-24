@@ -84,6 +84,8 @@ botapi:
       user_chat_id: user
     ChatShared:
       chat_id: chat
+    InputRichBlockDocument:
+      document: document_id
     InputRichBlockPhoto:
       photo: photo_id
     InputRichBlockVideo:
@@ -103,6 +105,7 @@ botapi:
     InputRichBlockTable:
       is_bordered: bordered
       is_striped: striped
+      is_compact: compact
       caption: title
       cells: rows
     InputRichBlockMap:
@@ -382,6 +385,7 @@ botapi:
       can_manage_topics: folded into the privileges argument
       can_manage_direct_messages: folded into the privileges argument
       can_manage_tags: folded into the privileges argument
+      can_send_welcome_messages: folded into the privileges argument
 
   enum_value_rename:
     ChatType:

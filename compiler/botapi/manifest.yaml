@@ -34,6 +34,7 @@ types:
     - CallbackGame
     - CallbackQuery
     - Chat
+    - ChatAdministratorRights
     - ChatBackground
     - ChatBoost
     - ChatBoostUpdated
@@ -55,12 +56,14 @@ types:
     - ChosenInlineResult
     - Community
     - CommunityChatAdded
+    - CommunityChatJoined
     - CommunityChatRemoved
     - Contact
     - CopyTextButton
     - Dice
     - DirectMessagePriceChanged
     - DirectMessagesTopic
+    - DisabledButton
     - Document
     - ExternalReplyInfo
     - ForceReply
@@ -79,6 +82,8 @@ types:
     - GiveawayCompleted
     - GiveawayCreated
     - GiveawayWinners
+    - InlineKeyboardButton
+    - InlineKeyboardMarkup
     - InlineQuery
     - InlineQueryResult
     - InlineQueryResultArticle
@@ -122,9 +127,12 @@ types:
     - InputRichBlockAnimation
     - InputRichBlockAudio
     - InputRichBlockBlockQuotation
+    - InputRichBlockButtons
     - InputRichBlockCollage
     - InputRichBlockDetails
     - InputRichBlockDivider
+    - InputRichBlockDocument
+    - InputRichBlockExpandableBlockQuotation
     - InputRichBlockFooter
     - InputRichBlockList
     - InputRichBlockListItem
@@ -136,6 +144,7 @@ types:
     - InputRichBlockPullQuotation
     - InputRichBlockSectionHeading
     - InputRichBlockSlideshow
+    - InputRichBlockTable
     - InputRichBlockThinking
     - InputRichBlockVideo
     - InputRichBlockVoiceNote
@@ -163,7 +172,9 @@ types:
     - MenuButtonCommands
     - MenuButtonDefault
     - MenuButtonWebApp
+    - Message
     - MessageEntity
+    - MessageGenerationStopped
     - MessageOrigin
     - MessageOriginChannel
     - MessageOriginChat
@@ -184,6 +195,7 @@ types:
     - ProximityAlertTriggered
     - ReactionType
     - RefundedPayment
+    - ReplyKeyboardMarkup
     - ReplyKeyboardRemove
     - ReplyParameters
     - RichBlock
@@ -191,10 +203,13 @@ types:
     - RichBlockAnimation
     - RichBlockAudio
     - RichBlockBlockQuotation
+    - RichBlockButtons
     - RichBlockCaption
     - RichBlockCollage
     - RichBlockDetails
     - RichBlockDivider
+    - RichBlockDocument
+    - RichBlockExpandableBlockQuotation
     - RichBlockFooter
     - RichBlockList
     - RichBlockListItem
@@ -206,17 +221,20 @@ types:
     - RichBlockPullQuotation
     - RichBlockSectionHeading
     - RichBlockSlideshow
+    - RichBlockTable
     - RichBlockTableCell
     - RichBlockThinking
     - RichBlockVideo
     - RichBlockVoiceNote
     - RichMessage
+    - RichMessageButton
     - RichText
     - RichTextAnchor
     - RichTextAnchorLink
     - RichTextBankCardNumber
     - RichTextBold
     - RichTextBotCommand
+    - RichTextButton
     - RichTextCashtag
     - RichTextCode
     - RichTextCustomEmoji
@@ -270,20 +288,7 @@ types:
     - WebAppInfo
     - WriteAccessAllowed
   pending:
-    ChatAdministratorRights:
-      botapi: [can_send_welcome_messages]
-    InlineKeyboardButton:
-      botapi: [disabled]
-    InlineKeyboardMarkup:
-      botapi: [force_reply]
-    InputRichBlockTable:
-      botapi: [is_compact]
-    Message:
-      botapi: [community_chat_joined]
-    ReplyKeyboardMarkup:
-      botapi: [force_reply]
-    RichBlockTable:
-      botapi: [is_compact]
+    {}
 
 methods:
   supported:
@@ -341,6 +346,7 @@ methods:
     - leaveChat
     - logOut
     - pinChatMessage
+    - promoteChatMember
     - refundStarPayment
     - replaceManagedBotToken
     - restrictChatMember
@@ -355,6 +361,7 @@ methods:
     - sendMediaGroup
     - sendPaidMedia
     - sendPoll
+    - sendRichMessageDraft
     - setChatDescription
     - setChatMenuButton
     - setChatPermissions
@@ -370,8 +377,6 @@ methods:
     - unpinChatMessage
     - upgradeGift
   pending:
-    promoteChatMember:
-      botapi: [can_send_welcome_messages]
     sendAnimation:
       botapi: [ephemeral_message_parameters]
     sendAudio:
@@ -388,8 +393,6 @@ methods:
       botapi: [ephemeral_message_parameters]
     sendRichMessage:
       botapi: [ephemeral_message_parameters]
-    sendRichMessageDraft:
-      botapi: [can_stop, keep_on_stop]
     sendSticker:
       botapi: [ephemeral_message_parameters]
     sendVenue:

@@ -16,18 +16,19 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from .send_ephemeral_message import SendEphemeralMessage
-from .delete_ephemeral_message import DeleteEphemeralMessage
-from .get_welcome_messages import GetWelcomeMessages
-from .delete_welcome_message import DeleteWelcomeMessage
-from .delete_all_welcome_messages import DeleteAllWelcomeMessages
+from enum import auto
+
+from .auto_name import AutoName
 
 
-class Ephemeral(
-    SendEphemeralMessage,
-    DeleteEphemeralMessage,
-    GetWelcomeMessages,
-    DeleteWelcomeMessage,
-    DeleteAllWelcomeMessages,
-):
-    pass
+class BlockAlignment(AutoName):
+    """Horizontal alignment of a :obj:`~pyrogram.types.RichBlockButtons` block."""
+
+    LEFT = auto()
+    "The buttons are aligned to the left"
+
+    CENTER = auto()
+    "The buttons are centered"
+
+    RIGHT = auto()
+    "The buttons are aligned to the right"

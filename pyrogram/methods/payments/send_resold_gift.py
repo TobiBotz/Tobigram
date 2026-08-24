@@ -17,10 +17,10 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import pyrogram
-from pyrogram import raw, types, utils
+from pyrogram import enums, raw, types, utils
 
 
 class SendResoldGift:
@@ -29,6 +29,10 @@ class SendResoldGift:
         gift_link: str,
         new_owner_chat_id: Union[int, str],
         price: "types.GiftResalePrice",
+        text: Optional[str] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        entities: Optional[List["types.MessageEntity"]] = None,
+        show_name: Optional[bool] = None,
     ) -> Optional["types.Message"]:
         """Send an upgraded gift that is available for resale to another user or channel chat.
 
@@ -49,6 +53,20 @@ class SendResoldGift:
 
             price (:obj:`~pyrogram.types.GiftResalePrice`):
                 The price that the user agreed to pay for the gift.
+
+            text (``str``, *optional*):
+                Text of the message to be sent with the gift.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
+                List of special entities that appear in message text, which can be specified instead of *parse_mode*.
+
+            show_name (``bool``, *optional*):
+                Pass True to show the sender's name to the gift receiver. Otherwise, the gift
+                is sent anonymously.
 
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent message is returned.
@@ -83,10 +101,16 @@ class SendResoldGift:
 
         peer = await self.resolve_peer(new_owner_chat_id)
 
+        text, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
+
         invoice = raw.types.InputInvoiceStarGiftResale(
             slug=match.group(1),
             to_id=peer,
-            ton=isinstance(price, types.GiftResalePriceTon)
+            ton=isinstance(price, types.GiftResalePriceTon),
+            show_name=show_name,
+            message=raw.types.TextWithEntities(
+                text=text, entities=entities or []
+            ) if text else None
         )
 
         form = await self.invoke(

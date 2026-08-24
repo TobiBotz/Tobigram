@@ -240,6 +240,9 @@ class MessageServiceType(AutoName):
     COMMUNITY_CHAT_REMOVED = auto()
     "Chat removed from community"
 
+    COMMUNITY_CHAT_JOINED = auto()
+    "Chat joined by a user from a community"
+
     CONFERENCE_CALL = auto()
     "Conference call"
 

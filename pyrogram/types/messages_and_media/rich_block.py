@@ -20,6 +20,7 @@ from typing import Dict, List, Literal, Optional, Union
 
 import pyrogram
 from pyrogram import raw, types
+from pyrogram.enums import BlockAlignment
 
 from ..object import Object
 
@@ -85,6 +86,7 @@ class RichBlock(Object):
     - :obj:`~pyrogram.types.RichBlockAnchor`
     - :obj:`~pyrogram.types.RichBlockList`
     - :obj:`~pyrogram.types.RichBlockBlockQuotation`
+    - :obj:`~pyrogram.types.RichBlockExpandableBlockQuotation`
     - :obj:`~pyrogram.types.RichBlockPullQuotation`
     - :obj:`~pyrogram.types.RichBlockCollage`
     - :obj:`~pyrogram.types.RichBlockSlideshow`
@@ -96,6 +98,8 @@ class RichBlock(Object):
     - :obj:`~pyrogram.types.RichBlockPhoto`
     - :obj:`~pyrogram.types.RichBlockVideo`
     - :obj:`~pyrogram.types.RichBlockVoiceNote`
+    - :obj:`~pyrogram.types.RichBlockButtons`
+    - :obj:`~pyrogram.types.RichBlockDocument`
     - :obj:`~pyrogram.types.RichBlockThinking`
     - :obj:`~pyrogram.types.RichBlockUnsupported`
     """
@@ -181,6 +185,12 @@ class RichBlock(Object):
                 credit=await types.RichText._parse(client, rich_block.caption),
             )
         if isinstance(rich_block, raw.types.PageBlockBlockquote):
+            if rich_block.collapsed:
+                return RichBlockExpandableBlockQuotation(
+                    text=await types.RichText._parse(client, rich_block.text),
+                    credit=await types.RichText._parse(client, rich_block.caption),
+                )
+
             return RichBlockBlockQuotation(
                 blocks=types.List(
                     [RichBlockParagraph(text=await types.RichText._parse(client, rich_block.text))]
@@ -304,6 +314,30 @@ class RichBlock(Object):
             )
         if isinstance(rich_block, raw.types.PageBlockThinking):
             return RichBlockThinking(text=await types.RichText._parse(client, rich_block.text))
+        if isinstance(rich_block, raw.types.PageBlockButtonRow):
+            return RichBlockButtons(
+                buttons=types.List(
+                    [
+                        await types.RichMessageButton._parse(client, button)
+                        for button in rich_block.buttons
+                    ]
+                ),
+                align=RichBlockButtons._parse_align(rich_block),
+            )
+        if isinstance(rich_block, raw.types.PageBlockDocument):
+            doc = documents.get(rich_block.document_id)
+            if doc is None:
+                return RichBlockUnsupported()
+            attributes = {type(i): i for i in doc.attributes}
+
+            file_name = getattr(
+                attributes.get(raw.types.DocumentAttributeFilename, None), "file_name", None
+            )
+
+            return RichBlockDocument(
+                document=types.Document._parse(client, doc, file_name),
+                caption=await types.RichBlockCaption._parse(client, rich_block.caption),
+            )
 
         # if isinstance(rich_block, raw.types.PageBlockAuthorDate):
         # if isinstance(rich_block, raw.types.PageBlockChannel):
@@ -687,6 +721,80 @@ class RichBlockBlockQuotation(RichBlock):
         self.credit = credit
 
 
+class RichBlockExpandableBlockQuotation(RichBlock):
+    """A block quotation, corresponding to the HTML tag ``<blockquote>`` with the
+    custom attribute ``collapsed``.
+
+    Parameters:
+        text (:obj:`~pyrogram.types.RichText`):
+            Content of the block.
+
+        credit (:obj:`~pyrogram.types.RichText`, *optional*):
+            Credit of the block.
+    """
+
+    def __init__(self, text: "types.RichText", credit: Optional["types.RichText"] = None):
+        super().__init__()
+
+        self.text = text
+        self.credit = credit
+
+
+class RichBlockButtons(RichBlock):
+    """A block containing a list of buttons shown in one row, corresponding to the
+    custom HTML tag ``<tg-button-row>``.
+
+    Parameters:
+        buttons (List of :obj:`~pyrogram.types.RichMessageButton`):
+            The buttons.
+
+        align (:obj:`~pyrogram.enums.BlockAlignment`, *optional*):
+            Horizontal alignment of the buttons.
+    """
+
+    def __init__(
+        self,
+        buttons: List["types.RichMessageButton"],
+        align: Optional["BlockAlignment"] = None,
+    ):
+        super().__init__()
+
+        self.buttons = buttons
+        self.align = align
+
+    @staticmethod
+    def _parse_align(page_block: "raw.types.PageBlockButtonRow") -> Optional["BlockAlignment"]:
+        if page_block.align_left:
+            return BlockAlignment.LEFT
+        if page_block.align_center:
+            return BlockAlignment.CENTER
+        if page_block.align_right:
+            return BlockAlignment.RIGHT
+        return None
+
+
+class RichBlockDocument(RichBlock):
+    """A block with a general file, corresponding to the custom HTML tag ``<tg-document>``.
+
+    Parameters:
+        document (:obj:`~pyrogram.types.Document`):
+            The document.
+
+        caption (:obj:`~pyrogram.types.RichBlockCaption`, *optional*):
+            Caption of the block.
+    """
+
+    def __init__(
+        self,
+        document: "types.Document",
+        caption: Optional["types.RichBlockCaption"] = None,
+    ):
+        super().__init__()
+
+        self.document = document
+        self.caption = caption
+
+
 class RichBlockPullQuotation(RichBlock):
     """A quotation with centered text, loosely corresponding to the HTML tag ``<aside>``.
 
@@ -758,6 +866,9 @@ class RichBlockTable(RichBlock):
         is_striped (``bool``, *optional*):
             True, if the table is striped.
 
+        is_compact (``bool``, *optional*):
+            True, if table cells have smaller indents.
+
         caption (:obj:`~pyrogram.types.RichBlockCaption`, *optional*):
             Caption of the block.
     """
@@ -767,6 +878,7 @@ class RichBlockTable(RichBlock):
         cells: List[List["types.RichBlockTableCell"]],
         is_bordered: Optional[bool] = None,
         is_striped: Optional[bool] = None,
+        is_compact: Optional[bool] = None,
         caption: Optional["types.RichBlockCaption"] = None,
     ):
         super().__init__()
@@ -774,6 +886,7 @@ class RichBlockTable(RichBlock):
         self.cells = cells
         self.is_bordered = is_bordered
         self.is_striped = is_striped
+        self.is_compact = is_compact
         self.caption = caption
 
     @staticmethod
@@ -795,6 +908,7 @@ class RichBlockTable(RichBlock):
             cells=cells,
             is_bordered=page_block.bordered,
             is_striped=page_block.striped,
+            is_compact=page_block.compact,
             caption=await types.RichText._parse(client, page_block.title),
         )
 

@@ -92,7 +92,8 @@ class PromoteChatMember:
                     pin_messages=privileges.can_pin_messages,
                     add_admins=privileges.can_promote_members,
                     manage_call=privileges.can_manage_video_chats,
-                    other=privileges.can_manage_chat
+                    other=privileges.can_manage_chat,
+                    manage_welcome_messages=privileges.can_send_welcome_messages
                 ),
                 rank=rank or ""
             )

@@ -16,18 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from .send_ephemeral_message import SendEphemeralMessage
-from .delete_ephemeral_message import DeleteEphemeralMessage
-from .get_welcome_messages import GetWelcomeMessages
-from .delete_welcome_message import DeleteWelcomeMessage
-from .delete_all_welcome_messages import DeleteAllWelcomeMessages
+from ..object import Object
 
 
-class Ephemeral(
-    SendEphemeralMessage,
-    DeleteEphemeralMessage,
-    GetWelcomeMessages,
-    DeleteWelcomeMessage,
-    DeleteAllWelcomeMessages,
-):
-    pass
+class DisabledButton(Object):
+    """A disabled button, which does nothing. Currently holds no information."""
+
+    def __init__(self):
+        super().__init__()

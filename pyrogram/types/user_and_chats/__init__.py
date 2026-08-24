@@ -30,6 +30,7 @@ from .chat_admin_with_invite_links import ChatAdminWithInviteLinks
 from .chat_full_info import ChatFullInfo
 from .community import Community
 from .community_chat_added import CommunityChatAdded
+from .community_chat_joined import CommunityChatJoined
 from .community_chat_removed import CommunityChatRemoved
 from .chat_preview import ChatPreview
 from .chat_administrator_rights import ChatAdministratorRights, ChatPrivileges
@@ -88,6 +89,7 @@ __all__ = [
     "ChatFullInfo",
     "Community",
     "CommunityChatAdded",
+    "CommunityChatJoined",
     "CommunityChatRemoved",
     "ChatColor",
     "ChatEvent",

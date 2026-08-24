@@ -85,6 +85,7 @@ from .media_area import MediaArea
 from .message import Message, Str
 from .message_content import MessageContent
 from .message_entity import MessageEntity
+from .message_generation_stopped import MessageGenerationStopped
 from .message_origin import MessageOrigin
 from .message_origin_channel import MessageOriginChannel
 from .message_origin_chat import MessageOriginChat
@@ -118,10 +119,13 @@ from .rich_block import (
     RichBlockAnimation,
     RichBlockAudio,
     RichBlockBlockQuotation,
+    RichBlockButtons,
     RichBlockCaption,
     RichBlockCollage,
     RichBlockDetails,
     RichBlockDivider,
+    RichBlockDocument,
+    RichBlockExpandableBlockQuotation,
     RichBlockFooter,
     RichBlockList,
     RichBlockListItem,
@@ -141,12 +145,14 @@ from .rich_block import (
     RichBlockVoiceNote,
 )
 from .rich_message import RichMessage
+from .rich_message_button import RichMessageButton
 from .rich_text import (
     RichText,
     RichTextAnchor,
     RichTextAnchorLink,
     RichTextBankCardNumber,
     RichTextBold,
+    RichTextButton,
     RichTextBotCommand,
     RichTextCashtag,
     RichTextCode,
@@ -292,6 +298,7 @@ __all__ = [
     "Str",
     "MessageContent",
     "MessageEntity",
+    "MessageGenerationStopped",
     "MessageOrigin",
     "MessageOriginChannel",
     "MessageOriginChat",
@@ -324,10 +331,13 @@ __all__ = [
     "RichBlockAnimation",
     "RichBlockAudio",
     "RichBlockBlockQuotation",
+    "RichBlockButtons",
     "RichBlockCaption",
     "RichBlockCollage",
     "RichBlockDetails",
     "RichBlockDivider",
+    "RichBlockDocument",
+    "RichBlockExpandableBlockQuotation",
     "RichBlockFooter",
     "RichBlockList",
     "RichBlockListItem",
@@ -346,11 +356,13 @@ __all__ = [
     "RichBlockVideo",
     "RichBlockVoiceNote",
     "RichMessage",
+    "RichMessageButton",
     "RichText",
     "RichTextAnchor",
     "RichTextAnchorLink",
     "RichTextBankCardNumber",
     "RichTextBold",
+    "RichTextButton",
     "RichTextBotCommand",
     "RichTextCashtag",
     "RichTextCode",

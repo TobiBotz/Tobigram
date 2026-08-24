@@ -54,6 +54,10 @@ class ReplyKeyboardMarkup(Object):
 
         placeholder (``str``, *optional*):
             The placeholder to be shown in the input field when the keyboard is active; 1-64 characters.
+
+        force_reply (``bool``, *optional*):
+            Pass True if the reply interface must be shown to the user, as if they had manually
+            selected the bot's message and tapped 'Reply'.
     """
 
     def __init__(
@@ -63,7 +67,8 @@ class ReplyKeyboardMarkup(Object):
         resize_keyboard: Optional[bool] = None,
         one_time_keyboard: Optional[bool] = None,
         selective: Optional[bool] = None,
-        placeholder: Optional[str] = None
+        placeholder: Optional[str] = None,
+        force_reply: Optional[bool] = None
     ):
         super().__init__()
 
@@ -73,6 +78,7 @@ class ReplyKeyboardMarkup(Object):
         self.one_time_keyboard = one_time_keyboard
         self.selective = selective
         self.placeholder = placeholder
+        self.force_reply = force_reply
 
     @staticmethod
     def read(kb: "raw.base.ReplyMarkup"):
@@ -92,7 +98,8 @@ class ReplyKeyboardMarkup(Object):
             resize_keyboard=kb.resize,
             one_time_keyboard=kb.single_use,
             selective=kb.selective,
-            placeholder=kb.placeholder
+            placeholder=kb.placeholder,
+            force_reply=kb.force_reply
         )
 
     async def write(self, _: "pyrogram.Client"):
@@ -108,5 +115,6 @@ class ReplyKeyboardMarkup(Object):
             single_use=self.one_time_keyboard or None,
             selective=self.selective or None,
             persistent=self.is_persistent or None,
-            placeholder=self.placeholder or None
+            placeholder=self.placeholder or None,
+            force_reply=self.force_reply or None
         )

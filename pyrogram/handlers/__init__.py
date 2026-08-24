@@ -34,6 +34,7 @@ from .guest_message_handler import GuestMessageHandler
 from .handler import Handler
 from .inline_query_handler import InlineQueryHandler
 from .managed_bot_updated_handler import ManagedBotUpdatedHandler
+from .message_generation_stopped_handler import MessageGenerationStoppedHandler
 from .message_handler import MessageHandler
 from .message_reaction_count_handler import MessageReactionCountHandler
 from .message_reaction_handler import MessageReactionHandler

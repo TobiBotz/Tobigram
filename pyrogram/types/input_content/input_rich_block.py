@@ -18,7 +18,8 @@
 
 from typing import List, Optional, Union
 
-from pyrogram import raw
+from pyrogram import raw, types
+from pyrogram.enums import BlockAlignment
 
 from ..object import Object
 
@@ -328,6 +329,97 @@ class InputRichBlockBlockQuotation(InputRichBlock):
         )
 
 
+class InputRichBlockExpandableBlockQuotation(InputRichBlock):
+    """A block quotation, corresponding to the HTML tag ``<blockquote>`` with the
+    custom attribute ``collapsed``.
+
+    Parameters:
+        text (``str`` | :obj:`~pyrogram.raw.base.RichText`):
+            Content of the block.
+
+        credit (``str`` | :obj:`~pyrogram.raw.base.RichText`, *optional*):
+            Credit or citation source of the block quotation,
+            corresponding to the HTML tag ``<cite>``.
+    """
+
+    def __init__(
+        self,
+        text: Union[str, "raw.base.RichText"],
+        credit: Optional[Union[str, "raw.base.RichText"]] = None,
+    ):
+        super().__init__()
+
+        self.text = text
+        self.credit = credit
+
+    def write(self) -> "raw.base.PageBlock":
+        return raw.types.PageBlockBlockquote(
+            text=_to_rich_text(self.text),
+            caption=_to_rich_text(self.credit or ""),
+            collapsed=True,
+        )
+
+
+class InputRichBlockButtons(InputRichBlock):
+    """A block containing a list of buttons shown in one row, corresponding to the
+    custom HTML tag ``<tg-button-row>``.
+
+    Parameters:
+        buttons (List of :obj:`~pyrogram.types.RichMessageButton`):
+            List of 1-8 buttons to send.
+
+        align (:obj:`~pyrogram.enums.BlockAlignment`, *optional*):
+            Horizontal alignment of the buttons.
+    """
+
+    def __init__(
+        self,
+        buttons: List["types.RichMessageButton"],
+        align: Optional["BlockAlignment"] = None,
+    ):
+        super().__init__()
+
+        self.buttons = buttons
+        self.align = align
+
+    def write(self) -> "raw.base.PageBlock":
+        return raw.types.PageBlockButtonRow(
+            buttons=[button.write() for button in self.buttons],
+            align_left=self.align == BlockAlignment.LEFT or None,
+            align_center=self.align == BlockAlignment.CENTER or None,
+            align_right=self.align == BlockAlignment.RIGHT or None,
+        )
+
+
+class InputRichBlockDocument(InputRichBlock):
+    """A block with a general file, corresponding to the custom HTML tag ``<tg-document>``.
+
+    Parameters:
+        document_id (``int``):
+            The ``id`` field from an :obj:`~pyrogram.raw.types.InputDocument` that
+            represents the file.
+
+        caption (``str`` | :obj:`~pyrogram.raw.base.RichText`, *optional*):
+            Caption of the block.
+    """
+
+    def __init__(
+        self,
+        document_id: int,
+        caption: Optional[Union[str, "raw.base.RichText"]] = None,
+    ):
+        super().__init__()
+
+        self.document_id = document_id
+        self.caption = caption
+
+    def write(self) -> "raw.base.PageBlock":
+        return raw.types.PageBlockDocument(
+            document_id=self.document_id,
+            caption=_to_page_caption(text=self.caption),
+        )
+
+
 class InputRichBlockPullQuotation(InputRichBlock):
     """A pull quotation block, corresponding to the HTML tag ``<pullquote>``.
 
@@ -434,6 +526,9 @@ class InputRichBlockTable(InputRichBlock):
 
         striped (``bool``, *optional*):
             Pass *True* to display the table with alternating row colors.
+
+        compact (``bool``, *optional*):
+            Pass *True* if table cells must have smaller indents.
     """
 
     def __init__(
@@ -442,6 +537,7 @@ class InputRichBlockTable(InputRichBlock):
         rows: List[List["InputRichBlockTableCell"]],
         bordered: Optional[bool] = None,
         striped: Optional[bool] = None,
+        compact: Optional[bool] = None,
     ):
         super().__init__()
 
@@ -449,6 +545,7 @@ class InputRichBlockTable(InputRichBlock):
         self.rows = rows
         self.bordered = bordered
         self.striped = striped
+        self.compact = compact
 
     def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockTable(
@@ -461,6 +558,7 @@ class InputRichBlockTable(InputRichBlock):
             ],
             bordered=self.bordered,
             striped=self.striped,
+            compact=self.compact,
         )
 
 

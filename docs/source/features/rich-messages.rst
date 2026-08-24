@@ -78,6 +78,7 @@ Block                                          What it is
 ``InputRichBlockPreformatted``                 a code block with a ``language``
 ``InputRichBlockList``                         ordered or bulleted, items may have checkboxes
 ``InputRichBlockBlockQuotation``               a quote wrapping other blocks
+``InputRichBlockExpandableBlockQuotation``     a quote that starts collapsed
 ``InputRichBlockPullQuotation``                a pull quote with a ``credit``
 ``InputRichBlockTable``                        rows of ``InputRichBlockTableCell``
 ``InputRichBlockDetails``                      a collapsible section
@@ -91,6 +92,8 @@ Block                                          What it is
 ``InputRichBlockDivider``                      a horizontal rule
 ``InputRichBlockFooter``                       trailing small print
 ``InputRichBlockThinking``                     a model's reasoning, rendered as such
+``InputRichBlockButtons``                      a row of 1-8 ``RichMessageButton``
+``InputRichBlockDocument``                     a general file, by ``document_id``
 ============================================  ===========================================
 
 Attaching media
@@ -134,6 +137,47 @@ A block's ``photo_id`` / ``video_id`` / ``audio_id`` must equal the ``id`` attri
 corresponding ``InputPhoto`` or ``InputDocument`` in those vectors. MTProto carries no
 string identifiers on this side, which is why the two shapes differ at all.
 
+Buttons
+-------
+
+*Bot API 10.3 — August 2026*
+
+A rich message can carry buttons of its own, in a row of its own
+(:obj:`~pyrogram.types.InputRichBlockButtons`) or inline in the text
+(:obj:`~pyrogram.types.RichTextButton`). Both hold a
+:obj:`~pyrogram.types.RichMessageButton`, which takes the same actions an inline keyboard
+button does — ``url``, ``callback_data``, ``web_app``, ``login_url``, the
+``switch_inline_query`` family, ``copy_text`` — plus a ``style``:
+
+.. code-block:: python
+
+    from pyrogram import enums
+    from pyrogram.types import InputRichBlockButtons, RichMessageButton
+
+    InputRichBlockButtons(
+        buttons=[
+            RichMessageButton(
+                text="Buy",
+                callback_data="buy",
+                style=enums.RichButtonStyle.PRIMARY,
+            ),
+            RichMessageButton(
+                text="Cancel",
+                callback_data="cancel",
+                style=enums.RichButtonStyle.DANGER,
+            ),
+        ],
+        align=enums.BlockAlignment.CENTER,
+    )
+
+:obj:`~pyrogram.enums.RichButtonStyle` adds ``LINK`` to the styles a keyboard button has —
+the button is then drawn as a plain link with no border. A button with nothing set is a
+:obj:`~pyrogram.types.DisabledButton`, which renders and does nothing; ``disabled`` says so
+explicitly.
+
+Rich buttons never resolve a peer, because a block is written synchronously. A ``login_url``
+therefore leaves the bot for the server to fill in, which is what layer 229 made optional.
+
 Drafts and diffs
 ----------------
 
@@ -143,6 +187,17 @@ rather than sending it, which is how an editing tool shows a preview before publ
 .. code-block:: python
 
     await app.send_rich_message_draft(chat_id, draft_id=1, rich_message=rich)
+
+Pass ``can_stop=True`` to offer the user a button that stops the generation. Pressing it
+delivers a :obj:`~pyrogram.types.MessageGenerationStopped` update, which
+:meth:`~pyrogram.Client.on_message_generation_stopped` handles; add ``keep_on_stop=True`` to
+leave the partial draft in the chat rather than clearing it.
+
+.. code-block:: python
+
+    @app.on_message_generation_stopped()
+    async def stopped(client, update):
+        cancel_generation(update.draft_id)
 
 :obj:`~pyrogram.types.RichTextDiff` marks a rich text as a *change* against an older one,
 pairing ``text`` with ``old_text``. Clients render the difference.

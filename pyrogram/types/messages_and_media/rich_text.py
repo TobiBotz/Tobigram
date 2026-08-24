@@ -33,6 +33,7 @@ class RichText(Object):
     - ``str``
     - List of :obj:`~pyrogram.types.RichText`
     - :obj:`~pyrogram.types.RichTextBold`
+    - :obj:`~pyrogram.types.RichTextButton`
     - :obj:`~pyrogram.types.RichTextItalic`
     - :obj:`~pyrogram.types.RichTextUnderline`
     - :obj:`~pyrogram.types.RichTextStrikethrough`
@@ -244,6 +245,28 @@ class RichText(Object):
                 text=await RichText._parse(client, rich_text.text),
                 old_text=await RichText._parse(client, rich_text.old_text),
             )
+
+        if isinstance(rich_text, raw.types.TextButton):
+            return RichTextButton(
+                button=await types.RichMessageButton._parse(client, rich_text)
+            )
+
+
+class RichTextButton(RichText):
+    """A button.
+
+    Parameters:
+        button (:obj:`~pyrogram.types.RichMessageButton`):
+            The button.
+    """
+
+    def __init__(
+        self,
+        button: "types.RichMessageButton",
+    ):
+        super().__init__()
+
+        self.button = button
 
 
 class RichTextBold(RichText):

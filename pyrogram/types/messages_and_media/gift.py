@@ -718,6 +718,8 @@ class Gift(Object):
 
             parsed_gift.was_upgraded = action_gift.upgrade or parsed_gift.was_upgraded
             parsed_gift.is_saved = action_gift.saved or parsed_gift.is_saved
+            parsed_gift.is_name_hidden = action_gift.name_hidden or parsed_gift.is_name_hidden
+            parsed_gift.text = types.FormattedText._parse(client, action_gift.message) or parsed_gift.text
             parsed_gift.was_refunded = action_gift.refunded or parsed_gift.was_refunded
             parsed_gift.export_date = utils.timestamp_to_datetime(action_gift.can_export_at) or parsed_gift.export_date
             parsed_gift.transfer_star_count = action_gift.transfer_stars or parsed_gift.transfer_star_count

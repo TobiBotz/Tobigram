@@ -11,6 +11,8 @@ class SendRichMessageDraft:
         draft_id: int,
         rich_message: "types.InputRichMessage",
         message_thread_id: Optional[int] = None,
+        can_stop: Optional[bool] = None,
+        keep_on_stop: Optional[bool] = None,
     ) -> bool:
         """Send a rich message draft action, allowing bots to stream partial rich messages.
 
@@ -38,6 +40,16 @@ class SendRichMessageDraft:
 
             message_thread_id (``int``, *optional*):
                 Unique identifier for a forum topic thread.
+
+            can_stop (``bool``, *optional*):
+                Pass True to show the user a button to stop further drafts. The bot then
+                receives a :obj:`~pyrogram.types.MessageGenerationStopped` update when the
+                user presses it.
+
+            keep_on_stop (``bool``, *optional*):
+                Pass True to keep the draft in the chat when the button is pressed. The draft
+                still disappears after a short time or as soon as the bot sends a message, so
+                call :meth:`~pyrogram.Client.send_rich_message` to preserve it.
 
         Returns:
             ``bool``: On success, True is returned.
@@ -69,6 +81,8 @@ class SendRichMessageDraft:
                 action=raw.types.InputSendMessageRichMessageDraftAction(
                     random_id=draft_id,
                     rich_message=rich_message.write(),
+                    can_stop=can_stop,
+                    keep_on_stop=keep_on_stop,
                 ),
                 top_msg_id=message_thread_id,
             )

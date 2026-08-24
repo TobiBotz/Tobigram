@@ -45,6 +45,10 @@ class SendEphemeralMessage:
         rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
         rich_text_media: Optional[List["types.InputRichMessageMedia"]] = None,
         disable_web_page_preview: Optional[bool] = None,
+        welcome: Optional[bool] = None,
+        anchor: Optional[bool] = None,
+        show_caption_above_media: Optional[bool] = None,
+        protect_content: Optional[bool] = None,
     ) -> "types.Message":
         """Send an ephemeral message visible only to a specific user and the bot in a group.
 
@@ -95,6 +99,21 @@ class SendEphemeralMessage:
                 Ignored. The ephemeral message RPC has no link preview field,
                 so this cannot be honoured. Kept only for backwards compatibility.
 
+            welcome (``bool``, *optional*):
+                Pass True to store the message as a welcome message for the chat rather than
+                deliver it once. It is then shown to each user the first time they open the
+                chat, and can be listed with :meth:`~pyrogram.Client.get_welcome_messages`.
+
+            anchor (``bool``, *optional*):
+                Pass True to anchor the message to the message it replies to, so it stays
+                beside it rather than at the bottom of the chat.
+
+            show_caption_above_media (``bool``, *optional*):
+                Pass True if the caption must be shown above the message media.
+
+            protect_content (``bool``, *optional*):
+                Pass True to protect the content of the message from forwarding and saving.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent ephemeral message is returned.
 
@@ -133,6 +152,10 @@ class SendEphemeralMessage:
                     reply_markup=await reply_markup.write(self) if reply_markup else None,
                     rich_message=rich_message,
                     query_id=query_id,
+                    welcome=welcome,
+                    anchor=anchor,
+                    invert_media=show_caption_above_media,
+                    noforwards=protect_content,
                 )
             )
         else:
@@ -148,6 +171,10 @@ class SendEphemeralMessage:
                     reply_to=await utils.get_reply_to(self, reply_parameters),
                     reply_markup=await reply_markup.write(self) if reply_markup else None,
                     query_id=query_id,
+                    welcome=welcome,
+                    anchor=anchor,
+                    invert_media=show_caption_above_media,
+                    noforwards=protect_content,
                 )
             )
 

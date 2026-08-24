@@ -43,6 +43,7 @@ from pyrogram.handlers import (
     Handler,
     InlineQueryHandler,
     ManagedBotUpdatedHandler,
+    MessageGenerationStoppedHandler,
     MessageHandler,
     MessageReactionCountHandler,
     MessageReactionHandler,
@@ -89,7 +90,10 @@ from pyrogram.raw.types import (
     UpdateNewMessage,
     UpdateNewScheduledMessage,
     UpdateStory,
+    UpdateChannelUserTyping,
+    UpdateChatUserTyping,
     UpdateUserStatus,
+    UpdateUserTyping,
 )
 
 log = logging.getLogger(__name__)
@@ -107,6 +111,7 @@ class Dispatcher:
                               UpdateEphemeralBotCallbackQuery)
     CHAT_MEMBER_UPDATES = (UpdateChatParticipant, UpdateChannelParticipant)
     USER_STATUS_UPDATES = (UpdateUserStatus,)
+    TYPING_UPDATES = (UpdateUserTyping, UpdateChatUserTyping, UpdateChannelUserTyping)
     BOT_INLINE_QUERY_UPDATES = (UpdateBotInlineQuery,)
     POLL_UPDATES = (UpdateMessagePoll, UpdateMessagePollVote)
     CHOSEN_INLINE_RESULT_UPDATES = (UpdateBotInlineSend,)
@@ -182,6 +187,18 @@ class Dispatcher:
                 await pyrogram.types.CallbackQuery._parse(self.client, update, users, chats),
                 CallbackQueryHandler
             )
+
+        async def message_generation_stopped_parser(update, users, chats):
+            stopped = pyrogram.types.MessageGenerationStopped._parse(
+                self.client, update, users, chats
+            )
+
+            # typing updates carry every SendMessageAction, and only the stop one has a
+            # handler; type(None) matches nothing, so the rest fall through to raw handlers
+            if stopped is None:
+                return None, type(None)
+
+            return stopped, MessageGenerationStoppedHandler
 
         async def user_status_parser(update, users, chats):
             return (
@@ -313,6 +330,7 @@ class Dispatcher:
             Dispatcher.DELETE_MESSAGES_UPDATES: deleted_messages_parser,
             Dispatcher.CALLBACK_QUERY_UPDATES: callback_query_parser,
             Dispatcher.USER_STATUS_UPDATES: user_status_parser,
+            Dispatcher.TYPING_UPDATES: message_generation_stopped_parser,
             Dispatcher.BOT_INLINE_QUERY_UPDATES: inline_query_parser,
             Dispatcher.POLL_UPDATES: poll_parser,
             Dispatcher.CHOSEN_INLINE_RESULT_UPDATES: chosen_inline_result_parser,

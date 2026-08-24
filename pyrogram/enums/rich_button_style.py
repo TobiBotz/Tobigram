@@ -16,18 +16,25 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from .send_ephemeral_message import SendEphemeralMessage
-from .delete_ephemeral_message import DeleteEphemeralMessage
-from .get_welcome_messages import GetWelcomeMessages
-from .delete_welcome_message import DeleteWelcomeMessage
-from .delete_all_welcome_messages import DeleteAllWelcomeMessages
+from enum import auto
+
+from .auto_name import AutoName
 
 
-class Ephemeral(
-    SendEphemeralMessage,
-    DeleteEphemeralMessage,
-    GetWelcomeMessages,
-    DeleteWelcomeMessage,
-    DeleteAllWelcomeMessages,
-):
-    pass
+class RichButtonStyle(AutoName):
+    """Style of a :obj:`~pyrogram.types.RichMessageButton`."""
+
+    DEFAULT = auto()
+    "The button has an app-specific style"
+
+    PRIMARY = auto()
+    "The button has dark blue color"
+
+    DANGER = auto()
+    "The button has red color"
+
+    SUCCESS = auto()
+    "The button has green color"
+
+    LINK = auto()
+    "The button is shown as a regular link, without borders"

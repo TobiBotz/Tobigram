@@ -58,6 +58,7 @@ Bots
 .. autoclass:: pyrogram.handlers.ChosenInlineResultHandler()
 .. autoclass:: pyrogram.handlers.GuestMessageHandler()
 .. autoclass:: pyrogram.handlers.ManagedBotUpdatedHandler()
+.. autoclass:: pyrogram.handlers.MessageGenerationStoppedHandler()
 .. autoclass:: pyrogram.handlers.StartHandler()
 
 Chats and members

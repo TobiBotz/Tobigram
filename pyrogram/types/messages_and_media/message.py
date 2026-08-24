@@ -145,6 +145,13 @@ class Message(Object, Update):
             Unique identifier of the message effect.
             For private chats only.
 
+        is_welcome_template (``bool``, *optional*):
+            True, if the ephemeral message is a stored welcome message rather than one
+            delivered once.
+
+        anchor_message_id (``int``, *optional*):
+            Identifier of the message this ephemeral message is anchored to, if any.
+
         rich_message (:obj:`~pyrogram.types.RichMessage`, *optional*):
             Message is a rich formatted message.
 
@@ -646,6 +653,9 @@ class Message(Object, Update):
         community_chat_removed (:obj:`~pyrogram.types.CommunityChatRemoved`, *optional*):
             Service message: a chat was removed from the community.
 
+        community_chat_joined (:obj:`~pyrogram.types.CommunityChatJoined`, *optional*):
+            Service message: the chat was joined by a user from a community.
+
         scheduled (``bool``, *optional*):
             True, if the message is a scheduled message that has not been sent yet.
 
@@ -677,6 +687,8 @@ class Message(Object, Update):
         message_thread_id: Optional[int] = None,
         direct_messages_topic_id: Optional[int] = None,
         effect_id: Optional[int] = None,
+        is_welcome_template: Optional[bool] = None,
+        anchor_message_id: Optional[int] = None,
         rich_message: Optional["types.RichMessage"] = None,
         reply_to_message_id: Optional[int] = None,
         reply_to_story_id: Optional[int] = None,
@@ -772,6 +784,7 @@ class Message(Object, Update):
         checklist_tasks_done: Optional[List["types.ChecklistTasksDone"]] = None,
         checklist_tasks_added: Optional[List["types.ChecklistTasksAdded"]] = None,
         community_chat_added: Optional["types.CommunityChatAdded"] = None,
+        community_chat_joined: Optional["types.CommunityChatJoined"] = None,
         community_chat_removed: Optional["types.CommunityChatRemoved"] = None,
         premium_gift_code: Optional["types.PremiumGiftCode"] = None,
         gifted_premium: Optional["types.GiftedPremium"] = None,
@@ -855,6 +868,8 @@ class Message(Object, Update):
         self.message_thread_id = message_thread_id
         self.direct_messages_topic_id = direct_messages_topic_id
         self.effect_id = effect_id
+        self.is_welcome_template = is_welcome_template
+        self.anchor_message_id = anchor_message_id
         self.rich_message = rich_message
         self.reply_to_message_id = reply_to_message_id
         self.reply_to_story_id = reply_to_story_id
@@ -958,6 +973,7 @@ class Message(Object, Update):
         self.checklist_tasks_done = checklist_tasks_done
         self.checklist_tasks_added = checklist_tasks_added
         self.community_chat_added = community_chat_added
+        self.community_chat_joined = community_chat_joined
         self.community_chat_removed = community_chat_removed
         self.premium_gift_code = premium_gift_code
         self.gifted_premium = gifted_premium
@@ -1116,6 +1132,7 @@ class Message(Object, Update):
         checklist_tasks_done = None
         checklist_tasks_added = None
         community_chat_added = None
+        community_chat_joined = None
         community_chat_removed = None
 
         service_type = enums.MessageServiceType.UNSUPPORTED
@@ -1395,6 +1412,9 @@ class Message(Object, Update):
                 service_type = enums.MessageServiceType.COMMUNITY_CHAT_ADDED
             elif community_chat_removed is not None:
                 service_type = enums.MessageServiceType.COMMUNITY_CHAT_REMOVED
+        elif isinstance(action, raw.types.MessageActionChatJoinedViaCommunity):
+            service_type = enums.MessageServiceType.COMMUNITY_CHAT_JOINED
+            community_chat_joined = types.CommunityChatJoined._parse(client, action, chats)
 
         parsed_message = Message(
             id=message.id,
@@ -1472,6 +1492,7 @@ class Message(Object, Update):
             checklist_tasks_done=checklist_tasks_done,
             checklist_tasks_added=checklist_tasks_added,
             community_chat_added=community_chat_added,
+            community_chat_joined=community_chat_joined,
             community_chat_removed=community_chat_removed,
             reactions=types.MessageReactions._parse(client, message.reactions, users, chats),
             business_connection_id=business_connection_id,
@@ -2031,6 +2052,9 @@ class Message(Object, Update):
 
         if isinstance(message, raw.types.EphemeralMessage):
             from_user = types.User._parse(client, users.get(utils.get_raw_peer_id(message.from_id)))
+            rich_message = await types.RichMessage._parse(
+                client, message.rich_message, users, chats
+            ) if message.rich_message else None
 
             if message.peer_id is not None:
                 chat = types.Chat._parse(client, message, users, chats, is_chat=True)
@@ -2065,6 +2089,11 @@ class Message(Object, Update):
                 entities=entities or None,
                 reply_markup=reply_markup,
                 message_thread_id=message.top_msg_id,
+                rich_message=rich_message,
+                is_welcome_template=message.welcome_template,
+                show_caption_above_media=message.invert_media,
+                has_protected_content=message.noforwards,
+                anchor_message_id=message.anchor_msg_id,
                 raw=message,
                 client=client,
             )

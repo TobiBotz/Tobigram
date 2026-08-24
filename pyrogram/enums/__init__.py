@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from .block_alignment import BlockAlignment
 from .block_list import BlockList
 from .business_schedule import BusinessSchedule
 from .button_style import ButtonStyle
@@ -52,6 +53,7 @@ from .privacy_rule_type import PrivacyRuleType
 from .profile_color import ProfileColor
 from .profile_tab import ProfileTab
 from .reply_color import ReplyColor
+from .rich_button_style import RichButtonStyle
 from .sent_code_type import SentCodeType
 from .sticker_type import StickerType
 from .stories_privacy_rules import StoriesPrivacyRules
@@ -62,6 +64,7 @@ from .upgraded_gift_origin import UpgradedGiftOrigin
 from .user_status import UserStatus
 
 __all__ = [
+    'BlockAlignment',
     'BlockList',
     'BusinessSchedule',
     'ButtonStyle',
@@ -98,6 +101,7 @@ __all__ = [
     'ProfileColor',
     'ProfileTab',
     'ReplyColor',
+    'RichButtonStyle',
     'SentCodeType',
     'StickerType',
     'StoriesPrivacyRules',

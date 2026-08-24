@@ -64,6 +64,68 @@ carry buttons; ``reply_parameters``, so it can quote the message that triggered 
 ``query_id`` answers a guest bot query with an ephemeral message — see
 :doc:`guest-mode-and-managed-bots`.
 
+Welcome messages
+----------------
+
+*Bot API 10.3 — August 2026*
+
+An ephemeral message sent with ``welcome=True`` is not delivered once. The server keeps it
+as a template and shows it to each user the first time they open the chat, so a bot can
+greet everyone without posting anything the whole group sees:
+
+.. code-block:: python
+
+    await app.send_ephemeral_message(
+        chat_id=group_id,
+        receiver_id="me",
+        text="Welcome! Read the rules before posting.",
+        welcome=True,
+    )
+
+The stored templates are listed and removed separately from ordinary ephemeral messages,
+because they outlive the send:
+
+.. code-block:: python
+
+    for message in await app.get_welcome_messages(group_id):
+        print(message.id, message.text)
+
+    await app.delete_welcome_message(group_id, message_id)
+    await app.delete_all_welcome_messages(group_id)
+
+A message parsed back from ``get_welcome_messages`` has ``is_welcome_template`` set, which
+is what separates a stored template from a message that happened to be sent once.
+
+Sending or managing them needs the ``can_send_welcome_messages`` administrator right:
+
+.. code-block:: python
+
+    from pyrogram.types import ChatPrivileges
+
+    await app.promote_chat_member(
+        group_id, bot_id,
+        ChatPrivileges(can_send_welcome_messages=True),
+    )
+
+Anchoring and protection
+------------------------
+
+*Bot API 10.3 — August 2026*
+
+``anchor=True`` keeps the message beside the message it replies to instead of at the bottom
+of the chat, which is what an inline correction or a per-message hint wants.
+``protect_content`` and ``show_caption_above_media`` behave as they do elsewhere.
+
+.. code-block:: python
+
+    await app.send_ephemeral_message(
+        chat_id=group_id,
+        receiver_id=user_id,
+        text="That command needs an argument.",
+        reply_parameters=ReplyParameters(message_id=message.id),
+        anchor=True,
+    )
+
 Deleting one
 ------------
 
@@ -87,4 +149,8 @@ Gotchas
   :meth:`~pyrogram.Client.get_messages` to find one, and do not build a flow that needs to
   read it back — hold what you need in your own state.
 - Everything about them is per-receiver. To tell three people something privately, send
-  three messages.
+  three messages. A welcome message is the exception: it is stored once and shown to
+  everyone who arrives.
+- The Bot API also lets ``sendMessage`` and the media send methods carry
+  ``ephemeral_message_parameters``. wzgram does not: send an ephemeral message through
+  :meth:`~pyrogram.Client.send_ephemeral_message`.
