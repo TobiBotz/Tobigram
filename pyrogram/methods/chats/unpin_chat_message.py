@@ -49,6 +49,14 @@ class UnpinChatMessage:
                 Unique identifier of the business connection on behalf of which the
                 action is taken.
 
+            disable_notification (``bool``, *optional*):
+                Sends the message silently.
+                Users will receive a notification with no sound.
+
+            both_sides (``bool``, *optional*):
+                Pass True to pin the message for both sides (you and recipient).
+                Applicable to private chats only. Defaults to False.
+
         Returns:
             ``bool``: True on success.
 

@@ -82,6 +82,12 @@ class AnswerInlineQuery:
                 link. Once done, the bot can offer a switch_inline button so that the user can easily return to the chat
                 where they wanted to use the bot's inline capabilities.
 
+            switch_webview_text (``str``, *optional*):
+                Label of the button shown above the results that opens *switch_webview_url*.
+
+            switch_webview_url (``str``, *optional*):
+                URL of the Web App the button above the results opens.
+
         Returns:
             ``bool``: True, on success.
 

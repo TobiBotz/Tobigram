@@ -68,6 +68,40 @@ class SendInlineBotResult:
             reply_to_message_id (``bool``, *optional*):
                 If the message is a reply, ID of the original message.
 
+            reply_parameters (:obj:`~pyrogram.types.ReplyParameters`, *optional*):
+                Describes reply parameters for the message that is being sent.
+
+            background (``bool``, *optional*):
+                Send the message in background.
+
+            clear_draft (``bool``, *optional*):
+                Clear the draft of the chat.
+
+            hide_via (``bool``, *optional*):
+                Pass True to hide the "via @bot" header on the sent message.
+
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                Date when the message will be automatically sent.
+
+            send_as (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the chat or channel to send the message as.
+
+            quick_reply_shortcut (``int``, *optional*):
+                Unique identifier of the quick reply shortcut the message belongs to.
+
+            paid_message_star_count (``int``, *optional*):
+                The number of Telegram Stars the user agreed to pay to send the messages.
+
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection.
+
+            message_thread_id (``int``, *optional*):
+                Unique identifier for a message thread in a forum topic.
+
+            direct_messages_topic_id (``int``, *optional*):
+                Unique identifier of the topic in a channel direct messages chat administered by the current user.
+                For directs only only.
+
         Returns:
             :obj:`~pyrogram.raw.base.Updates`: Currently, on success, a raw result is returned.
 

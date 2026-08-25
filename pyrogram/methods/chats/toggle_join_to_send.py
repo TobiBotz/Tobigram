@@ -42,6 +42,9 @@ class ToggleJoinToSend:
 
             enabled (bool, *optional*): Whether join-to-send is enabled
 
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
 
 
         Returns:

@@ -134,6 +134,63 @@ class SendPaidMedia:
             progress_args (``tuple``, *optional*):
                 Arguments to pass to the progress callback function.
 
+            caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
+
+            message_thread_id (``int``, *optional*):
+                Unique identifier for a message thread in a forum topic.
+
+            effect_id (``int``, *optional*):
+                Unique identifier of the effect to apply to the message.
+
+            repeat_period (``int``, *optional*):
+                New period in seconds for the message to be sent repeatedly.
+
+            allow_paid_broadcast (``bool``, *optional*):
+                If True, you will be allowed to send up to 1000 messages per second.
+                Ignoring broadcasting limits for a fee of 0.1 Telegram Stars per message.
+                The relevant Stars will be withdrawn from the bot's balance.
+                For bots only.
+
+            paid_message_star_count (``int``, *optional*):
+                The number of Telegram Stars the user agreed to pay to send the messages.
+
+            background (``bool``, *optional*):
+                Send the message in background.
+
+            clear_draft (``bool``, *optional*):
+                Clear the draft of the chat.
+
+            update_stickersets_order (``bool``, *optional*):
+                Move the sticker set to the top of the list.
+
+            send_as (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the chat or channel to send the message as.
+
+            quick_reply_shortcut (``int``, *optional*):
+                Unique identifier of the quick reply shortcut the message belongs to.
+
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
+                Additional interface options. An object for an inline keyboard, custom reply keyboard,
+                instructions to remove reply keyboard or to force a reply from the user.
+
+            reply_to_message_id (``int``, *optional*):
+                If the message is a reply, ID of the original message.
+
+            reply_to_chat_id (``int`` | ``str``, *optional*):
+                Unique identifier for the chat to which the replied message belongs.
+                Only applicable in combination with *reply_to_message_id*.
+
+            quote_text (``str``, *optional*):
+                Text of the quote to reply to.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in *quote_text*, which can be specified instead of *parse_mode*.
+
+            quote_offset (``int``, *optional*):
+                Deprecated, use *reply_parameters* instead.
+                Position of the quote in the original message, in UTF-16 code units.
+
         Returns:
             List of :obj:`~pyrogram.types.Message`: On success, a list of messages is returned.
 

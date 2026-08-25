@@ -50,6 +50,9 @@ class UpdateChannelColor:
 
             background_emoji_id (int): Custom emoji ID for the background
 
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
 
 
         Returns:

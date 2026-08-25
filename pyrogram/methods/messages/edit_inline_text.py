@@ -57,6 +57,12 @@ class EditInlineText:
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
 
+            show_caption_above_media (``bool``, *optional*):
+                Pass True, if the caption must be shown above the message media.
+
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection.
+
         Returns:
             ``bool``: On success, True is returned.
 

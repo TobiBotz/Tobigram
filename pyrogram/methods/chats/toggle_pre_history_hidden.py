@@ -42,6 +42,9 @@ class TogglePreHistoryHidden:
 
             enabled (bool, *optional*): Whether pre-history is hidden
 
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
 
 
         Returns:

@@ -42,6 +42,9 @@ class SendScreenshotNotification:
 
             reply_to_message_id (int, *optional*): Message ID to reply to
 
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
 
 
         Returns:

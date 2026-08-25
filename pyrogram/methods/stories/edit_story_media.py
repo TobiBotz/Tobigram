@@ -107,6 +107,10 @@ class EditStoryMedia:
                 You can pass anything you need to be available in the progress callback scope; for example, a Message
                 object or a Client instance in order to edit the message with the updated progress status.
 
+            music (``str`` | :obj:`~pyrogram.types.Document`, *optional*):
+                Audio track to play over the story. Pass a file identifier or an audio
+                :obj:`~pyrogram.types.Document` that already exists on Telegram.
+
         Returns:
             :obj:`~pyrogram.types.Story`: On success, the edited story is returned.
 

@@ -46,6 +46,9 @@ class ToggleSignatures:
 
             profiles_enabled (bool): Whether profile signatures are enabled
 
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
 
 
         Returns:

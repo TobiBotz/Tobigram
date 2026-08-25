@@ -112,6 +112,65 @@ class SendContact:
                 *paid_message_star_count*, *suggested_post_parameters* or
                 *update_stickersets_order*; any of those that is set is logged and
                 dropped.
+
+            reply_to_chat_id (``int`` | ``str``, *optional*):
+                Unique identifier for the chat to which the replied message belongs.
+                Only applicable in combination with *reply_to_message_id*.
+
+            reply_parameters (:obj:`~pyrogram.types.ReplyParameters`, *optional*):
+                Describes reply parameters for the message that is being sent.
+
+            message_thread_id (``int``, *optional*):
+                Unique identifier for a message thread in a forum topic.
+
+            allow_paid_broadcast (``bool``, *optional*):
+                If True, you will be allowed to send up to 1000 messages per second.
+                Ignoring broadcasting limits for a fee of 0.1 Telegram Stars per message.
+                The relevant Stars will be withdrawn from the bot's balance.
+                For bots only.
+
+            paid_message_star_count (``int``, *optional*):
+                The number of Telegram Stars the user agreed to pay to send the messages.
+
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection.
+
+            quote_text (``str``, *optional*):
+                Text of the quote to reply to.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in *quote_text*, which can be specified instead of *parse_mode*.
+
+            effect_id (``int``, *optional*):
+                Unique identifier of the effect to apply to the message.
+
+            show_caption_above_media (``bool``, *optional*):
+                Pass True, if the caption must be shown above the message media.
+
+            repeat_period (``int``, *optional*):
+                New period in seconds for the message to be sent repeatedly.
+
+            suggested_post_parameters (:obj:`~pyrogram.types.SuggestedPostParameters`, *optional*):
+                Parameters of the suggested post.
+
+            direct_messages_topic_id (``int``, *optional*):
+                Unique identifier of the topic in a channel direct messages chat administered by the current user.
+                For directs only only.
+
+            background (``bool``, *optional*):
+                Send the message in background.
+
+            clear_draft (``bool``, *optional*):
+                Clear the draft of the chat.
+
+            update_stickersets_order (``bool``, *optional*):
+                Move the sticker set to the top of the list.
+
+            send_as (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the chat or channel to send the message as.
+
+            quick_reply_shortcut (``int``, *optional*):
+                Unique identifier of the quick reply shortcut the message belongs to.
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent contact message is returned.
 

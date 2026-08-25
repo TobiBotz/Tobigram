@@ -222,6 +222,18 @@ class SendInvoice:
             schedule_date (:py:obj:`~datetime.datetime`, *optional*):
                 Date when the message will be automatically sent.
 
+            paid_message_star_count (``int``, *optional*):
+                The number of Telegram Stars the user agreed to pay to send the messages.
+
+            terms_url (``str``, *optional*):
+                URL of the terms of service the buyer has to accept before paying.
+
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection.
+
+            reply_to_message_id (``int``, *optional*):
+                If the message is a reply, ID of the original message.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent invoice message is returned.
 

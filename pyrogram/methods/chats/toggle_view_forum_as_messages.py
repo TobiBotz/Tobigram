@@ -42,6 +42,9 @@ class ToggleViewForumAsMessages:
 
             enabled (bool, *optional*): Whether to view forum as messages
 
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
 
 
         Returns:

@@ -123,6 +123,18 @@ class ForwardMessages:
                 Pass True when the messages being forwarded are ephemeral messages
                 rather than messages of the source chat.
 
+            reply_parameters (:obj:`~pyrogram.types.ReplyParameters`, *optional*):
+                Describes reply parameters for the message that is being sent.
+
+            quick_reply_shortcut (``int``, *optional*):
+                Unique identifier of the quick reply shortcut the message belongs to.
+
+            suggested_post_parameters (:obj:`~pyrogram.types.SuggestedPostParameters`, *optional*):
+                Parameters of the suggested post.
+
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection.
+
         Returns:
             :obj:`~pyrogram.types.Message` | List of :obj:`~pyrogram.types.Message`: In case *message_ids* was not
             a list, a single message is returned, otherwise a list of messages is returned.

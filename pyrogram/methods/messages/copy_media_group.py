@@ -128,6 +128,9 @@ class CopyMediaGroup:
             has_spoilers (``bool``, *optional*):
                 Pass True to cover the copied media with a spoiler animation.
 
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection.
+
         Returns:
             List of :obj:`~pyrogram.types.Message`: On success, a list of copied messages is returned.
 

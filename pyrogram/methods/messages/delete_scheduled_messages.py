@@ -42,6 +42,9 @@ class DeleteScheduledMessages:
 
             id (List[int], *optional*): List of message IDs to delete
 
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
 
 
         Returns:

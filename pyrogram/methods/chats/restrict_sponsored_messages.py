@@ -42,6 +42,9 @@ class RestrictSponsoredMessages:
 
             restricted (bool, *optional*): Whether sponsored messages are restricted
 
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
 
 
         Returns:

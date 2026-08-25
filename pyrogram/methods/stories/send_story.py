@@ -141,6 +141,22 @@ class SendStory:
                 You can pass anything you need to be available in the progress callback scope; for example, a Message
                 object or a Client instance in order to edit the message with the updated progress status.
 
+            albums (List of ``int``, *optional*):
+                Identifiers of the story albums to put the story in.
+
+            music (``str`` | :obj:`~pyrogram.types.Document`, *optional*):
+                Audio track to play over the story. Pass a file identifier or an audio
+                :obj:`~pyrogram.types.Document` that already exists on Telegram.
+
+            fwd_modified (``bool``, *optional*):
+                Pass True if the reposted story was modified rather than reposted as it was.
+
+            fwd_from_id (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the chat the story is reposted from.
+
+            fwd_from_story (``int``, *optional*):
+                Identifier of the story being reposted, within *fwd_from_id*.
+
         Returns:
             :obj:`~pyrogram.types.Story` a single story is returned.
 

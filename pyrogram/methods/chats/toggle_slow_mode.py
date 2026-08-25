@@ -42,6 +42,9 @@ class ToggleSlowMode:
 
             seconds (int, *optional*): Slow mode interval in seconds (0 to disable)
 
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
 
 
         Returns:

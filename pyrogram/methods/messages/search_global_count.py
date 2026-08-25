@@ -50,6 +50,18 @@ class SearchGlobalCount:
             community (``int`` | ``str``, *optional*):
                 Unique identifier (int) or username (str) of the community to search in.
 
+            broadcasts_only (``bool``, *optional*):
+                Pass True to search channels only.
+
+            groups_only (``bool``, *optional*):
+                Pass True to search groups only.
+
+            users_only (``bool``, *optional*):
+                Pass True to search private chats only.
+
+            folder_id (``int``):
+                Unique identifier (int) of the target folder.
+
         Returns:
             ``int``: On success, the messages count is returned.
         """

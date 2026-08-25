@@ -120,6 +120,34 @@ class SendCachedMedia:
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
+            reply_to_chat_id (``int`` | ``str``, *optional*):
+                Unique identifier for the chat to which the replied message belongs.
+                Only applicable in combination with *reply_to_message_id*.
+
+            has_spoiler (``bool``, *optional*):
+                Pass True if the message needs to be covered with a spoiler animation.
+
+            quote_text (``str``, *optional*):
+                Text of the quote to reply to.
+
+            quote_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in *quote_text*, which can be specified instead of *parse_mode*.
+
+            background (``bool``, *optional*):
+                Send the message in background.
+
+            clear_draft (``bool``, *optional*):
+                Clear the draft of the chat.
+
+            update_stickersets_order (``bool``, *optional*):
+                Move the sticker set to the top of the list.
+
+            send_as (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the chat or channel to send the message as.
+
+            quick_reply_shortcut (``int``, *optional*):
+                Unique identifier of the quick reply shortcut the message belongs to.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent media message is returned.
 

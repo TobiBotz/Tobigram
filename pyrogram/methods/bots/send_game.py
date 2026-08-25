@@ -114,6 +114,15 @@ class SendGame:
             quick_reply_shortcut (``int``, *optional*):
                 Unique identifier of the quick reply shortcut to use.
 
+            reply_parameters (:obj:`~pyrogram.types.ReplyParameters`, *optional*):
+                Describes reply parameters for the message that is being sent.
+
+            message_thread_id (``int``, *optional*):
+                Unique identifier for a message thread in a forum topic.
+
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent game message is returned.
 

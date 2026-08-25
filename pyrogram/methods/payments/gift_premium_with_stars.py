@@ -49,6 +49,17 @@ class GiftPremiumWithStars:
             star_count (``int``, *optional*):
                 The number of Telegram Stars to pay for subscription.
 
+            text (``str`` | :obj:`~pyrogram.types.FormattedText`):
+                The original text.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
+                List of special entities that appear in message text, which can be specified
+                instead of *parse_mode*.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent message is returned.
 

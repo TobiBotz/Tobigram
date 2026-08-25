@@ -61,6 +61,9 @@ class EditMessageReplyMarkup:
             quick_reply_shortcut (``int``, *optional*):
                 Unique identifier of the quick reply shortcut the message belongs to.
 
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the edited message is returned.
 

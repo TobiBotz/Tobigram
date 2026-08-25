@@ -59,6 +59,9 @@ class SendReaction:
             story_id (``int``, *optional*):
                 Identifier of the story to react to, instead of a message.
 
+            add_to_recent (``bool``, *optional*):
+                Pass True to add the chosen reaction to the recently used ones.
+
         Returns:
             ``bool``: On success, True is returned.
 

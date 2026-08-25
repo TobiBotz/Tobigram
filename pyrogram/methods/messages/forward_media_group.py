@@ -110,6 +110,9 @@ class ForwardMediaGroup:
             quick_reply_shortcut (``int``, *optional*):
                 Unique identifier of the quick reply shortcut.
 
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection.
+
         Returns:
             List of :obj:`~pyrogram.types.Message`: On success, a list of forwarded messages is returned.
 

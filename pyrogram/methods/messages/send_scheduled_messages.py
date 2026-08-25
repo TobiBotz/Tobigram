@@ -42,6 +42,9 @@ class SendScheduledMessages:
 
             id (List[int], *optional*): List of scheduled message IDs to send now
 
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
 
 
         Returns:

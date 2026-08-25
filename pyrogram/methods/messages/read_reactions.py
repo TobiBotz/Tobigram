@@ -43,6 +43,10 @@ class ReadReactions:
                 Mark as read only reactions to messages within the specified forum topic.
                 By default, no topic is applied and all reactions marked as read.
 
+            saved_peer_id (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the dialog inside your personal
+                cloud (Saved Messages) to act on, rather than the cloud as a whole.
+
         Returns:
             ``bool`` - On success, True is returned.
 

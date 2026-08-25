@@ -42,6 +42,9 @@ class ToggleAntiSpam:
 
             enabled (bool, *optional*): Whether anti-spam is enabled
 
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
 
 
         Returns:

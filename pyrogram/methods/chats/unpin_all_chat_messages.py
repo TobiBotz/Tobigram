@@ -39,6 +39,13 @@ class UnpinAllChatMessages:
             chat_id (``int`` | ``str``):
                 Unique identifier (int) or username (str) of the target chat.
 
+            top_msg_id (``int``, *optional*):
+                Unique identifier of the forum topic the action is broadcast to.
+
+            saved_peer_id (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the dialog inside your personal
+                cloud (Saved Messages) to act on, rather than the cloud as a whole.
+
         Returns:
             ``bool``: True on success.
 

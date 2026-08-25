@@ -127,6 +127,9 @@ class CreateInvoiceLink:
                 Unique identifier of the business connection on behalf of which the
                 link is created.
 
+            terms_url (``str``, *optional*):
+                URL of the terms of service the buyer has to accept before paying.
+
         Returns:
             ``str``: On success, the invoice url is returned.
 

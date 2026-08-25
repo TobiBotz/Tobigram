@@ -58,6 +58,39 @@ class SendPhoneNumberCode:
                 Type of the request for which the code is sent.
                 Defaults to authentication.
 
+            current_number (``bool``, *optional*):
+                Deprecated, use *settings* instead.
+                Pass True if the phone number is the one the client is already signed in with.
+
+            allow_flashcall (``bool``, *optional*):
+                Deprecated, use *settings* instead.
+                Pass True if the code may be delivered as a flash call.
+
+            allow_app_hash (``bool``, *optional*):
+                Deprecated, use *settings* instead.
+                Pass True if the code may be delivered through the app hash.
+
+            allow_missed_call (``bool``, *optional*):
+                Deprecated, use *settings* instead.
+                Pass True if the code may be delivered as a missed call.
+
+            allow_firebase (``bool``, *optional*):
+                Deprecated, use *settings* instead.
+                Pass True if the code may be delivered through Firebase.
+
+            logout_tokens (List of ``bytes``, *optional*):
+                Deprecated, use *settings* instead.
+                Tokens of the sessions the user was signed out of, so the server can offer
+                a faster sign-in.
+
+            token (``str``, *optional*):
+                Deprecated, use *settings* instead.
+                Push notification token the code may be delivered to.
+
+            app_sandbox (``bool``, *optional*):
+                Deprecated, use *settings* instead.
+                Pass True to use the sandbox push service rather than the production one.
+
         Returns:
             :obj:`~pyrogram.types.SentCode`: On success, returns information about the sent code.
 

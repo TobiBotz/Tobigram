@@ -315,6 +315,9 @@ class EditMessageMedia:
                 File name of the media to be sent. Not applicable to photos.
                 Defaults to file's path basename.
 
+            business_connection_id (``str``, *optional*):
+                Unique identifier of the business connection.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the edited message is returned.
 

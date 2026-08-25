@@ -111,6 +111,13 @@ class SearchMessages:
             from_user (``int`` | ``str``, *optional*):
                 Unique identifier (int) or username (str) of the target user you want to search for messages from.
 
+            saved_peer_id (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the dialog inside your personal
+                cloud (Saved Messages) to act on, rather than the cloud as a whole.
+
+            top_msg_id (``int``, *optional*):
+                Unique identifier of the forum topic the action is broadcast to.
+
         Returns:
             ``Generator``: A generator yielding :obj:`~pyrogram.types.Message` objects.
 

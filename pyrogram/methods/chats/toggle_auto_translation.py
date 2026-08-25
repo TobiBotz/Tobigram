@@ -42,6 +42,9 @@ class ToggleAutoTranslation:
 
             enabled (bool, *optional*): Whether auto-translation is enabled
 
+            chat_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target chat.
+
 
 
         Returns:
