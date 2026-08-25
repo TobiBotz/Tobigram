@@ -42,6 +42,9 @@ class RemoveHandler:
             group (``int``, *optional*):
                 The group identifier, defaults to 0.
 
+        Returns:
+            ``None``: The handler stops receiving updates once it returns.
+
         Example:
             .. code-block:: python
 

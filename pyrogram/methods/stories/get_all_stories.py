@@ -48,6 +48,17 @@ class GetAllStories:
                 If neither state nor next are set, fetches the initial page.
                 If state is set and next is not set, check for changes in the active/hidden peerset.
 
+        Parameters:
+            next (``bool``, *optional*):
+                Pass True to get the next page of stories rather than the first.
+
+            hidden (``bool``, *optional*):
+                Pass True to get the stories of the chats the user has hidden from the
+                action bar, instead of the ones shown on it.
+
+            state (``str``, *optional*):
+                The pagination state returned with the previous page.
+
         Returns:
             ``Generator``: On success, a generator yielding :obj:`~pyrogram.types.Story` objects is returned.
 

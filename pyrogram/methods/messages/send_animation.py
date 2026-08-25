@@ -163,6 +163,16 @@ class SendAnimation:
                 You can pass anything you need to be available in the progress callback scope; for example, a Message
                 object or a Client instance in order to edit the message with the updated progress status.
 
+            ephemeral_message_parameters (:obj:`~pyrogram.types.EphemeralMessageParameters`, *optional*):
+                Send the message as an ephemeral message, visible only to the user it
+                names and absent from the chat's history, rather than as an ordinary one.
+                The ephemeral RPC has no field for *silent*, *background*, *clear_draft*,
+                *schedule_date*, *repeat_period*, *send_as*, *effect_id*,
+                *quick_reply_shortcut*, *allow_paid_broadcast*,
+                *paid_message_star_count*, *suggested_post_parameters* or
+                *update_stickersets_order*; any of those that is set is logged and
+                dropped.
+
         Other Parameters:
             current (``int``):
                 The amount of bytes transmitted so far.
@@ -174,15 +184,6 @@ class SendAnimation:
                 Extra custom arguments as defined in the ``progress_args`` parameter.
                 You can either keep ``*args`` or add every single extra argument in your function signature.
 
-            ephemeral_message_parameters (:obj:`~pyrogram.types.EphemeralMessageParameters`, *optional*):
-                Send the message as an ephemeral message, visible only to the user it
-                names and absent from the chat's history, rather than as an ordinary one.
-                The ephemeral RPC has no field for *silent*, *background*, *clear_draft*,
-                *schedule_date*, *repeat_period*, *send_as*, *effect_id*,
-                *quick_reply_shortcut*, *allow_paid_broadcast*,
-                *paid_message_star_count*, *suggested_post_parameters* or
-                *update_stickersets_order*; any of those that is set is logged and
-                dropped.
         Returns:
             :obj:`~pyrogram.types.Message` | ``None``: On success, the sent animation message is returned, otherwise,
             in case the upload is deliberately stopped with :meth:`~pyrogram.Client.stop_transmission`, None is

@@ -25,6 +25,9 @@ class Disconnect:
     ):
         """Disconnect the client from Telegram servers.
 
+        Returns:
+            ``None``: The client is left connected to nothing.
+
         Raises:
             ConnectionError: In case you try to disconnect an already disconnected client or in case you try to
                 disconnect a client that needs to be terminated first.

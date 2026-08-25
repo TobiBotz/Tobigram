@@ -1,0 +1,500 @@
+{
+  "add_profile_audio": [
+    "duration",
+    "file_name",
+    "performer",
+    "progress",
+    "progress_args",
+    "thumb",
+    "title"
+  ],
+  "answer_inline_query": [
+    "switch_webview_text",
+    "switch_webview_url"
+  ],
+  "copy_media_group": [
+    "business_connection_id"
+  ],
+  "create_invoice_link": [
+    "terms_url"
+  ],
+  "delete_scheduled_messages": [
+    "chat_id"
+  ],
+  "edit_inline_caption": [
+    "business_connection_id"
+  ],
+  "edit_inline_media": [
+    "business_connection_id"
+  ],
+  "edit_inline_reply_markup": [
+    "business_connection_id"
+  ],
+  "edit_inline_text": [
+    "business_connection_id",
+    "show_caption_above_media"
+  ],
+  "edit_message_media": [
+    "business_connection_id"
+  ],
+  "edit_message_reply_markup": [
+    "business_connection_id"
+  ],
+  "edit_story_media": [
+    "music"
+  ],
+  "forward_media_group": [
+    "business_connection_id"
+  ],
+  "forward_messages": [
+    "business_connection_id",
+    "quick_reply_shortcut",
+    "reply_parameters",
+    "suggested_post_parameters"
+  ],
+  "forward_story": [
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "quick_reply_shortcut",
+    "send_as",
+    "show_caption_above_media",
+    "update_stickersets_order"
+  ],
+  "get_business_account_gifts": [
+    "offset"
+  ],
+  "gift_premium_with_stars": [
+    "entities",
+    "parse_mode",
+    "text"
+  ],
+  "read_reactions": [
+    "saved_peer_id"
+  ],
+  "restrict_sponsored_messages": [
+    "chat_id"
+  ],
+  "search_global": [
+    "broadcasts_only",
+    "folder_id",
+    "groups_only",
+    "users_only"
+  ],
+  "search_global_count": [
+    "broadcasts_only",
+    "folder_id",
+    "groups_only",
+    "users_only"
+  ],
+  "search_messages": [
+    "saved_peer_id",
+    "top_msg_id"
+  ],
+  "search_messages_count": [
+    "saved_peer_id",
+    "top_msg_id"
+  ],
+  "send_animation": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "repeat_period",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "suggested_post_parameters",
+    "ttl_seconds",
+    "update_stickersets_order"
+  ],
+  "send_audio": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "has_spoiler",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "repeat_period",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "suggested_post_parameters",
+    "ttl_seconds",
+    "update_stickersets_order"
+  ],
+  "send_cached_media": [
+    "background",
+    "clear_draft",
+    "has_spoiler",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "reply_to_chat_id",
+    "send_as",
+    "update_stickersets_order"
+  ],
+  "send_contact": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "repeat_period",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "suggested_post_parameters",
+    "update_stickersets_order"
+  ],
+  "send_dice": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "repeat_period",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "suggested_post_parameters",
+    "update_stickersets_order"
+  ],
+  "send_document": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "repeat_period",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "suggested_post_parameters",
+    "update_stickersets_order"
+  ],
+  "send_game": [
+    "business_connection_id",
+    "message_thread_id",
+    "reply_parameters"
+  ],
+  "send_inline_bot_result": [
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "hide_via",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "reply_parameters",
+    "schedule_date",
+    "send_as"
+  ],
+  "send_invoice": [
+    "business_connection_id",
+    "paid_message_star_count",
+    "reply_to_message_id",
+    "terms_url"
+  ],
+  "send_location": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "repeat_period",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "suggested_post_parameters",
+    "update_stickersets_order"
+  ],
+  "send_media_group": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "update_stickersets_order"
+  ],
+  "send_paid_media": [
+    "allow_paid_broadcast",
+    "background",
+    "caption_entities",
+    "clear_draft",
+    "effect_id",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_offset",
+    "quote_text",
+    "repeat_period",
+    "reply_markup",
+    "reply_to_chat_id",
+    "reply_to_message_id",
+    "send_as",
+    "update_stickersets_order"
+  ],
+  "send_phone_number_code": [
+    "allow_app_hash",
+    "allow_firebase",
+    "allow_flashcall",
+    "allow_missed_call",
+    "app_sandbox",
+    "current_number",
+    "logout_tokens",
+    "token"
+  ],
+  "send_photo": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "repeat_period",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "suggested_post_parameters",
+    "update_stickersets_order"
+  ],
+  "send_poll": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "repeat_period",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "suggested_post_parameters",
+    "update_stickersets_order"
+  ],
+  "send_reaction": [
+    "add_to_recent"
+  ],
+  "send_scheduled_messages": [
+    "chat_id"
+  ],
+  "send_screenshot_notification": [
+    "chat_id"
+  ],
+  "send_sticker": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "has_spoiler",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "repeat_period",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "suggested_post_parameters",
+    "ttl_seconds",
+    "update_stickersets_order"
+  ],
+  "send_story": [
+    "albums",
+    "fwd_from_id",
+    "fwd_from_story",
+    "fwd_modified",
+    "music"
+  ],
+  "send_venue": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "repeat_period",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "suggested_post_parameters",
+    "update_stickersets_order"
+  ],
+  "send_video": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "message_thread_id",
+    "no_sound",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "repeat_period",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "suggested_post_parameters",
+    "update_stickersets_order"
+  ],
+  "send_video_note": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "repeat_period",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "suggested_post_parameters",
+    "update_stickersets_order"
+  ],
+  "send_voice": [
+    "allow_paid_broadcast",
+    "background",
+    "business_connection_id",
+    "clear_draft",
+    "direct_messages_topic_id",
+    "effect_id",
+    "message_thread_id",
+    "paid_message_star_count",
+    "quick_reply_shortcut",
+    "quote_entities",
+    "quote_text",
+    "repeat_period",
+    "reply_parameters",
+    "reply_to_chat_id",
+    "send_as",
+    "show_caption_above_media",
+    "suggested_post_parameters",
+    "update_stickersets_order"
+  ],
+  "toggle_anti_spam": [
+    "chat_id"
+  ],
+  "toggle_auto_translation": [
+    "chat_id"
+  ],
+  "toggle_forum": [
+    "chat_id"
+  ],
+  "toggle_join_to_send": [
+    "chat_id"
+  ],
+  "toggle_participants_hidden": [
+    "chat_id"
+  ],
+  "toggle_pre_history_hidden": [
+    "chat_id"
+  ],
+  "toggle_signatures": [
+    "chat_id"
+  ],
+  "toggle_slow_mode": [
+    "chat_id"
+  ],
+  "toggle_view_forum_as_messages": [
+    "chat_id"
+  ],
+  "unpin_all_chat_messages": [
+    "saved_peer_id",
+    "top_msg_id"
+  ],
+  "unpin_chat_message": [
+    "both_sides",
+    "disable_notification"
+  ],
+  "update_channel_color": [
+    "chat_id"
+  ]
+}

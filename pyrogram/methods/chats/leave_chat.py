@@ -41,6 +41,9 @@ class LeaveChat:
                 Deletes the group chat dialog after leaving (for simple group chats, not supergroups).
                 Defaults to False.
 
+        Returns:
+            ``RawType``: On success, the raw result of the underlying request is returned.
+
         Example:
             .. code-block:: python
 

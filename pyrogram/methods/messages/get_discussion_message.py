@@ -43,6 +43,9 @@ class GetDiscussionMessage:
             message_id (``int``):
                 Message id.
 
+        Returns:
+            :obj:`~pyrogram.types.Message`: On success, the discussion message is returned.
+
         Example:
             .. code-block:: python
 

@@ -39,6 +39,9 @@ class GetDiscussionRepliesCount:
             message_id (``int``):
                 Message id.
 
+        Returns:
+            ``int``: On success, the number of replies is returned.
+
         Example:
             .. code-block:: python
 

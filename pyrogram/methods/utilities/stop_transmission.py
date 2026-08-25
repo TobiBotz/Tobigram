@@ -29,6 +29,9 @@ class StopTransmission:
         This method must be called inside a progress callback function in order to stop the transmission at the
         desired time. The progress callback is called every time a file chunk is uploaded/downloaded.
 
+        Returns:
+            ``None``: The transfer raises :obj:`~pyrogram.StopTransmission` in the caller.
+
         Example:
             .. code-block:: python
 

@@ -50,6 +50,9 @@ class Run:
         Raises:
             ConnectionError: In case you try to run an already started client.
 
+        Returns:
+            ``None``: It returns once the client has stopped.
+
         Example:
             .. code-block:: python
 

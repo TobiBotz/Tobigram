@@ -44,6 +44,9 @@ class GetDiscussionReplies:
                 Limits the number of messages to be retrieved.
                 By default, no limit is applied and all messages are returned.
 
+        Yields:
+            :obj:`~pyrogram.types.Message` objects.
+
         Example:
             .. code-block:: python
 

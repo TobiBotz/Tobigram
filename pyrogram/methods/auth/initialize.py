@@ -33,6 +33,9 @@ class Initialize:
         This method will start updates and download workers.
         It will also load plugins and start the internal dispatcher.
 
+        Returns:
+            ``None``: The workers are running when it returns.
+
         Raises:
             ConnectionError: In case you try to initialize a disconnected client or in case you try to initialize an
                 already initialized client.

@@ -36,6 +36,9 @@ class GetChatMenuButton:
             chat_id (``int`` | ``str``, *optional*):
                 Unique identifier (int) or username (str) of the target chat.
                 If not specified, default bot's menu button will be returned.
+
+        Returns:
+            :obj:`~pyrogram.types.MenuButton`: On success, the current menu button is returned.
         """
 
         if chat_id:

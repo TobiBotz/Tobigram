@@ -32,6 +32,9 @@ class AcceptTermsOfService:
         Parameters:
             terms_of_service_id (``str``):
                 The terms of service identifier.
+
+        Returns:
+            ``bool``: On success, True is returned.
         """
         r = await self.invoke(
             raw.functions.help.AcceptTermsOfService(

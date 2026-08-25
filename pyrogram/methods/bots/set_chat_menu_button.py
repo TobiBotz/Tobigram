@@ -41,6 +41,9 @@ class SetChatMenuButton:
             menu_button (:obj:`~pyrogram.types.MenuButton`, *optional*):
                 The new bot's menu button.
                 Defaults to :obj:`~pyrogram.types.MenuButtonDefault`.
+
+        Returns:
+            ``bool``: On success, True is returned.
         """
 
         await self.invoke(

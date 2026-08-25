@@ -33,6 +33,9 @@ class Terminate:
         This method does the opposite of :meth:`~pyrogram.Client.initialize`.
         It will stop the dispatcher and shut down updates and download workers.
 
+        Returns:
+            ``None``: The workers are stopped when it returns.
+
         Raises:
             ConnectionError: In case you try to terminate a client that is already terminated.
         """
