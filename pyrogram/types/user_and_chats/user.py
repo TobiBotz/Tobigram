@@ -675,13 +675,24 @@ class User(Object, Update):
             username=user.username or (user.usernames[0].username if user.usernames else None),
             usernames=types.List([types.Username._parse(r) for r in user.usernames]) or None,
             language_code=user.lang_code,
-            emoji_status=types.EmojiStatus._parse(client, user.emoji_status),
+            emoji_status=(
+                types.EmojiStatus._parse(client, user.emoji_status)
+                if user.emoji_status is not None else None
+            ),
             dc_id=getattr(user.photo, "dc_id", None),
             phone_number=user.phone,
-            photo=types.ChatPhoto._parse(client, user.photo, user.id, user.access_hash),
+            photo=(
+                types.ChatPhoto._parse(client, user.photo, user.id, user.access_hash)
+                if user.photo is not None else None
+            ),
             restrictions=types.List([types.Restriction._parse(r) for r in user.restriction_reason]) or None,
-            reply_color=types.ChatColor._parse(user.color),
-            profile_color=types.ChatColor._parse_profile_color(user.profile_color),
+            reply_color=(
+                types.ChatColor._parse(user.color) if user.color is not None else None
+            ),
+            profile_color=(
+                types.ChatColor._parse_profile_color(user.profile_color)
+                if user.profile_color is not None else None
+            ),
             added_to_attachment_menu=user.attach_menu_enabled,
             active_users_count=user.bot_active_users,
             inline_need_location=user.bot_inline_geo,

@@ -9,12 +9,13 @@ being handed off for anything smaller than a transfer part.
 """
 
 import asyncio
+from io import BytesIO
 import tempfile
 import time
 from pathlib import Path
 from types import SimpleNamespace
 
-from pyrogram import raw
+from pyrogram import raw, types
 from pyrogram.session.session import Session
 from pyrogram.storage import SQLiteStorage
 
@@ -90,7 +91,57 @@ async def main():
     await bench("storage.update_peers (new peer)", new_peer, 1000)
     await bench("storage.update_state", state, 1000)
 
+    await bench_message_parse()
+
     await storage.close()
+
+
+async def bench_message_parse():
+    """The largest per-update cost there is, several times the deserialise."""
+
+    from unittest.mock import Mock
+
+    user = raw.types.User(
+        id=1, first_name="U", usernames=[], restriction_reason=[], access_hash=1
+    )
+    channel = raw.types.Channel(
+        id=100, title="C", photo=raw.types.ChatPhotoEmpty(), date=0, access_hash=1,
+        usernames=[], restriction_reason=[],
+    )
+    message = raw.types.Message(
+        id=1,
+        peer_id=raw.types.PeerChannel(channel_id=100),
+        from_id=raw.types.PeerUser(user_id=1),
+        date=1700000000,
+        restriction_reason=[],
+        message="hello world " * 4,
+        entities=[
+            raw.types.MessageEntityBold(offset=0, length=5),
+            raw.types.MessageEntityMention(offset=6, length=5),
+        ],
+    )
+
+    client = Mock()
+    client.me = Mock(id=999, is_bot=True, is_premium=False)
+    client.message_cache = {}
+    client.parse_mode = None
+
+    users, chats = {1: user}, {100: channel}
+
+    async def write(i=0):
+        message.write()
+
+    async def read(i=0):
+        raw.core.TLObject.read(BytesIO(blob))
+
+    async def parse(i=0):
+        await types.Message._parse(client, message, users, chats, replies=0)
+
+    blob = message.write()
+
+    await bench("raw Message.write", write, 3000)
+    await bench("raw TLObject.read", read, 3000)
+    await bench("types.Message._parse", parse, 3000)
 
 
 if __name__ == "__main__":

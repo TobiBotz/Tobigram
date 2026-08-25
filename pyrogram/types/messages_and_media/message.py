@@ -1561,6 +1561,11 @@ class Message(Object, Update):
                 else:
                     users.update({i.id: i for i in r})
 
+        # read once: each of these is asked for twice below, and for an ordinary
+        # message all of them are absent
+        guest_caller_id = utils.get_raw_peer_id(message.guestchat_via_from)
+        business_bot_id = getattr(message, "via_business_bot_id", None)
+
         from_user = types.User._parse(client, users.get(from_id or peer_id))
         chat = types.Chat._parse(client, message, users, chats, is_chat=True)
 
@@ -1748,20 +1753,26 @@ class Message(Object, Update):
 
         reply_markup = _parse_reply_markup(message.reply_markup)
 
-        reactions = types.MessageReactions._parse(client, message.reactions, users, chats)
+        reactions = (
+            types.MessageReactions._parse(client, message.reactions, users, chats)
+            if message.reactions is not None else None
+        )
 
         parsed_message = Message(
             id=message.id,
             effect_id=getattr(message, "effect", None),
-            rich_message=await types.RichMessage._parse(client, message.rich_message, users, chats),
+            rich_message=(
+                await types.RichMessage._parse(client, message.rich_message, users, chats)
+                if message.rich_message is not None else None
+            ),
             date=utils.timestamp_to_datetime(message.date),
             guest_query_id=str(guest_query_id) if guest_query_id else None,
             chat=chat,
             from_user=from_user,
             sender_chat=sender_chat,
-            sender_business_bot=types.User._parse(
-                client,
-                users.get(getattr(message, "via_business_bot_id", None))
+            sender_business_bot=(
+                types.User._parse(client, users.get(business_bot_id))
+                if business_bot_id is not None else None
             ),
             sender_tag=message.from_rank,
             text=(
@@ -1824,7 +1835,10 @@ class Message(Object, Update):
             views=message.views,
             forwards=message.forwards,
             sender_boost_count=message.from_boosts_applied,
-            via_bot=types.User._parse(client, users.get(message.via_bot_id)),
+            via_bot=(
+                types.User._parse(client, users.get(message.via_bot_id))
+                if message.via_bot_id is not None else None
+            ),
             outgoing=message.out,
             business_connection_id=business_connection_id,
             reply_markup=reply_markup,
@@ -1838,13 +1852,25 @@ class Message(Object, Update):
                 types.RestrictionReason._parse(reason)
                 for reason in getattr(message, "restriction_reason", [])
             ) or None,
-            fact_check=types.FactCheck._parse(client, message.factcheck, users),
-            suggested_post_info=types.SuggestedPostInfo._parse(message.suggested_post),
+            fact_check=(
+                types.FactCheck._parse(client, message.factcheck, users)
+                if message.factcheck is not None else None
+            ),
+            suggested_post_info=(
+                types.SuggestedPostInfo._parse(message.suggested_post)
+                if message.suggested_post is not None else None
+            ),
             channel_post=message.post,
             repeat_period=message.schedule_repeat_period,
             summary_language_code=message.summary_from_language,
-            guest_bot_caller_user=types.User._parse(client, users.get(utils.get_raw_peer_id(message.guestchat_via_from))),
-            guest_bot_caller_chat=types.Chat._parse_chat(client, chats.get(utils.get_raw_peer_id(message.guestchat_via_from))),
+            guest_bot_caller_user=(
+                types.User._parse(client, users.get(guest_caller_id))
+                if guest_caller_id is not None else None
+            ),
+            guest_bot_caller_chat=(
+                types.Chat._parse_chat(client, chats.get(guest_caller_id))
+                if guest_caller_id is not None else None
+            ),
             raw=message,
             client=client
         )

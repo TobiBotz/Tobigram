@@ -888,12 +888,23 @@ class Chat(Object):
             usernames=types.List([types.Username._parse(r) for r in user.usernames]) or None,
             first_name=user.first_name,
             last_name=user.last_name,
-            photo=types.ChatPhoto._parse(client, user.photo, peer_id, user.access_hash),
+            photo=(
+                types.ChatPhoto._parse(client, user.photo, peer_id, user.access_hash)
+                if user.photo is not None else None
+            ),
             restrictions=types.List([types.Restriction._parse(r) for r in user.restriction_reason]) or None,
             dc_id=getattr(getattr(user, "photo", None), "dc_id", None),
-            reply_color=types.ChatColor._parse(user.color),
-            profile_color=types.ChatColor._parse_profile_color(user.profile_color),
-            emoji_status=types.EmojiStatus._parse(client, user.emoji_status),
+            reply_color=(
+                types.ChatColor._parse(user.color) if user.color is not None else None
+            ),
+            profile_color=(
+                types.ChatColor._parse_profile_color(user.profile_color)
+                if user.profile_color is not None else None
+            ),
+            emoji_status=(
+                types.EmojiStatus._parse(client, user.emoji_status)
+                if user.emoji_status is not None else None
+            ),
             paid_message_star_count=user.send_paid_messages_stars,
             can_manage_bots=user.bot_can_manage_bots,
             raw=user,
@@ -929,7 +940,10 @@ class Chat(Object):
             is_call_not_empty=chat.call_not_empty,
             usernames=types.List([types.Username._parse(r) for r in usernames]) or None,
             photo=types.ChatPhoto._parse(client, chat.photo, peer_id, 0),
-            permissions=types.ChatPermissions._parse(chat.default_banned_rights),
+            permissions=(
+                types.ChatPermissions._parse(chat.default_banned_rights)
+                if chat.default_banned_rights is not None else None
+            ),
             members_count=chat.participants_count,
             dc_id=getattr(getattr(chat, "photo", None), "dc_id", None),
             has_protected_content=chat.noforwards,
@@ -988,14 +1002,26 @@ class Chat(Object):
             show_message_sender_name=channel.signature_profiles,
             sign_messages=channel.signatures,
             restrictions=types.List([types.Restriction._parse(r) for r in restriction_reason]) or None,
-            permissions=types.ChatPermissions._parse(channel.default_banned_rights),
+            permissions=(
+                types.ChatPermissions._parse(channel.default_banned_rights)
+                if channel.default_banned_rights is not None else None
+            ),
             members_count=channel.participants_count,
             dc_id=getattr(getattr(channel, "photo", None), "dc_id", None),
             has_protected_content=channel.noforwards,
             level=channel.level,
-            reply_color=types.ChatColor._parse(channel.color),
-            profile_color=types.ChatColor._parse(channel.profile_color),
-            emoji_status=types.EmojiStatus._parse(client, channel.emoji_status),
+            reply_color=(
+                types.ChatColor._parse(channel.color)
+                if channel.color is not None else None
+            ),
+            profile_color=(
+                types.ChatColor._parse(channel.profile_color)
+                if channel.profile_color is not None else None
+            ),
+            emoji_status=(
+                types.EmojiStatus._parse(client, channel.emoji_status)
+                if channel.emoji_status is not None else None
+            ),
             join_to_send_messages=channel.join_to_send,
             subscription_until_date=utils.timestamp_to_datetime(channel.subscription_until_date),
             paid_message_star_count=channel.send_paid_messages_stars,
