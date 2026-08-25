@@ -226,6 +226,66 @@ def indent_desc(desc: str, indent: str = "    ") -> str:
 
 
 # noinspection PyShadowingBuiltins
+LAZY_PACKAGE = """
+_names = {{
+{names}
+}}
+
+_subpackages = {subpackages}
+
+__all__ = [*_names, *_subpackages]
+
+
+def __getattr__(name):
+    \"\"\"Import the module that defines *name*, the first time it is asked for.
+
+    The schema generates thousands of one-class modules and a client touches a
+    handful of them. Importing every one so that ``raw.types.Message`` resolves
+    cost tens of megabytes and seconds of start-up in a process that never used
+    the rest.
+    \"\"\"
+
+    from importlib import import_module
+
+    module = _names.get(name)
+
+    if module is not None:
+        value = getattr(import_module("." + module, __name__), name)
+    elif name in _subpackages:
+        value = import_module("." + name, __name__)
+    else:
+        raise AttributeError(f"module {{__name__!r}} has no attribute {{name!r}}")
+
+    globals()[name] = value
+
+    return value
+
+
+def __dir__():
+    return sorted(__all__)
+"""
+
+
+def write_package(path, notice, types, subpackages):
+    """A package that imports its members on first use rather than all at once."""
+
+    names = []
+
+    for t in types:
+        module = "UpdatesT" if t == "Updates" else t
+        names.append(f'    "{t}": "{snake(module)}",')
+
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(f"{notice}\n\n")
+        f.write(f"{WARNING}\n")
+        f.write(
+            LAZY_PACKAGE.format(
+                names="\n".join(names),
+                subpackages=repr(tuple(subpackages)),
+            )
+        )
+
+
 def start(format: bool = False):
     shutil.rmtree(DESTINATION_PATH / "types", ignore_errors=True)
     shutil.rmtree(DESTINATION_PATH / "functions", ignore_errors=True)
@@ -619,53 +679,18 @@ def start(format: bool = False):
 
         d[c.namespace].append(c.name)
 
-    for namespace, types in namespaces_to_types.items():
-        with open(DESTINATION_PATH / "base" / namespace / "__init__.py", "w") as f:
-            f.write(f"{notice}\n\n")
-            f.write(f"{WARNING}\n\n")
-
-            for t in types:
-                module = t
-
-                if module == "Updates":
-                    module = "UpdatesT"
-
-                f.write(f"from .{snake(module)} import {t}\n")
-
-            if not namespace:
-                f.write(f"from . import {', '.join(filter(bool, namespaces_to_types))}")
-
-    for namespace, types in namespaces_to_constructors.items():
-        with open(DESTINATION_PATH / "types" / namespace / "__init__.py", "w") as f:
-            f.write(f"{notice}\n\n")
-            f.write(f"{WARNING}\n\n")
-
-            for t in types:
-                module = t
-
-                if module == "Updates":
-                    module = "UpdatesT"
-
-                f.write(f"from .{snake(module)} import {t}\n")
-
-            if not namespace:
-                f.write(f"from . import {', '.join(filter(bool, namespaces_to_constructors))}\n")
-
-    for namespace, types in namespaces_to_functions.items():
-        with open(DESTINATION_PATH / "functions" / namespace / "__init__.py", "w") as f:
-            f.write(f"{notice}\n\n")
-            f.write(f"{WARNING}\n\n")
-
-            for t in types:
-                module = t
-
-                if module == "Updates":
-                    module = "UpdatesT"
-
-                f.write(f"from .{snake(module)} import {t}\n")
-
-            if not namespace:
-                f.write(f"from . import {', '.join(filter(bool, namespaces_to_functions))}")
+    for directory, mapping in (
+        ("base", namespaces_to_types),
+        ("types", namespaces_to_constructors),
+        ("functions", namespaces_to_functions),
+    ):
+        for namespace, types in mapping.items():
+            write_package(
+                DESTINATION_PATH / directory / namespace / "__init__.py",
+                notice,
+                types,
+                sorted(filter(bool, mapping)) if not namespace else [],
+            )
 
     with open(DESTINATION_PATH / "all.py", "w", encoding="utf-8") as f:
         f.write(notice + "\n\n")

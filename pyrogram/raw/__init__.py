@@ -18,9 +18,21 @@
 
 from importlib import import_module
 
-from . import types, functions, base, core
-from .all import objects
+from . import core
+from .core.tl_object import objects
 
-for k, v in objects.items():
-    path, name = v.rsplit(".", 1)
-    objects[k] = getattr(import_module(path), name)
+
+def __getattr__(name):
+    """Load types, functions or base on first use.
+
+    Each is a package of thousands of one-class modules, and a client touches a
+    handful of them.
+    """
+
+    if name in ("types", "functions", "base"):
+        value = import_module("." + name, __name__)
+        globals()[name] = value
+
+        return value
+
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

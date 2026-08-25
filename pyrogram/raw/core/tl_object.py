@@ -22,9 +22,55 @@ from json import dumps
 from struct import Struct
 from typing import List, Any, Union, Dict
 
-from ..all import objects
+from ..all import objects as _paths
 
 _constructor = Struct("<I").unpack
+
+
+class _Objects(dict):
+    """Constructor id to class, resolved the first time that id arrives.
+
+    ``all.objects`` maps every id in the schema to a dotted path. Walking it at
+    import time to build a table of classes pulled in every one of the several
+    thousand one-class modules the schema generates, for a session that reads a
+    few dozen entries out of it.
+
+    ``__missing__`` raises ``KeyError`` for an id the schema does not know, which
+    is what ``read`` already handles.
+    """
+
+    def __missing__(self, key: int) -> Any:
+        path = _paths[key]
+
+        # a class rather than a path means someone put one in all.objects, which
+        # was a live dict of classes before this became lazy
+        if isinstance(path, str):
+            module_path, class_name = path.rsplit(".", 1)
+            value = getattr(importlib.import_module(module_path), class_name)
+        else:
+            value = path
+
+        self[key] = value
+
+        return value
+
+    def __contains__(self, key: object) -> bool:
+        return key in _paths
+
+    def __iter__(self):
+        return iter(_paths)
+
+    def __len__(self) -> int:
+        return len(_paths)
+
+    def keys(self):
+        return _paths.keys()
+
+    def get(self, key, default=None):
+        return self[key] if key in _paths else default
+
+
+objects = _Objects()
 
 _legacy_objects: Dict[int, str] = {
     0xf2355507: "pyrogram.raw.types.ChannelFull",

@@ -11,6 +11,43 @@ explain why the defaults are what they are.
 
 -----
 
+Start-up and resident memory
+----------------------------
+
+``pyrogram.raw`` is the TL schema turned into Python: roughly three thousand modules, one
+class each. wzgram imports them **on first use**, not all at once, because a client touches
+a handful of them and a bot that only uses the high-level API touches almost none.
+
+.. list-table::
+    :header-rows: 1
+    :widths: 40 20 20 20
+
+    * - ``import wzgram``
+      - RSS
+      - modules
+      - time
+    * - importing the whole schema
+      - 66.7 MiB
+      - 4389
+      - 3.1 s
+    * - importing it on first use
+      - 33.7 MiB
+      - 1351
+      - 1.0 s
+
+Using two hundred raw constructors afterwards adds 2.3 MiB and 200 modules, so the cost
+tracks what a program actually reaches for.
+
+Nothing about this is visible in code: ``raw.types.Message``, ``from pyrogram.raw.types
+import *``, ``dir(raw.functions)`` and ``isinstance(x, raw.types.Message)`` all behave as
+before. The map from constructor id to class, ``raw.objects``, resolves an entry the first
+time that id arrives on the wire rather than building the whole table at import.
+
+There is no polling loop to switch off, and no webhook to configure. MTProto keeps one TCP
+connection and the server pushes updates down it; the only periodic work an idle client does
+is a keepalive ping, which costs about 13 µs. Long polling and webhooks are Bot API
+transports and do not exist here.
+
 Rust crypto
 -----------
 
