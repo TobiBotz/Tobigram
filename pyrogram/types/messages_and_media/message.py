@@ -8408,6 +8408,379 @@ class Message(Object, Update):
             reply_markup=reply_markup,
         )
 
+    @property
+    def is_ephemeral(self) -> bool:
+        """True, if this is an ephemeral message.
+
+        An ephemeral message is not in the chat's history and is edited and deleted
+        through its own methods, which name the receiver again because the message only
+        ever existed for them.
+        """
+
+        return self.ephemeral_message_id is not None
+
+    def _ephemeral_target(self) -> int:
+        if not self.is_ephemeral:
+            raise ValueError(
+                "this is not an ephemeral message; use the ordinary edit and delete "
+                "methods for it"
+            )
+
+        if self.receiver_user is None:
+            raise ValueError(
+                "the ephemeral message carries no receiver, so there is nobody to "
+                "address the edit to"
+            )
+
+        return self.receiver_user.id
+
+    async def edit_ephemeral_text(
+        self,
+        text: Optional[str] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        entities: Optional[List["types.MessageEntity"]] = None,
+        rich_message: Optional["types.InputRichMessage"] = None,
+        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
+        welcome: Optional[bool] = None,
+    ) -> Optional["Message"]:
+        """Shortcut for method :obj:`~pyrogram.Client.edit_ephemeral_message_text` will automatically fill method attributes:
+
+        * chat_id
+        * receiver_id
+        * message_id
+
+        Example:
+            .. code-block:: python
+
+                await message.edit_ephemeral_text("hello")
+
+        Parameters:
+            text (``str``, *optional*):
+                New text of the message. Required if *rich_message* is not given.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
+                List of special entities that appear in message text, which can be specified instead of *parse_mode*.
+
+            rich_message (:obj:`~pyrogram.types.InputRichMessage`, *optional*):
+                New rich content of the message. Overrides *text*.
+
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
+                An InlineKeyboardMarkup object.
+
+            welcome (``bool``, *optional*):
+                Pass True when editing a stored welcome message rather than one that was delivered once.
+
+        Returns:
+            On success, the edited :obj:`~pyrogram.types.Message` is returned.
+
+        Raises:
+            ValueError: In case the message is not an ephemeral one.
+            RPCError: In case of a Telegram RPC error.
+        """
+        return await self._client.edit_ephemeral_message_text(
+            chat_id=self.chat.id,
+            receiver_id=self._ephemeral_target(),
+            message_id=self.ephemeral_message_id,
+            text=text,
+            parse_mode=parse_mode,
+            entities=entities,
+            rich_message=rich_message,
+            reply_markup=reply_markup,
+            welcome=welcome,
+        )
+
+    edit_ephemeral = edit_ephemeral_text
+
+    async def edit_ephemeral_caption(
+        self,
+        caption: str,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        caption_entities: Optional[List["types.MessageEntity"]] = None,
+        show_caption_above_media: Optional[bool] = None,
+        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
+        welcome: Optional[bool] = None,
+    ) -> Optional["Message"]:
+        """Shortcut for method :obj:`~pyrogram.Client.edit_ephemeral_message_caption` will automatically fill method attributes:
+
+        * chat_id
+        * receiver_id
+        * message_id
+
+        Example:
+            .. code-block:: python
+
+                await message.edit_ephemeral_caption("new caption")
+
+        Parameters:
+            caption (``str``):
+                New caption of the message.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            caption_entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
+                List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
+
+            show_caption_above_media (``bool``, *optional*):
+                Pass True if the caption must be shown above the message media.
+
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
+                An InlineKeyboardMarkup object.
+
+            welcome (``bool``, *optional*):
+                Pass True when editing a stored welcome message rather than one that was delivered once.
+
+        Returns:
+            On success, the edited :obj:`~pyrogram.types.Message` is returned.
+
+        Raises:
+            ValueError: In case the message is not an ephemeral one.
+            RPCError: In case of a Telegram RPC error.
+        """
+        return await self._client.edit_ephemeral_message_caption(
+            chat_id=self.chat.id,
+            receiver_id=self._ephemeral_target(),
+            message_id=self.ephemeral_message_id,
+            caption=caption,
+            parse_mode=parse_mode,
+            caption_entities=caption_entities,
+            show_caption_above_media=show_caption_above_media,
+            reply_markup=reply_markup,
+            welcome=welcome,
+        )
+
+    async def edit_ephemeral_media(
+        self,
+        media: "types.InputMedia",
+        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
+        welcome: Optional[bool] = None,
+    ) -> Optional["Message"]:
+        """Shortcut for method :obj:`~pyrogram.Client.edit_ephemeral_message_media` will automatically fill method attributes:
+
+        * chat_id
+        * receiver_id
+        * message_id
+
+        Example:
+            .. code-block:: python
+
+                from wzgram.types import InputMediaPhoto
+
+                await message.edit_ephemeral_media(InputMediaPhoto("new.jpg"))
+
+        Parameters:
+            media (:obj:`~pyrogram.types.InputMedia`):
+                The new media. A local file is uploaded first.
+
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
+                An InlineKeyboardMarkup object.
+
+            welcome (``bool``, *optional*):
+                Pass True when editing a stored welcome message rather than one that was delivered once.
+
+        Returns:
+            On success, the edited :obj:`~pyrogram.types.Message` is returned.
+
+        Raises:
+            ValueError: In case the message is not an ephemeral one.
+            RPCError: In case of a Telegram RPC error.
+        """
+        return await self._client.edit_ephemeral_message_media(
+            chat_id=self.chat.id,
+            receiver_id=self._ephemeral_target(),
+            message_id=self.ephemeral_message_id,
+            media=media,
+            reply_markup=reply_markup,
+            welcome=welcome,
+        )
+
+    async def edit_ephemeral_reply_markup(
+        self,
+        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
+        welcome: Optional[bool] = None,
+    ) -> Optional["Message"]:
+        """Shortcut for method :obj:`~pyrogram.Client.edit_ephemeral_message_reply_markup` will automatically fill method attributes:
+
+        * chat_id
+        * receiver_id
+        * message_id
+
+        Example:
+            .. code-block:: python
+
+                from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
+
+                await message.edit_ephemeral_reply_markup(
+                    InlineKeyboardMarkup([[InlineKeyboardButton("Done", "done")]])
+                )
+
+        Parameters:
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
+                An InlineKeyboardMarkup object. Pass nothing to remove the current one.
+
+            welcome (``bool``, *optional*):
+                Pass True when editing a stored welcome message rather than one that was delivered once.
+
+        Returns:
+            On success, the edited :obj:`~pyrogram.types.Message` is returned.
+
+        Raises:
+            ValueError: In case the message is not an ephemeral one.
+            RPCError: In case of a Telegram RPC error.
+        """
+        return await self._client.edit_ephemeral_message_reply_markup(
+            chat_id=self.chat.id,
+            receiver_id=self._ephemeral_target(),
+            message_id=self.ephemeral_message_id,
+            reply_markup=reply_markup,
+            welcome=welcome,
+        )
+
+    async def delete_ephemeral(self) -> bool:
+        """Shortcut for method :obj:`~pyrogram.Client.delete_ephemeral_message` will automatically fill method attributes:
+
+        * chat_id
+        * receiver_id
+        * message_id
+
+        Example:
+            .. code-block:: python
+
+                await message.delete_ephemeral()
+
+        Returns:
+            ``bool``: True on success.
+
+        Raises:
+            ValueError: In case the message is not an ephemeral one.
+            RPCError: In case of a Telegram RPC error.
+        """
+        return bool(
+            await self._client.delete_ephemeral_message(
+                chat_id=self.chat.id,
+                receiver_id=self._ephemeral_target(),
+                message_id=self.ephemeral_message_id,
+            )
+        )
+
+    async def reply_ephemeral_text(
+        self,
+        text: str,
+        receiver_id: Optional[Union[int, str]] = None,
+        parse_mode: Optional["enums.ParseMode"] = None,
+        entities: Optional[List["types.MessageEntity"]] = None,
+        reply_markup: Optional[Union[
+            "types.InlineKeyboardMarkup",
+            "types.ReplyKeyboardMarkup",
+            "types.ReplyKeyboardRemove",
+            "types.ForceReply"
+        ]] = None,
+        query_id: Optional[int] = None,
+        rich_text: Optional[Union[str, "types.InputRichMessage"]] = None,
+        rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
+        rich_text_media: Optional[List["types.InputRichMessageMedia"]] = None,
+        welcome: Optional[bool] = None,
+        anchor: Optional[bool] = None,
+        show_caption_above_media: Optional[bool] = None,
+        protect_content: Optional[bool] = None,
+    ) -> Optional["Message"]:
+        """Shortcut for method :obj:`~pyrogram.Client.send_ephemeral_message` will automatically fill method attributes:
+
+        * chat_id
+        * receiver_id
+        * reply_parameters
+
+        The reply goes to whoever sent this message unless *receiver_id* names someone
+        else, and it is visible only to them.
+
+        Example:
+            .. code-block:: python
+
+                await message.reply_ephemeral_text("Only you can see this")
+
+        Parameters:
+            text (``str``):
+                Text of the message to be sent.
+
+            receiver_id (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of the user who will receive the
+                message. Defaults to the sender of this message.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
+                List of special entities that appear in message text, which can be specified instead of *parse_mode*.
+
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
+                Additional interface options.
+
+            query_id (``int``, *optional*):
+                Identifier of the guest query to respond to, if this message is a reply to a guest bot query.
+
+            rich_text (``str`` | :obj:`~pyrogram.types.InputRichMessage`, *optional*):
+                Rich text (Markdown or HTML) to render a styled message. Overrides *text*.
+
+            rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                Parse mode for *rich_text*. Defaults to Markdown.
+
+            rich_text_media (List of :obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
+                Media *rich_text* refers to through ``tg://photo?id=``, ``tg://video?id=`` or ``tg://audio?id=`` links.
+
+            welcome (``bool``, *optional*):
+                Pass True to store the message as a welcome message for the chat rather than deliver it once.
+
+            anchor (``bool``, *optional*):
+                Pass True to anchor the message to the message it replies to.
+
+            show_caption_above_media (``bool``, *optional*):
+                Pass True if the caption must be shown above the message media.
+
+            protect_content (``bool``, *optional*):
+                Pass True to protect the content of the message from forwarding and saving.
+
+        Returns:
+            On success, the sent :obj:`~pyrogram.types.Message` is returned.
+
+        Raises:
+            ValueError: In case there is nobody to address the message to.
+            RPCError: In case of a Telegram RPC error.
+        """
+        if receiver_id is None:
+            if self.from_user is None:
+                raise ValueError(
+                    "the message has no sender, so there is nobody to address the "
+                    "ephemeral reply to; pass receiver_id"
+                )
+
+            receiver_id = self.from_user.id
+
+        return await self._client.send_ephemeral_message(
+            chat_id=self.chat.id,
+            receiver_id=receiver_id,
+            text=text,
+            parse_mode=parse_mode,
+            entities=entities,
+            reply_parameters=types.ReplyParameters(message_id=self.id),
+            reply_markup=reply_markup,
+            query_id=query_id,
+            rich_text=rich_text,
+            rich_text_parse_mode=rich_text_parse_mode,
+            rich_text_media=rich_text_media,
+            welcome=welcome,
+            anchor=anchor,
+            show_caption_above_media=show_caption_above_media,
+            protect_content=protect_content,
+        )
+
+    reply_ephemeral = reply_ephemeral_text
+
     async def edit_text(
         self,
         text: str,

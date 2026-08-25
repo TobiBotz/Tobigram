@@ -717,6 +717,112 @@ class TestEditEphemeralMessage:
             assert "raw.functions.messages.UploadMedia(" not in source
 
 
+class TestEphemeralBoundMethods:
+    """An ephemeral message is edited and deleted through its own RPCs.
+
+    The ordinary bound methods send messages.editMessage, which is the wrong request
+    for one, so the shortcut has to name the receiver again — and refuse when there is
+    nobody to name.
+    """
+
+    SHORTCUTS = (
+        "edit_ephemeral_text",
+        "edit_ephemeral_caption",
+        "edit_ephemeral_media",
+        "edit_ephemeral_reply_markup",
+        "delete_ephemeral",
+        "reply_ephemeral_text",
+    )
+
+    @staticmethod
+    def _message(ephemeral=True, receiver=True, sender=True):
+        return types.Message(
+            id=11,
+            chat=types.Chat(id=-100, type=enums.ChatType.SUPERGROUP),
+            from_user=types.User(id=5) if sender else None,
+            receiver_user=types.User(id=7) if receiver else None,
+            ephemeral_message_id=11 if ephemeral else None,
+            client=AsyncMock(),
+        )
+
+    @pytest.mark.parametrize("name", SHORTCUTS)
+    def test_each_one_exists(self, name):
+        assert hasattr(types.Message, name)
+
+    def test_the_aliases_point_at_the_long_names(self):
+        assert types.Message.edit_ephemeral is types.Message.edit_ephemeral_text
+        assert types.Message.reply_ephemeral is types.Message.reply_ephemeral_text
+
+    def test_is_ephemeral_follows_the_identifier(self):
+        assert self._message().is_ephemeral is True
+        assert self._message(ephemeral=False).is_ephemeral is False
+
+    @pytest.mark.parametrize(
+        "call",
+        [
+            lambda m: m.edit_ephemeral_text("x"),
+            lambda m: m.edit_ephemeral_caption("x"),
+            lambda m: m.edit_ephemeral_media(None),
+            lambda m: m.edit_ephemeral_reply_markup(),
+            lambda m: m.delete_ephemeral(),
+        ],
+    )
+    async def test_an_ordinary_message_is_refused(self, call):
+        """Sending the ephemeral RPC for a normal message edits nothing."""
+
+        with pytest.raises(ValueError, match="not an ephemeral message"):
+            await call(self._message(ephemeral=False))
+
+    async def test_a_message_with_no_receiver_is_refused(self):
+        with pytest.raises(ValueError, match="no receiver"):
+            await self._message(receiver=False).edit_ephemeral_text("x")
+
+    async def test_the_edit_fills_chat_receiver_and_message(self):
+        message = self._message()
+
+        await message.edit_ephemeral_text("hello")
+
+        kwargs = message._client.edit_ephemeral_message_text.await_args.kwargs
+
+        assert kwargs["chat_id"] == -100
+        assert kwargs["receiver_id"] == 7
+        assert kwargs["message_id"] == 11
+        assert kwargs["text"] == "hello"
+
+    async def test_the_delete_fills_the_same_three(self):
+        message = self._message()
+
+        await message.delete_ephemeral()
+
+        kwargs = message._client.delete_ephemeral_message.await_args.kwargs
+
+        assert (kwargs["chat_id"], kwargs["receiver_id"], kwargs["message_id"]) == (
+            -100, 7, 11
+        )
+
+    async def test_a_reply_goes_to_the_sender_and_quotes_the_message(self):
+        message = self._message(ephemeral=False)
+
+        await message.reply_ephemeral_text("only you")
+
+        kwargs = message._client.send_ephemeral_message.await_args.kwargs
+
+        assert kwargs["chat_id"] == -100
+        assert kwargs["receiver_id"] == 5, "the reply goes to whoever sent the message"
+        assert kwargs["reply_parameters"].message_id == 11
+
+    async def test_a_reply_can_name_someone_else(self):
+        message = self._message(ephemeral=False)
+
+        await message.reply_ephemeral_text("only you", receiver_id=99)
+
+        assert message._client.send_ephemeral_message.await_args.kwargs["receiver_id"] == 99
+
+    async def test_a_reply_with_nobody_to_address_is_refused(self):
+        with pytest.raises(ValueError, match="no sender"):
+            await self._message(ephemeral=False, sender=False).reply_ephemeral_text("x")
+
+
 class TestChatWelcomeMessagesFlag:
     def test_a_full_channel_carries_it(self):
         assert "has_welcome_messages" in inspect.getsource(

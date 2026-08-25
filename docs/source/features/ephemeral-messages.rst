@@ -197,6 +197,37 @@ Unlike :meth:`~pyrogram.Client.send_ephemeral_message`, the text form takes a bu
 :obj:`~pyrogram.types.InputRichMessage` as ``rich_message`` rather than a string: a rich
 message that has to be composed is composed once and edited many times.
 
+Bound methods
+-------------
+
+A :obj:`~pyrogram.types.Message` that arrived as an ephemeral one carries everything the edit
+and delete RPCs need, so it edits and deletes itself:
+
+.. code-block:: python
+
+    sent = await app.send_ephemeral_message(chat_id, user_id, "Working…")
+
+    await sent.edit_ephemeral_text("Done")
+    await sent.edit_ephemeral_reply_markup(markup)
+    await sent.delete_ephemeral()
+
+``edit_ephemeral`` and ``reply_ephemeral`` are aliases of the ``_text`` forms, matching
+``edit`` and ``reply``. They are separate from :meth:`~pyrogram.types.Message.edit_text` and
+:meth:`~pyrogram.types.Message.delete` on purpose — those send ``messages.editMessage``, which
+is the wrong request for a message that is not in the chat's history. Calling an ephemeral
+shortcut on an ordinary message raises rather than sending it.
+
+:obj:`~pyrogram.types.Message.is_ephemeral` says which kind you have.
+
+Replying to any message with an ephemeral one needs no identifiers at all — it goes to
+whoever sent it, quoting it:
+
+.. code-block:: python
+
+    @app.on_message(filters.command("balance"))
+    async def balance(client, message):
+        await message.reply_ephemeral_text(f"You have {get_balance(message.from_user.id)}")
+
 Deleting one
 ------------
 

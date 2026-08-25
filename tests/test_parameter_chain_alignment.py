@@ -24,6 +24,12 @@ import pyrogram
 
 SHORTCUT_CALLS = {
     # (Module, ShortcutMethod)  →  ("client.send_*")
+    ("messages_and_media.message", "edit_ephemeral_text"): "edit_ephemeral_message_text",
+    ("messages_and_media.message", "edit_ephemeral_caption"): "edit_ephemeral_message_caption",
+    ("messages_and_media.message", "edit_ephemeral_media"): "edit_ephemeral_message_media",
+    ("messages_and_media.message", "edit_ephemeral_reply_markup"): "edit_ephemeral_message_reply_markup",
+    ("messages_and_media.message", "delete_ephemeral"): "delete_ephemeral_message",
+    ("messages_and_media.message", "reply_ephemeral_text"): "send_ephemeral_message",
     ("messages_and_media.message", "reply_video"): "send_video",
     ("messages_and_media.message", "answer_video"): "send_video",
     ("messages_and_media.message", "reply_animation"): "send_animation",

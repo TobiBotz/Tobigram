@@ -1202,6 +1202,12 @@ def pyrogram_api():
         Message
             Message.click
             Message.delete
+            Message.delete_ephemeral
+            Message.edit_ephemeral_text
+            Message.edit_ephemeral_caption
+            Message.edit_ephemeral_media
+            Message.edit_ephemeral_reply_markup
+            Message.reply_ephemeral_text
             Message.download
             Message.forward
             Message.copy
