@@ -369,8 +369,6 @@ async def test_clicking_a_url_button_returns_its_url():
 
 
 async def test_clicking_a_password_button_forwards_the_password():
-    import pytest
-
     from pyrogram.types import (
         InlineKeyboardButton, InlineKeyboardMarkup, Message,
     )
@@ -472,4 +470,127 @@ async def test_restricting_a_member_sends_the_granular_permissions():
     assert legacy.send_media is False and legacy.send_photos is None, (
         "the deprecated can_send_media_messages still has to work on its own, "
         "without the granular flags contradicting it"
+    )
+
+
+async def test_lifecycle_decorators_reach_the_client():
+    import pyrogram
+    from pyrogram.handlers import (
+        ConnectHandler, DisconnectHandler, MessageHandler, StartHandler,
+        StopHandler,
+    )
+
+    fired = []
+
+    class _Client:
+        name = "lifecycle"
+        workers = 1
+        no_updates = True
+        skip_updates = True
+        rate_limiter = None
+        listeners = None
+        start_handler = None
+        stop_handler = None
+        connect_handler = None
+        disconnect_handler = None
+
+        def __init__(self):
+            self.loop = asyncio.get_event_loop()
+            self.dispatcher = Dispatcher(self)
+
+        async def recover_gaps(self):
+            return (0, 0)
+
+        add_handler = pyrogram.Client.add_handler
+        remove_handler = pyrogram.Client.remove_handler
+
+    def callback(name):
+        async def fire(client):
+            fired.append(name)
+
+        return fire
+
+    client = _Client()
+    slots = {
+        StartHandler: "start_handler",
+        StopHandler: "stop_handler",
+        ConnectHandler: "connect_handler",
+        DisconnectHandler: "disconnect_handler",
+    }
+    registered = {
+        handler_type: client.add_handler(handler_type(callback(attribute)))[0]
+        for handler_type, attribute in slots.items()
+    }
+
+    for handler_type, attribute in slots.items():
+        assert callable(getattr(client, attribute)), (
+            f"{handler_type.__name__} is a lifecycle callback, so add_handler "
+            "must put it on the client; parking it in dispatcher group 0 means "
+            "it can never match an update and never runs"
+        )
+
+    assert not client.dispatcher.groups, (
+        "no lifecycle handler belongs in a dispatcher group"
+    )
+
+    await client.dispatcher.start()
+    await asyncio.sleep(0.05)
+    await client.dispatcher.stop()
+
+    assert fired == ["start_handler", "stop_handler"], (
+        f"the dispatcher runs both around its own lifecycle, got {fired}"
+    )
+
+    for handler in registered.values():
+        client.remove_handler(handler)
+
+    for attribute in slots.values():
+        assert getattr(client, attribute) is None, (
+            f"remove_handler must clear {attribute}, not leave it firing"
+        )
+
+    client.add_handler(MessageHandler(callback("message")))
+    await asyncio.sleep(0.05)
+
+    assert [type(h).__name__ for h in client.dispatcher.groups[0]] == ["MessageHandler"], (
+        "an ordinary handler still belongs to the dispatcher"
+    )
+
+
+async def test_removing_a_handler_spares_another_callback_of_the_same_type():
+    import pyrogram
+    from pyrogram.handlers import StartHandler
+
+    class _Client:
+        start_handler = None
+        stop_handler = None
+        connect_handler = None
+        disconnect_handler = None
+        dispatcher = None
+
+        add_handler = pyrogram.Client.add_handler
+        remove_handler = pyrogram.Client.remove_handler
+
+    async def mine(client):
+        pass
+
+    async def theirs(client):
+        pass
+
+    client = _Client()
+    client.add_handler(StartHandler(theirs))
+    installed = client.add_handler(StartHandler(mine))[0]
+
+    client.remove_handler(StartHandler(theirs))
+
+    assert client.start_handler is mine, (
+        "matching on type alone lets unloading one plugin clear whatever "
+        "on_start another plugin installed, which the loader's exclude= path "
+        "does on every run"
+    )
+
+    client.remove_handler(installed)
+
+    assert client.start_handler is None, (
+        "removing the callback that is actually installed still clears it"
     )

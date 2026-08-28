@@ -17,8 +17,17 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import pyrogram
-from pyrogram.handlers import DisconnectHandler
+from pyrogram.handlers import (
+    ConnectHandler, DisconnectHandler, StartHandler, StopHandler,
+)
 from pyrogram.handlers.handler import Handler
+
+LIFECYCLE_HANDLERS = {
+    ConnectHandler: "connect_handler",
+    DisconnectHandler: "disconnect_handler",
+    StartHandler: "start_handler",
+    StopHandler: "stop_handler",
+}
 
 
 class AddHandler:
@@ -36,6 +45,11 @@ class AddHandler:
         To handle the same update more than once, register your handler using a different group id (lower group id
         == higher priority). This mechanism is explained in greater details at
         :doc:`More on Updates <../../topics/more-on-updates>`.
+
+        :obj:`~pyrogram.handlers.ConnectHandler`, :obj:`~pyrogram.handlers.DisconnectHandler`,
+        :obj:`~pyrogram.handlers.StartHandler` and :obj:`~pyrogram.handlers.StopHandler` are
+        lifecycle callbacks rather than update handlers: they never reach a group, *group* is
+        ignored, and the client holds one of each, so registering a second one replaces the first.
 
         Parameters:
             handler (``Handler``):
@@ -62,8 +76,10 @@ class AddHandler:
 
                 app.run()
         """
-        if isinstance(handler, DisconnectHandler):
-            self.disconnect_handler = handler.callback
+        for handler_type, attribute in LIFECYCLE_HANDLERS.items():
+            if isinstance(handler, handler_type):
+                setattr(self, attribute, handler.callback)
+                break
         else:
             self.dispatcher.add_handler(handler, group)
 
