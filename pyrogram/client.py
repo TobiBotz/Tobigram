@@ -1800,7 +1800,8 @@ class Client(Methods):
         export_authorization: Optional[bool] = True,
         server_address: Optional[str] = None,
         port: Optional[int] = None,
-        temporary: Optional[bool] = False
+        temporary: Optional[bool] = False,
+        adopt_as_main: Optional[bool] = False
     ) -> "Session":
         """Get existing session or create a new one.
 
@@ -1832,6 +1833,10 @@ class Client(Methods):
             temporary (``bool``, *optional*):
                 Create temporary session instead of getting from storage.
                 Used only when uploading/downloading and don't forget to stop it.
+
+            adopt_as_main (``bool``, *optional*):
+                Pass True to make the new session the client's main one before it
+                connects, so a datacenter migration announces the new connection.
         """
         if not dc_id:
             dc_id = await self.storage.dc_id()
@@ -1910,6 +1915,9 @@ class Client(Methods):
                 port=port,
                 crypto_executor=self.crypto_executor,
             )
+
+            if adopt_as_main:
+                self.session = session
 
             async with self._session_creation_gate:
                 await session.start(max_attempts=Session.MAX_RETRIES)

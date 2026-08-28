@@ -1240,3 +1240,80 @@ async def test_the_client_counts_as_connected_while_on_connect_runs(monkeypatch)
         "a connect that never got a session must not leave the client claiming to "
         "be connected"
     )
+
+
+async def test_a_datacenter_migration_announces_the_new_connection(monkeypatch):
+    import pyrogram.client as client_mod
+    from pyrogram.errors import PhoneMigrate
+
+    seen = []
+
+    class _Done(Exception):
+        pass
+
+    class _DcOption:
+        ip_address = "1.2.3.4"
+        port = 443
+
+    class _Auth:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def create(self):
+            return b"" * 256
+
+    class _Session:
+        MAX_RETRIES = 1
+
+        def __init__(self, client, dc_id, auth_key=None, *args, **kwargs):
+            self.client = client
+            self.dc_id = dc_id
+            self.auth_key = auth_key
+
+        async def start(self, max_attempts=None):
+            if self is self.client.session and callable(self.client.connect_handler):
+                await self.client.connect_handler(self.client, self)
+
+        async def stop(self):
+            pass
+
+    async def on_connect(client, session):
+        seen.append(session.dc_id)
+
+    monkeypatch.setattr(client_mod, "Auth", _Auth)
+    monkeypatch.setattr(client_mod, "Session", _Session)
+
+    attempts = []
+
+    async def invoke(query, *args, **kwargs):
+        attempts.append(query)
+
+        if len(attempts) == 1:
+            raise PhoneMigrate(4)
+
+        raise _Done
+
+    async def get_dc_option(*args, **kwargs):
+        return _DcOption()
+
+    client = pyrogram.Client("migration", api_id=1, api_hash="x", in_memory=True)
+    await client.storage.open()
+
+    try:
+        await client.storage.dc_id(2)
+
+        client.connect_handler = on_connect
+        client.session = _Session(client, 2, b"\x00" * 256)
+
+        monkeypatch.setattr(client, "invoke", invoke)
+        monkeypatch.setattr(client, "get_dc_option", get_dc_option)
+
+        with pytest.raises(_Done):
+            await client.send_code("+10000000000")
+    finally:
+        await client.storage.close()
+
+    assert seen == [4], (
+        "a datacenter migration stops the old session and opens a new one, so "
+        f"on_connect has to run for the new datacenter; got {seen}"
+    )

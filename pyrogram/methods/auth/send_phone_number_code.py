@@ -204,6 +204,7 @@ class SendPhoneNumberCode:
                     port=dc_option.port,
                     export_authorization=False,
                     temporary=True,
+                    adopt_as_main=True,
                 )
 
                 await self.storage.dc_id(e.value)
