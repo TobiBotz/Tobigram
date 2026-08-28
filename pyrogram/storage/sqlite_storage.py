@@ -168,7 +168,7 @@ class SQLiteStorage(Storage):
         self.use_wal = use_wal
 
         self._cache = SessionAttrCache()
-        self._peer_cache = PeerRowCache(self._PEER_CACHE_SIZE)
+        self._peer_cache = PeerRowCache(self._PEER_CACHE_SIZE, self.USERNAME_TTL / 2)
         self._dirty: bool = False
         self._write_count: int = 0
         self._flush_task: Optional[asyncio.Task] = None
@@ -374,7 +374,7 @@ class SQLiteStorage(Storage):
         if not peers:
             return
 
-        fresh = [p for p in peers if not self._peer_cache.matches(p[0], p[1], p[2])]
+        fresh = [p for p in peers if not self._peer_cache.matches(*p)]
 
         if not fresh:
             return
@@ -383,8 +383,10 @@ class SQLiteStorage(Storage):
             "REPLACE INTO peers (id, access_hash, type, phone_number) VALUES (?, ?, ?, ?)", fresh
         )
 
-        for peer_id, access_hash, peer_type, _ in fresh:
-            self._peer_cache.remember((peer_id, access_hash, peer_type))
+        for peer_id, access_hash, peer_type, phone_number in fresh:
+            self._peer_cache.remember(
+                (peer_id, access_hash, peer_type), phone_number, written=True
+            )
 
         await self._maybe_commit()
 

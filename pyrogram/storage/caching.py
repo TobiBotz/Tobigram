@@ -17,6 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+import time
 from typing import Any, Dict, Optional, Tuple
 
 from pyrogram import raw
@@ -24,6 +25,7 @@ from pyrogram import raw
 from .. import utils
 
 PEER_CACHE_SIZE = int(os.environ.get("WZGRAM_PEER_CACHE", 4096))
+PEER_WRITE_TTL = 60 * 60
 
 
 def get_input_peer(peer_id: int, access_hash: int, peer_type: str) -> "raw.base.InputPeer":
@@ -56,24 +58,52 @@ class PeerRowCache:
     costs, or a network round trip on a remote engine.
     """
 
-    def __init__(self, size: int = PEER_CACHE_SIZE):
+    def __init__(self, size: int = PEER_CACHE_SIZE, write_ttl: float = PEER_WRITE_TTL):
         self.size = size
-        self._rows: Dict[int, Tuple[int, int, str]] = {}
+        self.write_ttl = write_ttl
+        self._rows: Dict[int, Tuple[Tuple[int, int, str], Optional[str], Optional[float]]] = {}
 
     def __len__(self) -> int:
         return len(self._rows)
 
     def get(self, peer_id: int) -> Optional[Tuple[int, int, str]]:
-        return self._rows.get(peer_id)
+        entry = self._rows.get(peer_id)
 
-    def matches(self, peer_id: int, access_hash: int, peer_type: str) -> bool:
-        return self._rows.get(peer_id) == (peer_id, access_hash, peer_type)
+        return entry[0] if entry is not None else None
 
-    def remember(self, row: Tuple[int, int, str]) -> None:
+    def matches(
+        self,
+        peer_id: int,
+        access_hash: int,
+        peer_type: str,
+        phone_number: Optional[str] = None
+    ) -> bool:
+        entry = self._rows.get(peer_id)
+
+        if entry is None:
+            return False
+
+        row, phone, written_at = entry
+
+        if written_at is None or time.monotonic() - written_at > self.write_ttl:
+            return False
+
+        return row == (peer_id, access_hash, peer_type) and phone == phone_number
+
+    def remember(
+        self,
+        row: Tuple[int, int, str],
+        phone_number: Optional[str] = None,
+        written: bool = False
+    ) -> None:
         rows = self._rows
 
         rows.pop(row[0], None)
-        rows[row[0]] = row
+        rows[row[0]] = (
+            tuple(row),
+            phone_number,
+            time.monotonic() if written else None
+        )
 
         if len(rows) > self.size:
             for key in list(rows)[:len(rows) - self.size]:

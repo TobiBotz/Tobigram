@@ -84,7 +84,7 @@ class RemoteStorage(Storage):
         self.session_string = session_string
 
         self._cache = SessionAttrCache()
-        self._peer_cache = PeerRowCache(PEER_CACHE_SIZE)
+        self._peer_cache = PeerRowCache(PEER_CACHE_SIZE, self.USERNAME_TTL / 2)
         self._opened = False
 
     @abstractmethod
@@ -208,15 +208,17 @@ class RemoteStorage(Storage):
         if not peers:
             return
 
-        fresh = [p for p in peers if not self._peer_cache.matches(p[0], p[1], p[2])]
+        fresh = [p for p in peers if not self._peer_cache.matches(*p)]
 
         if not fresh:
             return
 
         await self._upsert_peers(fresh)
 
-        for peer_id, access_hash, peer_type, _ in fresh:
-            self._peer_cache.remember((peer_id, access_hash, peer_type))
+        for peer_id, access_hash, peer_type, phone_number in fresh:
+            self._peer_cache.remember(
+                (peer_id, access_hash, peer_type), phone_number, written=True
+            )
 
     async def update_usernames(self, usernames: List[Tuple[int, List[str]]]) -> None:
         if not usernames:

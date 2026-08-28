@@ -824,3 +824,84 @@ async def test_inviting_to_an_empty_folder_does_not_crash():
     assert _Client.sent["chat_ids"] == [], (
         "a folder with no included chats must send an empty chat list, not raise"
     )
+
+
+async def test_a_peer_that_never_changes_is_still_written_back(tmp_path, monkeypatch):
+    import time
+
+    from pyrogram.storage import caching
+
+    from pyrogram.storage import SQLiteStorage
+
+    async def age(storage, peer_id, seconds):
+        await storage.conn.execute("DROP TRIGGER trg_peers_last_update_on")
+        await storage.conn.execute(
+            "UPDATE peers SET last_update_on = ? WHERE id = ?",
+            (int(time.time()) - seconds, peer_id)
+        )
+        await storage.conn.execute(
+            "CREATE TRIGGER trg_peers_last_update_on AFTER UPDATE ON peers BEGIN "
+            "UPDATE peers SET last_update_on = CAST(STRFTIME('%s','now') AS INTEGER) "
+            "WHERE id = NEW.id; END"
+        )
+        await storage._ensure_committed()
+
+    async def age_of(storage, peer_id):
+        cursor = await storage.conn.execute(
+            "SELECT last_update_on FROM peers WHERE id = ?", (peer_id,)
+        )
+
+        return int(time.time()) - (await cursor.fetchone())[0]
+
+    storage = SQLiteStorage("peers", tmp_path)
+    await storage.open()
+
+    try:
+        peer = (777, 123, "user", None)
+
+        await storage.update_peers([peer])
+        await storage.update_usernames([(777, ["bob"])])
+        await storage._ensure_committed()
+
+        await age(storage, 777, 3600)
+        await storage.update_peers([peer])
+        await storage._ensure_committed()
+
+        assert await age_of(storage, 777) == 3600, (
+            "an unchanged peer seen again within the cache window must not be rewritten"
+        )
+
+        later = time.monotonic() + storage.USERNAME_TTL
+        monkeypatch.setattr(caching.time, "monotonic", lambda: later)
+
+        await storage.update_peers([peer])
+        await storage._ensure_committed()
+
+        assert await age_of(storage, 777) == 0, (
+            "an unchanged peer seen again after the cache window must be rewritten, "
+            "or its username expires while the client is still seeing it"
+        )
+
+        await storage.get_peer_by_username("bob")
+
+        assert storage._peer_cache.write_ttl < storage.USERNAME_TTL, (
+            "a peer row must be rewritten well before the username on it expires"
+        )
+    finally:
+        await storage.close()
+
+
+async def test_a_phone_number_learned_later_is_stored(tmp_path):
+    from pyrogram.storage import SQLiteStorage
+
+    storage = SQLiteStorage("phones", tmp_path)
+    await storage.open()
+
+    try:
+        await storage.update_peers([(777, 123, "user", None)])
+        await storage.update_peers([(777, 123, "user", "+15551234")])
+        await storage._ensure_committed()
+
+        await storage.get_peer_by_phone_number("+15551234")
+    finally:
+        await storage.close()
