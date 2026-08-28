@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-import pyrogram.session.session as session_mod
 from pyrogram import raw
+from pyrogram.connection import Connection
 from pyrogram.connection.transport import TCPAbridged
 from pyrogram.errors import AuthKeyUnregistered
 from pyrogram.session.session import Session
@@ -20,6 +20,7 @@ class DummyClient:
     proxy = None
     ipv6 = False
     protocol_factory = TCPAbridged
+    connection_factory = Connection
     init_connection_params = None
     dc_id = 2
     session = None
@@ -80,7 +81,7 @@ def session_factory():
 
 async def test_fatal_auth_after_transient_retry_propagates(monkeypatch, session_factory):
     _AuthFailThenUnreg.attempts = 0
-    monkeypatch.setattr(session_mod, "Connection", _AuthFailThenUnreg)
+    monkeypatch.setattr(DummyClient, "connection_factory", _AuthFailThenUnreg)
 
     started = asyncio.get_event_loop().time()
     with pytest.raises(AuthKeyUnregistered):
@@ -95,7 +96,7 @@ async def test_fatal_auth_after_transient_retry_propagates(monkeypatch, session_
 
 async def test_bounded_start_raises_instead_of_looping(monkeypatch, session_factory):
     _AlwaysFails.attempts = 0
-    monkeypatch.setattr(session_mod, "Connection", _AlwaysFails)
+    monkeypatch.setattr(DummyClient, "connection_factory", _AlwaysFails)
 
     started = asyncio.get_event_loop().time()
     with pytest.raises(OSError):
@@ -133,7 +134,7 @@ class _BlackHoleThenHealthy:
 
 async def test_start_retry_still_dispatches_packets(monkeypatch, session_factory):
     _BlackHoleThenHealthy.attempts = 0
-    monkeypatch.setattr(session_mod, "Connection", _BlackHoleThenHealthy)
+    monkeypatch.setattr(DummyClient, "connection_factory", _BlackHoleThenHealthy)
 
     s = session_factory()
     s.is_media = True
@@ -220,7 +221,7 @@ async def _wait_until(predicate, timeout=10):
 
 
 async def test_dead_session_rearms_when_network_returns(monkeypatch):
-    monkeypatch.setattr(session_mod, "Connection", _OutageConn)
+    monkeypatch.setattr(DummyClient, "connection_factory", _OutageConn)
     monkeypatch.setattr(Session, "MAX_RETRIES", 2)
     monkeypatch.setattr(_OutageConn, "outage", False)
 
@@ -255,7 +256,7 @@ async def test_dead_session_rearms_when_network_returns(monkeypatch):
 
 async def test_invoke_surfaces_real_start_failure(monkeypatch, session_factory):
     _AuthFailThenUnreg.attempts = 1
-    monkeypatch.setattr(session_mod, "Connection", _AuthFailThenUnreg)
+    monkeypatch.setattr(DummyClient, "connection_factory", _AuthFailThenUnreg)
 
     s = session_factory()
 
@@ -291,7 +292,7 @@ async def test_invoke_waits_out_active_start_then_proceeds(monkeypatch, session_
 
 async def test_invoke_raises_bounded_start_error_after_active_finishes(monkeypatch, session_factory):
     _AlwaysFails.attempts = 0
-    monkeypatch.setattr(session_mod, "Connection", _AlwaysFails)
+    monkeypatch.setattr(DummyClient, "connection_factory", _AlwaysFails)
     monkeypatch.setattr(Session, "MAX_RETRIES", 2)
 
     s = session_factory()

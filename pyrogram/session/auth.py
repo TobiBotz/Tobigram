@@ -27,7 +27,7 @@ from os import urandom
 
 import pyrogram
 from pyrogram import raw
-from pyrogram.connection import Connection, transport_error
+from pyrogram.connection import transport_error
 from pyrogram.crypto import aes, rsa, prime
 from pyrogram.errors import SecurityCheckMismatch
 from pyrogram.raw.core import TLObject, Long, Int
@@ -45,6 +45,7 @@ class Auth:
         self.ipv6 = client.ipv6
         self.proxy = client.proxy
         self.protocol_factory = client.protocol_factory
+        self.connection_factory = client.connection_factory
         self.server_address = server_address
         self.port = port
 
@@ -86,7 +87,7 @@ class Auth:
         # The server may close the connection at any time, causing the auth key creation to fail.
         # If that happens, just try again up to MAX_RETRIES times.
         while True:
-            self.connection = Connection(
+            self.connection = self.connection_factory(
                 self.dc_id,
                 self.test_mode,
                 self.ipv6,

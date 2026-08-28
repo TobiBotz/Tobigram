@@ -161,7 +161,7 @@ class Session:
                 self._teardown_started = False
                 self._skew_breaches = 0
                 self._msg_id_floor = 0
-                self.connection = Connection(
+                self.connection = self.client.connection_factory(
                     self.dc_id,
                     self.test_mode,
                     self.client.ipv6,

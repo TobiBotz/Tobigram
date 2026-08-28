@@ -958,8 +958,6 @@ async def test_the_obfuscated_transports_survive_their_handshake(monkeypatch):
 
 
 async def test_the_clients_transport_choice_reaches_the_connection(monkeypatch):
-    import pyrogram.session.auth as auth_mod
-    import pyrogram.session.session as session_mod
     from pyrogram.connection.transport import TCPAbridgedO
     from pyrogram.session.auth import Auth
     from pyrogram.session.session import Session
@@ -979,7 +977,7 @@ async def test_the_clients_transport_choice_reaches_the_connection(monkeypatch):
     client = DummyClient()
     client.protocol_factory = TCPAbridgedO
 
-    monkeypatch.setattr(session_mod, "Connection", record)
+    monkeypatch.setattr(client, "connection_factory", record)
 
     session = Session(client, 1, b"\x00" * 256, False, is_media=False, crypto_executor=None)
 
@@ -992,7 +990,6 @@ async def test_the_clients_transport_choice_reaches_the_connection(monkeypatch):
     )
 
     seen.clear()
-    monkeypatch.setattr(auth_mod, "Connection", record)
 
     auth = Auth(client, 1, False)
 
@@ -1006,7 +1003,6 @@ async def test_the_clients_transport_choice_reaches_the_connection(monkeypatch):
 
 
 async def test_init_connection_params_reach_the_server(monkeypatch):
-    import pyrogram.session.session as session_mod
     from pyrogram import raw
     from pyrogram.session.session import Session
 
@@ -1029,7 +1025,7 @@ async def test_init_connection_params_reach_the_server(monkeypatch):
 
         return None
 
-    monkeypatch.setattr(session_mod, "Connection", _Connection)
+    monkeypatch.setattr(DummyClient, "connection_factory", _Connection)
     monkeypatch.setattr(Session, "send", send)
     monkeypatch.setattr(Session, "recv_worker", lambda self: asyncio.sleep(0))
 
@@ -1052,3 +1048,38 @@ async def test_init_connection_params_reach_the_server(monkeypatch):
     assert init.params.value[0].key == "tz_offset", (
         "init_connection_params must carry the keys it was given"
     )
+
+
+async def test_the_clients_connection_factory_is_the_one_that_gets_used(monkeypatch):
+    import pyrogram.session.auth as auth_mod
+    import pyrogram.session.session as session_mod
+    from pyrogram.session.auth import Auth
+    from pyrogram.session.session import Session
+
+    from tests.test_session import DummyClient
+
+    class _FactoryUsed(Exception):
+        pass
+
+    class _ModuleGlobalUsed(Exception):
+        pass
+
+    def chosen(*args, **kwargs):
+        raise _FactoryUsed
+
+    def ignored(*args, **kwargs):
+        raise _ModuleGlobalUsed
+
+    monkeypatch.setattr(session_mod, "Connection", ignored)
+    monkeypatch.setattr(auth_mod, "Connection", ignored, raising=False)
+
+    client = DummyClient()
+    client.connection_factory = chosen
+
+    session = Session(client, 1, b"\x00" * 256, False, is_media=False, crypto_executor=None)
+
+    with pytest.raises(_FactoryUsed):
+        await session.start(max_attempts=1)
+
+    with pytest.raises(_FactoryUsed):
+        await Auth(client, 1, False).create()

@@ -10,6 +10,7 @@ import pyrogram
 import pyrogram.session.session as session_mod
 from pyrogram import raw
 from pyrogram.connection.transport.tcp.tcp import TCP
+from pyrogram.connection import Connection
 from pyrogram.connection.transport.tcp.tcp_abridged import TCPAbridged
 from pyrogram.dispatcher import Dispatcher
 from pyrogram.file_id import FileId, FileType
@@ -28,6 +29,7 @@ class DummyClient:
     proxy = None
     ipv6 = False
     protocol_factory = TCPAbridged
+    connection_factory = Connection
     init_connection_params = None
     dc_id = 2
     session = None
@@ -325,7 +327,7 @@ async def _failed_handshake(monkeypatch, reply):
     conn.reply = reply
 
     session = make_session()
-    monkeypatch.setattr(session_mod, "Connection", lambda *a, **kw: conn)
+    monkeypatch.setattr(DummyClient, "connection_factory", lambda *a, **kw: conn)
     monkeypatch.setattr(session.loop, "run_in_executor", _packed)
     monkeypatch.setattr(Session, "START_TIMEOUT", 5)
 
@@ -1118,7 +1120,7 @@ async def test_the_handshake_gets_longer_after_a_failed_attempt(monkeypatch):
         async def recv(self):
             await asyncio.sleep(3600)
 
-    monkeypatch.setattr("pyrogram.session.session.Connection", Flaky)
+    monkeypatch.setattr(DummyClient, "connection_factory", Flaky)
 
     async def send(data, wait_response=True, timeout=None, retry=0):
         seen.append(timeout)

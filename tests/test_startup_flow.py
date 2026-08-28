@@ -189,7 +189,7 @@ class _NeverConnects:
 
 async def test_an_unbounded_start_says_something_before_the_second_minute(monkeypatch, caplog):
     _NeverConnects.attempts = 0
-    monkeypatch.setattr(session_mod, "Connection", _NeverConnects)
+    monkeypatch.setattr(DummyClient, "connection_factory", _NeverConnects)
 
     session = Session(
         DummyClient(), 1, b"\x00" * 256, False, is_media=False, crypto_executor=None

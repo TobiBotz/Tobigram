@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 import pytest
 
 import pyrogram
-import pyrogram.session.auth as auth_mod
 from pyrogram import raw
 from pyrogram.connection.connection import Connection
 from pyrogram.dispatcher import Dispatcher
@@ -58,8 +57,6 @@ class _ClosingConnection:
 
 
 async def test_auth_reports_a_closed_socket_as_a_connection_error(monkeypatch):
-    monkeypatch.setattr(auth_mod, "Connection", _ClosingConnection)
-
     auth = Auth.__new__(Auth)
     auth.connection = _ClosingConnection()
 
