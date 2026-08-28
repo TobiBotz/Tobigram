@@ -40,7 +40,7 @@ def read_button_type(t: "raw.base.InlineButtonType") -> dict:
         except UnicodeDecodeError:
             data = t.data
 
-        return {"callback_data": data}
+        return {"callback_data": data, "requires_password": t.requires_password}
 
     if isinstance(t, raw.types.InlineButtonTypeCopy):
         return {"copy_text": types.CopyTextButton(text=t.copy_text)}
@@ -87,6 +87,7 @@ def write_button_type(
     callback_data: Optional[Union[str, bytes]] = None,
     copy_text: Optional["types.CopyTextButton"] = None,
     pay: Optional[bool] = None,
+    requires_password: Optional[bool] = None,
     url: Optional[str] = None,
     login_url: Optional["types.LoginUrl"] = None,
     login_bot: Optional["raw.base.InputUser"] = None,
@@ -109,7 +110,9 @@ def write_button_type(
         # Telegram only wants bytes, but we are allowed to pass strings too, for convenience.
         data = bytes(callback_data, "utf-8") if isinstance(callback_data, str) else callback_data
 
-        return raw.types.InlineButtonTypeCallback(data=data)
+        return raw.types.InlineButtonTypeCallback(
+            data=data, requires_password=requires_password or None
+        )
 
     if copy_text is not None:
         return raw.types.InlineButtonTypeCopy(copy_text=copy_text.text)
@@ -217,6 +220,9 @@ class InlineKeyboardButton(Object):
 
         style (:obj:`~pyrogram.enums.ButtonStyle`, *optional*):
             Style of the button. Defaults to :attr:`~pyrogram.enums.ButtonStyle.DEFAULT`.
+
+        requires_password (``bool``, *optional*):
+            True, if pressing the button asks for the account's 2-step verification password.
     """
 
     def __init__(
@@ -235,12 +241,14 @@ class InlineKeyboardButton(Object):
         pay: Optional[bool] = None,
         disabled: Optional["types.DisabledButton"] = None,
         icon_custom_emoji_id: Optional[str] = None,
-        style: ButtonStyle = ButtonStyle.DEFAULT
+        style: ButtonStyle = ButtonStyle.DEFAULT,
+        requires_password: Optional[bool] = None
     ):
         super().__init__()
 
         self.text = str(text)
         self.callback_data = callback_data
+        self.requires_password = requires_password
         self.url = url
         self.web_app = web_app
         self.login_url = login_url
@@ -298,6 +306,7 @@ class InlineKeyboardButton(Object):
             text=self.text,
             type=write_button_type(
                 callback_data=self.callback_data,
+                requires_password=self.requires_password,
                 copy_text=self.copy_text,
                 pay=self.pay,
                 url=self.url,

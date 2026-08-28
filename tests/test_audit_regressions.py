@@ -320,3 +320,84 @@ async def test_reacting_to_a_message_sends_the_emoji():
     ], (
         "react documents a list for reacting with several emojis at once"
     )
+
+
+async def test_clicking_a_url_button_returns_its_url():
+    import inspect
+
+    from pyrogram import raw
+    from pyrogram.types import (
+        InlineKeyboardButton, InlineKeyboardMarkup, Message,
+    )
+
+    message = Message(
+        id=7,
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("open", url="https://example.org"),
+        ]]),
+    )
+
+    assert await message.click() == "https://example.org", (
+        "click reaches the url branch only if the branches before it stop "
+        "reading attributes the button does not have"
+    )
+
+    raw_button = raw.types.KeyboardInlineButton(
+        text="confirm",
+        type=raw.types.InlineButtonTypeCallback(data=b"go", requires_password=True),
+    )
+    button = InlineKeyboardButton.read(raw_button)
+
+    positional = [
+        name
+        for name in inspect.signature(InlineKeyboardButton.__init__).parameters
+    ][1:]
+
+    assert positional[:3] == ["text", "callback_data", "url"], (
+        "InlineKeyboardButton is built positionally in Pyrogram code this "
+        "library has to stay a drop-in replacement for, so a new parameter "
+        f"belongs at the end, never inserted: {positional}"
+    )
+
+    assert button.requires_password, (
+        "the flag is on the wire, so it has to survive the read or click can "
+        "never tell a password button from an ordinary one"
+    )
+    assert (await button.write(None)).type == raw_button.type, (
+        "and it has to survive the write, or a bot cannot build one"
+    )
+
+
+async def test_clicking_a_password_button_forwards_the_password():
+    import pytest
+
+    from pyrogram.types import (
+        InlineKeyboardButton, InlineKeyboardMarkup, Message,
+    )
+
+    class _Client:
+        asked = None
+
+        async def request_callback_answer(self, **kwargs):
+            self.asked = kwargs
+
+            return True
+
+    message = Message(
+        id=7,
+        chat=object.__new__(type("C", (), {"id": -100})),
+        reply_markup=InlineKeyboardMarkup([[
+            InlineKeyboardButton("confirm", callback_data="go", requires_password=True),
+        ]]),
+    )
+    message._client = _Client()
+
+    with pytest.raises(ValueError, match="requires a password"):
+        await message.click()
+
+    await message.click(password="hunter2")
+
+    assert message._client.asked["password"] == "hunter2", (
+        "a password button always carries callback data, so the password has "
+        "to be forwarded from the callback branch or it is never sent at all"
+    )
