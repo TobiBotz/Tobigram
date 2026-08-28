@@ -360,6 +360,54 @@ class TestMessageGenerationStopped:
         assert handler_type is MessageGenerationStoppedHandler
 
 
+class TestMessageDraft:
+    """`sendMessageDraft` streams plain text, `sendRichMessageDraft` streams blocks."""
+
+    @staticmethod
+    def _client():
+        client = pyrogram.Client.__new__(pyrogram.Client)
+        client.invoke = AsyncMock(return_value=True)
+        client.resolve_peer = AsyncMock(
+            return_value=raw.types.InputPeerUser(user_id=7, access_hash=0)
+        )
+        client.parser = Mock()
+        client.parser.parse = AsyncMock(
+            side_effect=lambda text, mode: {"message": text, "entities": None}
+        )
+
+        return client
+
+    async def test_it_streams_a_text_draft_action(self):
+        client = self._client()
+
+        await pyrogram.Client.send_message_draft(
+            client, 7, 42, "hello", message_thread_id=3, can_stop=True, keep_on_stop=True
+        )
+
+        request = client.invoke.await_args.args[0]
+
+        assert isinstance(request.action, raw.types.SendMessageTextDraftAction)
+        assert request.action.random_id == 42
+        assert request.action.text.text == "hello"
+        assert request.action.can_stop is True
+        assert request.action.keep_on_stop is True
+        assert request.top_msg_id == 3
+        assert request.write()
+
+    async def test_an_empty_draft_carries_no_entities_rather_than_none(self):
+        """textWithEntities has no flag on entities, and Vector(None) raises."""
+
+        client = self._client()
+
+        await pyrogram.Client.send_message_draft(client, 7, 42)
+
+        request = client.invoke.await_args.args[0]
+
+        assert request.action.text.text == ""
+        assert request.action.text.entities == []
+        assert request.write()
+
+
 class TestGiftsAndCommunities:
     async def test_a_unique_gift_keeps_its_text_and_hidden_name(self):
         action = raw.types.MessageActionStarGiftUnique(

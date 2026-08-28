@@ -370,6 +370,7 @@ methods:
     - sendLocation
     - sendMediaGroup
     - sendMessage
+    - sendMessageDraft
     - sendPaidMedia
     - sendPhoto
     - sendPoll

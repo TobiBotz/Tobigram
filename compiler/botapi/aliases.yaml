@@ -597,6 +597,8 @@ mtproto:
       stargift: built from business_connection_id and owned_gift_id
     create_invoice_link:
       invoice_media: built from the invoice arguments
+    send_message_draft:
+      action: the method exists to save a draft, so it sets this itself
     send_rich_message_draft:
       action: the method exists to save a draft, so it sets this itself
     export_chat_invite_link:

@@ -445,6 +445,7 @@ def pyrogram_api():
             send_location
             send_media_group
             send_message
+            send_message_draft
             send_paid_media
             send_photo
             send_poll
