@@ -34,8 +34,9 @@ class ConnectHandler(Handler):
 
     Parameters:
         callback (``Callable``):
-            Pass a function that will be called when a connection occurs. It takes *(client)*
-            as positional argument (look at the section below for a detailed description).
+            Pass a function that will be called when a connection occurs. It takes
+            *(client, session)* as positional arguments (look at the section below for a
+            detailed description).
 
     Other parameters:
         client (:obj:`~pyrogram.Client`):

@@ -53,8 +53,12 @@ class Connect:
             crypto_executor=self.crypto_executor,
         )
 
-        await self.session.start()
-
         self.is_connected = True
+
+        try:
+            await self.session.start()
+        except BaseException:
+            self.is_connected = False
+            raise
 
         return bool(await self.storage.user_id())

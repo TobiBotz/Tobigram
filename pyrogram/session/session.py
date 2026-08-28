@@ -261,6 +261,12 @@ class Session:
             self._start_active = False
             self._start_completed.set()
 
+        if self is self.client.session and callable(self.client.connect_handler):
+            try:
+                await self.client.connect_handler(self.client, self)
+            except (Exception, asyncio.CancelledError) as e:
+                log.exception(e)
+
     async def stop(self):
         self.is_started.clear()
         self._stopping = True

@@ -33,6 +33,7 @@ class DummyClient:
     init_connection_params = None
     dc_id = 2
     session = None
+    connect_handler = None
     disconnect_handler = None
 
     def __init__(self):

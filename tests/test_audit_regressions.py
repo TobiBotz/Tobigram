@@ -1083,3 +1083,160 @@ async def test_the_clients_connection_factory_is_the_one_that_gets_used(monkeypa
 
     with pytest.raises(_FactoryUsed):
         await Auth(client, 1, False).create()
+
+
+async def test_a_registered_on_connect_callback_actually_runs(monkeypatch):
+    from pyrogram.session.session import Session
+
+    from tests.test_session import DummyClient
+
+    class _Connection:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def connect(self):
+            pass
+
+        async def close(self):
+            pass
+
+    seen = []
+
+    async def on_connect(client, session):
+        await asyncio.wait_for(session._wait_started(), timeout=2)
+
+        seen.append((client, session))
+
+    async def send(self, query, *args, **kwargs):
+        return None
+
+    monkeypatch.setattr(Session, "send", send)
+    monkeypatch.setattr(Session, "recv_worker", lambda self: asyncio.sleep(0))
+
+    client = DummyClient()
+    client.connection_factory = _Connection
+    client.connect_handler = on_connect
+
+    session = Session(client, 1, b"\x00" * 256, False, is_media=False, crypto_executor=None)
+    client.session = session
+
+    await session.start(max_attempts=1)
+
+    assert seen == [(client, session)], (
+        "a callback registered with @on_connect must run once the session is up, "
+        f"and receive (client, session); got {seen}"
+    )
+
+    await session.restart()
+    await session.stop()
+
+    assert len(seen) == 2, (
+        "on_connect must run again after a reconnect, the way on_disconnect runs "
+        f"again after every drop; ran {len(seen)} times"
+    )
+
+
+async def test_on_connect_stays_quiet_when_the_connection_never_came_up(monkeypatch):
+    from pyrogram.session.session import Session
+
+    from tests.test_session import DummyClient
+
+    class _Refused:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def connect(self):
+            raise OSError("no route to host")
+
+        async def close(self):
+            pass
+
+    fired = []
+
+    async def on_connect(client, session):
+        fired.append(session)
+
+    client = DummyClient()
+    client.connection_factory = _Refused
+    client.connect_handler = on_connect
+
+    session = Session(client, 1, b"\x00" * 256, False, is_media=False, crypto_executor=None)
+    client.session = session
+
+    with pytest.raises(OSError):
+        await session.start(max_attempts=1)
+
+    assert not fired, (
+        "on_connect must not run for a connection that never came up"
+    )
+
+
+async def test_the_client_counts_as_connected_while_on_connect_runs(monkeypatch):
+    import pyrogram.methods.auth.connect as connect_mod
+    from pyrogram.methods.auth.connect import Connect
+
+    seen = {}
+
+    class _Storage:
+        conn = object()
+
+        async def dc_id(self):
+            return 2
+
+        async def auth_key(self):
+            return b"\x00" * 256
+
+        async def test_mode(self):
+            return False
+
+        async def server_address(self):
+            return None
+
+        async def port(self):
+            return None
+
+        async def user_id(self):
+            return 12345
+
+    class _Session:
+        fails = False
+
+        def __init__(self, client, *args, **kwargs):
+            self.client = client
+
+        async def start(self):
+            seen["is_connected"] = self.client.is_connected
+
+            if _Session.fails:
+                raise OSError("no route to host")
+
+    class _Client(Connect):
+        is_connected = False
+        ipv6 = False
+        crypto_executor = None
+        storage = _Storage()
+
+        async def load_session(self):
+            pass
+
+    monkeypatch.setattr(connect_mod, "Session", _Session)
+
+    client = _Client()
+
+    assert await client.connect() is True
+
+    assert seen["is_connected"] is True, (
+        "an on_connect callback fires from inside Session.start, so the client has "
+        "to count as connected by then or client.invoke() raises ConnectionError"
+    )
+
+    _Session.fails = True
+    client.is_connected = False
+
+    with pytest.raises(OSError):
+        await client.connect()
+
+    assert client.is_connected is False, (
+        "a connect that never got a session must not leave the client claiming to "
+        "be connected"
+    )
