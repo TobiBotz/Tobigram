@@ -204,3 +204,71 @@ async def test_upload_shutdown_gives_up_on_a_worker_that_never_takes_its_sentine
         "asking a cancelled task for its exception re-raises instead of returning, "
         "so a cancelled worker must be read from gather"
     )
+
+
+async def test_editing_a_local_video_names_the_uploaded_file():
+    import io
+
+    from pyrogram import raw, types
+    from pyrogram.methods.messages.edit_message_media import resolve_input_media
+
+    class _Parser:
+        async def parse(self, text, parse_mode):
+            return {"message": text, "entities": None}
+
+    class _Client:
+        parser = _Parser()
+        sent = None
+
+        async def resolve_peer(self, chat_id):
+            return raw.types.InputPeerSelf()
+
+        async def save_file(self, media, **kwargs):
+            if media is None:
+                return None
+
+            return raw.types.InputFile(id=1, parts=1, name="f", md5_checksum="")
+
+        def guess_mime_type(self, media):
+            return "video/mp4"
+
+        async def invoke(self, query):
+            self.sent = query
+
+            return raw.types.MessageMediaDocument(
+                document=raw.types.Document(
+                    id=1, access_hash=2, file_reference=b"", date=0,
+                    mime_type="video/mp4", size=1, dc_id=1, attributes=[]
+                )
+            )
+
+    async def uploaded_name(media, **kwargs):
+        client = _Client()
+        await resolve_input_media(client, 1, media, **kwargs)
+
+        for attribute in client.sent.media.attributes:
+            if isinstance(attribute, raw.types.DocumentAttributeFilename):
+                return attribute.file_name
+
+        raise AssertionError("the upload carried no file name at all")
+
+    buffer = io.BytesIO(b"a video")
+    buffer.name = "from_the_buffer.mp4"
+
+    assert await uploaded_name(types.InputMediaVideo(buffer)) == "from_the_buffer.mp4", (
+        "with no name given anywhere the upload falls back to the media itself"
+    )
+
+    assert await uploaded_name(
+        types.InputMediaVideo(buffer, file_name="on_the_media.mp4")
+    ) == "on_the_media.mp4", (
+        "InputMediaVideo.file_name is documented, so it must reach the wire"
+    )
+
+    assert await uploaded_name(
+        types.InputMediaVideo(buffer, file_name="on_the_media.mp4"),
+        file_name="on_the_call.mp4",
+    ) == "on_the_call.mp4", (
+        "edit_message_media's own file_name parameter is the more specific of "
+        "the two, so it wins"
+    )

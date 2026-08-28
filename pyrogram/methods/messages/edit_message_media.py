@@ -31,7 +31,8 @@ from pyrogram.file_id import FileType
 async def resolve_input_media(
     client: "pyrogram.Client",
     chat_id: Union[int, str],
-    media: "types.InputMedia"
+    media: "types.InputMedia",
+    file_name: Optional[str] = None
 ) -> Tuple["raw.base.InputMedia", Optional[str], Optional[list]]:
     """The InputMedia an edit sends, uploading it first if it is a local file.
 
@@ -136,7 +137,9 @@ async def resolve_input_media(
                                 h=media.height
                             ),
                             raw.types.DocumentAttributeFilename(
-                                file_name=file_name or os.path.basename(media.media)
+                                file_name=utils.get_file_name(
+                                    media.media, file_name=file_name or media.file_name
+                                )
                             )
                         ]
                     )
@@ -182,7 +185,9 @@ async def resolve_input_media(
                                 title=media.title
                             ),
                             raw.types.DocumentAttributeFilename(
-                                file_name=file_name or os.path.basename(media.media)
+                                file_name=utils.get_file_name(
+                                    media.media, file_name=file_name or media.file_name
+                                )
                             )
                         ]
                     )
@@ -220,7 +225,9 @@ async def resolve_input_media(
                                 h=media.height
                             ),
                             raw.types.DocumentAttributeFilename(
-                                file_name=file_name or os.path.basename(media.media)
+                                file_name=utils.get_file_name(
+                                    media.media, file_name=file_name or media.file_name
+                                )
                             ),
                             raw.types.DocumentAttributeAnimated()
                         ]
@@ -254,7 +261,9 @@ async def resolve_input_media(
                         file=await client.save_file(media.media),
                         attributes=[
                             raw.types.DocumentAttributeFilename(
-                                file_name=file_name or os.path.basename(media.media)
+                                file_name=utils.get_file_name(
+                                    media.media, file_name=file_name or media.file_name
+                                )
                             )
                         ]
                     )
@@ -338,7 +347,7 @@ class EditMessageMedia:
                 await app.edit_message_media(chat_id, message_id,
                     InputMediaAudio("new_audio.mp3"))
         """
-        media, message, entities = await resolve_input_media(self, chat_id, media)
+        media, message, entities = await resolve_input_media(self, chat_id, media, file_name)
 
         r = await self.invoke(
             raw.functions.messages.EditMessage(
