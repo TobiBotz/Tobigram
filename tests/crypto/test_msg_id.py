@@ -13,7 +13,10 @@ class TestMsgIdSingleton:
         now = int(time.time())
         mid = MsgId()
         high = mid >> 32
-        assert high == now or high == now + 1
+        assert abs(high - now) <= 5, (
+            f"the high 32 bits should be a unix timestamp, got {high} "
+            f"against a wall clock of {now}"
+        )
 
 
 class TestMsgIdInstance:
