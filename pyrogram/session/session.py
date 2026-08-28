@@ -167,6 +167,7 @@ class Session:
                     self.client.ipv6,
                     self.client.proxy,
                     self.is_media,
+                    protocol_factory=self.client.protocol_factory,
                     crypto_executor=self.crypto_executor,
                     loop=self.loop,
                     server_address=self.server_address,
@@ -195,6 +196,11 @@ class Session:
                                     lang_code=self.client.lang_code,
                                     lang_pack="",
                                     query=raw.functions.help.GetConfig(),
+                                    params=(
+                                        utils.obj_to_jsonvalue(self.client.init_connection_params)
+                                        if self.client.init_connection_params
+                                        else None
+                                    ),
                                 )
                             ),
                             timeout=handshake_timeout

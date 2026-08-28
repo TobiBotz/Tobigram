@@ -44,6 +44,7 @@ class Auth:
         self.test_mode = test_mode
         self.ipv6 = client.ipv6
         self.proxy = client.proxy
+        self.protocol_factory = client.protocol_factory
         self.server_address = server_address
         self.port = port
 
@@ -85,7 +86,15 @@ class Auth:
         # The server may close the connection at any time, causing the auth key creation to fail.
         # If that happens, just try again up to MAX_RETRIES times.
         while True:
-            self.connection = Connection(self.dc_id, self.test_mode, self.ipv6, self.proxy, server_address=self.server_address, port=self.port)
+            self.connection = Connection(
+                self.dc_id,
+                self.test_mode,
+                self.ipv6,
+                self.proxy,
+                protocol_factory=self.protocol_factory,
+                server_address=self.server_address,
+                port=self.port
+            )
 
             try:
                 log.info("Start creating a new auth key on DC%s", self.dc_id)

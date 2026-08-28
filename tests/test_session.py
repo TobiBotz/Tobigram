@@ -4,6 +4,7 @@ import pytest
 
 import pyrogram.session.session as session_mod
 from pyrogram import raw
+from pyrogram.connection.transport import TCPAbridged
 from pyrogram.errors import AuthKeyUnregistered
 from pyrogram.session.session import Session
 
@@ -18,6 +19,8 @@ class DummyClient:
     is_media = False
     proxy = None
     ipv6 = False
+    protocol_factory = TCPAbridged
+    init_connection_params = None
     dc_id = 2
     session = None
     disconnect_handler = None

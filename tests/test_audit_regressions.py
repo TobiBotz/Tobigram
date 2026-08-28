@@ -905,3 +905,150 @@ async def test_a_phone_number_learned_later_is_stored(tmp_path):
         await storage.get_peer_by_phone_number("+15551234")
     finally:
         await storage.close()
+
+
+async def test_the_obfuscated_transports_survive_their_handshake(monkeypatch):
+    import asyncio
+
+    from pyrogram.connection.transport.tcp.tcp import TCP
+    from pyrogram.connection.transport.tcp.tcp_abridged_o import TCPAbridgedO
+    from pyrogram.connection.transport.tcp.tcp_intermediate_o import TCPIntermediateO
+    from pyrogram.connection.transport.tcp.tcp_padded_intermediate_o import (
+        TCPPaddedIntermediateO,
+    )
+    from pyrogram.crypto import aes
+
+    for transport_type in (TCPAbridgedO, TCPIntermediateO, TCPPaddedIntermediateO):
+        wire = []
+
+        async def connect(self, address):
+            return None
+
+        async def send(self, data, *args):
+            wire.append(bytes(data))
+
+        monkeypatch.setattr(TCP, "connect", connect)
+        monkeypatch.setattr(TCP, "send", send)
+
+        transport = transport_type(False, None, None, asyncio.get_event_loop())
+
+        await transport.connect(("127.0.0.1", 443))
+
+        assert len(wire) == 1 and len(wire[0]) == 64, (
+            f"{transport_type.__name__} must send a 64 byte handshake nonce"
+        )
+
+        nonce = wire[0]
+        peer = (bytes(nonce[8:40]), bytearray(nonce[40:56]), bytearray(1))
+
+        aes.ctr256_decrypt(nonce, *peer)
+
+        await transport.send(b"\x01" * 16)
+
+        plain = aes.ctr256_decrypt(wire[1], *peer)
+
+        assert b"\x01" * 16 in plain, (
+            f"{transport_type.__name__} must encrypt its first packet with the "
+            "same keystream the peer derives"
+        )
+
+        assert not isinstance(transport.encrypt[0], bytearray), (
+            f"{transport_type.__name__} must hand the cipher a bytes key"
+        )
+
+
+async def test_the_clients_transport_choice_reaches_the_connection(monkeypatch):
+    import pyrogram.session.auth as auth_mod
+    import pyrogram.session.session as session_mod
+    from pyrogram.connection.transport import TCPAbridgedO
+    from pyrogram.session.auth import Auth
+    from pyrogram.session.session import Session
+
+    from tests.test_session import DummyClient
+
+    seen = {}
+
+    class _Recorded(Exception):
+        pass
+
+    def record(*args, **kwargs):
+        seen.update(kwargs)
+
+        raise _Recorded
+
+    client = DummyClient()
+    client.protocol_factory = TCPAbridgedO
+
+    monkeypatch.setattr(session_mod, "Connection", record)
+
+    session = Session(client, 1, b"\x00" * 256, False, is_media=False, crypto_executor=None)
+
+    with pytest.raises(_Recorded):
+        await session.start(max_attempts=1)
+
+    assert seen.get("protocol_factory") is TCPAbridgedO, (
+        "Client(protocol_factory=...) must reach the connection the session opens, "
+        f"got {seen.get('protocol_factory')}"
+    )
+
+    seen.clear()
+    monkeypatch.setattr(auth_mod, "Connection", record)
+
+    auth = Auth(client, 1, False)
+
+    with pytest.raises(_Recorded):
+        await auth.create()
+
+    assert seen.get("protocol_factory") is TCPAbridgedO, (
+        "Client(protocol_factory=...) must reach the connection that creates the "
+        f"auth key, got {seen.get('protocol_factory')}"
+    )
+
+
+async def test_init_connection_params_reach_the_server(monkeypatch):
+    import pyrogram.session.session as session_mod
+    from pyrogram import raw
+    from pyrogram.session.session import Session
+
+    from tests.test_session import DummyClient
+
+    class _Connection:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def connect(self):
+            pass
+
+        async def close(self):
+            pass
+
+    sent = []
+
+    async def send(self, query, *args, **kwargs):
+        sent.append(query)
+
+        return None
+
+    monkeypatch.setattr(session_mod, "Connection", _Connection)
+    monkeypatch.setattr(Session, "send", send)
+    monkeypatch.setattr(Session, "recv_worker", lambda self: asyncio.sleep(0))
+
+    client = DummyClient()
+    client.init_connection_params = {"tz_offset": 3600}
+
+    session = Session(client, 1, b"\x00" * 256, False, is_media=False, crypto_executor=None)
+
+    await session.start(max_attempts=1)
+    await session.stop()
+
+    init = next(
+        q.query for q in sent
+        if isinstance(q, raw.functions.InvokeWithLayer)
+    )
+
+    assert isinstance(init.params, raw.types.JsonObject), (
+        f"init_connection_params must be sent as a JsonObject, got {init.params!r}"
+    )
+    assert init.params.value[0].key == "tz_offset", (
+        "init_connection_params must carry the keys it was given"
+    )
