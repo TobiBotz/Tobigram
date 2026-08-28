@@ -594,3 +594,169 @@ async def test_removing_a_handler_spares_another_callback_of_the_same_type():
     assert client.start_handler is None, (
         "removing the callback that is actually installed still clears it"
     )
+
+
+async def test_editing_a_folder_keeps_what_was_not_passed():
+    from pyrogram import raw
+    from pyrogram.methods.chats.edit_folder import EditFolder
+
+    def make_folder():
+        return raw.types.DialogFilter(
+            id=2,
+            title=raw.types.TextWithEntities(text="Work", entities=[]),
+            pinned_peers=[raw.types.InputPeerUser(user_id=1, access_hash=1)],
+            include_peers=[raw.types.InputPeerUser(user_id=2, access_hash=2)],
+            exclude_peers=[raw.types.InputPeerUser(user_id=3, access_hash=3)],
+            contacts=True,
+            exclude_muted=True,
+            emoticon="\U0001f4bc"
+        )
+
+    class _Parser:
+        async def parse(self, text, parse_mode):
+            return {"message": text, "entities": None}
+
+    class _Client(EditFolder):
+        parser = _Parser()
+
+        def __init__(self, folder):
+            self.folder = folder
+            self.sent = None
+
+        async def resolve_peer(self, chat_id):
+            return raw.types.InputPeerUser(user_id=9, access_hash=9)
+
+        async def invoke(self, query):
+            if isinstance(query, raw.functions.messages.GetDialogFilters):
+                return raw.types.messages.DialogFilters(filters=[self.folder])
+
+            self.sent = query
+
+            return True
+
+    client = _Client(make_folder())
+
+    await client.edit_folder(2, excluded_chats=["spam"])
+
+    sent = client.sent.filter
+
+    assert sent.title.text == "Work", (
+        "editing a folder without a name must not blank its title"
+    )
+    assert len(sent.pinned_peers) == 1, (
+        "editing a folder without pinned_chats must not drop its pinned chats"
+    )
+    assert len(sent.include_peers) == 1, (
+        "editing a folder without included_chats must not drop its included chats"
+    )
+    assert sent.contacts is True and sent.exclude_muted is True, (
+        "editing a folder must not reset the flags that were not passed"
+    )
+    assert sent.emoticon == "\U0001f4bc", (
+        "editing a folder without an icon must not drop its icon"
+    )
+    assert [p.user_id for p in sent.exclude_peers] == [9], (
+        "excluded_chats must replace the excluded peers it was given"
+    )
+
+    client = _Client(make_folder())
+
+    await client.edit_folder(2, animate_custom_emoji=None)
+
+    assert client.sent.filter.title_noanimate is None, (
+        "omitting animate_custom_emoji must not switch name animation off"
+    )
+
+
+async def test_editing_a_shared_folder_rejects_a_field_it_cannot_carry():
+    import pytest
+
+    from pyrogram import raw
+    from pyrogram.methods.chats.edit_folder import EditFolder
+
+    class _Parser:
+        async def parse(self, text, parse_mode):
+            return {"message": text, "entities": None}
+
+    folder = raw.types.DialogFilterChatlist(
+        id=3,
+        title=raw.types.TextWithEntities(text="Shared", entities=[]),
+        pinned_peers=[],
+        include_peers=[]
+    )
+
+    class _Client(EditFolder):
+        parser = _Parser()
+        sent = None
+
+        async def resolve_peer(self, chat_id):
+            return raw.types.InputPeerSelf()
+
+        async def invoke(self, query):
+            if isinstance(query, raw.functions.messages.GetDialogFilters):
+                return raw.types.messages.DialogFilters(filters=[folder])
+
+            self.sent = query
+
+            return True
+
+    client = _Client()
+
+    with pytest.raises(ValueError, match="excluded_chats"):
+        await client.edit_folder(3, excluded_chats=["spam"])
+
+    assert client.sent is None, (
+        "an unsupported field must be rejected before the folder is written back"
+    )
+
+
+async def test_editing_a_folder_can_still_clear_its_color():
+    from pyrogram import enums, raw
+    from pyrogram.methods.chats.edit_folder import EditFolder
+
+    class _Client(EditFolder):
+        def __init__(self):
+            self.folder = raw.types.DialogFilter(
+                id=2,
+                title=raw.types.TextWithEntities(text="Work", entities=[]),
+                pinned_peers=[],
+                include_peers=[],
+                exclude_peers=[],
+                color=3
+            )
+            self.sent = None
+
+        async def resolve_peer(self, chat_id):
+            return raw.types.InputPeerSelf()
+
+        async def invoke(self, query):
+            if isinstance(query, raw.functions.messages.GetDialogFilters):
+                return raw.types.messages.DialogFilters(filters=[self.folder])
+
+            self.sent = query
+
+            return True
+
+    client = _Client()
+
+    await client.edit_folder(2, color=enums.FolderColor.NO_COLOR)
+
+    assert client.sent.filter.color is None, (
+        "FolderColor.NO_COLOR must clear the color, not be read as no color given"
+    )
+
+    client = _Client()
+
+    await client.edit_folder(2, color=enums.FolderColor.RED)
+
+    assert client.sent.filter.color == 0, (
+        "FolderColor.RED carries value 0 and must not be read as no color given"
+    )
+
+    client = _Client()
+
+    await client.edit_folder(2, name=None)
+
+    assert client.sent.filter.color == 3, (
+        "an edit that does not mention the color must leave it alone"
+    )
