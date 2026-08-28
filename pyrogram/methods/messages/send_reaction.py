@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import pyrogram
 from pyrogram import raw
@@ -27,7 +27,7 @@ class SendReaction:
         self: "pyrogram.Client",
         chat_id: Union[int, str],
         message_id: Optional[int] = None,
-        emoji: str = "",
+        emoji: Optional[Union[int, str, List[Union[int, str]]]] = None,
         big: bool = False,
         add_to_recent: bool = False,
         business_connection_id: Optional[str] = None,
@@ -44,9 +44,10 @@ class SendReaction:
             message_id (``int``):
                 Identifier of the message.
 
-            emoji (``str``, *optional*):
-                Reaction emoji.
-                Pass "" as emoji (default) to retract the reaction.
+            emoji (``int`` | ``str`` | List of ``int`` | ``str``, *optional*):
+                Reaction emoji. An int is the document id of a custom emoji.
+                Pass None as emoji (default) to retract the reaction.
+                Pass a list to react with several emojis at once.
             
             big (``bool``, *optional*):
                 Pass True to show a bigger and longer reaction.
@@ -71,13 +72,23 @@ class SendReaction:
                 # Send a reaction
                 await app.send_reaction(chat_id, message_id, "🔥")
 
+                # Send a custom emoji reaction
+                await app.send_reaction(chat_id, message_id, 5875309033427620643)
+
                 # Retract a reaction
                 await app.send_reaction(chat_id, message_id)
         """
         if message_id is None and story_id is None:
             raise ValueError("You must pass either message_id or story_id")
 
-        reaction = [raw.types.ReactionEmoji(emoticon=emoji)] if emoji else None
+        emojis = emoji if isinstance(emoji, list) else [emoji] if emoji else []
+
+        reaction = [
+            raw.types.ReactionCustomEmoji(document_id=i)
+            if isinstance(i, int)
+            else raw.types.ReactionEmoji(emoticon=i)
+            for i in emojis
+        ] or None
 
         if story_id is not None:
             await self.invoke(

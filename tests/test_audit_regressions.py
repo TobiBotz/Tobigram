@@ -272,3 +272,51 @@ async def test_editing_a_local_video_names_the_uploaded_file():
         "edit_message_media's own file_name parameter is the more specific of "
         "the two, so it wins"
     )
+
+
+async def test_reacting_to_a_message_sends_the_emoji():
+    from pyrogram import raw
+    from pyrogram.methods.messages.send_reaction import SendReaction
+    from pyrogram.types import Message
+
+    class _Client(SendReaction):
+        sent = None
+
+        async def resolve_peer(self, chat_id):
+            return raw.types.InputPeerSelf()
+
+        async def invoke(self, query, **kwargs):
+            self.sent = query
+
+            return True
+
+    async def reaction_of(*args, **kwargs):
+        client = _Client()
+        message = Message(id=7, chat=object.__new__(type("C", (), {"id": -100})))
+        message._client = client
+
+        await message.react(*args, **kwargs)
+
+        return client.sent.reaction
+
+    assert await reaction_of("🔥") == [raw.types.ReactionEmoji(emoticon="🔥")], (
+        "react must forward its emoji; sending none is the documented way to "
+        "retract, so dropping it turns every reaction into a retraction"
+    )
+
+    assert await reaction_of() is None, (
+        "react() with no emoji still retracts"
+    )
+
+    assert await reaction_of(5875309033427620643) == [
+        raw.types.ReactionCustomEmoji(document_id=5875309033427620643)
+    ], (
+        "an int is a custom emoji document id, not an emoticon string"
+    )
+
+    assert await reaction_of(["🔥", 5875309033427620643]) == [
+        raw.types.ReactionEmoji(emoticon="🔥"),
+        raw.types.ReactionCustomEmoji(document_id=5875309033427620643),
+    ], (
+        "react documents a list for reacting with several emojis at once"
+    )

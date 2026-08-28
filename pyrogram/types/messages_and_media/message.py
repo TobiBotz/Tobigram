@@ -9846,7 +9846,7 @@ class Message(Object, Update):
         return await self._client.send_reaction(
             chat_id=self.chat.id,
             message_id=self.id,
-
+            emoji=emoji,
             big=big,
             business_connection_id=self.business_connection_id
         )
