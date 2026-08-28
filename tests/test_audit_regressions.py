@@ -401,3 +401,75 @@ async def test_clicking_a_password_button_forwards_the_password():
         "a password button always carries callback data, so the password has "
         "to be forwarded from the callback branch or it is never sent at all"
     )
+
+
+async def test_restricting_a_member_sends_the_granular_permissions():
+    import logging
+
+    from pyrogram import raw
+    from pyrogram.methods.chats.restrict_chat_member import RestrictChatMember
+    from pyrogram.methods.chats.set_chat_permissions import SetChatPermissions
+    from pyrogram.types import ChatPermissions
+
+    class _Client(RestrictChatMember, SetChatPermissions):
+        sent = None
+
+        async def resolve_peer(self, chat_id):
+            return raw.types.InputPeerSelf()
+
+        async def invoke(self, query):
+            self.sent = query
+
+            return raw.types.messages.ChatFull(
+                full_chat=None, chats=[None], users=[]
+            )
+
+    async def rights_of(call, permissions):
+        client = _Client()
+
+        try:
+            await call(client, permissions)
+        except AttributeError:
+            pass
+
+        return client.sent.banned_rights
+
+    allowed = ChatPermissions(
+        can_send_messages=True, can_send_photos=True, can_send_videos=True
+    )
+
+    for call, label in [
+        (lambda c, p: c.restrict_chat_member(-100, 1, p), "restrict_chat_member"),
+        (lambda c, p: c.set_chat_permissions(-100, p), "set_chat_permissions"),
+    ]:
+        rights = await rights_of(call, allowed)
+
+        assert rights.send_photos is False, (
+            f"{label} granted photos, so the ban flag must say photos are not "
+            "banned; hand-rolling the rights drops every granular field"
+        )
+        assert rights.send_videos is False, f"{label} granted videos"
+        assert rights.send_media is not True, (
+            f"{label}: can_send_media_messages defaults to None, so `not None` "
+            "bans all media on a call that never mentioned it"
+        )
+        assert rights.send_reactions is not None, (
+            f"{label} must decide reactions, or a muted user keeps reacting"
+        )
+        assert rights.manage_topics is not None, (
+            f"{label} must decide topics, or a muted user keeps managing them"
+        )
+
+    logging.disable(logging.WARNING)
+    try:
+        legacy = await rights_of(
+            lambda c, p: c.restrict_chat_member(-100, 1, p),
+            ChatPermissions(can_send_messages=True, can_send_media_messages=True),
+        )
+    finally:
+        logging.disable(logging.NOTSET)
+
+    assert legacy.send_media is False and legacy.send_photos is None, (
+        "the deprecated can_send_media_messages still has to work on its own, "
+        "without the granular flags contradicting it"
+    )
