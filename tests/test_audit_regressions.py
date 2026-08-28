@@ -1245,6 +1245,7 @@ async def test_the_client_counts_as_connected_while_on_connect_runs(monkeypatch)
 async def test_a_datacenter_migration_announces_the_new_connection(monkeypatch):
     import pyrogram.client as client_mod
     from pyrogram.errors import PhoneMigrate
+    from pyrogram.session.session import Session
 
     seen = []
 
@@ -1260,28 +1261,23 @@ async def test_a_datacenter_migration_announces_the_new_connection(monkeypatch):
             pass
 
         async def create(self):
-            return b"" * 256
+            return bytes(256)
 
-    class _Session:
-        MAX_RETRIES = 1
-
-        def __init__(self, client, dc_id, auth_key=None, *args, **kwargs):
-            self.client = client
-            self.dc_id = dc_id
-            self.auth_key = auth_key
-
-        async def start(self, max_attempts=None):
-            if self is self.client.session and callable(self.client.connect_handler):
-                await self.client.connect_handler(self.client, self)
-
-        async def stop(self):
+    class _Connection:
+        def __init__(self, *args, **kwargs):
             pass
+
+        async def connect(self):
+            pass
+
+        async def close(self):
+            pass
+
+    async def send(self, query, *args, **kwargs):
+        return None
 
     async def on_connect(client, session):
         seen.append(session.dc_id)
-
-    monkeypatch.setattr(client_mod, "Auth", _Auth)
-    monkeypatch.setattr(client_mod, "Session", _Session)
 
     attempts = []
 
@@ -1296,20 +1292,27 @@ async def test_a_datacenter_migration_announces_the_new_connection(monkeypatch):
     async def get_dc_option(*args, **kwargs):
         return _DcOption()
 
+    monkeypatch.setattr(client_mod, "Auth", _Auth)
+    monkeypatch.setattr(Session, "send", send)
+    monkeypatch.setattr(Session, "recv_worker", lambda self: asyncio.sleep(0))
+
     client = pyrogram.Client("migration", api_id=1, api_hash="x", in_memory=True)
     await client.storage.open()
 
     try:
         await client.storage.dc_id(2)
 
+        client.connection_factory = _Connection
         client.connect_handler = on_connect
-        client.session = _Session(client, 2, b"\x00" * 256)
+        client.session = Session(client, 2, bytes(256), False, crypto_executor=None)
 
         monkeypatch.setattr(client, "invoke", invoke)
         monkeypatch.setattr(client, "get_dc_option", get_dc_option)
 
         with pytest.raises(_Done):
             await client.send_code("+10000000000")
+
+        await client.session.stop()
     finally:
         await client.storage.close()
 
