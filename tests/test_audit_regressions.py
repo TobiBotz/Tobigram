@@ -760,3 +760,47 @@ async def test_editing_a_folder_can_still_clear_its_color():
     assert client.sent.filter.color == 3, (
         "an edit that does not mention the color must leave it alone"
     )
+
+
+async def test_the_folder_edit_shortcut_keeps_its_own_pinned_chats():
+    from pyrogram import types
+
+    class _Client:
+        sent = None
+
+        async def edit_folder(self, **kwargs):
+            _Client.sent = kwargs
+
+            return True
+
+    def chat(chat_id):
+        return types.Chat(id=chat_id)
+
+    folder = types.Folder(
+        client=_Client(),
+        id=2,
+        name="Work",
+        pinned_chats=[chat(1)],
+        included_chats=[chat(1), chat(2)],
+        excluded_chats=[chat(3)]
+    )
+
+    await folder.edit(exclude_muted=True)
+
+    assert _Client.sent["pinned_chats"] == [1], (
+        "editing a folder must fall back to its own pinned chats, "
+        "not to its included chats"
+    )
+
+    await folder.edit(name="Work")
+
+    assert _Client.sent["pinned_chats"] == [1], (
+        "editing a folder must fall back to its own pinned chats, "
+        "not to its included chats"
+    )
+    assert _Client.sent["included_chats"] == [1, 2], (
+        "editing a folder must keep its included chats"
+    )
+    assert _Client.sent["excluded_chats"] == [3], (
+        "editing a folder must keep its excluded chats"
+    )
