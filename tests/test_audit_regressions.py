@@ -804,3 +804,23 @@ async def test_the_folder_edit_shortcut_keeps_its_own_pinned_chats():
     assert _Client.sent["excluded_chats"] == [3], (
         "editing a folder must keep its excluded chats"
     )
+
+
+async def test_inviting_to_an_empty_folder_does_not_crash():
+    from pyrogram import types
+
+    class _Client:
+        sent = None
+
+        async def create_folder_invite_link(self, **kwargs):
+            _Client.sent = kwargs
+
+            return True
+
+    folder = types.Folder(client=_Client(), id=2, name="Work")
+
+    await folder.create_invite_link()
+
+    assert _Client.sent["chat_ids"] == [], (
+        "a folder with no included chats must send an empty chat list, not raise"
+    )
