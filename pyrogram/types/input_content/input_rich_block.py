@@ -265,15 +265,36 @@ class InputRichBlockListItem(Object):
         self.has_checkbox = has_checkbox
         self.is_checked = is_checked
 
-    def write(self) -> "raw.base.PageListItem":
+    def write(
+        self, ordered: bool = False
+    ) -> Union["raw.base.PageListItem", "raw.base.PageListOrderedItem"]:
         if self.blocks:
+            blocks = [b.write() for b in self.blocks]
+
+            if ordered:
+                return raw.types.PageListOrderedItemBlocks(
+                    blocks=blocks,
+                    checkbox=self.has_checkbox,
+                    checked=self.is_checked
+                )
+
             return raw.types.PageListItemBlocks(
-                blocks=[b.write() for b in self.blocks],
+                blocks=blocks,
                 checkbox=self.has_checkbox,
                 checked=self.is_checked
             )
+
+        text = _to_rich_text(self.text or "")
+
+        if ordered:
+            return raw.types.PageListOrderedItemText(
+                text=text,
+                checkbox=self.has_checkbox,
+                checked=self.is_checked
+            )
+
         return raw.types.PageListItemText(
-            text=_to_rich_text(self.text or ""),
+            text=text,
             checkbox=self.has_checkbox,
             checked=self.is_checked
         )
@@ -303,7 +324,7 @@ class InputRichBlockList(InputRichBlock):
     def write(self) -> "raw.base.PageBlock":
         if self.ordered:
             return raw.types.PageBlockOrderedList(
-                items=[item.write() for item in self.items]
+                items=[item.write(ordered=True) for item in self.items]
             )
         return raw.types.PageBlockList(
             items=[item.write() for item in self.items]

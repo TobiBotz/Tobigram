@@ -104,3 +104,47 @@ def test_every_send_path_threads_the_files_vector():
             f"{path.name}:{node.lineno} builds a rich message without files=, so "
             "media referenced from the text can never resolve"
         )
+
+
+def test_an_ordered_list_uses_the_ordered_item_constructors():
+    """pageBlockOrderedList takes Vector<PageListOrderedItem>, a different base
+    type from the Vector<PageListItem> an unordered list takes. Feeding it plain
+    page list items put the wrong constructor on the wire and Telegram answered
+    RICH_MESSAGE_BLOCK_UNEXPECTED, so an ordered list could never be sent."""
+    block = types.InputRichBlockList(
+        items=[
+            types.InputRichBlockListItem(text="first"),
+            types.InputRichBlockListItem(text="done", has_checkbox=True, is_checked=True),
+            types.InputRichBlockListItem(
+                blocks=[types.InputRichBlockParagraph(text="nested")]
+            ),
+        ],
+        ordered=True,
+    ).write()
+
+    assert isinstance(block, raw.types.PageBlockOrderedList)
+    assert [type(item) for item in block.items] == [
+        raw.types.PageListOrderedItemText,
+        raw.types.PageListOrderedItemText,
+        raw.types.PageListOrderedItemBlocks,
+    ]
+    assert block.items[1].checkbox and block.items[1].checked
+    block.write()
+
+
+def test_an_unordered_list_keeps_the_plain_item_constructors():
+    block = types.InputRichBlockList(
+        items=[
+            types.InputRichBlockListItem(text="first"),
+            types.InputRichBlockListItem(
+                blocks=[types.InputRichBlockParagraph(text="nested")]
+            ),
+        ]
+    ).write()
+
+    assert isinstance(block, raw.types.PageBlockList)
+    assert [type(item) for item in block.items] == [
+        raw.types.PageListItemText,
+        raw.types.PageListItemBlocks,
+    ]
+    block.write()
