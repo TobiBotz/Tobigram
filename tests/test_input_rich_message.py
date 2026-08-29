@@ -148,3 +148,31 @@ def test_an_unordered_list_keeps_the_plain_item_constructors():
         raw.types.PageListItemBlocks,
     ]
     block.write()
+
+
+def test_a_thinking_block_writes_the_page_block_the_tag_maps_to():
+    written = types.InputRichMessage(
+        blocks=[types.InputRichBlockThinking(text="Reading files")]
+    ).write()
+
+    assert written.blocks == [
+        raw.types.PageBlockThinking(
+            text=raw.types.TextConcat(texts=[raw.types.TextPlain(text="Reading files")])
+        )
+    ]
+
+
+@pytest.mark.parametrize("kwargs,expected,field", [
+    ({"html": "<tg-thinking>Thinking...</tg-thinking>"},
+     raw.types.InputRichMessageHTML, "html"),
+    ({"markdown": "<tg-thinking>Thinking...</tg-thinking>"},
+     raw.types.InputRichMessageMarkdown, "markdown"),
+])
+def test_the_thinking_tag_reaches_the_wire_untouched(kwargs, expected, field):
+    written = types.InputRichMessage(**kwargs).write()
+
+    assert isinstance(written, expected)
+    assert getattr(written, field) == "<tg-thinking>Thinking...</tg-thinking>", (
+        "the html and markdown forms are parsed by the server, so a tag the "
+        "library rewrote or dropped could never render"
+    )

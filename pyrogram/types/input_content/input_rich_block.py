@@ -941,14 +941,16 @@ class InputRichBlockVoiceNote(InputRichBlock):
 
 
 class InputRichBlockThinking(InputRichBlock):
-    """A thinking block (collapsible text that reveals after a bot's reasoning).
+    """A block with a "Thinking..." placeholder, corresponding to the custom HTML tag ``<tg-thinking>``.
 
-    This block is used to show the bot's reasoning process that was collapsed
-    or hidden behind a "thinking" indicator.
+    The block may be used only in :meth:`~pyrogram.Client.send_rich_message_draft`, therefore it
+    can't be received in messages.
+    See https://t.me/addemoji/AIActions for examples of custom emoji, which are recommended for usage in the block.
 
     Parameters:
         text (``str`` | :obj:`~pyrogram.raw.base.RichText`):
-            Text of the block (the reasoning content).
+            Text of the block.
+            See https://t.me/addemoji/AIActions for examples of custom emoji, which are recommended for usage in the block.
     """
 
     def __init__(

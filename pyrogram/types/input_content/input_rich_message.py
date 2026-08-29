@@ -57,7 +57,7 @@ class InputRichMessage(Object):
         media (:obj:`~pyrogram.types.InputRichMessageMedia` | List of :obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
             Media the message refers to. With *html* or *markdown*, each entry needs an
             ``id`` and is referred to from the text as ``tg://photo?id=``,
-            ``tg://video?id=`` or ``tg://audio?id=``. With *blocks*, the entries carry the
+            ``tg://video?id=``, ``tg://document?id=`` or ``tg://audio?id=``. With *blocks*, the entries carry the
             photo, document and user vectors the blocks index into.
     """
 

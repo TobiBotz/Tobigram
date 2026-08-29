@@ -91,7 +91,7 @@ Block                                          What it is
 ``InputRichBlockAnchor``                       a named target to link to
 ``InputRichBlockDivider``                      a horizontal rule
 ``InputRichBlockFooter``                       trailing small print
-``InputRichBlockThinking``                     a model's reasoning, rendered as such
+``InputRichBlockThinking``                     a "Thinking..." placeholder, drafts only
 ``InputRichBlockButtons``                      a row of 1-8 ``RichMessageButton``
 ``InputRichBlockDocument``                     a general file, by ``document_id``
 ============================================  ===========================================
@@ -181,12 +181,25 @@ therefore leaves the bot for the server to fill in, which is what layer 229 made
 Drafts and diffs
 ----------------
 
-:meth:`~pyrogram.Client.send_rich_message_draft` saves a rich message as a draft in a chat
-rather than sending it, which is how an editing tool shows a preview before publishing:
+:meth:`~pyrogram.Client.send_rich_message_draft` streams a *partial* rich message as a
+typing action, which is how a bot shows its output while it is still being generated. The
+draft is ephemeral — clients drop it after about 30 seconds or as soon as a real message
+arrives — so call :meth:`~pyrogram.Client.send_rich_message` to persist the result:
 
 .. code-block:: python
 
     await app.send_rich_message_draft(chat_id, draft_id=1, rich_message=rich)
+
+:obj:`~pyrogram.types.InputRichBlockThinking` is a "Thinking..." placeholder for content
+that has not been generated yet, and ``<tg-thinking>Thinking...</tg-thinking>`` is the same
+block in the ``html`` and ``markdown`` forms. Both are accepted only by this method:
+
+.. code-block:: python
+
+    await app.send_rich_message_draft(
+        chat_id, draft_id=1,
+        rich_message=InputRichMessage(html="<tg-thinking>Reading files</tg-thinking>"),
+    )
 
 Pass ``can_stop=True`` to offer the user a button that stops the generation. Pressing it
 delivers a :obj:`~pyrogram.types.MessageGenerationStopped` update, which
