@@ -199,7 +199,16 @@ class RemoteStorage(Storage):
         await self._disconnect()
 
     async def delete(self, remove_peers: bool = True) -> None:
-        await self._purge(remove_peers)
+        reopened = not self._opened
+
+        if reopened:
+            await self._connect()
+
+        try:
+            await self._purge(remove_peers)
+        finally:
+            if reopened:
+                await self._disconnect()
 
         self._cache.clear()
         self._peer_cache.clear()

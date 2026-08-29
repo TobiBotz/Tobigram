@@ -277,6 +277,19 @@ class TestRedisMapping:
         assert redis._redis.hashes.get("wzgram:driver:session") in (None, {})
         assert not redis._redis.sets.get("wzgram:driver:peers")
 
+    async def test_delete_works_after_close(self):
+        server = FakeRedis()
+        storage = RedisStorage("logout", server)
+
+        await storage.open()
+        await storage.auth_key(b"k" * 256)
+        await storage.close()
+
+        await storage.delete()
+
+        assert not server.hashes.get("wzgram:logout:session"), "the login survived log_out"
+        assert storage._redis is None, "delete must not leave the connection open"
+
     async def test_eviction_policy_warning(self, caplog):
         class Evicting(FakeRedis):
             async def config_get(self, key):

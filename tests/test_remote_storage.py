@@ -198,6 +198,25 @@ class TestLifecycle:
         with pytest.raises(ConnectionError):
             await storage.dc_id()
 
+    async def test_delete_after_close_purges_on_a_live_connection(self):
+        seen = []
+
+        class Recording(FakeRemote):
+            async def _purge(self, remove_peers):
+                seen.append(self.connected)
+                await super()._purge(remove_peers)
+
+        storage = Recording()
+        await storage.open()
+        await storage.auth_key(b"k" * 256)
+        await storage.close()
+
+        await storage.delete()
+
+        assert seen == [True], "a purge must run against a live connection"
+        assert storage.session is None
+        assert not storage.connected, "delete must leave a closed storage closed"
+
     async def test_delete_keeps_peers_when_asked(self):
         storage = FakeRemote()
         await storage.open()
