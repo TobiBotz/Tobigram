@@ -1496,10 +1496,10 @@ class TestPinBusinessConnection:
 class TestQuizPollSerialises:
     """A quiz poll could not be sent at all.
 
-    TL layer 228 declares inputMediaPoll.correct_answers as Vector<int>, but
-    send_poll still built it as bytes, so every quiz died in Int.__new__ with
-    "'bytes' object has no attribute 'to_bytes'" the moment the request was
-    serialised.
+    correct_answers is a Vector<int> of positions, which only resolves if the
+    poll is created with inputPollAnswer. send_poll built pollAnswer instead -
+    the read-back constructor, which carries its own option bytes - and every
+    quiz came back from Telegram as QUIZ_CORRECT_ANSWER_INVALID.
     """
 
     @staticmethod
@@ -1546,11 +1546,51 @@ class TestQuizPollSerialises:
         assert query.media.correct_answers == [0, 1]
         query.write()
 
-    async def test_the_option_index_stays_bytes(self):
+    async def test_options_are_built_for_creation(self):
         query = await self.sent(question="Q?", options=["a", "b"])
 
-        assert [answer.option for answer in query.media.poll.answers] == [b"\x00", b"\x01"], (
-            "pollAnswer.option is still bytes in the schema, unlike correct_answers"
+        answers = query.media.poll.answers
+
+        assert all(
+            isinstance(answer, raw.types.InputPollAnswer) for answer in answers
+        ), "a poll being created sends inputPollAnswer, not the read-back pollAnswer"
+        assert [answer.text.text for answer in answers] == ["a", "b"]
+        query.write()
+
+    async def test_description_and_its_media_reach_the_request(self):
+        class Media:
+            async def write(self, **kwargs):
+                return raw.types.InputMediaEmpty()
+
+        query = await self.sent(
+            question="Q?",
+            options=["a", "b"],
+            description=types.FormattedText(text="described", entities=[]),
+            description_media=Media(),
+        )
+
+        assert query.message == "described", "the poll description never left the client"
+        assert isinstance(query.media.attached_media, raw.types.InputMediaEmpty), (
+            "description_media was accepted and then dropped before SendMedia"
+        )
+        query.write()
+
+    async def test_explanation_media_reaches_the_request(self):
+        class Media:
+            async def write(self, **kwargs):
+                return raw.types.InputMediaEmpty()
+
+        query = await self.sent(
+            question="Q?",
+            options=["a", "b"],
+            type=enums.PollType.QUIZ,
+            correct_option_id=0,
+            explanation="because",
+            explanation_media=Media(),
+        )
+
+        assert isinstance(query.media.solution_media, raw.types.InputMediaEmpty), (
+            "explanation_media was accepted and then dropped before SendMedia"
         )
         query.write()
 

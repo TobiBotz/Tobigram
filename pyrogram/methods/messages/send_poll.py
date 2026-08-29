@@ -285,21 +285,21 @@ class SendPoll:
             solution_text = None
             solution_entities = []
 
+        if isinstance(description, types.FormattedText):
+            description_text = description.text
+            description_entities = description.entities or []
+        else:
+            description_text = description
+            description_entities = []
+
         parsed_options = []
-        for i, opt in enumerate(options):
+        for opt in options:
             if isinstance(opt, types.InputPollOption):
-                raw_opt = await opt.write(self)
-                parsed_options.append(
-                    raw.types.PollAnswer(
-                        text=raw_opt.text,
-                        option=bytes([i]),
-                    )
-                )
+                parsed_options.append(await opt.write(self))
             else:
                 parsed_options.append(
-                    raw.types.PollAnswer(
-                        text=raw.types.TextWithEntities(text=opt, entities=[]),
-                        option=bytes([i])
+                    raw.types.InputPollAnswer(
+                        text=raw.types.TextWithEntities(text=opt, entities=[])
                     )
                 )
 
@@ -308,6 +308,18 @@ class SendPoll:
             correct = list(correct_option_ids)
         elif correct_option_id is not None:
             correct = [correct_option_id]
+
+        solution_media = (
+            await explanation_media.write(client=self, chat_id=chat_id)
+            if explanation_media is not None
+            else None
+        )
+
+        attached_media = (
+            await description_media.write(client=self, chat_id=chat_id)
+            if description_media is not None
+            else None
+        )
 
         r = await self.invoke(
             raw.functions.messages.SendMedia(
@@ -334,8 +346,10 @@ class SendPoll:
                     correct_answers=correct,
                     solution=solution_text,
                     solution_entities=solution_entities or [],
+                    solution_media=solution_media,
+                    attached_media=attached_media,
                 ),
-                message="",
+                message=description_text or "",
                 silent=disable_notification if disable_notification is not None else None,
                 reply_to=await utils.get_reply_to(
                     self,
@@ -358,7 +372,7 @@ class SendPoll:
                 send_as=await self.resolve_peer(send_as) if send_as is not None else None,
                 quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
-                entities=None,
+                entities=description_entities or None,
             ),
             sleep_threshold=60,
             business_connection_id=business_connection_id
