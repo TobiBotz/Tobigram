@@ -834,10 +834,12 @@ async def test_a_peer_that_never_changes_is_still_written_back(tmp_path, monkeyp
     from pyrogram.storage import SQLiteStorage
 
     async def age(storage, peer_id, seconds):
+        stale = int(time.time()) - seconds
+
         await storage.conn.execute("DROP TRIGGER trg_peers_last_update_on")
         await storage.conn.execute(
             "UPDATE peers SET last_update_on = ? WHERE id = ?",
-            (int(time.time()) - seconds, peer_id)
+            (stale, peer_id)
         )
         await storage.conn.execute(
             "CREATE TRIGGER trg_peers_last_update_on AFTER UPDATE ON peers BEGIN "
@@ -846,12 +848,14 @@ async def test_a_peer_that_never_changes_is_still_written_back(tmp_path, monkeyp
         )
         await storage._ensure_committed()
 
-    async def age_of(storage, peer_id):
+        return stale
+
+    async def stamp_of(storage, peer_id):
         cursor = await storage.conn.execute(
             "SELECT last_update_on FROM peers WHERE id = ?", (peer_id,)
         )
 
-        return int(time.time()) - (await cursor.fetchone())[0]
+        return (await cursor.fetchone())[0]
 
     storage = SQLiteStorage("peers", tmp_path)
     await storage.open()
@@ -863,11 +867,11 @@ async def test_a_peer_that_never_changes_is_still_written_back(tmp_path, monkeyp
         await storage.update_usernames([(777, ["bob"])])
         await storage._ensure_committed()
 
-        await age(storage, 777, 3600)
+        stale = await age(storage, 777, 3600)
         await storage.update_peers([peer])
         await storage._ensure_committed()
 
-        assert await age_of(storage, 777) == 3600, (
+        assert await stamp_of(storage, 777) == stale, (
             "an unchanged peer seen again within the cache window must not be rewritten"
         )
 
@@ -877,7 +881,7 @@ async def test_a_peer_that_never_changes_is_still_written_back(tmp_path, monkeyp
         await storage.update_peers([peer])
         await storage._ensure_committed()
 
-        assert await age_of(storage, 777) == 0, (
+        assert await stamp_of(storage, 777) > stale, (
             "an unchanged peer seen again after the cache window must be rewritten, "
             "or its username expires while the client is still seeing it"
         )
