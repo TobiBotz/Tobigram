@@ -30,7 +30,9 @@ class SendMessageDraft:
 
         Parameters:
             chat_id (``int`` | ``str``):
-                Unique identifier (int) or username (str) of the target chat.
+                Unique identifier (int) or username (str) of the target **private** chat.
+                Drafts are streamed as a typing action and a group or channel refuses one
+                with ``TEXTDRAFT_PEER_INVALID``.
 
             draft_id (``int``):
                 Unique identifier of the draft; must be non-zero.

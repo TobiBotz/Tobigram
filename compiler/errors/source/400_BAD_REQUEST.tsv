@@ -307,6 +307,7 @@ STICKER_VIDEO_NOWEBM	A webm video file was expected, but something else was prov
 TAKEOUT_INVALID	The takeout id is invalid
 TAKEOUT_REQUIRED	The method must be invoked inside a takeout session
 TEMP_AUTH_KEY_EMPTY	The temporary auth key provided is empty
+TEXTDRAFT_PEER_INVALID	Message drafts can only be streamed to a private chat
 THEME_FILE_INVALID	Invalid theme file provided
 THEME_FORMAT_INVALID	Invalid theme format provided
 THEME_INVALID	Invalid theme provided
