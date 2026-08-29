@@ -117,6 +117,7 @@ class HybridStorage(Storage):
         self._writer: Optional[asyncio.Task] = None
         self._closing = False
         self._dropped = 0
+        self._inflight: Optional[str] = None
 
     async def open(self) -> None:
         await self.local.open()
@@ -215,6 +216,7 @@ class HybridStorage(Storage):
 
         while True:
             kind, payload = await self._queue.get()
+            self._inflight = kind
 
             try:
                 if kind is None:
@@ -236,6 +238,7 @@ class HybridStorage(Storage):
                 except asyncio.QueueFull:
                     log.error("Hybrid storage dropped a %s write after a backend failure", kind)
             finally:
+                self._inflight = None
                 self._queue.task_done()
 
     async def _apply(self, kind: str, payload: Any) -> None:
@@ -260,7 +263,7 @@ class HybridStorage(Storage):
         except asyncio.TimeoutError:
             log.warning(
                 "Hybrid storage still had %s writes queued after %.0fs",
-                self._queue.qsize(),
+                self._pending(),
                 timeout,
             )
 
@@ -295,7 +298,18 @@ class HybridStorage(Storage):
             if not self._writer.done():
                 self._writer.cancel()
 
+            lost = self._drain() + (1 if self._inflight is not None else 0)
+
             self._writer = None
+            self._inflight = None
+
+            if lost:
+                self._dropped += lost
+                log.error(
+                    "Hybrid storage gave up on %s write(s) after %.0fs and lost them",
+                    lost,
+                    self.flush_timeout,
+                )
 
         await self.local.close()
         await self.backend.close()
@@ -320,14 +334,22 @@ class HybridStorage(Storage):
         except asyncio.CancelledError:
             pass
 
-    def _drain(self) -> None:
+    def _drain(self) -> int:
+        dropped = 0
+
         while True:
             try:
-                self._queue.get_nowait()
+                kind, _ = self._queue.get_nowait()
             except asyncio.QueueEmpty:
-                return
+                return dropped
+
+            if kind is not None:
+                dropped += 1
 
             self._queue.task_done()
+
+    def _pending(self) -> int:
+        return self._queue.qsize() + (1 if self._inflight is not None else 0)
 
     async def update_peers(self, peers: List[Tuple[int, int, str, str]]) -> None:
         if not peers:
