@@ -215,6 +215,23 @@ leave the partial draft in the chat rather than clearing it.
 :obj:`~pyrogram.types.RichTextDiff` marks a rich text as a *change* against an older one,
 pairing ``text`` with ``old_text``. Clients render the difference.
 
+A message that arrives truncated
+--------------------------------
+
+A rich message too large to travel inline is delivered with only its first blocks and
+``is_partial`` set on its :obj:`~pyrogram.types.RichMessage`.
+:meth:`~pyrogram.Client.get_rich_message` fetches the whole of it:
+
+.. code-block:: python
+
+    @app.on_message()
+    async def handler(client, message):
+        if message.rich_message and message.rich_message.is_partial:
+            message = await client.get_rich_message(message.chat.id, message.id)
+
+        for block in message.rich_message.blocks:
+            print(block)
+
 Rich text elsewhere
 -------------------
 

@@ -996,3 +996,39 @@ class TestDisabledButton:
         )
 
         assert isinstance(button.disabled, types.DisabledButton)
+
+
+class TestPartialRichMessage:
+    def _raw(self, part):
+        return raw.types.RichMessage(
+            blocks=[
+                raw.types.PageBlockBlockquoteBlocks(
+                    blocks=[
+                        raw.types.PageBlockParagraph(
+                            text=raw.types.TextPlain(text="hello")
+                        )
+                    ],
+                    caption=raw.types.TextPlain(text=""),
+                )
+            ],
+            photos=[],
+            documents=[],
+            part=part,
+        )
+
+    @pytest.mark.parametrize("part,expected", [(True, True), (False, False)])
+    async def test_the_part_flag_reaches_the_parsed_message(self, part, expected):
+        parsed = await types.RichMessage._parse(Mock(), self._raw(part))
+
+        assert parsed.is_partial is expected, (
+            "a rich message too large to travel inline arrives truncated, and a caller "
+            "that cannot see it is one has no reason to call get_rich_message"
+        )
+        assert parsed.blocks[0].blocks[0].text == "hello"
+
+    def test_the_method_that_fetches_the_whole_one_exists(self):
+        assert hasattr(pyrogram.Client, "get_rich_message")
+
+        source = inspect.getsource(pyrogram.Client.get_rich_message)
+
+        assert "raw.functions.messages.GetRichMessage" in source

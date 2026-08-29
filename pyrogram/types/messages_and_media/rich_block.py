@@ -113,7 +113,6 @@ class RichBlock(Object):
         rich_block: "raw.base.PageBlock",
         photos: Dict[int, "raw.base.Photo"] = {},
         documents: Dict[int, "raw.base.Document"] = {},
-        part: Optional[bool] = None,
         users: Dict[int, "raw.base.User"] = {},
         chats: Dict[int, "raw.base.Chat"] = {},
     ) -> "RichBlock":
@@ -177,7 +176,7 @@ class RichBlock(Object):
                 blocks=types.List(
                     [
                         await types.RichBlock._parse(
-                            client, i, photos, documents, part, users, chats
+                            client, i, photos, documents, users, chats
                         )
                         for i in rich_block.blocks
                     ]
@@ -207,7 +206,7 @@ class RichBlock(Object):
                 blocks=types.List(
                     [
                         await types.RichBlock._parse(
-                            client, i, photos, documents, part, users, chats
+                            client, i, photos, documents, users, chats
                         )
                         for i in rich_block.items
                     ]
@@ -219,7 +218,7 @@ class RichBlock(Object):
                 blocks=types.List(
                     [
                         await types.RichBlock._parse(
-                            client, i, photos, documents, part, users, chats
+                            client, i, photos, documents, users, chats
                         )
                         for i in rich_block.items
                     ]
@@ -234,7 +233,7 @@ class RichBlock(Object):
                 blocks=types.List(
                     [
                         await types.RichBlock._parse(
-                            client, i, photos, documents, part, users, chats
+                            client, i, photos, documents, users, chats
                         )
                         for i in rich_block.blocks
                     ]

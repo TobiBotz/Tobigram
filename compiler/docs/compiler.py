@@ -418,6 +418,7 @@ def pyrogram_api():
             get_messages
             get_poll_results
             get_poll_stats
+            get_rich_message
             get_scheduled_messages
             get_stickers
             get_user_personal_chat_messages

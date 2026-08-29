@@ -58,6 +58,7 @@ from .get_media_group import GetMediaGroup
 from .get_messages import GetMessages
 from .get_poll_results import GetPollResults
 from .get_poll_stats import GetPollStats
+from .get_rich_message import GetRichMessage
 from .get_scheduled_messages import GetScheduledMessages
 from .get_stickers import GetStickers
 from .get_user_personal_chat_messages import GetUserPersonalChatMessages
@@ -149,6 +150,7 @@ class Messages(
     GetMessages,
     GetPollResults,
     GetPollStats,
+    GetRichMessage,
     GetScheduledMessages,
     GetStickers,
     GetUserPersonalChatMessages,
