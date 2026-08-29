@@ -301,8 +301,33 @@ class HybridStorage(Storage):
         await self.backend.close()
 
     async def delete(self) -> None:
+        await self._stop_writer()
+        self._drain()
+
         await self.backend.delete()
         await self.local.delete()
+
+    async def _stop_writer(self) -> None:
+        writer, self._writer = self._writer, None
+
+        if writer is None:
+            return
+
+        writer.cancel()
+
+        try:
+            await writer
+        except asyncio.CancelledError:
+            pass
+
+    def _drain(self) -> None:
+        while True:
+            try:
+                self._queue.get_nowait()
+            except asyncio.QueueEmpty:
+                return
+
+            self._queue.task_done()
 
     async def update_peers(self, peers: List[Tuple[int, int, str, str]]) -> None:
         if not peers:

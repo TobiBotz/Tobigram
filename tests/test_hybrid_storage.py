@@ -191,6 +191,31 @@ class TestWritesReachTheBackend:
         assert 1 in backend.peers
 
 
+class TestDelete:
+    async def test_a_queued_write_is_not_replayed_after_a_purge(self, tmp_path):
+        class Slow(FakeRemote):
+            async def _save_session(self, fields):
+                await asyncio.sleep(0.2)
+                return await super()._save_session(fields)
+
+        backend = Slow("purge")
+        storage = HybridStorage("purge", backend=backend, workdir=tmp_path, flush_timeout=1)
+
+        await storage.open()
+        await storage.auth_key(b"k" * 256)
+        await asyncio.sleep(0)
+
+        await storage.delete()
+
+        assert backend.session is None
+
+        await asyncio.sleep(0.5)
+
+        assert backend.session is None, "a queued write put the session back after the purge"
+
+        await storage.close()
+
+
 class TestBackendFailures:
     async def test_write_failure_does_not_reach_the_caller(self, hybrid):
         storage, backend = hybrid
