@@ -138,7 +138,9 @@ class AddProfileAudio:
                 else:
                     media = (utils.get_input_media_from_file_id(audio, FileType.AUDIO)).id
             else:
-                mime_type = self.guess_mime_type(file_name or audio.name) or "audio/mpeg"
+                mime_type = self.guess_mime_type(
+                    utils.get_file_name(audio, file_name=file_name, fallback="audio.mp3")
+                ) or "audio/mpeg"
                 if mime_type == "audio/ogg":
                     mime_type = "audio/opus"
                 thumb = await self.save_file(thumb)
@@ -156,7 +158,9 @@ class AddProfileAudio:
                                     duration=duration, performer=performer, title=title
                                 ),
                                 raw.types.DocumentAttributeFilename(
-                                    file_name=file_name or audio.name
+                                    file_name=utils.get_file_name(
+                                        audio, file_name=file_name, fallback="audio.mp3"
+                                    )
                                 ),
                             ],
                         ),

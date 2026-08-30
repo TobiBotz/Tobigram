@@ -269,7 +269,9 @@ class SendVideoNote:
                 thumb = await self.save_file(thumb)
                 file = await self.save_file(video_note, progress=progress, progress_args=progress_args)
                 media = raw.types.InputMediaUploadedDocument(
-                    mime_type=self.guess_mime_type(video_note.name) or "video/mp4",
+                    mime_type=self.guess_mime_type(
+                        utils.get_file_name(video_note, fallback="video_note.mp4")
+                    ) or "video/mp4",
                     file=file,
                     thumb=thumb,
                     attributes=[

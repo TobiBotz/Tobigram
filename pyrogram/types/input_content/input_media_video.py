@@ -199,7 +199,9 @@ class InputMediaVideo(InputMedia):
                                 h=self.height,
                             ),
                             raw.types.DocumentAttributeFilename(
-                                file_name=utils.get_file_name(self.media, file_name=self.file_name),
+                                file_name=utils.get_file_name(
+                                    self.media, file_name=self.file_name, fallback="video.mp4"
+                                ),
                             ),
                         ],
                         ttl_seconds=ttl_seconds,

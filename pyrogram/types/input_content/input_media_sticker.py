@@ -78,7 +78,7 @@ class InputMediaSticker(InputMedia):
                         ),
                         attributes=[
                             raw.types.DocumentAttributeFilename(
-                                file_name=utils.get_file_name(self.media),
+                                file_name=utils.get_file_name(self.media, fallback="sticker.webp"),
                             ),
                             raw.types.DocumentAttributeSticker(
                                 alt=self.emoji, stickerset=raw.types.InputStickerSetEmpty()

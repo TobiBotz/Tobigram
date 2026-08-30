@@ -265,12 +265,16 @@ class SendSticker:
             else:
                 file = await self.save_file(sticker, progress=progress, progress_args=progress_args)
                 media = raw.types.InputMediaUploadedDocument(
-                    mime_type=self.guess_mime_type(sticker.name) or "image/webp",
+                    mime_type=self.guess_mime_type(
+                        utils.get_file_name(sticker, fallback="sticker.webp")
+                    ) or "image/webp",
                     file=file,
                     ttl_seconds=ttl_seconds,
                     spoiler=has_spoiler,
                     attributes=[
-                        raw.types.DocumentAttributeFilename(file_name=sticker.name)
+                        raw.types.DocumentAttributeFilename(
+                            file_name=utils.get_file_name(sticker, fallback="sticker.webp")
+                        )
                     ]
                 )
 

@@ -2095,10 +2095,13 @@ class Client(Methods):
         return MsgId.now()
 
     def guess_mime_type(self, filename: Union[str, BytesIO]) -> Optional[str]:
-        if isinstance(filename, BytesIO):
-            result = self.mimetypes.guess_type(filename.name)
-        else:
-            result = self.mimetypes.guess_type(filename)
+        if hasattr(filename, "read"):
+            filename = getattr(filename, "name", "")
+
+        if not isinstance(filename, (str, os.PathLike)):
+            return None
+
+        result = self.mimetypes.guess_type(filename)
 
         return result[0] if result else None
 

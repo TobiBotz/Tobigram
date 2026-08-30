@@ -394,7 +394,9 @@ class SendVideo:
                 file = await self.save_file(video, progress=progress, progress_args=progress_args)
 
                 media = raw.types.InputMediaUploadedDocument(
-                    mime_type=self.guess_mime_type(file_name or video.name) or "video/mp4",
+                    mime_type=self.guess_mime_type(
+                        utils.get_file_name(video, file_name=file_name, fallback="video.mp4")
+                    ) or "video/mp4",
                     file=file,
                     ttl_seconds=ttl_seconds,
                     spoiler=has_spoiler,
@@ -411,7 +413,9 @@ class SendVideo:
                             nosound=no_sound,
                             video_start_ts=video_start_timestamp
                         ),
-                        raw.types.DocumentAttributeFilename(file_name=file_name or video.name)
+                        raw.types.DocumentAttributeFilename(
+                            file_name=utils.get_file_name(video, file_name=file_name, fallback="video.mp4")
+                        )
                     ]
                 )
 

@@ -291,12 +291,16 @@ class SendDocument:
                 thumb = await self.save_file(thumb)
                 file = await self.save_file(document, progress=progress, progress_args=progress_args)
                 media = raw.types.InputMediaUploadedDocument(
-                    mime_type=self.guess_mime_type(file_name or document.name) or "application/zip",
+                    mime_type=self.guess_mime_type(
+                        utils.get_file_name(document, file_name=file_name, fallback="file.zip")
+                    ) or "application/zip",
                     file=file,
                     force_file=force_document if force_document is not None else None,
                     thumb=thumb,
                     attributes=[
-                        raw.types.DocumentAttributeFilename(file_name=file_name or document.name)
+                        raw.types.DocumentAttributeFilename(
+                            file_name=utils.get_file_name(document, file_name=file_name, fallback="file.zip")
+                        )
                     ]
                 )
 

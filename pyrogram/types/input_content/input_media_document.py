@@ -114,7 +114,9 @@ class InputMediaDocument(InputMedia):
                         thumb=await client.save_file(self.thumb),
                         attributes=[
                             raw.types.DocumentAttributeFilename(
-                                file_name=utils.get_file_name(self.media, file_name=self.file_name),
+                                file_name=utils.get_file_name(
+                                    self.media, file_name=self.file_name, fallback="file.zip"
+                                ),
                             ),
                         ],
                     ),

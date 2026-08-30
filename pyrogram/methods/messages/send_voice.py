@@ -273,7 +273,9 @@ class SendVoice:
             else:
                 file = await self.save_file(voice, progress=progress, progress_args=progress_args)
                 media = raw.types.InputMediaUploadedDocument(
-                    mime_type=self.guess_mime_type(voice.name) or "audio/mpeg",
+                    mime_type=self.guess_mime_type(
+                        utils.get_file_name(voice, fallback="voice.ogg")
+                    ) or "audio/mpeg",
                     file=file,
                     attributes=[
                         raw.types.DocumentAttributeAudio(

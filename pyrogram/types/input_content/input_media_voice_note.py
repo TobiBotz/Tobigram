@@ -131,7 +131,9 @@ class InputMediaVoiceNote(InputMedia):
                                 waveform=self.waveform,
                             ),
                             raw.types.DocumentAttributeFilename(
-                                file_name=utils.get_file_name(self.media, file_name=self.file_name),
+                                file_name=utils.get_file_name(
+                                    self.media, file_name=self.file_name, fallback="voice.ogg"
+                                ),
                             ),
                         ],
                         ttl_seconds=ttl_seconds,

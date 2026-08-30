@@ -132,7 +132,9 @@ class InputMediaAudio(InputMedia):
                                 title=self.title,
                             ),
                             raw.types.DocumentAttributeFilename(
-                                file_name=utils.get_file_name(self.media, file_name=self.file_name),
+                                file_name=utils.get_file_name(
+                                    self.media, file_name=self.file_name, fallback="audio.mp3"
+                                ),
                             ),
                         ],
                         ttl_seconds=ttl_seconds,

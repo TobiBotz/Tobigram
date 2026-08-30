@@ -138,7 +138,9 @@ async def resolve_input_media(
                             ),
                             raw.types.DocumentAttributeFilename(
                                 file_name=utils.get_file_name(
-                                    media.media, file_name=file_name or media.file_name
+                                    media.media,
+                                    file_name=file_name or media.file_name,
+                                    fallback="video.mp4",
                                 )
                             )
                         ]
@@ -186,7 +188,9 @@ async def resolve_input_media(
                             ),
                             raw.types.DocumentAttributeFilename(
                                 file_name=utils.get_file_name(
-                                    media.media, file_name=file_name or media.file_name
+                                    media.media,
+                                    file_name=file_name or media.file_name,
+                                    fallback="audio.mp3",
                                 )
                             )
                         ]
@@ -226,7 +230,9 @@ async def resolve_input_media(
                             ),
                             raw.types.DocumentAttributeFilename(
                                 file_name=utils.get_file_name(
-                                    media.media, file_name=file_name or media.file_name
+                                    media.media,
+                                    file_name=file_name or media.file_name,
+                                    fallback="animation.mp4",
                                 )
                             ),
                             raw.types.DocumentAttributeAnimated()
@@ -262,7 +268,9 @@ async def resolve_input_media(
                         attributes=[
                             raw.types.DocumentAttributeFilename(
                                 file_name=utils.get_file_name(
-                                    media.media, file_name=file_name or media.file_name
+                                    media.media,
+                                    file_name=file_name or media.file_name,
+                                    fallback="file.zip",
                                 )
                             )
                         ]

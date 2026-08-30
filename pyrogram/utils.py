@@ -521,8 +521,13 @@ def get_file_name(
     if file_name:
         return file_name
 
-    if isinstance(media, io.BytesIO):
-        return getattr(media, "name", fallback) or fallback
+    if hasattr(media, "read"):
+        name = getattr(media, "name", None)
+
+        return name if isinstance(name, str) and name else fallback
+
+    if not isinstance(media, (str, pathlib.PurePath)):
+        return fallback
 
     return pathlib.Path(media).name or fallback
 

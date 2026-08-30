@@ -326,7 +326,9 @@ class SendAnimation:
                 thumb = await self.save_file(thumb)
                 file = await self.save_file(animation, progress=progress, progress_args=progress_args)
                 media = raw.types.InputMediaUploadedDocument(
-                    mime_type=self.guess_mime_type(file_name or animation.name) or "video/mp4",
+                    mime_type=self.guess_mime_type(
+                        utils.get_file_name(animation, file_name=file_name, fallback="animation.mp4")
+                    ) or "video/mp4",
                     file=file,
                     ttl_seconds=ttl_seconds,
                     thumb=thumb,
@@ -338,7 +340,9 @@ class SendAnimation:
                             w=width,
                             h=height
                         ),
-                        raw.types.DocumentAttributeFilename(file_name=file_name or animation.name),
+                        raw.types.DocumentAttributeFilename(
+                            file_name=utils.get_file_name(animation, file_name=file_name, fallback="animation.mp4")
+                        ),
                         raw.types.DocumentAttributeAnimated()
                     ]
                 )

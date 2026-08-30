@@ -322,7 +322,9 @@ class SendAudio:
                 thumb = await self.save_file(thumb)
                 file = await self.save_file(audio, progress=progress, progress_args=progress_args)
                 media = raw.types.InputMediaUploadedDocument(
-                    mime_type=self.guess_mime_type(file_name or audio.name) or "audio/mpeg",
+                    mime_type=self.guess_mime_type(
+                        utils.get_file_name(audio, file_name=file_name, fallback="audio.mp3")
+                    ) or "audio/mpeg",
                     file=file,
                     ttl_seconds=ttl_seconds,
                     spoiler=has_spoiler,
@@ -333,7 +335,9 @@ class SendAudio:
                             performer=performer,
                             title=title
                         ),
-                        raw.types.DocumentAttributeFilename(file_name=file_name or audio.name)
+                        raw.types.DocumentAttributeFilename(
+                            file_name=utils.get_file_name(audio, file_name=file_name, fallback="audio.mp3")
+                        )
                     ]
                 )
 
