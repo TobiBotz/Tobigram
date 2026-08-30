@@ -1378,6 +1378,47 @@ async def test_a_saved_message_does_not_ask_for_a_direct_messages_topic():
     assert parsed.topic is None
 
 
+async def test_get_users_survives_an_answer_the_server_left_short():
+    """``users.getUsers`` answers only for user peers, and drops whatever it will not
+    answer for rather than refusing: a channel id, or a user held by an access hash
+    the server no longer honours, comes back as a short vector. Indexing that for the
+    single-id form raised a bare ``IndexError`` naming nothing.
+    """
+
+    from pyrogram import raw
+    from pyrogram.methods.users.get_users import GetUsers
+
+    class _Client(GetUsers):
+        async def resolve_peer(self, peer_id):
+            if peer_id == "durov":
+                return raw.types.InputPeerChannel(channel_id=1, access_hash=1)
+
+            return raw.types.InputPeerUser(user_id=2, access_hash=1)
+
+        async def invoke(self, query):
+            # the server answers for the user peers only and drops the rest
+            return [
+                raw.types.User(
+                    id=p.user_id, first_name="U", usernames=[], restriction_reason=[],
+                    access_hash=1
+                )
+                for p in query.id
+                if isinstance(p, raw.types.InputPeerUser)
+            ]
+
+    client = _Client()
+
+    assert await client.get_users("durov") is None, (
+        "a peer the server declined to answer for is absent, not an IndexError"
+    )
+    assert (await client.get_users("someone")).id == 2, "a real user still parses"
+    assert [u.id for u in await client.get_users(["durov", "someone"])] == [2], (
+        "the iterable form still returns what came back, as it always has"
+    )
+
+
+
+
 async def test_a_monoforum_message_still_asks_for_its_direct_messages_topic():
     """The other half of the pairing: a monoforum reports ``ChatType.PRIVATE`` like
     any user chat, so telling the two apart by ``is_direct_messages`` has to keep

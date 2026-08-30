@@ -68,4 +68,4 @@ class GetUsers:
         for i in r:
             users.append(types.User._parse(self, i))
 
-        return users if is_iterable else users[0]
+        return users if is_iterable else users[0] if users else None
