@@ -2337,3 +2337,38 @@ async def test_a_caller_can_still_choose_to_wait_forever(monkeypatch):
     assert await _drive(session, -1, monkeypatch) == "answered"
     assert len(session.slept) == 40
 
+
+async def test_creating_a_group_unwraps_the_answer_it_gets():
+    """``messages.createChat`` returned ``Updates`` at layer 158 and the method read
+    ``r.chats[0]`` off it. The layer 227 bump changed the return type to
+    ``messages.InvitedUsers``, which carries the real ``Updates`` in a field of its
+    own and has no ``chats`` at all, so every call raised AttributeError.
+    """
+
+    from pyrogram import raw, types
+    from pyrogram.methods.chats.create_group import CreateGroup
+
+    class _Client(CreateGroup):
+        async def resolve_peer(self, peer_id):
+            return raw.types.InputPeerSelf()
+
+        async def invoke(self, query):
+            return raw.types.messages.InvitedUsers(
+                updates=raw.types.Updates(
+                    updates=[],
+                    users=[],
+                    chats=[raw.types.Chat(
+                        id=7, title="made", photo=raw.types.ChatPhotoEmpty(),
+                        participants_count=1, date=0, version=1,
+                    )],
+                    date=0, seq=0,
+                ),
+                missing_invitees=[],
+            )
+
+    chat = await _Client().create_group("made", "me")
+
+    assert isinstance(chat, types.Chat), "the docstring promises a Chat"
+    assert chat.id == -7, "and it is the chat the server just made"
+    assert chat.title == "made"
+
