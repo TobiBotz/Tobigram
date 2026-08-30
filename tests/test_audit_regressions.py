@@ -2189,3 +2189,43 @@ async def test_an_edited_media_is_named_after_its_kind():
         "a stream that has a name still keeps it"
     )
 
+
+async def test_a_fallback_name_keeps_the_mime_type_its_method_documents():
+    """The fallback name is what the mime is guessed from, so an invented
+    extension quietly decides what goes on the wire. Every fallback must guess
+    back to the default its own method already declared, and send_voice - whose
+    fallback feeds nothing else, since a voice note carries no file name - takes
+    none at all so that ``audio/mpeg`` still applies.
+    """
+
+    import io as _io
+
+    from pyrogram.methods.messages.send_animation import SendAnimation
+    from pyrogram.methods.messages.send_audio import SendAudio
+    from pyrogram.methods.messages.send_document import SendDocument
+    from pyrogram.methods.messages.send_sticker import SendSticker
+    from pyrogram.methods.messages.send_video import SendVideo
+    from pyrogram.methods.messages.send_video_note import SendVideoNote
+    from pyrogram.methods.messages.send_voice import SendVoice
+
+    cases = [
+        (SendDocument, "send_document", "application/zip"),
+        (SendVideo, "send_video", "video/mp4"),
+        (SendAudio, "send_audio", "audio/mpeg"),
+        (SendAnimation, "send_animation", "video/mp4"),
+        (SendSticker, "send_sticker", "image/webp"),
+        (SendVoice, "send_voice", "audio/mpeg"),
+        (SendVideoNote, "send_video_note", "video/mp4"),
+    ]
+
+    for base, name, documented in cases:
+        client = _upload_capturing_client(base)
+        media = await _uploaded_attributes(
+            client, getattr(client, name)(1, _io.BytesIO(b"generated"))
+        )
+
+        assert media.mime_type == documented, (
+            f"{name} sends {media.mime_type} for a nameless stream, but documents "
+            f"{documented}; the fallback name must not change what goes on the wire"
+        )
+
