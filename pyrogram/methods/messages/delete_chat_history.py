@@ -65,7 +65,9 @@ class DeleteChatHistory:
                 For private and simple group chats only.
 
         Returns:
-            ``int``: Amount of affected messages
+            ``int``: Amount of affected messages. A channel or a supergroup counts
+            the messages the server named as deleted, which is none when it hid the
+            history instead of deleting it, as it does unless *revoke* is set.
 
         Example:
             .. code-block:: python
@@ -98,5 +100,12 @@ class DeleteChatHistory:
                 )
             )
 
-        return len(r.updates[0].messages) if isinstance(peer, raw.types.InputPeerChannel) else r.pts_count
+        if isinstance(peer, raw.types.InputPeerChannel):
+            return sum(
+                len(update.messages)
+                for update in getattr(r, "updates", [])
+                if isinstance(update, raw.types.UpdateDeleteChannelMessages)
+            )
+
+        return r.pts_count
 

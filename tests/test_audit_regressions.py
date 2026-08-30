@@ -1835,3 +1835,82 @@ def test_the_peer_id_behind_a_self_peer_needs_the_session():
     with pytest.raises(ValueError):
         utils.get_peer_id(raw.types.InputPeerSelf())
 
+
+def _history_client(result):
+    from pyrogram import raw
+    from pyrogram.methods.messages.delete_chat_history import DeleteChatHistory
+
+    class _Client(DeleteChatHistory):
+        async def resolve_peer(self, peer_id):
+            return raw.types.InputPeerChannel(channel_id=1, access_hash=1)
+
+        async def invoke(self, query):
+            return result
+
+    return _Client()
+
+
+async def test_clearing_a_channel_reads_the_update_that_answers():
+    """``channels.deleteHistory`` answers with a plain ``Updates``, whose order is
+    not contractual and which can be empty. Taking ``updates[0].messages`` raised
+    ``AttributeError`` on the default call for a supergroup, where the server hides
+    the history and sends ``updateChannelAvailableMessages``, and ``IndexError``
+    whenever there was nothing left to delete.
+    """
+
+    from pyrogram import raw
+
+    deleted = raw.types.Updates(
+        updates=[raw.types.UpdateDeleteChannelMessages(
+            channel_id=1, messages=[2, 3, 4], pts=4, pts_count=3
+        )],
+        users=[], chats=[], date=0, seq=0,
+    )
+    assert await _history_client(deleted).delete_chat_history(-100) == 3
+
+    hidden = raw.types.Updates(
+        updates=[raw.types.UpdateChannelAvailableMessages(
+            channel_id=1, available_min_id=5
+        )],
+        users=[], chats=[], date=0, seq=0,
+    )
+    assert await _history_client(hidden).delete_chat_history(-100) == 0, (
+        "a hidden history deleted no messages, and saying so beats crashing"
+    )
+
+    empty = raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0)
+    assert await _history_client(empty).delete_chat_history(-100) == 0, (
+        "there was nothing to delete, which is not an IndexError"
+    )
+
+    unordered = raw.types.Updates(
+        updates=[
+            raw.types.UpdateChannelAvailableMessages(channel_id=1, available_min_id=5),
+            raw.types.UpdateDeleteChannelMessages(
+                channel_id=1, messages=[2, 3], pts=4, pts_count=2
+            ),
+        ],
+        users=[], chats=[], date=0, seq=0,
+    )
+    assert await _history_client(unordered).delete_chat_history(-100) == 2, (
+        "the answer is found by type, not by position"
+    )
+
+
+async def test_clearing_a_private_history_still_counts_the_old_way():
+    """Only the channel branch changed; a user or basic group peer still reports
+    what ``messages.affectedHistory`` carried.
+    """
+
+    from pyrogram import raw
+    from pyrogram.methods.messages.delete_chat_history import DeleteChatHistory
+
+    class _Client(DeleteChatHistory):
+        async def resolve_peer(self, peer_id):
+            return raw.types.InputPeerUser(user_id=1, access_hash=1)
+
+        async def invoke(self, query):
+            return raw.types.messages.AffectedHistory(pts=9, pts_count=7, offset=0)
+
+    assert await _Client().delete_chat_history(1) == 7
+
