@@ -62,7 +62,7 @@ class VotePoll:
             raw.functions.messages.SendVote(
                 peer=await self.resolve_peer(chat_id),
                 msg_id=message_id,
-                options=[poll.options[option].data for option in options]
+                options=[poll.options[option].persistent_id.encode() for option in options]
             )
         )
 

@@ -2372,3 +2372,54 @@ async def test_creating_a_group_unwraps_the_answer_it_gets():
     assert chat.id == -7, "and it is the chat the server just made"
     assert chat.title == "made"
 
+
+async def test_voting_sends_the_option_the_server_named():
+    """``messages.sendVote`` takes the ``option:bytes`` the server put on each
+    ``pollAnswer``. Poll parsing keeps that as ``persistent_id``, decoded UTF-8,
+    but the layer 227 bump renamed the attribute from ``data`` without updating
+    this caller, so every vote raised AttributeError before a request was built.
+    """
+
+    from types import SimpleNamespace
+
+    from pyrogram import raw, types
+    from pyrogram.methods.messages.vote_poll import VotePoll
+
+    answers = [
+        raw.types.PollAnswer(text=raw.types.TextWithEntities(text=t, entities=[]), option=o)
+        for t, o in (("a", b"0"), ("b", b"1"), ("c", b"2"))
+    ]
+    media_poll = raw.types.MessageMediaPoll(
+        poll=raw.types.Poll(id=1, question=raw.types.TextWithEntities(text="q", entities=[]),
+                            answers=answers, hash=0),
+        results=raw.types.PollResults(results=[], total_voters=0),
+    )
+
+    class _Client(VotePoll):
+        sent = None
+
+        async def resolve_peer(self, peer_id):
+            return raw.types.InputPeerSelf()
+
+        async def get_messages(self, chat_id, message_id):
+            return SimpleNamespace(poll=await types.Poll._parse(self, media_poll))
+
+        async def invoke(self, query):
+            _Client.sent = query
+
+            return raw.types.Updates(
+                updates=[raw.types.UpdateMessagePoll(poll_id=1, results=media_poll.results,
+                                                     poll=media_poll.poll)],
+                users=[], chats=[], date=0, seq=0,
+            )
+
+    client = _Client()
+
+    await client.vote_poll(1, 2, 0)
+    assert _Client.sent.options == [b"0"], (
+        "the vote carries the option bytes the server named, not a missing attribute"
+    )
+
+    await client.vote_poll(1, 2, [1, 2])
+    assert _Client.sent.options == [b"1", b"2"], "and every option for a multi answer poll"
+
