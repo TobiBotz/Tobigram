@@ -1736,3 +1736,102 @@ async def test_a_finished_upload_says_it_finished(tmp_path):
     )
     assert seen == sorted(seen), "progress must not go backwards"
 
+
+OWN_ID = 7933658472
+
+
+def _self_aware_client():
+    from types import SimpleNamespace
+
+    from pyrogram import raw
+    from tests.test_listeners import FakeClient
+
+    class _Client(FakeClient):
+        async def resolve_peer(self, peer_id):
+            if peer_id in ("me", "self"):
+                return raw.types.InputPeerSelf()
+
+            return raw.types.InputPeerUser(user_id=555, access_hash=1)
+
+    client = _Client(listener_timeout=0.05)
+
+    async def user_id():
+        return OWN_ID
+
+    client.storage = SimpleNamespace(user_id=user_id)
+
+    return client
+
+
+async def test_a_listener_can_wait_on_saved_messages():
+    """``resolve_peer("me")`` answers ``InputPeerSelf``, which carries no id, and
+    ``get_peer_id`` raised ``ValueError: Peer type invalid`` on it. That killed
+    listen, ask, wait_for_message, wait_for_callback_query, stop_listening and
+    register_next_step_handler for the commonest peer string in the library.
+    """
+
+    from pyrogram.errors import ListenerTimeout
+    from pyrogram.methods.listeners.listen import resolve_listener_ids
+
+    client = _self_aware_client()
+
+    assert await resolve_listener_ids(client, "me") == OWN_ID
+    assert await resolve_listener_ids(client, "self") == OWN_ID
+    assert await resolve_listener_ids(client, "someone") == 555, (
+        "a username still resolves the way it always did"
+    )
+    assert await resolve_listener_ids(client, 42) == 42, "an int is still taken as given"
+    assert await resolve_listener_ids(client, None) is None
+    assert await resolve_listener_ids(client, ["me", 42]) == [OWN_ID, 42]
+
+    with pytest.raises(ListenerTimeout):
+        await asyncio.wait_for(client.listen(chat_id="me"), timeout=2)
+
+
+async def test_a_listener_on_saved_messages_hears_its_own_chat():
+    """Resolving to the right number is only half of it: the listener is filed by
+    that id, so a message from Saved Messages has to reach it.
+    """
+
+    from pyrogram.enums import ListenerTypes
+    from tests.test_listeners import message, waiting
+
+    from pyrogram.methods.listeners.listen import resolve_listener_ids
+
+    client = _self_aware_client()
+    resolved = await resolve_listener_ids(client, "me")
+    _, future = waiting(client, chat_id=resolved)
+
+    assert await client.listeners.feed(
+        client, ListenerTypes.MESSAGE, message(chat_id=OWN_ID)
+    ) is True
+    assert future.result().chat.id == OWN_ID
+
+
+async def test_stopping_a_saved_messages_listener_does_not_raise():
+    """``stop_listening`` and ``register_next_step_handler`` share the same
+    resolver, so they went down with it.
+    """
+
+    client = _self_aware_client()
+
+    assert await client.stop_listening(chat_id="me") == 0
+
+    def step(c, m):
+        return None
+
+    await client.register_next_step_handler(step, chat_id="me")
+    assert await client.stop_listening(chat_id="me") == 1
+
+
+def test_the_peer_id_behind_a_self_peer_needs_the_session():
+    """The helper the fix leans on: every other peer keeps its old answer."""
+
+    from pyrogram import raw, utils
+
+    assert utils.get_peer_id(raw.types.InputPeerUser(user_id=7, access_hash=1)) == 7
+    assert utils.get_peer_id(raw.types.InputPeerChat(chat_id=7)) == -7
+
+    with pytest.raises(ValueError):
+        utils.get_peer_id(raw.types.InputPeerSelf())
+

@@ -43,7 +43,7 @@ async def resolve_listener_ids(client: "pyrogram.Client", value):
         return [await resolve_listener_ids(client, item) for item in value]
 
     if isinstance(value, str):
-        return utils.get_peer_id(await client.resolve_peer(value))
+        return await utils.resolve_peer_id(client, value)
 
     return value
 

@@ -434,8 +434,7 @@ class Folder(Object):
         Returns:
             True on success.
         """
-        peer = await self._client.resolve_peer(chat_id)
-        peer_id = utils.get_peer_id(peer)
+        peer_id = await utils.resolve_peer_id(self._client, chat_id)
 
         return await self.edit(
             pinned_chats=[i.id for i in self.pinned_chats or [] if peer_id != i.id],
