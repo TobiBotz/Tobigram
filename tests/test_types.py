@@ -586,7 +586,7 @@ class TestNestedTypes:
 
 
 # ---------------------------------------------------------------------------
-# 12.  Test attribute assignment compability (no __slots__ used by these types)
+# 12.  Test attribute assignment compatibility (no __slots__ used by these types)
 # ---------------------------------------------------------------------------
 
 class TestDynamicAttributes:

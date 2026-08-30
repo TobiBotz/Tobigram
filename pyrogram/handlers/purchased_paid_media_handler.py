@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 
 class PurchasedPaidMediaHandler(Handler):
-    """The PurchasedPaidMedia handler class. Used to handle purchased paid medias.
+    """The PurchasedPaidMedia handler class. Used to handle purchased paid media.
     It is intended to be used with :meth:`~pyrogram.Client.add_handler`
 
     For a nicer way to register this handler, have a look at the

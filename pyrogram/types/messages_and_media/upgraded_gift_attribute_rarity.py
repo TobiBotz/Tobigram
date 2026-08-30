@@ -54,7 +54,7 @@ class UpgradedGiftAttributeRarity(Object):
 
 
 class UpgradedGiftAttributeRarityPerMille(UpgradedGiftAttributeRarity):
-    """The rarity is represented as the numeric frequence of the model.
+    """The rarity is represented as the numeric frequency of the model.
 
     Parameters:
         per_mille (``int``):

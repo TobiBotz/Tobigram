@@ -18,7 +18,7 @@
 
 from typing import Dict, List, Optional, Union
 
-from pyrogram import raw
+from pyrogram import raw, types
 
 from ..object import Object
 

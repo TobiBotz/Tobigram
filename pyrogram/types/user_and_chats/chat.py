@@ -283,7 +283,7 @@ class Chat(Object):
             For supergroups, the minimum number of boosts that a non-administrator user needs to add in order to ignore slow mode and chat permissions.
 
         slow_mode_delay (``int``, *optional*):
-            For supergroups, the minimum allowed delay between consecutive messages sent by each unpriviledged user; in seconds.
+            For supergroups, the minimum allowed delay between consecutive messages sent by each unprivileged user; in seconds.
 
         slowmode_next_send_date (:py:obj:`~datetime.datetime`, *optional*):
             Indicates when the user will be allowed to send another message in the chat. For supergroups only.

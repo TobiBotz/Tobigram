@@ -113,7 +113,7 @@ class SendStory:
                 and :obj:`~pyrogram.enums.StoriesPrivacyRules.SELECTED_USERS` only
 
             disallowed_users (List of ``int``, *optional*):
-                List of user_id whos disallow to view the stories.
+                List of user_id who are not allowed to view the stories.
                 Note: Works with :obj:`~pyrogram.enums.StoriesPrivacyRules.PUBLIC`
                 and :obj:`~pyrogram.enums.StoriesPrivacyRules.CONTACTS` only
 

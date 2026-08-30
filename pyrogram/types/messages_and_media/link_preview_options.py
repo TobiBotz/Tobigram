@@ -35,11 +35,11 @@ class LinkPreviewOptions(Object):
             If empty, then the first URL found in the message text will be used.
 
         prefer_small_media (``bool``, *optional*):
-            True, if the media in the link preview is suppposed to be shrunk.
+            True, if the media in the link preview is supposed to be shrunk.
             Ignored if the URL isn't explicitly specified or media size change isn't supported for the preview.
 
         prefer_large_media (``bool``, *optional*):
-            True, if the media in the link preview is suppposed to be enlarged.
+            True, if the media in the link preview is supposed to be enlarged.
             Ignored if the URL isn't explicitly specified or media size change isn't supported for the preview.
 
         show_above_text (``bool``, *optional*):

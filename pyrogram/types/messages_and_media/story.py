@@ -114,10 +114,10 @@ class Story(Object, Update):
             Story privacy.
 
         allowed_users (List of ``int`` | ``str``, *optional*):
-            List of user_ids or chat_ids whos allowed to view the story.
+            List of user_ids or chat_ids who are allowed to view the story.
 
         disallowed_users (List of ``int`` | ``str``, *optional*):
-            List of user_ids whos denied to view the story.
+            List of user_ids who are denied to view the story.
 
         reactions (List of :obj:`~pyrogram.types.Reaction`):
             List of the reactions to this story.
@@ -1761,7 +1761,7 @@ class Story(Object, Update):
                 and :obj:`~pyrogram.enums.StoriesPrivacyRules.SELECTED_USERS` only
 
             disallowed_users (List of ``int``, *optional*):
-                List of user_id whos disallow to view the stories.
+                List of user_id who are not allowed to view the stories.
                 Note: Works with :obj:`~pyrogram.enums.StoriesPrivacyRules.PUBLIC`
                 and :obj:`~pyrogram.enums.StoriesPrivacyRules.CONTACTS` only
 
@@ -1944,7 +1944,7 @@ class Story(Object, Update):
                 and :obj:`~pyrogram.enums.StoriesPrivacyRules.SELECTED_USERS` only
 
             disallowed_users (List of ``int`` | ``str``, *optional*):
-                List of user_id whos disallow to view the stories.
+                List of user_id who are not allowed to view the stories.
                 Note: Works with :obj:`~pyrogram.enums.StoriesPrivacyRules.PUBLIC`
                 and :obj:`~pyrogram.enums.StoriesPrivacyRules.CONTACTS` only
 
