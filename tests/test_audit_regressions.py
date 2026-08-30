@@ -2423,3 +2423,57 @@ async def test_voting_sends_the_option_the_server_named():
     await client.vote_poll(1, 2, [1, 2])
     assert _Client.sent.options == [b"1", b"2"], "and every option for a multi answer poll"
 
+
+async def test_every_privacy_setting_reaches_the_field_it_belongs_to():
+    """The setter reads the live settings and writes a modified copy back, so each
+    parameter has to be assigned onto the raw field name, not its own. Seven were;
+    show_gift_button was assigned onto itself, and the raw object is slotted, so
+    passing it raised AttributeError before the write RPC was sent.
+    """
+
+    from pyrogram import raw, types
+    from pyrogram.methods.account.set_global_privacy_settings import (
+        SetGlobalPrivacySettings,
+    )
+
+    sent = []
+
+    class _Client(SetGlobalPrivacySettings):
+        async def invoke(self, query):
+            if isinstance(query, raw.functions.account.GetGlobalPrivacySettings):
+                return raw.types.GlobalPrivacySettings()
+
+            sent.append(query.settings)
+
+            return query.settings
+
+    result = await _Client().set_global_privacy_settings(
+        archive_and_mute_new_chats=True,
+        keep_unmuted_chats_archived=True,
+        keep_chats_from_folders_archived=True,
+        show_read_date=False,
+        allow_new_chats_from_unknown_users=False,
+        incoming_paid_message_star_count=5,
+        show_gift_button=True,
+    )
+
+    written = sent[0]
+
+    assert written.display_gifts_button is True, (
+        "show_gift_button belongs to display_gifts_button on the wire"
+    )
+    assert written.archive_and_mute_new_noncontact_peers is True
+    assert written.keep_archived_unmuted is True
+    assert written.keep_archived_folders is True
+    assert written.hide_read_marks is True
+    assert written.new_noncontact_peers_require_premium is True
+    assert written.noncontact_peers_paid_stars == 5
+    assert result.show_gift_button is True, "and it reads back the way it was asked"
+
+    assert not set(raw.types.GlobalPrivacySettings.__slots__) - {
+        "archive_and_mute_new_noncontact_peers", "keep_archived_unmuted",
+        "keep_archived_folders", "hide_read_marks",
+        "new_noncontact_peers_require_premium", "display_gifts_button",
+        "noncontact_peers_paid_stars", "disallowed_gifts",
+    }, "a new raw field means the setter needs a parameter for it"
+

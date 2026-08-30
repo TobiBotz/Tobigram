@@ -110,7 +110,7 @@ class SetGlobalPrivacySettings:
             settings.noncontact_peers_paid_stars = incoming_paid_message_star_count
 
         if show_gift_button is not None:
-            settings.show_gift_button = show_gift_button
+            settings.display_gifts_button = show_gift_button
 
         if accepted_gift_types is not None:
             settings.disallowed_gifts = accepted_gift_types.write()
