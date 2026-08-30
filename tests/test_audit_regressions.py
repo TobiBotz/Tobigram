@@ -1613,3 +1613,126 @@ async def test_asking_to_show_a_read_date_clears_the_hide_flag():
     assert result.show_read_date is True, "and the answer reads back the way it was asked"
     assert result.allow_new_chats_from_unknown_users is True
 
+
+def _progress_client(chunks):
+    import asyncio as _asyncio
+    from concurrent.futures import ThreadPoolExecutor
+
+    from tests.test_download_write import FakeClient
+
+    client = FakeClient(chunks)
+    client.loop = _asyncio.get_event_loop()
+    client.executor = ThreadPoolExecutor(1)
+
+    return client
+
+
+async def test_a_finished_download_says_it_finished(tmp_path):
+    """The progress callback was moved onto a task that polls every 0.5s and is
+    cancelled the moment the transfer ends, so a download could finish having
+    reported nothing at all, and none ever reported the final chunk. Measured
+    live, a 12 MB file produced between zero and two calls, the last of them
+    claiming 58%.
+    """
+
+    from tests.test_download_write import CHUNK, file_id
+
+    for label, chunks, file_size in (
+        ("shorter than one chunk", [b"x" * 2048], 2048),
+        ("exactly one chunk", [b"a" * CHUNK], CHUNK),
+        ("spilling past a chunk", [b"a" * CHUNK, b"b" * 4096], CHUNK + 4096),
+    ):
+        seen = []
+
+        async def note(current, total):
+            seen.append((current, total))
+
+        client = _progress_client(chunks)
+        await client.handle_download(
+            (file_id(), str(tmp_path), "out.bin", False, file_size, note, ())
+        )
+
+        assert seen, f"{label}: a download that transferred bytes reported none"
+        assert seen[-1] == (file_size, file_size), (
+            f"{label}: the last call must report the whole file, got {seen[-1]}"
+        )
+        assert all(c <= file_size for c, _ in seen), (
+            f"{label}: no call may claim more than the file holds"
+        )
+        assert seen == sorted(seen), f"{label}: progress must not go backwards"
+
+
+async def test_a_download_progress_callback_may_be_a_plain_function(tmp_path):
+    """The callback is documented as either kind, and the sync branch hands it to
+    the executor rather than awaiting it.
+    """
+
+    from tests.test_download_write import file_id
+
+    seen = []
+    client = _progress_client([b"x" * 4096])
+
+    await client.handle_download(
+        (file_id(), str(tmp_path), "out.bin", False, 4096,
+         lambda current, total: seen.append((current, total)), ())
+    )
+
+    assert seen[-1] == (4096, 4096), f"a plain function is called too, got {seen}"
+
+
+async def test_progress_args_reach_the_download_callback(tmp_path):
+    """``progress_args`` is appended to every call, and the reporter rewrite had to
+    keep passing it through.
+    """
+
+    from tests.test_download_write import file_id
+
+    seen = []
+
+    async def note(current, total, tag):
+        seen.append((current, total, tag))
+
+    client = _progress_client([b"x" * 4096])
+    await client.handle_download(
+        (file_id(), str(tmp_path), "out.bin", False, 4096, note, ("tag",))
+    )
+
+    assert seen[-1] == (4096, 4096, "tag")
+
+
+async def test_a_finished_upload_says_it_finished(tmp_path):
+    """The upload half of the same rewrite. It polled ``file_part``, which counts
+    parts handed to a worker rather than parts the server acknowledged, so it both
+    over-reported and stopped short of the end.
+    """
+
+    from types import SimpleNamespace as NS
+
+    from tests.e2e import CHUNK, FakeDC, make_client
+
+    size = 8 * CHUNK
+    path = tmp_path / "up.bin"
+    with open(path, "wb") as handle:
+        handle.truncate(size)
+
+    dc = FakeDC(size, step=0.00002)
+    client = make_client(dc, "upprogress", pool=dc.pool(4))
+    client.me = NS(is_bot=False, is_premium=False)
+    await client.storage.open()
+
+    seen = []
+
+    async def note(current, total):
+        seen.append((current, total))
+
+    await client.save_file(str(path), progress=note)
+
+    assert seen, "an upload that transferred bytes reported none"
+    assert seen[-1] == (size, size), (
+        f"the last call must report the whole file, got {seen[-1]}"
+    )
+    assert all(c <= size for c, _ in seen), (
+        "no call may claim more bytes than were sent"
+    )
+    assert seen == sorted(seen), "progress must not go backwards"
+

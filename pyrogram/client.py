@@ -1430,6 +1430,25 @@ class Client(Methods):
             offset_bytes = abs(offset) * chunk_size
             _last_progress_time = 0.0
 
+            async def _report(sent: int) -> None:
+                if not progress:
+                    return
+
+                func = functools.partial(
+                    progress,
+                    min(sent, file_size) if file_size else sent,
+                    file_size,
+                    *progress_args
+                )
+
+                try:
+                    if inspect.iscoroutinefunction(progress):
+                        await func()
+                    else:
+                        await self.loop.run_in_executor(self.executor, func)
+                except Exception as e:
+                    log.warning(f"Download progress callback error: {e}")
+
             dc_id = file_id.dc_id
 
             try:
@@ -1485,6 +1504,8 @@ class Client(Methods):
                     first_len = len(first_chunk)
                     first_chunk = None
 
+                    await _report(offset_bytes)
+
                     if not first_len or first_len < chunk_size or current >= total:
                         return
 
@@ -1508,6 +1529,8 @@ class Client(Methods):
                                 _write_file.write(chunk)
                             current += 1
                             offset_bytes += chunk_size
+
+                            await _report(offset_bytes)
 
                             if len(chunk) < chunk_size or current >= total:
                                 return
@@ -1540,7 +1563,6 @@ class Client(Methods):
                     _done_count = 0
                     _total_chunks = chunks_needed
                     _getfile_rate = TokenBucket(rate=dl_rate, burst=dl_burst)
-                    _last_progress_count = 0
                     _last_rate_adj = 0.0
                     _fast_window = 0
 
@@ -1613,39 +1635,13 @@ class Client(Methods):
                     for t in tasks:
                         t.add_done_callback(lambda _: data_ready.set())
 
-                    _progress_task = None
-                    if progress:
-                        async def _progress_reporter():
-                            nonlocal _last_progress_count, _last_progress_time
-                            try:
-                                while True:
-                                    await asyncio.sleep(0.5)
-                                    dc = _done_count
-                                    if dc == _last_progress_count:
-                                        continue
-                                    _last_progress_count = dc
-                                    now = time.monotonic()
-                                    if now - _last_progress_time >= 0.1:
-                                        _last_progress_time = now
-                                        s = min((dc + 1) * chunk_size, file_size)
-                                        try:
-                                            if inspect.iscoroutinefunction(progress):
-                                                await progress(s, file_size, *progress_args)
-                                            else:
-                                                await self.loop.run_in_executor(
-                                                    self.executor,
-                                                    functools.partial(progress, s, file_size, *progress_args),
-                                                )
-                                        except Exception as e:
-                                            log.warning(f"Download progress callback error: {e}")
-                            except asyncio.CancelledError:
-                                pass
-                        _progress_task = asyncio.ensure_future(_progress_reporter())
+                    _reported_count = -1
 
                     try:
                         while current < total:
                             if _write_mode:
                                 if _done_count >= _total_chunks:
+                                    await _report(offset_bytes + _done_count * chunk_size)
                                     return
                                 for t in tasks:
                                     if t.done() and not t.cancelled():
@@ -1659,6 +1655,11 @@ class Client(Methods):
                                 except asyncio.TimeoutError:
                                     pass
                                 data_ready.clear()
+
+                                if _done_count != _reported_count:
+                                    _reported_count = _done_count
+                                    await _report(offset_bytes + _done_count * chunk_size)
+
                                 yield b""
                             else:
                                 while offset_bytes not in received:
@@ -1678,11 +1679,11 @@ class Client(Methods):
                                 current += 1
                                 offset_bytes += chunk_size
 
+                                await _report(offset_bytes)
+
                                 if len(chunk) < chunk_size or current >= total:
                                     return
                     finally:
-                        if _progress_task and not _progress_task.done():
-                            _progress_task.cancel()
                         for t in tasks:
                             if not t.done():
                                 t.cancel()

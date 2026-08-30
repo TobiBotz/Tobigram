@@ -42,7 +42,6 @@ MAX_RETRIES = 16
 STALL_TIMEOUT = 900
 READ_BUFFER = 4 * 1024 * 1024
 MAX_BATCH = 4 * 1024 * 1024
-PROGRESS_INTERVAL = 0.2
 
 
 async def _stop_workers(queue: asyncio.Queue, workers: list) -> list:
@@ -127,6 +126,7 @@ class SaveFile:
 
                     try:
                         await _send_part(session, data)
+                        _acked[0] += 1
                     finally:
                         data = None
                         budget.release()
@@ -215,6 +215,8 @@ class SaveFile:
             dc_id = await self.storage.dc_id()
             pool = await self._get_media_session_pool(dc_id, pool_size)
 
+            _acked = [0]
+
             n_workers = len(pool) * 2
             queue = asyncio.Queue(n_workers)
             budget = ReadAhead(self.read_ahead_slots)
@@ -223,40 +225,25 @@ class SaveFile:
                 for i in range(n_workers)
             ]
             next_batch_task = None
-            _last_progress_time = 0.0
             _next_dispatch = 0.0
             _dispatch_interval = 1.0 / rate_limit
             _stalled_since = 0.0
 
-            _progress_task = None
-            if progress:
-                async def _progress_reporter():
-                    nonlocal _last_progress_time
-                    try:
-                        _prev_part = 0
-                        while True:
-                            await asyncio.sleep(0.5)
-                            p = file_part
-                            if p == 0 or p == _prev_part:
-                                continue
-                            _prev_part = p
-                            now = time.monotonic()
-                            if now - _last_progress_time >= PROGRESS_INTERVAL:
-                                _last_progress_time = now
-                                s = min(p * part_size, file_size)
-                                try:
-                                    if inspect.iscoroutinefunction(progress):
-                                        await progress(s, file_size, *progress_args)
-                                    else:
-                                        await self.loop.run_in_executor(
-                                            self.executor,
-                                            functools.partial(progress, s, file_size, *progress_args),
-                                        )
-                                except Exception as e:
-                                    log.warning(f"Progress callback error: {e}")
-                    except asyncio.CancelledError:
-                        pass
-                _progress_task = asyncio.ensure_future(_progress_reporter())
+            async def _report(parts: int) -> None:
+                if not progress:
+                    return
+
+                func = functools.partial(
+                    progress, min(parts * part_size, file_size), file_size, *progress_args
+                )
+
+                try:
+                    if inspect.iscoroutinefunction(progress):
+                        await func()
+                    else:
+                        await self.loop.run_in_executor(self.executor, func)
+                except Exception as e:
+                    log.warning(f"Upload progress callback error: {e}")
 
             try:
 
@@ -345,6 +332,8 @@ class SaveFile:
                         chunk = None
                         file_part += 1
 
+                        await _report(_acked[0])
+
                     batch = None
 
             except StopTransmission:
@@ -353,6 +342,9 @@ class SaveFile:
                 log.exception(e)
                 raise
             else:
+                await _stop_workers(queue, workers)
+                await _report(file_total_parts)
+
                 if is_big:
                     return raw.types.InputFileBig(
                         id=file_id,
@@ -367,8 +359,6 @@ class SaveFile:
                         md5_checksum=md5_sum,
                     )
             finally:
-                if _progress_task and not _progress_task.done():
-                    _progress_task.cancel()
                 if next_batch_task is not None and not next_batch_task.done():
                     next_batch_task.cancel()
 
