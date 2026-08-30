@@ -2229,3 +2229,111 @@ async def test_a_fallback_name_keeps_the_mime_type_its_method_documents():
             f"{documented}; the fallback name must not change what goes on the wire"
         )
 
+
+def _flood_session(amounts):
+    import collections
+    from types import SimpleNamespace
+
+    from pyrogram import raw
+    from pyrogram.errors import FloodWait
+    from pyrogram.session.session import Session
+
+    session = Session.__new__(Session)
+    session.is_started = asyncio.Event()
+    session.is_started.set()
+    session.client = SimpleNamespace(name="flood")
+    session.last_used = 0.0
+    session.flood_history = collections.deque(maxlen=50)
+    session._dynamic_backoff = float(Session.SLEEP_THRESHOLD)
+    session._last_flood_decay = 0.0
+    session.sent = []
+    session.slept = []
+
+    queue = list(amounts)
+
+    async def send(query, timeout=None):
+        session.sent.append(query)
+
+        if queue:
+            raise FloodWait(queue.pop(0))
+
+        return "answered"
+
+    session.send = send
+
+    return session
+
+
+async def _drive(session, sleep_threshold, monkeypatch):
+    from pyrogram import raw
+
+    async def no_wait(amount):
+        session.slept.append(amount)
+
+    monkeypatch.setattr(asyncio, "sleep", no_wait)
+
+    return await session._invoke(
+        raw.functions.help.GetConfig(), retries=10, timeout=5,
+        sleep_threshold=sleep_threshold,
+    )
+
+
+async def test_asking_for_no_sleeping_raises_the_flood(monkeypatch):
+    """``sleep_threshold=0`` is documented as raising every flood, and it is the
+    only way a caller can refuse to be slept. A dynamic backoff raised the bar it
+    was compared against to between 10 and 60 seconds, so any flood under that was
+    slept through and the setting did nothing.
+    """
+
+    from pyrogram.errors import FloodWait
+
+    session = _flood_session([3])
+
+    with pytest.raises(FloodWait):
+        await _drive(session, 0, monkeypatch)
+
+    assert session.slept == [], "asking for no sleeping must not sleep"
+
+
+async def test_a_flood_under_the_threshold_is_still_slept(monkeypatch):
+    """The ordinary case has to keep working: one short flood, one sleep, one
+    answer.
+    """
+
+    session = _flood_session([3])
+
+    assert await _drive(session, 10, monkeypatch) == "answered"
+    assert session.slept == [3]
+
+
+async def test_a_flood_that_never_lets_up_gives_up(monkeypatch):
+    """A server that keeps answering FLOOD_WAIT 3 met a branch that slept, retried,
+    and never decremented ``retries`` - so a single call looped for as long as the
+    server kept saying no. Observed live: fifty waits and counting on one
+    unpin_all_chat_messages, killed rather than returned.
+    """
+
+    from pyrogram.errors import FloodWait
+
+    session = _flood_session([3] * 500)
+
+    with pytest.raises(FloodWait):
+        await _drive(session, 10, monkeypatch)
+
+    assert sum(session.slept) <= 10 * 10, (
+        "the total time spent sleeping on floods is bounded by the threshold "
+        "the caller allowed"
+    )
+    assert len(session.slept) < 500, "it must stop asking long before the server does"
+
+
+async def test_a_caller_can_still_choose_to_wait_forever(monkeypatch):
+    """A negative threshold has always meant "sleep through anything", and the
+    bound must not take that away.
+    """
+
+    session = _flood_session([3] * 40)
+
+    assert await _drive(session, -1, monkeypatch) == "answered"
+    assert len(session.slept) == 40
+
