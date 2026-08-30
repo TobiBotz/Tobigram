@@ -1324,3 +1324,146 @@ async def test_a_datacenter_migration_announces_the_new_connection(monkeypatch):
         "a datacenter migration stops the old session and opens a new one, so "
         f"on_connect has to run for the new datacenter; got {seen}"
     )
+
+
+async def test_a_saved_message_does_not_ask_for_a_direct_messages_topic():
+    """Saved Messages carries ``saved_peer_id`` to name the saved dialog a message
+    belongs to. A monoforum names its topic with the same field, and reports
+    ``ChatType.PRIVATE`` like any user chat, so the chat type alone cannot tell the
+    two apart: keying on it sends ``messages.GetSavedDialogsByID`` with a user as
+    ``parent_peer``, and Telegram answers PARENT_PEER_INVALID. Only a monoforum
+    sets ``is_direct_messages``.
+    """
+
+    from unittest.mock import Mock
+
+    from pyrogram import raw, types
+
+    asked = []
+
+    client = Mock()
+    client.me = Mock(id=7, is_bot=False, is_premium=False)
+    client.message_cache = {}
+    client.topic_cache = pyrogram.client.Cache(8)
+    client.parse_mode = None
+    client.fetch_topics = True
+
+    async def get_direct_messages_topics_by_id(chat_id, topic_ids):
+        asked.append((chat_id, topic_ids))
+        raise AssertionError("a user chat has no direct messages topic to fetch")
+
+    client.get_direct_messages_topics_by_id = get_direct_messages_topics_by_id
+
+    message = raw.types.Message(
+        id=1,
+        peer_id=raw.types.PeerUser(user_id=7),
+        from_id=raw.types.PeerUser(user_id=7),
+        saved_peer_id=raw.types.PeerUser(user_id=7),
+        date=1700000000,
+        restriction_reason=[],
+        entities=[],
+        message="saved",
+    )
+
+    users = {7: raw.types.User(
+        id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1, is_self=True
+    )}
+
+    parsed = await types.Message._parse(client, message, users, {})
+
+    assert not asked, (
+        "Saved Messages is a plain user chat, so parsing a message in it must not "
+        f"reach for a direct messages topic; asked {asked}"
+    )
+    assert parsed.topic is None
+
+
+async def test_a_monoforum_message_still_asks_for_its_direct_messages_topic():
+    """The other half of the pairing: a monoforum reports ``ChatType.PRIVATE`` like
+    any user chat, so telling the two apart by ``is_direct_messages`` has to keep
+    the monoforum fetching the topic it really does own.
+    """
+
+    from unittest.mock import Mock
+
+    from pyrogram import raw, types
+
+    asked = []
+
+    client = Mock()
+    client.me = Mock(id=7, is_bot=False, is_premium=False)
+    client.message_cache = {}
+    client.topic_cache = pyrogram.client.Cache(8)
+    client.parse_mode = None
+    client.fetch_topics = True
+
+    async def get_direct_messages_topics_by_id(chat_id, topic_ids):
+        asked.append((chat_id, topic_ids))
+        return None
+
+    client.get_direct_messages_topics_by_id = get_direct_messages_topics_by_id
+
+    channel = raw.types.Channel(
+        id=100, title="DM", photo=raw.types.ChatPhotoEmpty(), date=0, access_hash=1,
+        usernames=[], restriction_reason=[], monoforum=True, broadcast=False, megagroup=False
+    )
+
+    message = raw.types.Message(
+        id=1,
+        peer_id=raw.types.PeerChannel(channel_id=100),
+        from_id=raw.types.PeerUser(user_id=7),
+        saved_peer_id=raw.types.PeerUser(user_id=42),
+        date=1700000000,
+        restriction_reason=[],
+        entities=[],
+        message="m",
+    )
+
+    users = {7: raw.types.User(
+        id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1
+    )}
+
+    parsed = await types.Message._parse(client, message, users, {100: channel})
+
+    assert parsed.chat.is_direct_messages, "a monoforum is what marks a direct messages chat"
+    assert parsed.direct_messages_topic_id == 42
+    assert asked == [(parsed.chat.id, 42)], (
+        f"a monoforum still owns the topic its saved_peer_id names; asked {asked}"
+    )
+
+
+async def test_a_saved_channel_message_does_not_read_a_user_id_off_a_channel():
+    """``saved_peer_id`` in Saved Messages is whoever sent the message originally,
+    and that can be a channel, which carries no ``user_id`` to read.
+    """
+
+    from unittest.mock import Mock
+
+    from pyrogram import raw, types
+
+    client = Mock()
+    client.me = Mock(id=7, is_bot=False, is_premium=False)
+    client.message_cache = {}
+    client.topic_cache = pyrogram.client.Cache(8)
+    client.parse_mode = None
+    client.fetch_topics = True
+
+    message = raw.types.Message(
+        id=1,
+        peer_id=raw.types.PeerUser(user_id=7),
+        from_id=raw.types.PeerUser(user_id=7),
+        saved_peer_id=raw.types.PeerChannel(channel_id=555),
+        date=1700000000,
+        restriction_reason=[],
+        entities=[],
+        message="saved from a channel",
+    )
+
+    users = {7: raw.types.User(
+        id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1, is_self=True
+    )}
+
+    parsed = await types.Message._parse(client, message, users, {})
+
+    assert parsed.direct_messages_topic_id is None
+    assert parsed.topic is None

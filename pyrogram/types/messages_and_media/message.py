@@ -1926,7 +1926,7 @@ class Message(Object, Update):
                 except (ChannelPrivate, ChannelForumMissing):
                     pass
 
-        if chat.type == enums.ChatType.PRIVATE and message.saved_peer_id:
+        if chat.is_direct_messages and message.saved_peer_id:
             parsed_message.direct_messages_topic_id = message.saved_peer_id.user_id
 
             parsed_topic = client.topic_cache[(parsed_message.chat.id, parsed_message.direct_messages_topic_id)]
