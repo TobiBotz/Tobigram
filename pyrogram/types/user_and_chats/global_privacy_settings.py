@@ -95,8 +95,8 @@ class GlobalPrivacySettings(Object):
             archive_and_mute_new_chats=getattr(settings, "archive_and_mute_new_noncontact_peers", None),
             keep_unmuted_chats_archived=getattr(settings, "keep_archived_unmuted", None),
             keep_chats_from_folders_archived=getattr(settings, "keep_archived_folders", None),
-            show_read_date=getattr(settings, "hide_read_marks", None),
-            allow_new_chats_from_unknown_users=getattr(settings, "new_noncontact_peers_require_premium", None),
+            show_read_date=not getattr(settings, "hide_read_marks", None),
+            allow_new_chats_from_unknown_users=not getattr(settings, "new_noncontact_peers_require_premium", None),
             incoming_paid_message_star_count=getattr(settings, "noncontact_peers_paid_stars", None),
             show_gift_button=getattr(settings, "display_gifts_button", None),
             accepted_gift_types=types.AcceptedGiftTypes._parse(getattr(settings, "disallowed_gifts", None))
@@ -107,8 +107,12 @@ class GlobalPrivacySettings(Object):
             archive_and_mute_new_noncontact_peers=self.archive_and_mute_new_chats,
             keep_archived_unmuted=self.keep_unmuted_chats_archived,
             keep_archived_folders=self.keep_chats_from_folders_archived,
-            hide_read_marks=self.show_read_date,
-            new_noncontact_peers_require_premium=self.allow_new_chats_from_unknown_users,
+            hide_read_marks=not self.show_read_date if self.show_read_date is not None else None,
+            new_noncontact_peers_require_premium=(
+                not self.allow_new_chats_from_unknown_users
+                if self.allow_new_chats_from_unknown_users is not None
+                else None
+            ),
             noncontact_peers_paid_stars=self.incoming_paid_message_star_count,
             display_gifts_button=self.show_gift_button,
             disallowed_gifts=self.accepted_gift_types.write() if self.accepted_gift_types else None

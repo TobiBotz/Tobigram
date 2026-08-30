@@ -1508,3 +1508,108 @@ async def test_a_saved_channel_message_does_not_read_a_user_id_off_a_channel():
 
     assert parsed.direct_messages_topic_id is None
     assert parsed.topic is None
+
+
+def test_a_hidden_read_date_is_not_a_shown_one():
+    """``globalPrivacySettings`` carries the *negative* flags ``hide_read_marks`` and
+    ``new_noncontact_peers_require_premium``. Both were mapped straight onto the
+    positively named ``show_read_date`` and ``allow_new_chats_from_unknown_users``
+    with no negation, so every read reported the opposite of the truth, and both
+    errors fell on the permissive side. TDLib settles the polarity:
+    ``hide_read_marks_ = !show_read_date_``.
+    """
+
+    from pyrogram import raw, types
+
+    hidden = types.GlobalPrivacySettings._parse(
+        raw.types.GlobalPrivacySettings(
+            hide_read_marks=True,
+            new_noncontact_peers_require_premium=True,
+        )
+    )
+    assert hidden.show_read_date is False, "a hidden read date is not a shown one"
+    assert hidden.allow_new_chats_from_unknown_users is False, (
+        "requiring premium of non-contacts is not allowing them"
+    )
+
+    shown = types.GlobalPrivacySettings._parse(
+        raw.types.GlobalPrivacySettings(
+            hide_read_marks=False,
+            new_noncontact_peers_require_premium=False,
+        )
+    )
+    assert shown.show_read_date is True
+    assert shown.allow_new_chats_from_unknown_users is True
+
+    absent = types.GlobalPrivacySettings._parse(raw.types.GlobalPrivacySettings())
+    assert absent.show_read_date is True, "an unset hide flag means the date is shown"
+    assert absent.allow_new_chats_from_unknown_users is True
+
+    from io import BytesIO
+
+    written = types.GlobalPrivacySettings(
+        show_read_date=False, allow_new_chats_from_unknown_users=False
+    ).write()
+    assert written.hide_read_marks is True
+    assert written.new_noncontact_peers_require_premium is True
+
+    reread = types.GlobalPrivacySettings._parse(
+        raw.types.GlobalPrivacySettings.read(BytesIO(written.write()[4:]))
+    )
+    assert reread.show_read_date is False, "the round trip keeps what was asked for"
+    assert reread.allow_new_chats_from_unknown_users is False
+
+
+def test_an_unspecified_privacy_flag_is_not_a_restriction():
+    """``write()`` must not turn "the caller said nothing" into "hide it". A bare
+    ``not None`` would have set both restrictions on an object built with neither
+    field.
+    """
+
+    from pyrogram import types
+
+    written = types.GlobalPrivacySettings().write()
+
+    assert written.hide_read_marks is None, "saying nothing is not asking to hide"
+    assert written.new_noncontact_peers_require_premium is None
+
+
+async def test_asking_to_show_a_read_date_clears_the_hide_flag():
+    """The setter reads the live settings and writes back a modified copy, so the
+    negation has to happen there too, not only in the type.
+    """
+
+    from pyrogram import raw
+    from pyrogram.methods.account.set_global_privacy_settings import (
+        SetGlobalPrivacySettings,
+    )
+
+    sent = []
+
+    class _Client(SetGlobalPrivacySettings):
+        async def invoke(self, query):
+            if isinstance(query, raw.functions.account.GetGlobalPrivacySettings):
+                return raw.types.GlobalPrivacySettings(
+                    hide_read_marks=True,
+                    new_noncontact_peers_require_premium=True,
+                )
+
+            sent.append(query.settings)
+            return query.settings
+
+    client = _Client()
+
+    result = await client.set_global_privacy_settings(
+        show_read_date=True,
+        allow_new_chats_from_unknown_users=True,
+    )
+
+    assert sent[0].hide_read_marks is False, (
+        "asking to show the read date must clear the hide flag, not set it"
+    )
+    assert sent[0].new_noncontact_peers_require_premium is False, (
+        "allowing unknown users must clear the premium requirement"
+    )
+    assert result.show_read_date is True, "and the answer reads back the way it was asked"
+    assert result.allow_new_chats_from_unknown_users is True
+
