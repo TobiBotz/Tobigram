@@ -47,10 +47,18 @@ class Vector(bytes, TLObject):
             read = t.read
             return List([read(data) for _ in range(count)])
 
+        if not count:
+            return List()
+
         pos = data.tell()
-        left = data.seek(0, 2) - pos
+
+        try:
+            return List([TLObject.read(data) for _ in range(count)])
+        except Exception:
+            data.seek(pos)
+
+        size = (data.seek(0, 2) - pos) / count
         data.seek(pos)
-        size = (left / count) if count else 0
 
         if size == 4:
             read = Int.read

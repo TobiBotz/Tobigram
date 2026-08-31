@@ -1417,8 +1417,6 @@ async def test_get_users_survives_an_answer_the_server_left_short():
     )
 
 
-
-
 async def test_a_monoforum_message_still_asks_for_its_direct_messages_topic():
     """The other half of the pairing: a monoforum reports ``ChatType.PRIVATE`` like
     any user chat, so telling the two apart by ``is_direct_messages`` has to keep
@@ -2477,3 +2475,52 @@ async def test_every_privacy_setting_reaches_the_field_it_belongs_to():
         "noncontact_peers_paid_stars", "disallowed_gifts",
     }, "a new raw field means the setter needs a parameter for it"
 
+
+def test_a_vector_of_objects_survives_a_trailing_field():
+    from io import BytesIO
+
+    from pyrogram import raw
+    from pyrogram.raw.core import TLObject
+
+    update = raw.types.UpdateShort(
+        update=raw.types.UpdatePrivacy(
+            key=raw.types.PrivacyKeyPhoneNumber(),
+            rules=[raw.types.PrivacyValueAllowAll()],
+        ),
+        date=1735689600,
+    )
+
+    read_back = TLObject.read(BytesIO(update.write()))
+
+    assert isinstance(read_back.update, raw.types.UpdatePrivacy)
+    assert [type(rule) for rule in read_back.update.rules] == [
+        raw.types.PrivacyValueAllowAll
+    ], "a vector of objects stays a vector of objects"
+    assert read_back.date == 1735689600, "and the field after it is still there"
+
+
+def test_a_bare_vector_of_numbers_still_reads_as_numbers():
+    from io import BytesIO
+
+    from pyrogram import raw
+    from pyrogram.raw.core import TLObject
+    from pyrogram.raw.core.primitives import Int, Long, Vector
+
+    assert list(TLObject.read(BytesIO(Vector([7, 8, 9], Int)))) == [7, 8, 9]
+    assert list(TLObject.read(BytesIO(Vector([42], Int)))) == [42]
+    assert list(TLObject.read(BytesIO(Vector([2 ** 40 + 1], Long)))) == [2 ** 40 + 1]
+    assert list(TLObject.read(BytesIO(Vector([], Int)))) == []
+
+    counters = [
+        raw.types.messages.SearchCounter(
+            filter=raw.types.InputMessagesFilterPhotos(), count=3
+        ),
+        raw.types.messages.SearchCounter(
+            filter=raw.types.InputMessagesFilterVideo(), count=4
+        ),
+    ]
+    read_back = TLObject.read(BytesIO(Vector(counters)))
+
+    assert [counter.count for counter in read_back] == [3, 4], (
+        "a bare vector of objects reads as objects too"
+    )
