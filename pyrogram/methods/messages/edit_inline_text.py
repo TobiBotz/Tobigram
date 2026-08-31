@@ -22,7 +22,7 @@ import pyrogram
 from pyrogram import raw, enums
 from pyrogram import types
 from pyrogram import utils
-from .inline_session import get_session
+from .inline_session import invoke_inline
 
 
 class EditInlineText:
@@ -83,9 +83,8 @@ class EditInlineText:
         unpacked = utils.unpack_inline_message_id(inline_message_id)
         dc_id = unpacked.dc_id
 
-        session = await get_session(self, dc_id)
-
-        return await session.invoke(
+        return await invoke_inline(
+            self, dc_id,
             raw.functions.messages.EditInlineBotMessage(
                 id=unpacked,
                 no_webpage=disable_web_page_preview if disable_web_page_preview is not None else None,
@@ -93,6 +92,5 @@ class EditInlineText:
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 **await self.parser.parse(text, parse_mode)
             ),
-            sleep_threshold=self.sleep_threshold,
-            business_connection_id=business_connection_id
+            business_connection_id
         )

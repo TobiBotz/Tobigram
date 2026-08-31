@@ -28,7 +28,7 @@ from pyrogram import types
 from pyrogram import utils
 from pyrogram.errors import RPCError, MediaEmpty
 from pyrogram.file_id import FileType
-from .inline_session import get_session
+from .inline_session import invoke_inline
 
 
 class EditInlineMedia:
@@ -258,8 +258,6 @@ class EditInlineMedia:
         unpacked = utils.unpack_inline_message_id(inline_message_id)
         dc_id = unpacked.dc_id
 
-        session = await get_session(self, dc_id)
-
         if is_uploaded_file:
             uploaded_media = await self.invoke(
                 raw.functions.messages.UploadMedia(
@@ -292,15 +290,15 @@ class EditInlineMedia:
 
         for i in range(self.MAX_RETRIES):
             try:
-                return await session.invoke(
+                return await invoke_inline(
+                    self, dc_id,
                     raw.functions.messages.EditInlineBotMessage(
                         id=unpacked,
                         media=actual_media,
                         reply_markup=await reply_markup.write(self) if reply_markup else None,
                         **await self.parser.parse(caption, parse_mode)
                     ),
-                    sleep_threshold=self.sleep_threshold,
-                    business_connection_id=business_connection_id
+                    business_connection_id
                 )
             except RPCError as e:
                 if i == self.MAX_RETRIES - 1:
