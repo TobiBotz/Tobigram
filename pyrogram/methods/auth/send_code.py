@@ -17,6 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import re
 
 import pyrogram
 from pyrogram import raw
@@ -46,7 +47,7 @@ class SendCode:
         Raises:
             BadRequest: In case the phone number is invalid.
         """
-        phone_number = phone_number.strip(" +")
+        phone_number = re.sub(r"\D", "", phone_number)
 
         while True:
             try:

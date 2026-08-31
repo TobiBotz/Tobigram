@@ -17,6 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import re
 
 import pyrogram
 from pyrogram import raw
@@ -52,7 +53,7 @@ class ResendCode:
         Raises:
             BadRequest: In case the arguments are invalid.
         """
-        phone_number = phone_number.strip(" +")
+        phone_number = re.sub(r"\D", "", phone_number)
 
         r = await self.invoke(
             raw.functions.auth.ResendCode(

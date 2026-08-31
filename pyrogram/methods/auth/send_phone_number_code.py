@@ -214,5 +214,3 @@ class SendPhoneNumberCode:
             else:
                 return types.SentCode._parse(r)
 
-    send_code = send_phone_number_code
-

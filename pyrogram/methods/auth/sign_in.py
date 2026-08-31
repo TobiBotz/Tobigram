@@ -17,6 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import re
 from typing import Union
 
 import pyrogram
@@ -58,7 +59,7 @@ class SignIn:
             BadRequest: In case the arguments are invalid.
             SessionPasswordNeeded: In case a password is needed to sign in.
         """
-        phone_number = phone_number.strip(" +")
+        phone_number = re.sub(r"\D", "", phone_number)
 
         r = await self.invoke(
             raw.functions.auth.SignIn(
