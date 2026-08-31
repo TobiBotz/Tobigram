@@ -49,6 +49,15 @@ MARKDOWN_RE = re.compile(r"({d})|\[(.+?)\]\((.+?)\)".format(
         ]]
     )))
 
+QUOTE_DELIM = ">"
+EXPANDABLE_QUOTE_DELIM = "**>"
+QUOTE_MARKERS = (
+    (EXPANDABLE_QUOTE_DELIM, True),
+    ("**&gt;", True),
+    (QUOTE_DELIM, False),
+    ("&gt;", False),
+)
+
 OPENING_TAG = "<{}>"
 CLOSING_TAG = "</{}>"
 URL_MARKUP = '<a href="{}">{}</a>'
@@ -59,9 +68,61 @@ class Markdown:
     def __init__(self, client: Optional["pyrogram.Client"]):
         self.html = HTML(client)
 
+    @staticmethod
+    def _split_quote_marker(line: str):
+        for marker, expandable in QUOTE_MARKERS:
+            if line.startswith(marker):
+                return line[len(marker):], expandable
+
+        return None, False
+
+    @classmethod
+    def _quotes_to_html(cls, text: str) -> str:
+        lines = text.split("\n")
+        out = []
+        index = 0
+        in_pre = False
+
+        while index < len(lines):
+            line = lines[index]
+
+            if line.count(PRE_DELIM) % 2:
+                in_pre = not in_pre
+
+            body, expandable = (None, False) if in_pre else cls._split_quote_marker(line)
+
+            if body is None:
+                out.append(line)
+                index += 1
+                continue
+
+            block = [body]
+            index += 1
+
+            while index < len(lines):
+                nxt, nxt_expandable = cls._split_quote_marker(lines[index])
+
+                if nxt is None or nxt_expandable:
+                    break
+
+                block.append(nxt)
+                index += 1
+
+            quoted = "\n".join(block)
+
+            if expandable and quoted.endswith(SPOILER_DELIM):
+                quoted = quoted[: -len(SPOILER_DELIM)]
+
+            tag = "<blockquote expandable>" if expandable else "<blockquote>"
+            out.append(f"{tag}{quoted}</blockquote>")
+
+        return "\n".join(out)
+
     async def parse(self, text: str, strict: bool = False):
         if strict:
             text = html.escape(text)
+
+        text = self._quotes_to_html(text)
 
         delims = set()
         is_fixed_width = False
@@ -142,12 +203,12 @@ class Markdown:
                 end_tag = f"\n{PRE_DELIM}"
             elif entity_type == MessageEntityType.BLOCKQUOTE:
                 expandable = getattr(entity, "expandable", None)
-                if expandable:
-                    start_tag = "**>"
-                    end_tag = "||"
-                else:
-                    start_tag = ">"
-                    end_tag = ""
+                start_tag = EXPANDABLE_QUOTE_DELIM if expandable else QUOTE_DELIM
+                end_tag = SPOILER_DELIM if expandable else ""
+
+                for index in range(start, end - 1):
+                    if text[index] == "\n":
+                        entities_offsets.append((QUOTE_DELIM, index + 1))
             elif entity_type == MessageEntityType.DATE_TIME:
                 unix_time = getattr(entity, "unix_time", 0) or 0
                 dt_format = getattr(entity, "date_time_format", "") or ""
