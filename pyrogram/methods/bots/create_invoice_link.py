@@ -82,7 +82,7 @@ class CreateInvoiceLink:
                 The maximum accepted amount for tips in the smallest units of the currency (integer, **not** float/double). For example, for a maximum tip of ``US$ 1.45`` pass ``max_tip_amount = 145``. See the exp parameter in `currencies.json <https://core.telegram.org/bots/payments/currencies.json>`_, it shows the number of digits past the decimal point for each currency (2 for the majority of currencies). Defaults to 0. Not supported for payments in `Telegram Stars <https://t.me/BotNews/90>`_.
 
             suggested_tip_amounts (List of ``int``, *optional*):
-                An array of suggested amounts of tips in the smallest units of the currency (integer, **not** float/double). At most 4 suggested tip amounts can be specified. The suggested tip amounts must be positive, passed in a strictly increased order and must not exceed ``max_tip_amount``.
+                An array of suggested amounts of tips in the smallest units of the currency (integer, **not** float/double). At most 4 suggested tip amounts can be specified. The suggested tip amounts must be positive, passed in a strictly increased order and must not exceed ``max_tip_amount``. Must be passed together with ``max_tip_amount``: the two share a single flag in the invoice payload, so one without the other is not representable.
 
             start_parameter (``str``, *optional*):
                 Unique deep-linking parameter. If left empty, **forwarded copies** of the sent message will have a Pay button, allowing multiple users to pay directly from the forwarded message, using the same invoice. If non-empty, forwarded copies of the sent message will have a URL button with a deep link to the bot (instead of a Pay button), with the value used as the start parameter.
@@ -134,6 +134,9 @@ class CreateInvoiceLink:
             ``str``: On success, the invoice url is returned.
 
         """
+        if (max_tip_amount is not None) != bool(suggested_tip_amounts):
+            raise ValueError("max_tip_amount and suggested_tip_amounts must be passed together")
+
         r = await self.invoke(
             raw.functions.payments.ExportInvoice(
                 invoice_media=raw.types.InputMediaInvoice(
@@ -160,6 +163,7 @@ class CreateInvoiceLink:
                         email_to_provider=send_email_to_provider,
                         max_tip_amount=max_tip_amount,
                         suggested_tip_amounts=suggested_tip_amounts,
+                        recurring=True if subscription_period is not None else None,
                         subscription_period=subscription_period,
                         terms_url=terms_url,
                     ),

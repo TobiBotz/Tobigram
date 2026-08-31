@@ -24,6 +24,11 @@ from pyrogram import raw, utils
 from pyrogram import types, enums
 
 
+class _EmptyEntities(list):
+    def __bool__(self) -> bool:
+        return True
+
+
 class SendPoll:
     async def send_poll(
         self: "pyrogram.Client",
@@ -285,6 +290,9 @@ class SendPoll:
             solution_text = None
             solution_entities = []
 
+        if solution_text is not None and not solution_entities:
+            solution_entities = _EmptyEntities()
+
         if isinstance(description, types.FormattedText):
             description_text = description.text
             description_entities = description.entities or []
@@ -345,7 +353,7 @@ class SendPoll:
                     ),
                     correct_answers=correct,
                     solution=solution_text,
-                    solution_entities=solution_entities or [],
+                    solution_entities=solution_entities,
                     solution_media=solution_media,
                     attached_media=attached_media,
                 ),

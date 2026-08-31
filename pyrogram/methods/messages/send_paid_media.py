@@ -281,6 +281,15 @@ class SendPaidMedia:
                                 )
                             )
                         )
+
+                        media = raw.types.InputMediaPhoto(
+                            id=raw.types.InputPhoto(
+                                id=media.photo.id,
+                                access_hash=media.photo.access_hash,
+                                file_reference=media.photo.file_reference
+                            ),
+                            spoiler=i.has_spoiler
+                        )
                     else:
                         media = utils.get_input_media_from_file_id(i.media, FileType.PHOTO, has_spoiler=i.has_spoiler)
                 else:
@@ -391,6 +400,17 @@ class SendPaidMedia:
                                     video_timestamp=i.video_start_timestamp
                                 )
                             )
+                        )
+
+                        media = raw.types.InputMediaDocument(
+                            id=raw.types.InputDocument(
+                                id=media.document.id,
+                                access_hash=media.document.access_hash,
+                                file_reference=media.document.file_reference,
+                            ),
+                            spoiler=i.has_spoiler,
+                            video_cover=vcover_file,
+                            video_timestamp=i.video_start_timestamp
                         )
                     else:
                         media = utils.get_input_media_from_file_id(
