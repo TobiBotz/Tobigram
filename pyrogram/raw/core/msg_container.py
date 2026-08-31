@@ -16,12 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
 from io import BytesIO
 from typing import List, Any
 
 from .message import Message
 from .primitives.int import Int
 from .tl_object import TLObject
+
+log = logging.getLogger(__name__)
 
 
 class MsgContainer(TLObject):
@@ -37,7 +40,15 @@ class MsgContainer(TLObject):
     @staticmethod
     def read(data: BytesIO, *args: Any) -> "MsgContainer":
         count = Int.read(data)
-        return MsgContainer([Message.read(data) for _ in range(count)])
+        messages = []
+
+        for _ in range(count):
+            try:
+                messages.append(Message.read(data))
+            except KeyError as e:
+                log.warning("Skipping message with unknown constructor %s", e)
+
+        return MsgContainer(messages)
 
     def write(self, *args: Any) -> bytes:
         b = BytesIO()
