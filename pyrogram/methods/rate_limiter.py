@@ -164,6 +164,9 @@ class RateLimiter:
     async def close(self):
         self._closed = True
 
+    def reopen(self):
+        self._closed = False
+
     @property
     def is_closed(self) -> bool:
         return self._closed

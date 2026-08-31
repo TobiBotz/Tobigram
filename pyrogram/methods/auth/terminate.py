@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+import asyncio
 import logging
 
 import pyrogram
@@ -42,54 +43,61 @@ class Terminate:
         if not self.is_initialized:
             raise ConnectionError("Client is already terminated")
 
-        await self.listeners.close()
+        try:
+            await self.listeners.close()
 
-        if self.takeout_id:
-            await self.invoke(raw.functions.account.FinishTakeoutSession())
-            log.info("Takeout session %s finished", self.takeout_id)
+            if self.takeout_id:
+                await self.invoke(raw.functions.account.FinishTakeoutSession())
+                log.info("Takeout session %s finished", self.takeout_id)
 
-        await self.storage.save()
-        await self.dispatcher.stop()
+            await self.storage.save()
+        finally:
+            self.takeout_id = None
 
-        self.media_pool_reaper_event.set()
-
-        if self.media_pool_reaper_task is not None:
             try:
-                await self.media_pool_reaper_task
+                await self.dispatcher.stop()
             except Exception:
-                log.exception("Error stopping media pool reaper")
+                log.exception("Error stopping the dispatcher")
 
-            self.media_pool_reaper_task = None
+            self.media_pool_reaper_event.set()
 
-        self.media_pool_reaper_event.clear()
+            if self.media_pool_reaper_task is not None:
+                try:
+                    await self.media_pool_reaper_task
+                except (Exception, asyncio.CancelledError):
+                    log.exception("Error stopping media pool reaper")
 
-        for session in [
-            *self.sessions.values(),
-            *self.media_sessions.values(),
-            *(s for pool in self.media_session_pools.values() for s in pool),
-        ]:
-            try:
-                await session.stop()
-            except Exception:
-                log.exception("Error stopping session")
+                self.media_pool_reaper_task = None
 
-        self.sessions.clear()
-        self.media_sessions.clear()
-        self.media_session_pools.clear()
+            self.media_pool_reaper_event.clear()
 
-        self.updates_watchdog_event.set()
+            for session in [
+                *self.sessions.values(),
+                *self.media_sessions.values(),
+                *(s for pool in self.media_session_pools.values() for s in pool),
+            ]:
+                try:
+                    await session.stop()
+                except Exception:
+                    log.exception("Error stopping session")
 
-        if self.updates_watchdog_task is not None:
-            try:
-                await self.updates_watchdog_task
-            except Exception:
-                log.exception("Error stopping updates watchdog")
+            self.sessions.clear()
+            self.media_sessions.clear()
+            self.media_session_pools.clear()
 
-            self.updates_watchdog_task = None
+            self.updates_watchdog_event.set()
 
-        self.updates_watchdog_event.clear()
+            if self.updates_watchdog_task is not None:
+                try:
+                    await self.updates_watchdog_task
+                except (Exception, asyncio.CancelledError):
+                    log.exception("Error stopping updates watchdog")
 
-        self.is_initialized = False
+                self.updates_watchdog_task = None
 
-        if self.rate_limiter is not None:
-            await self.rate_limiter.close()
+            self.updates_watchdog_event.clear()
+
+            self.is_initialized = False
+
+            if self.rate_limiter is not None:
+                await self.rate_limiter.close()

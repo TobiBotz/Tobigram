@@ -480,7 +480,6 @@ class Client(Methods):
         self.lang_code = lang_code.lower()
         self.system_lang_code = system_lang_code.lower()
 
-
         self.ipv6 = ipv6
         self.proxy = proxy
         self.test_mode = test_mode
@@ -621,15 +620,6 @@ class Client(Methods):
     @loop.setter
     def loop(self, value: asyncio.AbstractEventLoop):
         self._loop = value
-
-    def __enter__(self):
-        return self.start()
-
-    def __exit__(self, *args):
-        try:
-            self.stop()
-        except ConnectionError:
-            pass
 
     async def __aenter__(self):
         return await self.start()
@@ -1446,6 +1436,8 @@ class Client(Methods):
                         await func()
                     else:
                         await self.loop.run_in_executor(self.executor, func)
+                except pyrogram.StopTransmission:
+                    raise
                 except Exception as e:
                     log.warning(f"Download progress callback error: {e}")
 
@@ -1474,7 +1466,7 @@ class Client(Methods):
                 total_chunks = math.ceil((file_size - offset_bytes) / chunk_size)
                 pool_size = min(dl_pool_size, total_chunks)
                 total_workers = min(dl_pool_size * dl_workers_per_session, total_chunks)
-                needs_pool = pool_size >= 1
+                needs_pool = min(total, total_chunks) > 1
                 if needs_pool:
                     pool_task = asyncio.ensure_future(self._get_media_session_pool(dc_id, pool_size))
                     pool_task.add_done_callback(lambda t: t.cancelled() or t.exception())
@@ -1690,12 +1682,12 @@ class Client(Methods):
                         buffer_slots.release_all()
 
                 elif isinstance(r, raw.types.upload.FileCdnRedirect):
-
                     cdn_session = await self.get_session(
                         r.dc_id, is_media=True, is_cdn=True, temporary=True
                     )
                     _cdn_rate = TokenBucket(rate=dl_rate, burst=dl_burst)
                     _report_tasks = set()
+                    _stop_requested = False
 
                     try:
                         while True:
@@ -1751,6 +1743,9 @@ class Client(Methods):
 
                             await self.loop.run_in_executor(self.crypto_executor, _check_all_hashes)
 
+                            if _stop_requested:
+                                raise pyrogram.StopTransmission
+
                             yield decrypted_chunk
 
                             current += 1
@@ -1765,6 +1760,7 @@ class Client(Methods):
                                     _total = file_size
 
                                     async def report(_sent=_sent, _total=_total):
+                                        nonlocal _stop_requested
                                         try:
                                             if inspect.iscoroutinefunction(progress):
                                                 await progress(_sent, _total, *progress_args)
@@ -1775,6 +1771,8 @@ class Client(Methods):
                                                         progress, _sent, _total, *progress_args
                                                     ),
                                                 )
+                                        except pyrogram.StopTransmission:
+                                            _stop_requested = True
                                         except Exception as e:
                                             log.warning(f"CDN download progress callback error: {e}")
 

@@ -87,7 +87,8 @@ class QRLogin:
                 server_address=dc_option.ip_address,
                 port=dc_option.port,
                 export_authorization=False,
-                temporary=True
+                temporary=True,
+                adopt_as_main=True,
             )
 
             await self.client.storage.dc_id(r.dc_id)

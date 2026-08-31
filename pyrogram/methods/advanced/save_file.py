@@ -187,7 +187,10 @@ class SaveFile:
             if file_size == 0:
                 raise ValueError("File size equals to 0 B")
 
-            file_size_limit_mib = 4000 if self.me.is_premium else 2000
+            is_bot = self.me.is_bot if hasattr(self.me, 'is_bot') else False
+            is_premium = self.me.is_premium if hasattr(self.me, 'is_premium') else False
+
+            file_size_limit_mib = 4000 if is_premium else 2000
 
             if file_size > file_size_limit_mib * 1024 * 1024:
                 raise ValueError(
@@ -196,8 +199,6 @@ class SaveFile:
 
             file_total_parts = int(math.ceil(file_size / part_size))
             is_big = file_size > 10 * 1024 * 1024
-            is_bot = self.me.is_bot if hasattr(self.me, 'is_bot') else False
-            is_premium = self.me.is_premium if hasattr(self.me, 'is_premium') else False
             if is_bot:
                 rate_limit = 40  # ~20 MiB/s
                 pool_size = min(8, POOL_SIZE) if is_big else 1
@@ -242,11 +243,12 @@ class SaveFile:
                         await func()
                     else:
                         await self.loop.run_in_executor(self.executor, func)
+                except StopTransmission:
+                    raise
                 except Exception as e:
                     log.warning(f"Upload progress callback error: {e}")
 
             try:
-
                 fp.seek(part_size * file_part)
                 next_batch_task = self.loop.create_task(read_batch())
 
@@ -342,7 +344,14 @@ class SaveFile:
                 log.exception(e)
                 raise
             else:
-                await _stop_workers(queue, workers)
+                results = await _stop_workers(queue, workers)
+
+                for r in results:
+                    if isinstance(r, BaseException) and not isinstance(
+                        r, asyncio.CancelledError
+                    ):
+                        raise r
+
                 await _report(file_total_parts)
 
                 if is_big:

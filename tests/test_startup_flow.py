@@ -100,6 +100,7 @@ class _InitClient:
         self.is_connected = True
         self.is_initialized = False
         self.listeners = _Listeners()
+        self.rate_limiter = None
         self.dispatcher = _FakeDispatcher(fail)
         self.updates_watchdog_task = None
         self.updates_watchdog_event = asyncio.Event()

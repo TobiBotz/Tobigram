@@ -48,6 +48,9 @@ class Initialize:
 
         self.listeners.reopen()
 
+        if self.rate_limiter is not None:
+            self.rate_limiter.reopen()
+
         self.load_plugins()
 
         try:
