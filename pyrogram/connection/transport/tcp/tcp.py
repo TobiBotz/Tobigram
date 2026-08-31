@@ -37,6 +37,8 @@ class TCP:
 
     SOCKET_BUFFER = int(os.environ.get("WZGRAM_SOCKET_BUFFER", 0))
 
+    MAX_FRAME_SIZE = 0xFFFFFF * 4
+
     def __init__(self, ipv6: bool, proxy: dict, crypto_executor: Optional[ThreadPoolExecutor] = None, loop: Optional[asyncio.AbstractEventLoop] = None):
         self.socket = None
 
@@ -152,6 +154,9 @@ class TCP:
     async def recv(self, length: int = 0):
         if length <= 0:
             return b""
+
+        if length > TCP.MAX_FRAME_SIZE:
+            raise OSError(f"Frame of {length} bytes exceeds the {TCP.MAX_FRAME_SIZE} byte limit")
 
         chunks = []
         received = 0

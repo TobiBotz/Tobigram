@@ -58,9 +58,8 @@ class TCPAbridgedO(TCP):
     async def send(self, data: bytes, *args):
         length = len(data) // 4
         data = (bytes([length]) if length <= 126 else b"\x7f" + length.to_bytes(3, "little")) + data
-        payload = await self.loop.run_in_executor(self.crypto_executor, aes.ctr256_encrypt, data, *self.encrypt)
 
-        await super().send(payload)
+        await super().send(aes.ctr256_encrypt(data, *self.encrypt))
 
     async def recv(self, length: int = 0) -> Optional[bytes]:
         length = await super().recv(1)
@@ -83,4 +82,4 @@ class TCPAbridgedO(TCP):
         if data is None:
             return None
 
-        return await self.loop.run_in_executor(self.crypto_executor, aes.ctr256_decrypt, data, *self.decrypt)
+        return aes.ctr256_decrypt(data, *self.decrypt)

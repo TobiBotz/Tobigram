@@ -28,6 +28,13 @@ from .tcp import TCP
 log = logging.getLogger(__name__)
 
 
+def strip_padding(payload: bytes) -> bytes:
+    if len(payload) >= 20 and int.from_bytes(payload[:8], "little") == 0:
+        return payload[:20 + int.from_bytes(payload[16:20], "little")]
+
+    return payload[:len(payload) - (len(payload) - 8) % 16]
+
+
 class TCPPaddedIntermediate(TCP):
     def __init__(self, ipv6: bool, proxy: dict, crypto_executor=None, loop: Optional[asyncio.AbstractEventLoop] = None):
         super().__init__(ipv6, proxy, crypto_executor, loop)
@@ -52,6 +59,4 @@ class TCPPaddedIntermediate(TCP):
         if payload_plus_padding is None:
             return None
 
-        pad_len = (total_len - 8) % 16
-
-        return payload_plus_padding[:total_len - pad_len]
+        return strip_padding(payload_plus_padding)

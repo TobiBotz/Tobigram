@@ -25,6 +25,7 @@ from typing import Optional
 
 from pyrogram.crypto import aes
 from .tcp import TCP
+from .tcp_padded_intermediate import strip_padding
 
 log = logging.getLogger(__name__)
 
@@ -81,6 +82,5 @@ class TCPPaddedIntermediateO(TCP):
             return None
 
         data = aes.ctr256_decrypt(data, *self.decrypt)
-        pad_len = (total_len - 8) % 16
 
-        return data[:total_len - pad_len]
+        return strip_padding(data)
