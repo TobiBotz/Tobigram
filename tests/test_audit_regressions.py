@@ -2524,3 +2524,134 @@ def test_a_bare_vector_of_numbers_still_reads_as_numbers():
     assert [counter.count for counter in read_back] == [3, 4], (
         "a bare vector of objects reads as objects too"
     )
+
+
+def _channel_photos_client(pages, chat_photo_id):
+    from types import SimpleNamespace
+
+    from pyrogram import raw
+
+    class _Client:
+        searches = []
+
+        async def resolve_peer(self, chat_id):
+            return raw.types.InputPeerChannel(channel_id=1, access_hash=0)
+
+        async def invoke(self, query, *args, **kwargs):
+            if isinstance(query, raw.functions.channels.GetFullChannel):
+                return SimpleNamespace(
+                    full_chat=SimpleNamespace(chat_photo=chat_photo_id)
+                )
+
+            self.searches.append(query.offset_id)
+
+            return pages.get(query.offset_id, [])
+
+    return _Client()
+
+
+def _photo(unique_id):
+    from types import SimpleNamespace
+
+    return SimpleNamespace(file_id=f"id-{unique_id}", file_unique_id=unique_id)
+
+
+def _photo_message(message_id, unique_id):
+    from types import SimpleNamespace
+
+    return SimpleNamespace(id=message_id, new_chat_photo=_photo(unique_id))
+
+
+async def test_a_channels_photo_history_is_paged_to_the_end(monkeypatch):
+    from pyrogram import types, utils
+    from pyrogram.methods.users.get_chat_photos import GetChatPhotos
+
+    pages = {
+        0: [_photo_message(30, "c"), _photo_message(20, "b")],
+        20: [_photo_message(10, "a")],
+        10: [],
+    }
+
+    client = _channel_photos_client(pages, "current")
+
+    async def parse_messages(_client, messages, **kwargs):
+        return messages
+
+    monkeypatch.setattr(utils, "parse_messages", parse_messages)
+    monkeypatch.setattr(types.Photo, "_parse", staticmethod(lambda _c, photo: _photo(photo)))
+
+    got = [photo.file_unique_id async for photo in GetChatPhotos.get_chat_photos(client, 1)]
+
+    assert got == ["current", "c", "b", "a"], (
+        "with no limit the generator must walk every page, not stop after the first"
+    )
+    assert client.searches == [0, 20, 10], "each page must start where the last one ended"
+
+    client.searches.clear()
+    capped = [
+        photo.file_unique_id
+        async for photo in GetChatPhotos.get_chat_photos(client, 1, limit=2)
+    ]
+
+    assert capped == ["current", "c"], "a limit still caps the run"
+
+
+async def test_a_channels_current_photo_is_not_yielded_twice(monkeypatch):
+    from pyrogram import types, utils
+    from pyrogram.methods.users.get_chat_photos import GetChatPhotos
+
+    newest = _photo_message(30, "c")
+    newest.new_chat_photo.file_id = "id-from-a-message"
+
+    client = _channel_photos_client({0: [newest], 30: []}, "c")
+
+    async def parse_messages(_client, messages, **kwargs):
+        return messages
+
+    monkeypatch.setattr(utils, "parse_messages", parse_messages)
+    monkeypatch.setattr(
+        types.Photo, "_parse", staticmethod(lambda _c, photo: _photo(photo))
+    )
+
+    got = [
+        photo.file_unique_id
+        async for photo in GetChatPhotos.get_chat_photos(client, 1, limit=5)
+    ]
+
+    assert got == ["c"], (
+        "the same photo carries a different file_id depending on where it was "
+        "read from, so only file_unique_id can tell the current photo from its "
+        "own history entry"
+    )
+
+
+async def test_a_removed_channel_photo_does_not_end_the_walk(monkeypatch):
+    from types import SimpleNamespace
+
+    from pyrogram import types, utils
+    from pyrogram.methods.users.get_chat_photos import GetChatPhotos
+
+    removed = SimpleNamespace(id=20, new_chat_photo=None)
+
+    pages = {
+        0: [_photo_message(30, "b")],
+        30: [removed],
+        20: [_photo_message(10, "a")],
+        10: [],
+    }
+
+    client = _channel_photos_client(pages, None)
+
+    async def parse_messages(_client, messages, **kwargs):
+        return messages
+
+    monkeypatch.setattr(utils, "parse_messages", parse_messages)
+    monkeypatch.setattr(
+        types.Photo, "_parse", staticmethod(lambda _c, photo: _photo(photo) if photo else None)
+    )
+
+    got = [photo.file_unique_id async for photo in GetChatPhotos.get_chat_photos(client, 1)]
+
+    assert got == ["b", "a"], (
+        "a page carrying only a removed photo is not the end of the history"
+    )

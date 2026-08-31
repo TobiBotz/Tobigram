@@ -60,49 +60,54 @@ class GetChatPhotos:
                 )
             )
 
-            current = types.Photo._parse(self, r.full_chat.chat_photo) or []
-
-            r = await utils.parse_messages(
-                self,
-                await self.invoke(
-                    raw.functions.messages.Search(
-                        peer=peer_id,
-                        q="",
-                        filter=raw.types.InputMessagesFilterChatPhotos(),
-                        min_date=0,
-                        max_date=0,
-                        offset_id=0,
-                        add_offset=0,
-                        limit=limit,
-                        max_id=0,
-                        min_id=0,
-                        hash=0
-                    )
-                )
-            )
-
-            extra = [message.new_chat_photo for message in r]
-
-            if extra:
-                if current:
-                    photos = ([current] + extra) if current.file_id != extra[0].file_id else extra
-                else:
-                    photos = extra
-            else:
-                if current:
-                    photos = [current]
-                else:
-                    photos = []
+            chat_photo = types.Photo._parse(self, r.full_chat.chat_photo)
 
             current = 0
+            total = limit or (1 << 31) - 1
+            limit = min(100, total)
+            offset_id = 0
+            first = True
 
-            for photo in photos:
-                yield photo
+            while True:
+                messages = await utils.parse_messages(
+                    self,
+                    await self.invoke(
+                        raw.functions.messages.Search(
+                            peer=peer_id,
+                            q="",
+                            filter=raw.types.InputMessagesFilterChatPhotos(),
+                            min_date=0,
+                            max_date=0,
+                            offset_id=offset_id,
+                            add_offset=0,
+                            limit=limit,
+                            max_id=0,
+                            min_id=0,
+                            hash=0
+                        )
+                    )
+                )
 
-                current += 1
+                photos = [message.new_chat_photo for message in messages if message.new_chat_photo]
 
-                if current >= limit:
+                if first:
+                    first = False
+
+                    if chat_photo and (not photos or chat_photo.file_unique_id != photos[0].file_unique_id):
+                        photos.insert(0, chat_photo)
+
+                for photo in photos:
+                    yield photo
+
+                    current += 1
+
+                    if current >= total:
+                        return
+
+                if not messages:
                     return
+
+                offset_id = messages[-1].id
         else:
             current = 0
             total = limit or (1 << 31)
