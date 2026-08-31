@@ -54,12 +54,13 @@ class ReadMentions:
                 # Mark the chat mention as read in specified topic
                 await app.read_mentions(chat_id, topic_id)
         """
-        r = await self.invoke(
-            raw.functions.messages.ReadMentions(
-                peer=await self.resolve_peer(chat_id),
-                top_msg_id=topic_id
-            )
+        rpc = raw.functions.messages.ReadMentions(
+            peer=await self.resolve_peer(chat_id),
+            top_msg_id=topic_id
         )
 
-        return bool(r)
+        while (await self.invoke(rpc)).offset:
+            pass
+
+        return True
 

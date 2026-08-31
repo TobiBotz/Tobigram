@@ -47,12 +47,13 @@ class DeleteForumTopic:
 
                 await app.delete_forum_topic(chat_id, topic_id)
         """
-        await self.invoke(
-            raw.functions.messages.DeleteTopicHistory(
-                peer=await self.resolve_peer(chat_id),
-                top_msg_id=topic_id
-            )
+        rpc = raw.functions.messages.DeleteTopicHistory(
+            peer=await self.resolve_peer(chat_id),
+            top_msg_id=topic_id
         )
+
+        while (await self.invoke(rpc)).offset:
+            pass
 
         return True
 

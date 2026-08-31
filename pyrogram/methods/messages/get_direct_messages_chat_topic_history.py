@@ -141,6 +141,7 @@ class GetDirectMessagesChatTopicHistory:
             offset_id = messages[-1].id
             if reverse:
                 offset_id += 1
+            offset = 0
 
             for message in messages:
                 yield message

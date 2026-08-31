@@ -55,16 +55,17 @@ class UnpinAllChatMessages:
                 # Unpin all chat messages
                 await app.unpin_all_chat_messages(chat_id)
         """
-        await self.invoke(
-            raw.functions.messages.UnpinAllMessages(
-                peer=await self.resolve_peer(chat_id),
-                top_msg_id=top_msg_id,
-                saved_peer_id=(
-                    await self.resolve_peer(saved_peer_id)
-                    if saved_peer_id
-                    else None
-                )
+        rpc = raw.functions.messages.UnpinAllMessages(
+            peer=await self.resolve_peer(chat_id),
+            top_msg_id=top_msg_id,
+            saved_peer_id=(
+                await self.resolve_peer(saved_peer_id)
+                if saved_peer_id
+                else None
             )
         )
+
+        while (await self.invoke(rpc)).offset:
+            pass
 
         return True

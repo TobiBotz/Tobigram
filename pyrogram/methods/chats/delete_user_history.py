@@ -43,13 +43,20 @@ class DeleteUserHistory:
             ``bool``: True on success, False otherwise.
         """
 
-        r = await self.invoke(
-            raw.functions.channels.DeleteParticipantHistory(
-                channel=await self.resolve_peer(chat_id),
-                participant=await self.resolve_peer(user_id)
-            )
+        rpc = raw.functions.channels.DeleteParticipantHistory(
+            channel=await self.resolve_peer(chat_id),
+            participant=await self.resolve_peer(user_id)
         )
+
+        pts_count = 0
+
+        while True:
+            r = await self.invoke(rpc)
+            pts_count += r.pts_count
+
+            if not r.offset:
+                break
 
         # Deleting messages you don't have right onto won't raise any error.
         # Check for pts_count, which is 0 in case deletes fail.
-        return bool(r.pts_count)
+        return bool(pts_count)

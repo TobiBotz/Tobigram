@@ -89,23 +89,29 @@ class DeleteChatHistory:
                 )
             )
         else:
-            r = await self.invoke(
-                raw.functions.messages.DeleteHistory(
-                    peer=peer,
-                    max_id=max_id,
-                    just_clear=just_clear,
-                    revoke=revoke,
-                    min_date=utils.datetime_to_timestamp(min_date),
-                    max_date=utils.datetime_to_timestamp(max_date)
-                )
+            rpc = raw.functions.messages.DeleteHistory(
+                peer=peer,
+                max_id=max_id,
+                just_clear=just_clear,
+                revoke=revoke,
+                min_date=utils.datetime_to_timestamp(min_date),
+                max_date=utils.datetime_to_timestamp(max_date)
             )
 
-        if isinstance(peer, raw.types.InputPeerChannel):
-            return sum(
-                len(update.messages)
-                for update in getattr(r, "updates", [])
-                if isinstance(update, raw.types.UpdateDeleteChannelMessages)
-            )
+            affected = 0
 
-        return r.pts_count
+            while True:
+                r = await self.invoke(rpc)
+                affected += r.pts_count
+
+                if not r.offset:
+                    break
+
+            return affected
+
+        return sum(
+            len(update.messages)
+            for update in getattr(r, "updates", [])
+            if isinstance(update, raw.types.UpdateDeleteChannelMessages)
+        )
 

@@ -70,11 +70,12 @@ class LeaveChat:
             )
 
             if delete:
-                await self.invoke(
-                    raw.functions.messages.DeleteHistory(
-                        peer=peer,
-                        max_id=0
-                    )
+                rpc = raw.functions.messages.DeleteHistory(
+                    peer=peer,
+                    max_id=0
                 )
+
+                while (await self.invoke(rpc)).offset:
+                    pass
 
             return r

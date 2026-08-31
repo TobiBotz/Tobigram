@@ -61,15 +61,22 @@ class DeleteDirectMessagesChatTopicHistory:
                 # Delete all messages in topic
                 await app.delete_direct_messages_chat_topic_history(chat_id, topic_id)
         """
-        r = await self.invoke(
-            raw.functions.messages.DeleteSavedHistory(
-                parent_peer=await self.resolve_peer(chat_id),
-                peer=await self.resolve_peer(topic_id),
-                max_id=max_id,
-                min_date=utils.datetime_to_timestamp(min_date),
-                max_date=utils.datetime_to_timestamp(max_date)
-            )
+        rpc = raw.functions.messages.DeleteSavedHistory(
+            parent_peer=await self.resolve_peer(chat_id),
+            peer=await self.resolve_peer(topic_id),
+            max_id=max_id,
+            min_date=utils.datetime_to_timestamp(min_date),
+            max_date=utils.datetime_to_timestamp(max_date)
         )
 
-        return r.pts_count
+        affected = 0
+
+        while True:
+            r = await self.invoke(rpc)
+            affected += r.pts_count
+
+            if not r.offset:
+                break
+
+        return affected
 

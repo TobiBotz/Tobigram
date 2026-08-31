@@ -59,17 +59,18 @@ class ReadReactions:
                 # Mark the chat reaction as read in specified topic
                 await app.read_reactions(chat_id, topic_id)
         """
-        r = await self.invoke(
-            raw.functions.messages.ReadReactions(
-                peer=await self.resolve_peer(chat_id),
-                top_msg_id=topic_id,
-                saved_peer_id=(
-                    await self.resolve_peer(saved_peer_id)
-                    if saved_peer_id
-                    else None
-                )
+        rpc = raw.functions.messages.ReadReactions(
+            peer=await self.resolve_peer(chat_id),
+            top_msg_id=topic_id,
+            saved_peer_id=(
+                await self.resolve_peer(saved_peer_id)
+                if saved_peer_id
+                else None
             )
         )
 
-        return bool(r)
+        while (await self.invoke(rpc)).offset:
+            pass
+
+        return True
 

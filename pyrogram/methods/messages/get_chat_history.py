@@ -111,6 +111,7 @@ class GetChatHistory:
                 return
 
             offset_id = messages[-1].id
+            offset = 0
 
             for message in messages:
                 yield message
