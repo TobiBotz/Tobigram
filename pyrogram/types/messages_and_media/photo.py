@@ -81,7 +81,7 @@ class Photo(Object):
         self.thumbs = thumbs
 
     @staticmethod
-    def _parse(client, photo: "raw.types.Photo", ttl_seconds: Optional[int] = None) -> "Photo":
+    def _parse(client, photo: "raw.types.Photo", ttl_seconds: Optional[int] = None) -> Optional["Photo"]:
         if isinstance(photo, raw.types.Photo):
             photos: List[raw.types.PhotoSize] = []
 
@@ -100,6 +100,9 @@ class Photo(Object):
                     )
 
             photos.sort(key=lambda p: p.w * p.h)
+
+            if not photos:
+                return None
 
             main = photos[-1]
 

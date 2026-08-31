@@ -93,8 +93,8 @@ class Poll(Object, Update):
             Media attached to the poll.
             Only for polls inside the :obj:`~pyrogram.types.Message` object.
 
-        voter (:obj:`~pyrogram.types.User`, *optional*):
-            The user that voted in the poll.
+        voter (:obj:`~pyrogram.types.User` | :obj:`~pyrogram.types.Chat`, *optional*):
+            The user or chat that voted in the poll.
     """
 
     def __init__(
@@ -120,7 +120,7 @@ class Poll(Object, Update):
         close_date: Optional[datetime] = None,
         description: Optional["types.FormattedText"] = None,
         description_media: Optional["types.MessageContent"] = None,
-        voter: Optional["types.User"] = None,
+        voter: Optional[Union["types.User", "types.Chat"]] = None,
     ):
         super().__init__(client)
 
@@ -162,7 +162,7 @@ class Poll(Object, Update):
         options = []
 
         vote_percentages = Poll.get_vote_percentage(
-            [(results[i].voters if i < len(results) else 0) for i in range(len(poll.answers))],
+            [((results[i].voters or 0) if i < len(results) else 0) for i in range(len(poll.answers))],
             media_poll.results.total_voters or 0,
         )
 
@@ -173,7 +173,7 @@ class Poll(Object, Update):
 
             if i < len(results):
                 result = results[i]
-                voter_count = result.voters
+                voter_count = result.voters or 0
 
                 if result.chosen:
                     chosen_option_ids.append(i)
@@ -194,10 +194,8 @@ class Poll(Object, Update):
                         [
                             types.Chat._parse_chat(
                                 client,
-                                users.get(
-                                    utils.get_raw_peer_id(voter_peer)
-                                    or chats.get(utils.get_raw_peer_id(voter_peer))
-                                ),
+                                users.get(utils.get_raw_peer_id(voter_peer))
+                                or chats.get(utils.get_raw_peer_id(voter_peer)),
                             )
                             for voter_peer in result.recent_voters
                         ]
@@ -210,7 +208,7 @@ class Poll(Object, Update):
                     added_by_chat=types.Chat._parse_chat(
                         client, chats.get(utils.get_raw_peer_id(answer.added_by))
                     ),
-                    addition_date=utils.datetime_to_timestamp(getattr(answer, "date", None)),
+                    addition_date=utils.timestamp_to_datetime(getattr(answer, "date", None)),
                     client=client,
                 )
             )
@@ -283,7 +281,7 @@ class Poll(Object, Update):
 
                 options.append(
                     types.PollOption(
-                        persistent_id=result.option.decode("utf-8"), voter_count=result.voters, client=client
+                        persistent_id=result.option.decode("utf-8"), voter_count=result.voters or 0, client=client
                     )
                 )
 
@@ -298,6 +296,8 @@ class Poll(Object, Update):
             )
 
         if isinstance(update, raw.types.UpdateMessagePollVote):
+            voter_id = utils.get_raw_peer_id(update.peer)
+
             return Poll(
                 id=str(update.poll_id),
                 options=[
@@ -305,7 +305,8 @@ class Poll(Object, Update):
                     for option in update.options
                 ],
                 is_closed=False,
-                voter=types.User._parse(client, users[update.peer.user_id]),
+                voter=types.User._parse(client, users.get(voter_id))
+                or types.Chat._parse_chat(client, chats.get(voter_id)),
                 client=client,
             )
 

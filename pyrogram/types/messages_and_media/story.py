@@ -56,7 +56,7 @@ class Story(Object, Update):
             For stories forwarded from channels, information about the original channel.
 
         forward_from_story_id (``int``, *optional*):
-            For stories forwarded from channels, identifier of the original story in the channel.
+            For forwarded stories, identifier of the original story.
 
         expire_date (:py:obj:`~datetime.datetime`, *optional*):
             Date the story will be expired.
@@ -332,14 +332,17 @@ class Story(Object, Update):
         forward_header = story.fwd_from  # type: raw.types.StoryFwdHeader
 
         if forward_header:
-            fwd_raw_peer_id = utils.get_raw_peer_id(forward_header.from_peer)
-            fwd_peer_id = utils.get_peer_id(forward_header.from_peer)
+            forward_sender_name = forward_header.from_name
+            forward_from_story_id = forward_header.story_id
 
-            if fwd_peer_id > 0:
-                forward_from = types.User._parse(client, users[fwd_raw_peer_id])
-            else:
-                forward_from_chat = types.Chat._parse_channel_chat(client, chats[fwd_raw_peer_id])
-                forward_from_story_id = forward_header.story_id
+            if forward_header.from_peer:
+                fwd_raw_peer_id = utils.get_raw_peer_id(forward_header.from_peer)
+                fwd_peer_id = utils.get_peer_id(forward_header.from_peer)
+
+                if fwd_peer_id > 0:
+                    forward_from = types.User._parse(client, users[fwd_raw_peer_id])
+                else:
+                    forward_from_chat = types.Chat._parse_channel_chat(client, chats[fwd_raw_peer_id])
 
         if story.views:
             views=getattr(story.views, "views_count", None)

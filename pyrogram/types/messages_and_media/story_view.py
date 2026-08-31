@@ -29,11 +29,12 @@ class StoryView(Object):
     """A story view date and reaction information.
 
     Parameters:
-        from_user (:obj:`~pyrogram.types.User`):
+        from_user (:obj:`~pyrogram.types.User`, *optional*):
             The user that viewed the story.
+            None when the story was forwarded or reposted by a chat.
 
-        date (:py:obj:`~datetime.datetime`):
-            Date the story was viewed.
+        date (:py:obj:`~datetime.datetime`, *optional*):
+            Date the story was viewed, forwarded or reposted.
 
         is_blocked (``bool``, *optional*):
             Whether we have completely blocked this user, including from viewing more of our stories.
@@ -49,8 +50,8 @@ class StoryView(Object):
         self,
         *,
         client: Optional["pyrogram.Client"] = None,
-        from_user: "types.User",
-        date: datetime,
+        from_user: Optional["types.User"] = None,
+        date: Optional[datetime] = None,
         is_blocked: Optional[bool] = None,
         is_blocked_my_stories_from: Optional[bool] = None,
         reaction: Optional["types.Reaction"] = None
@@ -64,10 +65,23 @@ class StoryView(Object):
         self.reaction = reaction
 
     @staticmethod
-    def _parse(client, view: "raw.types.StoryView", users: List["raw.types.User"]) -> "StoryView":
+    def _parse(client, view: "raw.base.StoryView", users: List["raw.types.User"]) -> "StoryView":
+        if isinstance(view, raw.types.StoryViewPublicForward):
+            message = view.message
+            viewer_id = utils.get_raw_peer_id(
+                getattr(message, "from_id", None) or getattr(message, "peer_id", None)
+            )
+            date = getattr(message, "date", None)
+        elif isinstance(view, raw.types.StoryViewPublicRepost):
+            viewer_id = utils.get_raw_peer_id(view.peer_id)
+            date = getattr(view.story, "date", None)
+        else:
+            viewer_id = view.user_id
+            date = view.date
+
         return StoryView(
-            from_user=types.User._parse(client, users[view.user_id]),
-            date=utils.timestamp_to_datetime(view.date),
+            from_user=types.User._parse(client, users.get(viewer_id)),
+            date=utils.timestamp_to_datetime(date),
             is_blocked=getattr(view, "blocked", None),
             is_blocked_my_stories_from=getattr(view, "blocked_my_stories_from", None),
             reaction=types.Reaction._parse(client, getattr(view, "reaction", None)),

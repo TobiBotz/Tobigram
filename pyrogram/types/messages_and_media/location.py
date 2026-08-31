@@ -103,9 +103,10 @@ class Location(Object):
         if isinstance(media, raw.types.MessageMediaGeoLive):
             parsed_location = Location._parse(media.geo)
 
-            parsed_location.live_period = media.period
-            parsed_location.heading = media.heading
-            parsed_location.proximity_alert_radius = media.proximity_notification_radius
+            if parsed_location:
+                parsed_location.live_period = media.period
+                parsed_location.heading = media.heading
+                parsed_location.proximity_alert_radius = media.proximity_notification_radius
 
             return parsed_location
 
