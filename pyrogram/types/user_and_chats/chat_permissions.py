@@ -146,7 +146,7 @@ class ChatPermissions(Object):
     def _parse(denied_permissions: "raw.base.ChatBannedRights") -> Optional["ChatPermissions"]:
         if isinstance(denied_permissions, raw.types.ChatBannedRights):
             return ChatPermissions(
-                can_send_messages=not denied_permissions.send_messages,
+                can_send_messages=not (denied_permissions.send_plain or denied_permissions.send_messages),
                 can_send_audios=not denied_permissions.send_audios,
                 can_send_documents=not denied_permissions.send_docs,
                 can_send_photos=not denied_permissions.send_photos,
@@ -154,7 +154,7 @@ class ChatPermissions(Object):
                 can_send_video_notes=not denied_permissions.send_roundvideos,
                 can_send_voice_notes=not denied_permissions.send_voices,
                 can_send_polls=not denied_permissions.send_polls,
-                can_send_other_messages=any([
+                can_send_other_messages=all([
                     not denied_permissions.send_stickers,
                     not denied_permissions.send_gifs,
                     not denied_permissions.send_games,
@@ -171,7 +171,7 @@ class ChatPermissions(Object):
             )
 
     def write(self, until_date: datetime = utils.zero_datetime()) -> "raw.types.ChatBannedRights":
-        send_messages = not self.can_send_messages
+        send_plain = not self.can_send_messages
         send_audios = not self.can_send_audios
         send_docs = not self.can_send_documents
         send_photos = not self.can_send_photos
@@ -198,7 +198,7 @@ class ChatPermissions(Object):
         return raw.types.ChatBannedRights(
             until_date=utils.datetime_to_timestamp(until_date),
             # view_messages
-            send_messages=send_messages,
+            # send_messages
             send_audios=send_audios,
             send_docs=send_docs,
             send_photos=send_photos,
@@ -218,7 +218,7 @@ class ChatPermissions(Object):
             pin_messages=not self.can_pin_messages,
             manage_topics=not self.can_manage_topics,
             manage_linked_peers=not self.can_manage_linked_peers if self.can_manage_linked_peers is not None else None,
-            # send_plain
+            send_plain=send_plain,
 
             send_media=send_media
         )

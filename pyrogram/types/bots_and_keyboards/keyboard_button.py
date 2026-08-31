@@ -44,6 +44,9 @@ def _admin_rights(rights: Optional["types.ChatAdministratorRights"]):
         post_stories=rights.can_post_stories,
         edit_stories=rights.can_edit_stories,
         delete_stories=rights.can_delete_stories,
+        manage_direct_messages=rights.can_manage_direct_messages,
+        manage_ranks=rights.can_manage_tags,
+        manage_linked_peers=rights.can_manage_linked_peers,
         manage_welcome_messages=rights.can_send_welcome_messages
     )
 
