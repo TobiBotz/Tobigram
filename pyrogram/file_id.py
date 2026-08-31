@@ -198,6 +198,13 @@ class FileId:
 
     @staticmethod
     def decode(file_id: str):
+        try:
+            return FileId._decode(file_id)
+        except (struct.error, IndexError, TypeError) as e:
+            raise ValueError(f"Invalid file id: {file_id!r}") from e
+
+    @staticmethod
+    def _decode(file_id: str):
         decoded = rle_decode(b64_decode(file_id))
 
         # region read version
@@ -428,6 +435,13 @@ class FileUniqueId:
 
     @staticmethod
     def decode(file_unique_id: str):
+        try:
+            return FileUniqueId._decode(file_unique_id)
+        except (struct.error, IndexError, TypeError) as e:
+            raise ValueError(f"Invalid file unique id: {file_unique_id!r}") from e
+
+    @staticmethod
+    def _decode(file_unique_id: str):
         buffer = BytesIO(rle_decode(b64_decode(file_unique_id)))
         file_unique_type, = struct.unpack("<i", buffer.read(4))
 

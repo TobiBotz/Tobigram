@@ -435,6 +435,9 @@ async def resolve_peer_id(client: "pyrogram.Client", peer: Union[int, str]) -> i
 
 
 def get_peer_type(peer_id: int) -> str:
+    if peer_id is None:
+        raise ValueError(f"Peer id invalid: {peer_id}")
+
     if peer_id < 0:
         if -MAX_CHAT_ID <= peer_id:
             return "chat"

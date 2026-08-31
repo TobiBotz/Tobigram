@@ -2729,3 +2729,146 @@ async def test_all_stories_stops_when_the_state_stops_moving():
         "a page that hands back the state it was asked for has not moved, so "
         "honouring has_more again would just ask for it forever"
     )
+
+
+def test_a_peer_id_of_none_is_invalid_rather_than_unorderable():
+    from pyrogram import utils
+
+    with pytest.raises(ValueError):
+        utils.get_peer_type(None)
+
+
+async def test_a_method_whose_peer_is_required_names_the_missing_peer():
+    from pyrogram.methods.messages.summarize_text import SummarizeText
+
+    class _Client:
+        is_connected = True
+
+        async def resolve_peer(self, peer_id):
+            from pyrogram import utils
+            return utils.get_peer_type(peer_id)
+
+        async def invoke(self, query, *args, **kwargs):
+            raise AssertionError("a call with no peer must not reach the wire")
+
+    with pytest.raises(ValueError):
+        await SummarizeText.summarize_text(_Client(), id=1)
+
+
+async def test_get_bot_info_without_a_bot_asks_about_the_caller():
+    from pyrogram import raw
+    from pyrogram.methods.bots.get_bot_info import GetBotInfo
+
+    sent = []
+
+    class _Client:
+        async def resolve_peer(self, peer_id):
+            raise AssertionError(
+                "bots.getBotInfo declares bot as flags.0?InputUser, so omitting "
+                "it is how the caller asks about its own bot"
+            )
+
+        async def invoke(self, query, *args, **kwargs):
+            sent.append(query)
+            return raw.types.bots.BotInfo(name="n", about="a", description="d")
+
+    await GetBotInfo.get_bot_info(_Client())
+
+    assert sent[0].bot is None, (
+        "an unset flag is what tells the server to answer for the current bot; "
+        f"the query carried {sent[0].bot!r} instead"
+    )
+
+
+@pytest.mark.parametrize(
+    "bad",
+    ["", "!!!!not-base64!!!!", "AQADAgAT", None],
+    ids=["empty", "not-base64", "short", "none"],
+)
+def test_a_file_id_that_cannot_be_read_is_refused_by_value(bad):
+    from pyrogram.file_id import FileId
+
+    with pytest.raises(ValueError):
+        FileId.decode(bad)
+
+
+@pytest.mark.parametrize(
+    "bad",
+    ["", "!!!!not-base64!!!!", "AQADAgAT", None],
+    ids=["empty", "not-base64", "short", "none"],
+)
+def test_a_file_unique_id_that_cannot_be_read_is_refused_by_value(bad):
+    from pyrogram.file_id import FileUniqueId
+
+    with pytest.raises(ValueError):
+        FileUniqueId.decode(bad)
+
+
+async def test_downloading_a_malformed_file_id_says_what_is_wrong_with_it():
+    import pyrogram
+
+    client = pyrogram.Client("badfileid", api_id=1, api_hash="x", in_memory=True)
+
+    with pytest.raises(ValueError):
+        await client.download_media("!!!!not-base64!!!!")
+
+
+async def test_get_bot_info_still_refuses_a_peer_id_that_is_not_a_peer():
+    from pyrogram.methods.bots.get_bot_info import GetBotInfo
+
+    class _Client:
+        is_connected = True
+
+        async def resolve_peer(self, peer_id):
+            from pyrogram import utils
+            return utils.get_peer_type(peer_id)
+
+        async def invoke(self, query, *args, **kwargs):
+            raise AssertionError(
+                "0 is not a peer id, and it is falsy: treating it as an omitted "
+                "flag would quietly answer about the caller's own bot instead"
+            )
+
+    with pytest.raises(ValueError):
+        await GetBotInfo.get_bot_info(_Client(), 0)
+
+
+@pytest.mark.parametrize(
+    "module, klass, method, extra",
+    [
+        ("get_bot_name", "GetBotName", "get_bot_name", {}),
+        ("get_bot_info_description", "GetBotInfoDescription",
+         "get_bot_info_description", {}),
+        ("get_bot_info_short_description", "GetBotInfoShortDescription",
+         "get_bot_info_short_description", {}),
+        ("set_bot_name", "SetBotName", "set_bot_name", {"name": "x"}),
+        ("set_bot_info_description", "SetBotInfoDescription",
+         "set_bot_info_description", {"description": "x"}),
+        ("set_bot_info_short_description", "SetBotInfoShortDescription",
+         "set_bot_info_short_description", {"short_description": "x"}),
+    ],
+)
+async def test_a_bot_this_account_does_not_own_is_refused_not_taken_for_itself(
+    module, klass, method, extra
+):
+    import importlib
+
+    mod = importlib.import_module(f"pyrogram.methods.bots.{module}")
+
+    class _Client:
+        is_connected = True
+
+        async def resolve_peer(self, peer_id):
+            from pyrogram import utils
+            return utils.get_peer_type(peer_id)
+
+        async def invoke(self, query, *args, **kwargs):
+            raise AssertionError(
+                "0 is not a bot id, and it is falsy: leaving the flag unset "
+                "would aim the call at the caller's own bot instead"
+            )
+
+    fn = getattr(getattr(mod, klass), method)
+
+    with pytest.raises(ValueError):
+        await fn(_Client(), for_my_bot=0, **extra)

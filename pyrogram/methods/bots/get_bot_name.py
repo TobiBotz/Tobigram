@@ -55,7 +55,7 @@ class GetBotName:
 
         bot_info = await self.invoke(
             raw.functions.bots.GetBotInfo(
-                bot=await self.resolve_peer(for_my_bot) if for_my_bot else None,
+                bot=await self.resolve_peer(for_my_bot) if for_my_bot is not None else None,
                 lang_code=language_code
             )
         )
