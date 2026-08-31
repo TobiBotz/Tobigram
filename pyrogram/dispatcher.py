@@ -650,7 +650,7 @@ class Dispatcher:
                             continue
                         except Exception as exc:
                             await self.handle_update_handler_exception(
-                                exc, handler, update, users, chats
+                                exc, handler, update, users, chats, parsed_update
                             )
 
                         break
@@ -665,7 +665,8 @@ class Dispatcher:
         update_handler: Handler,
         update: "pyrogram.raw.base.Update",
         users: Dict[int, "pyrogram.raw.base.User"],
-        chats: Dict[int, "pyrogram.raw.base.Chat"]
+        chats: Dict[int, "pyrogram.raw.base.Chat"],
+        parsed_update: Optional["pyrogram.types.Update"] = None
     ) -> None:
         handled = False
         try:
@@ -675,6 +676,13 @@ class Dispatcher:
                         continue
 
                     if not isinstance(exc, handler.exceptions):
+                        continue
+
+                    try:
+                        if not await handler.check(self.client, parsed_update):
+                            continue
+                    except Exception as e:
+                        log.exception(e)
                         continue
 
                     try:

@@ -108,7 +108,7 @@ class Parser(HTMLParser):
         self.tag_entities[tag].append(entity(offset=len(self.text), length=0, **extra))
 
     def handle_data(self, data):
-        data = html.unescape(data)
+        data = utils.add_surrogates(data)
 
         for entities in self.tag_entities.values():
             for entity in entities:
@@ -290,11 +290,13 @@ class HTML:
         while i < len(entities):
             i += recursive(i)
 
-        if entities_offsets:
-            last_offset = entities_offsets[-1][1]
-            # no need to sort, but still add entities starting from the end
-            for entity, offset in reversed(entities_offsets):
-                text = text[:offset] + entity + html.escape(text[offset:last_offset]) + text[last_offset:]
-                last_offset = offset
+        last_offset = len(text)
+
+        # no need to sort, but still add entities starting from the end
+        for entity, offset in reversed(entities_offsets):
+            text = text[:offset] + entity + html.escape(text[offset:last_offset]) + text[last_offset:]
+            last_offset = offset
+
+        text = html.escape(text[:last_offset]) + text[last_offset:]
 
         return utils.remove_surrogates(text)

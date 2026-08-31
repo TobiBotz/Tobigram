@@ -924,8 +924,7 @@ def regex(pattern: Union[str, Pattern], flags: int = 0):
         else:
             raise ValueError(f"Regex filter doesn't work with {type(update)}")
 
-        if value:
-            update.matches = list(flt.p.finditer(value)) or None
+        update.matches = (list(flt.p.finditer(value)) or None) if value else None
 
         return bool(update.matches)
 
