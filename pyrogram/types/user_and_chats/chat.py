@@ -1015,7 +1015,7 @@ class Chat(Object):
                 if channel.color is not None else None
             ),
             profile_color=(
-                types.ChatColor._parse(channel.profile_color)
+                types.ChatColor._parse_profile_color(channel.profile_color)
                 if channel.profile_color is not None else None
             ),
             emoji_status=(
@@ -1052,7 +1052,7 @@ class Chat(Object):
 
     @staticmethod
     def _parse_chat(client, chat: Union[raw.types.Chat, raw.types.User, raw.types.Channel, raw.types.Community]) -> Optional["Chat"]:
-        if isinstance(chat, (raw.types.Chat, raw.types.ChatForbidden)):
+        if isinstance(chat, (raw.types.Chat, raw.types.ChatForbidden, raw.types.ChatEmpty)):
             return Chat._parse_chat_chat(client, chat)
         elif isinstance(chat, raw.types.User):
             return Chat._parse_user_chat(client, chat)
@@ -1085,15 +1085,19 @@ class Chat(Object):
 
     @staticmethod
     def _parse_dialog(client, peer, users: dict, chats: dict):
-        if isinstance(peer, (raw.types.PeerUser, raw.types.InputPeerUser)):
+        if isinstance(peer, raw.types.InputPeerSelf):
+            return Chat._parse_user_chat(client, users.get(getattr(client.me, "id", None)))
+        elif isinstance(peer, (raw.types.PeerUser, raw.types.InputPeerUser, raw.types.InputPeerUserFromMessage)):
             return Chat._parse_user_chat(client, users.get(peer.user_id))
         elif isinstance(peer, (raw.types.PeerChat, raw.types.InputPeerChat)):
             return Chat._parse_chat_chat(client, chats.get(peer.chat_id))
-        else:
+        elif isinstance(peer, (raw.types.PeerChannel, raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)):
             raw_chat = chats.get(peer.channel_id)
             if isinstance(raw_chat, raw.types.Community):
                 return Chat._parse_community_chat(client, raw_chat)
             return Chat._parse_channel_chat(client, raw_chat)
+        else:
+            return None
 
     @staticmethod
     async def _parse_full_user(
@@ -1269,7 +1273,7 @@ class Chat(Object):
         parsed_chat.can_view_participants = channel.can_view_participants
         parsed_chat.can_set_username = channel.can_set_username
         parsed_chat.can_set_sticker_set = channel.can_set_stickers
-        parsed_chat.has_visible_history = channel.hidden_prehistory
+        parsed_chat.has_visible_history = not channel.hidden_prehistory
         parsed_chat.has_welcome_messages = channel.has_welcome_messages
         parsed_chat.can_set_location = channel.can_set_location
         parsed_chat.can_schedule_messages = channel.has_scheduled
@@ -1286,7 +1290,7 @@ class Chat(Object):
         parsed_chat.can_view_revenue = channel.can_view_revenue
         parsed_chat.can_send_paid_media = channel.paid_media_allowed
         parsed_chat.can_view_stars_revenue = channel.can_view_stars_revenue
-        parsed_chat.is_paid_reactions_available = channel.paid_messages_available
+        parsed_chat.is_paid_reactions_available = channel.paid_reactions_available
         parsed_chat.can_send_gift = channel.stargifts_available
         parsed_chat.members_count = channel.participants_count
         parsed_chat.admins_count = channel.admins_count

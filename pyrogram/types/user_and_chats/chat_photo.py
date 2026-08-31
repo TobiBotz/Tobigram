@@ -84,6 +84,9 @@ class ChatPhoto(Object):
         ):
             return None
 
+        if peer_access_hash is None:
+            return None
+
         photo_id = (
             chat_photo.photo_id
             if isinstance(chat_photo, (raw.types.UserProfilePhoto, raw.types.ChatPhoto))

@@ -356,8 +356,8 @@ class ChatEvent(Object):
             action = enums.ChatEventAction.HISTORY_TTL_CHANGED
 
         elif isinstance(action, raw.types.ChannelAdminLogEventActionChangeLinkedChat):
-            old_linked_chat = types.Chat._parse_chat(client, chats[action.prev_value])
-            new_linked_chat = types.Chat._parse_chat(client, chats[action.new_value])
+            old_linked_chat = types.Chat._parse_chat(client, chats.get(action.prev_value))
+            new_linked_chat = types.Chat._parse_chat(client, chats.get(action.new_value))
             action = enums.ChatEventAction.LINKED_CHAT_CHANGED
 
         elif isinstance(action, raw.types.ChannelAdminLogEventActionChangePhoto):
@@ -465,7 +465,7 @@ class ChatEvent(Object):
             action = enums.ChatEventAction.EDITED_FORUM_TOPIC
 
         elif isinstance(action, raw.types.ChannelAdminLogEventActionDeleteTopic):
-            created_forum_topic = types.ForumTopic._parse(client, action.topic, users=users, chats=chats)
+            deleted_forum_topic = types.ForumTopic._parse(client, action.topic, users=users, chats=chats)
             action = enums.ChatEventAction.DELETED_FORUM_TOPIC
 
         else:

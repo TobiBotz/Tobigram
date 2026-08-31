@@ -49,7 +49,7 @@ class ChatColor(Object):
             return None
 
         return ChatColor(
-            color=enums.ReplyColor(color.color) if getattr(color, "color", None) else None,
+            color=enums.ReplyColor(color.color) if color.color is not None else None,
             background_emoji_id=getattr(color, "background_emoji_id", None)
         )
 
@@ -59,7 +59,7 @@ class ChatColor(Object):
             return None
 
         return ChatColor(
-            color=enums.ProfileColor(color.color) if getattr(color, "color", None) else None,
+            color=enums.ProfileColor(color.color) if color.color is not None else None,
             background_emoji_id=getattr(color, "background_emoji_id", None)
         )
 
