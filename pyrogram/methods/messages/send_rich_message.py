@@ -56,8 +56,9 @@ class SendRichMessage:
                 See `rich message formatting options <https://core.telegram.org/bots/api#rich-message-formatting-options>`__ for details.
 
             parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
-                By default, texts are parsed using both Markdown and HTML styles.
-                You can combine both syntaxes together.
+                By default, texts are parsed as Markdown.
+                Pass :obj:`~pyrogram.enums.ParseMode.HTML` to parse them as HTML instead;
+                the two styles are exclusive and cannot be combined.
                 Ignored when *rich_text* is an :obj:`~pyrogram.types.InputRichMessage`.
 
             media (List of :obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
@@ -141,7 +142,7 @@ class SendRichMessage:
             .. code-block:: python
 
                 # Send a rich formatted message
-                await app.send_rich_message(chat_id, "<b>Hello</b> <i>world</i>!")
+                await app.send_rich_message(chat_id, "**Hello** __world__!")
         """
         if isinstance(rich_text, types.InputRichMessage):
             rich_message = rich_text.write()
@@ -151,14 +152,14 @@ class SendRichMessage:
                 html="_", media=media
             ).write_files() if media else None
 
-            if parse_mode == enums.ParseMode.MARKDOWN:
-                rich_message = raw.types.InputRichMessageMarkdown(
-                    markdown=rich_text,
+            if parse_mode == enums.ParseMode.HTML:
+                rich_message = raw.types.InputRichMessageHTML(
+                    html=rich_text,
                     files=files,
                 )
             else:
-                rich_message = raw.types.InputRichMessageHTML(
-                    html=rich_text,
+                rich_message = raw.types.InputRichMessageMarkdown(
+                    markdown=rich_text,
                     files=files,
                 )
 

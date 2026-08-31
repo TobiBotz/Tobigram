@@ -71,5 +71,8 @@ class CreateForumTopic:
             )
         )
 
-        return types.ForumTopicCreated._parse(r.updates[1].message)
+        for i in r.updates:
+            if isinstance(i, (raw.types.UpdateNewMessage,
+                              raw.types.UpdateNewChannelMessage)):
+                return types.ForumTopicCreated._parse(i.message)
 

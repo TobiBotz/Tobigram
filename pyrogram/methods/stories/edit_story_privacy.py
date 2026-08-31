@@ -98,18 +98,20 @@ class EditStoryPrivacy:
             _allowed_users = []
             _allowed_chats = []
 
-            for user in allowed_users:
-                peer = await self.resolve_peer(user)
-                if isinstance(peer, raw.types.InputPeerUser):
-                    _allowed_users.append(peer)
-                elif isinstance(peer, (raw.types.InputPeerChat, raw.types.InputPeerChannel)):
-                    _allowed_chats.append(peer)
+            if allowed_users:
+                for user in allowed_users:
+                    peer = await self.resolve_peer(user)
+                    if isinstance(peer, raw.types.InputPeerUser):
+                        _allowed_users.append(peer)
+                    elif isinstance(peer, (raw.types.InputPeerChat, raw.types.InputPeerChannel)):
+                        _allowed_chats.append(peer)
+            else:
+                privacy_rules.append(raw.types.InputPrivacyValueAllowUsers(users=[raw.types.InputPeerEmpty()]))
 
             if _allowed_users:
                 privacy_rules.append(raw.types.InputPrivacyValueAllowUsers(users=_allowed_users))
             if _allowed_chats:
                 privacy_rules.append(raw.types.InputPrivacyValueAllowChatParticipants(chats=_allowed_chats))
-
 
         r = await self.invoke(
             raw.functions.stories.EditStory(

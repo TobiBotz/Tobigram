@@ -21,7 +21,7 @@
 # Source: tl:bots.allowSendMessage
 # ***************************
 
-from typing import Union, Optional
+from typing import Union
 
 import pyrogram
 from pyrogram import raw
@@ -31,14 +31,14 @@ from pyrogram import types
 class AllowBotSendMessage:
     async def allow_bot_send_message(
         self: "pyrogram.Client",
-        bot: Optional[Union[int, str]] = None,
+        bot: Union[int, str],
     ) -> "types.Message":
         """Allow a bot to send messages to the user.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            bot (Union[int, str], *optional*): Bot username or ID
+            bot (Union[int, str]): Bot username or ID
 
         Returns:
             :obj:`~pyrogram.types.Message`

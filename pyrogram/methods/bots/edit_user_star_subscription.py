@@ -51,7 +51,7 @@ class EditUserStarSubscription:
             raw.functions.payments.BotCancelStarsSubscription(
                 user_id=await self.resolve_peer(user_id),
                 charge_id=telegram_payment_charge_id,
-                restore=is_canceled,
+                restore=not is_canceled,
             )
         )
 

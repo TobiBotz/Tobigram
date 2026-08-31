@@ -21,7 +21,7 @@
 # Source: tl:bots.canSendMessage
 # ***************************
 
-from typing import Union, Optional
+from typing import Union
 
 import pyrogram
 from pyrogram import raw
@@ -30,14 +30,14 @@ from pyrogram import raw
 class CanBotSendMessage:
     async def can_bot_send_message(
         self: "pyrogram.Client",
-        bot: Optional[Union[int, str]] = None,
+        bot: Union[int, str],
     ) -> bool:
         """Check if a bot can send messages to the user.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            bot (Union[int, str], *optional*): Bot username or ID
+            bot (Union[int, str]): Bot username or ID
 
         Returns:
             ``bool``: True on success.

@@ -166,7 +166,7 @@ class CreateFolder:
                     exclude_muted=exclude_muted,
                     exclude_read=exclude_read,
                     exclude_archived=exclude_archived,
-                    title_noanimate=not animate_custom_emoji,
+                    title_noanimate=not animate_custom_emoji if animate_custom_emoji is not None else None,
                     emoticon=icon,
                     color=color.value if color else None
                 )

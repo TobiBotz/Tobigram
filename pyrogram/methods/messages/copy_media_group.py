@@ -169,7 +169,7 @@ class CopyMediaGroup:
             media = utils.get_input_media_from_file_id(file_id=file_id, has_spoiler=has_spoilers)
 
             text, entities = (await self.parser.parse(
-                captions[i] if isinstance(captions, list) and i < len(captions) and captions[i] else
+                captions[i] if isinstance(captions, list) and i < len(captions) and captions[i] is not None else
                 captions if isinstance(captions, str) and i == 0 else
                 message.caption if message.caption and message.caption != "None" and not type(
                     captions) is str else ""

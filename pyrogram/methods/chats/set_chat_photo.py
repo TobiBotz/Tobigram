@@ -53,9 +53,9 @@ class SetChatPhoto:
                 ".name" set for in-memory uploads.
 
             video (``str`` | ``BinaryIO``, *optional*):
-                New chat video. You can pass a :obj:`~pyrogram.types.Video` file_id, a file path to upload a new video
-                from your local machine or a binary file-like object with its attribute
-                ".name" set for in-memory uploads.
+                New chat video. You can pass a file path to upload a new video from your local machine or a binary
+                file-like object with its attribute ".name" set for in-memory uploads.
+                A file_id is not accepted here: the video half of a chat photo must always be uploaded.
 
             video_start_ts (``float``, *optional*):
                 The timestamp in seconds of the video frame to use as photo profile preview.
@@ -78,11 +78,11 @@ class SetChatPhoto:
 
                 # Set chat video using a local file
                 await app.set_chat_photo(chat_id, video="video.mp4")
-
-                # Set chat photo using an existing Video file_id
-                await app.set_chat_photo(chat_id, video=video.file_id)
         """
         peer = await self.resolve_peer(chat_id)
+
+        if isinstance(video, str) and not os.path.isfile(video):
+            raise ValueError(f'The video "{video}" is not an existing file path')
 
         if isinstance(photo, str):
             if os.path.isfile(photo):

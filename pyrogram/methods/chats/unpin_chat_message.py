@@ -71,7 +71,7 @@ class UnpinChatMessage:
                 id=message_id,
                 silent=disable_notification if disable_notification is not None else None,
                 unpin=True,
-                pm_oneside=both_sides if both_sides is not None else None
+                pm_oneside=not both_sides if both_sides is not None else None
             ),
             business_connection_id=business_connection_id
         )

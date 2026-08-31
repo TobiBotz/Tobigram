@@ -56,6 +56,10 @@ class VotePoll:
         """
 
         poll = (await self.get_messages(chat_id, message_id)).poll
+
+        if poll is None:
+            raise ValueError(f"Message {message_id} in chat {chat_id} does not contain a poll.")
+
         options = [options] if not isinstance(options, list) else options
 
         r = await self.invoke(

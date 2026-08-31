@@ -20,6 +20,7 @@ from typing import Optional, Union
 
 import pyrogram
 from pyrogram import raw
+from pyrogram import utils
 
 
 class GetTonBalance:
@@ -31,16 +32,13 @@ class GetTonBalance:
         .. include:: /_includes/usable-by/users.rst
 
         Returns:
-            ``float``: On success, the current stars balance is returned.
+            ``float``: On success, the current TON balance is returned, in whole Toncoins.
 
         Example:
             .. code-block:: python
 
-                # Get stars balance of current account
-                await app.get_stars_balance()
-
-                # Get stars balance of a bot
-                await app.get_stars_balance(chat_id="pyrogrambot")
+                # Get TON balance of current account
+                await app.get_ton_balance()
         """
         r = await self.invoke(
             raw.functions.payments.GetStarsTransactions(
@@ -51,5 +49,5 @@ class GetTonBalance:
             )
         )
 
-        return r.balance.amount
+        return utils.from_nano(r.balance.amount)
 

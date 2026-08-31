@@ -113,7 +113,7 @@ class GetChatGifts:
                     exclude_unique=exclude_upgraded,
                     exclude_upgradable=exclude_upgradable,
                     exclude_unupgradable=exclude_non_upgradable,
-                    peer_color_available=not exclude_without_colors if exclude_without_colors is not None else None,
+                    peer_color_available=exclude_without_colors,
                     exclude_hosted=exclude_hosted,
                     sort_by_value=sort_by_price,
                     collection_id=collection_id

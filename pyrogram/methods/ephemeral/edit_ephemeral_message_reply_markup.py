@@ -49,7 +49,8 @@ class EditEphemeralMessageReplyMarkup:
                 Identifier of the ephemeral message to edit.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
-                An inline keyboard. Pass nothing to remove the current one.
+                An inline keyboard. Pass nothing to leave the current one unchanged:
+                the RPC omits the field, which the server reads as "no change".
 
             welcome (``bool``, *optional*):
                 Pass True when editing a stored welcome message rather than one that was

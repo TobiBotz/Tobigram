@@ -77,6 +77,9 @@ class StopPoll:
         """
         poll = (await self.get_messages(chat_id, message_id)).poll
 
+        if poll is None:
+            raise ValueError(f"Message {message_id} in chat {chat_id} does not contain a poll.")
+
         r = await self.invoke(
             raw.functions.messages.EditMessage(
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
