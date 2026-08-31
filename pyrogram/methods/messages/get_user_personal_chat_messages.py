@@ -47,7 +47,9 @@ class GetUserPersonalChatMessages:
 
             limit (``int``, *optional*):
                 Limits the number of messages to be retrieved.
-                By default, no limit is applied and all messages are returned.
+                The server answers with at most the 20 most recent messages and
+                nothing below that window, so a larger limit does not reach
+                further back.
 
             min_id (``int``, *optional*):
                 If a positive value was provided, the method will return only messages

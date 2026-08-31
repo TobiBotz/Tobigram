@@ -2872,3 +2872,46 @@ async def test_a_bot_this_account_does_not_own_is_refused_not_taken_for_itself(
 
     with pytest.raises(ValueError):
         await fn(_Client(), for_my_bot=0, **extra)
+
+
+async def test_a_personal_chat_history_asks_the_server_once(monkeypatch):
+    from pyrogram import raw, utils
+    from pyrogram.methods.messages.get_user_personal_chat_messages import (
+        GetUserPersonalChatMessages,
+    )
+
+    class _Message:
+        def __init__(self, id):
+            self.id = id
+
+    class _Client:
+        def __init__(self):
+            self.asked = []
+
+        async def resolve_peer(self, peer_id):
+            return raw.types.InputUserSelf()
+
+        async def invoke(self, query, *args, **kwargs):
+            self.asked.append(query.max_id)
+            return [_Message(i) for i in range(26, 6, -1)]
+
+    async def parse_messages(client, history, **kwargs):
+        return history
+
+    monkeypatch.setattr(utils, "parse_messages", parse_messages)
+
+    client = _Client()
+    got = [
+        message.id
+        async for message in GetUserPersonalChatMessages.get_user_personal_chat_messages(
+            client, "me"
+        )
+    ]
+
+    assert len(got) == 20
+    assert client.asked == [0], (
+        "messages.getPersonalChannelHistory answers with at most the 20 most "
+        "recent messages and returns nothing for a max_id below that window, "
+        "so asking a second time costs a round trip and can only come back "
+        f"empty; it asked {len(client.asked)} times"
+    )
