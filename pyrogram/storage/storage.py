@@ -50,6 +50,10 @@ class Storage(ABC):
     V2_PACKED_SIZE = 290
     V2_CRC_PACKED_SIZE = 294
     SESSION_STRING_FORMAT_V2 = ">BBI?256sQ?H16s"
+    V3_PACKED_SIZE = 322
+    V3_CRC_PACKED_SIZE = 326
+    SESSION_STRING_FORMAT_V3 = ">BBI?256sQ?H48s"
+    SERVER_ADDRESS_SIZE = 48
 
     def __init__(self, name: str):
         self.name = name
@@ -187,6 +191,30 @@ class Storage(ABC):
         return bytes(result)
 
     @staticmethod
+    def _try_decode_v3(raw: bytes):
+        if len(raw) != Storage.V3_PACKED_SIZE:
+            return None
+        _, dc_id, api_id, test_mode, auth_key, user_id, is_bot, port, addr_bytes = struct.unpack(
+            Storage.SESSION_STRING_FORMAT_V3, raw
+        )
+        server_address = addr_bytes.rstrip(b"\x00").decode("ascii")
+        return dict(
+            dc_id=dc_id, api_id=api_id, test_mode=test_mode,
+            auth_key=auth_key, user_id=user_id, is_bot=is_bot,
+            port=port, server_address=server_address,
+        )
+
+    @staticmethod
+    def _try_decode_v3_with_crc(raw: bytes):
+        if len(raw) != Storage.V3_CRC_PACKED_SIZE:
+            return None
+        payload = raw[:-4]
+        stored_crc = struct.unpack("<I", raw[-4:])[0]
+        if zlib.crc32(payload) != stored_crc:
+            return None
+        return Storage._try_decode_v3(payload)
+
+    @staticmethod
     def _try_decode_v2(raw: bytes):
         if len(raw) != Storage.V2_PACKED_SIZE:
             return None
@@ -262,7 +290,7 @@ class Storage(ABC):
 
     @staticmethod
     def _try_every_format(raw: bytes, allow_unverified: bool):
-        result = Storage._try_decode_v2_with_crc(raw)
+        result = Storage._try_decode_v3_with_crc(raw) or Storage._try_decode_v2_with_crc(raw)
 
         if result:
             return result
@@ -270,7 +298,7 @@ class Storage(ABC):
         if not allow_unverified:
             return None
 
-        result = Storage._try_decode_v2(raw)
+        result = Storage._try_decode_v3(raw) or Storage._try_decode_v2(raw)
 
         if result:
             log.warning(
@@ -381,11 +409,19 @@ class Storage(ABC):
                 "Make sure the client is fully initialized."
             )
 
-        addr_bytes = (server_address or "").encode("ascii").ljust(16, b"\x00")[:16]
+        addr_bytes = (server_address or "").encode("ascii")
+
+        if len(addr_bytes) > self.SERVER_ADDRESS_SIZE:
+            raise ValueError(
+                f"Cannot export session string: server address {server_address!r} is longer than "
+                f"{self.SERVER_ADDRESS_SIZE} bytes."
+            )
+
+        addr_bytes = addr_bytes.ljust(self.SERVER_ADDRESS_SIZE, b"\x00")
 
         packed = struct.pack(
-            self.SESSION_STRING_FORMAT_V2,
-            2,
+            self.SESSION_STRING_FORMAT_V3,
+            3,
             dc_id,
             api_id or 0,
             test_mode,

@@ -17,7 +17,6 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
-import os
 from pathlib import Path
 
 import aiosqlite
@@ -45,6 +44,3 @@ class FileStorage(SQLiteStorage):
             await self.update()
 
         await self.conn.execute("VACUUM")
-
-    async def delete(self):
-        os.remove(self.database)

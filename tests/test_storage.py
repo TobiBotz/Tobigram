@@ -173,10 +173,37 @@ class TestMemoryStorage:
 
         s = await storage.export_session_string()
         assert isinstance(s, str)
-        assert len(s) == 395
+        assert len(s) == 438
         assert s.startswith("WZ_")
 
         await storage.close()
+
+    @pytest.mark.asyncio
+    async def test_export_session_string_survives_an_ipv6_address(self):
+        address = "2001:067c:04e8:f004:0000:0000:0000:000b"
+
+        storage = MemoryStorage(":memory:")
+        await storage.open()
+        await storage.dc_id(4)
+        await storage.api_id(12345)
+        await storage.test_mode(False)
+        await storage.auth_key(b"\x11" * 256)
+        await storage.user_id(999)
+        await storage.is_bot(False)
+        await storage.date(0)
+        await storage.server_address(address)
+        await storage.port(443)
+
+        s = await storage.export_session_string()
+        await storage.close()
+
+        imported = MemoryStorage(":memory:")
+        await imported.open()
+        await imported.load_session_string(s)
+
+        assert await imported.server_address() == address
+
+        await imported.close()
 
     @pytest.mark.asyncio
     async def test_server_address_and_port(self):

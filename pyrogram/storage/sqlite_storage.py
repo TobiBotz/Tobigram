@@ -354,6 +354,10 @@ class SQLiteStorage(Storage):
         self._cache.clear()
 
     async def delete(self):
+        if self.conn:
+            await self.conn.close()
+            self.conn = None
+
         if self._lock_fd is not None:
             _unlock(self._lock_fd)
             self._lock_fd = None
@@ -365,10 +369,6 @@ class SQLiteStorage(Storage):
                 path.unlink()
             if lock_path.exists():
                 lock_path.unlink()
-
-        if self.conn:
-            await self.conn.close()
-            self.conn = None
 
     async def update_peers(self, peers: List[Tuple[int, int, str, str]]):
         if not peers:
