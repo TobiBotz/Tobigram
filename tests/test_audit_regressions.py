@@ -2655,3 +2655,77 @@ async def test_a_removed_channel_photo_does_not_end_the_walk(monkeypatch):
     assert got == ["b", "a"], (
         "a page carrying only a removed photo is not the end of the history"
     )
+
+
+async def test_all_stories_follows_the_servers_has_more():
+    from pyrogram import raw
+    from pyrogram.methods.stories.get_all_stories import GetAllStories
+
+    def page(has_more, state):
+        return raw.types.stories.AllStories(
+            has_more=has_more, count=0, state=state, peer_stories=[],
+            chats=[], users=[], stealth_mode=raw.types.StoriesStealthMode()
+        )
+
+    pages = [page(True, "s1"), page(False, "s2"), page(True, "s3")]
+    asked = []
+
+    class _Client:
+        async def invoke(self, query, *args, **kwargs):
+            asked.append((query.next, query.state))
+
+            return pages[len(asked) - 1]
+
+    async for _ in GetAllStories.get_all_stories(_Client()):
+        pass
+
+    assert asked == [(None, None), (True, "s1")], (
+        "has_more means another page, and the state of the page just read is "
+        "what asks for it"
+    )
+
+
+async def test_unchanged_stories_end_the_generator_instead_of_crashing():
+    from pyrogram import raw
+    from pyrogram.methods.stories.get_all_stories import GetAllStories
+
+    class _Client:
+        async def invoke(self, query, *args, **kwargs):
+            return raw.types.stories.AllStoriesNotModified(
+                state="s", stealth_mode=raw.types.StoriesStealthMode()
+            )
+
+    async for _ in GetAllStories.get_all_stories(_Client(), state="s"):
+        raise AssertionError(
+            "passing a state is the documented way to check for changes, and "
+            "an unchanged peerset carries no stories to yield"
+        )
+
+
+async def test_all_stories_stops_when_the_state_stops_moving():
+    from pyrogram import raw
+    from pyrogram.methods.stories.get_all_stories import GetAllStories
+
+    class _Client:
+        asked = 0
+
+        async def invoke(self, query, *args, **kwargs):
+            self.asked += 1
+
+            if self.asked > 10:
+                raise AssertionError("the generator never stopped asking")
+
+            return raw.types.stories.AllStories(
+                has_more=True, count=0, state="stuck", peer_stories=[],
+                chats=[], users=[], stealth_mode=raw.types.StoriesStealthMode()
+            )
+
+    client = _Client()
+
+    async for _ in GetAllStories.get_all_stories(client):
+        pass
+
+    assert client.asked == 2, (
+        "a page that hands back the state it was asked for has not moved, so "
+        "honouring has_more again would just ask for it forever"
+    )

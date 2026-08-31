@@ -58,6 +58,7 @@ class GetAllStories:
 
             state (``str``, *optional*):
                 The pagination state returned with the previous page.
+                When the peerset has not changed since that state, nothing is yielded.
 
         Returns:
             ``Generator``: On success, a generator yielding :obj:`~pyrogram.types.Story` objects is returned.
@@ -70,24 +71,34 @@ class GetAllStories:
                     print(story)
         """
 
-        r = await self.invoke(
-            raw.functions.stories.GetAllStories(
-                next=next,
-                hidden=hidden,
-                state=state
-            )
-        )
-
-        users = {i.id: i for i in r.users}
-        chats = {i.id: i for i in r.chats}
-
-        for peer_story in r.peer_stories:
-            for story in peer_story.stories:
-                yield await types.Story._parse(
-                    self,
-                    story,
-                    peer_story.peer,
-                    users,
-                    chats
+        while True:
+            r = await self.invoke(
+                raw.functions.stories.GetAllStories(
+                    next=next,
+                    hidden=hidden,
+                    state=state
                 )
+            )
+
+            if isinstance(r, raw.types.stories.AllStoriesNotModified):
+                return
+
+            users = {i.id: i for i in r.users}
+            chats = {i.id: i for i in r.chats}
+
+            for peer_story in r.peer_stories:
+                for story in peer_story.stories:
+                    yield await types.Story._parse(
+                        self,
+                        story,
+                        peer_story.peer,
+                        users,
+                        chats
+                    )
+
+            if not r.has_more or r.state == state:
+                return
+
+            next = True
+            state = r.state
 
