@@ -40,6 +40,10 @@ class FileStorage(SQLiteStorage):
 
         if not file_exists:
             await self.create()
+
+            if self.session_string:
+                await self.load_session_string(self.session_string)
+                await self.conn.commit()
         else:
             await self.update()
 

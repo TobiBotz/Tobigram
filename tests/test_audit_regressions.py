@@ -3149,3 +3149,77 @@ async def test_a_spoiler_survives_a_send_by_file_id(monkeypatch):
     assert kwargs[1]["ttl_seconds"] == 5
 
 
+async def test_a_session_string_is_loaded_into_a_fresh_session_file(tmp_path):
+    """Client handed the session string to an explicit storage engine, but only
+    the in-memory branch of SQLiteStorage.open loaded it; a fresh session file
+    (FileStorage, or SQLiteStorage with in_memory=False) came up with no auth
+    key and start() fell into the phone-number prompt.
+    """
+
+    from pyrogram.storage.file_storage import FileStorage
+    from pyrogram.storage.memory_storage import MemoryStorage
+    from pyrogram.storage.sqlite_storage import SQLiteStorage
+
+    source = MemoryStorage(":memory:")
+    await source.open()
+    await source.dc_id(2)
+    await source.api_id(1)
+    await source.test_mode(False)
+    await source.auth_key(b"\x07" * 256)
+    await source.user_id(4242)
+    await source.is_bot(False)
+    await source.port(443)
+    await source.server_address("149.154.167.51")
+    string = await source.export_session_string()
+    await source.close()
+
+    for storage in (
+        FileStorage("fresh_file", workdir=tmp_path),
+        SQLiteStorage("fresh_sqlite", workdir=tmp_path, session_string=string),
+    ):
+        storage.session_string = string
+        await storage.open()
+
+        assert await storage.user_id() == 4242, type(storage).__name__
+        assert await storage.auth_key() == b"\x07" * 256, type(storage).__name__
+
+        await storage.close()
+
+
+async def test_downloading_a_story_hands_its_media_to_download_media():
+    """Story.download passed the Story itself as ``message``; download_media only
+    unwraps a Message, so it fell through to ``media.file_id`` and raised
+    AttributeError - taking Story.copy and copy_story down with it.
+    """
+
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+
+    from pyrogram import types
+
+    client = SimpleNamespace(download_media=AsyncMock(return_value="path"))
+    photo = SimpleNamespace(file_id="AgACAgfake")
+    story = types.Story(client=client, id=1, photo=photo)
+
+    assert await story.download() == "path"
+    assert client.download_media.await_args.kwargs["message"] is photo
+
+    with pytest.raises(ValueError):
+        await types.Story(client=client, id=2).download()
+
+
+def test_a_chosen_inline_result_keeps_a_64_bit_inline_message_id():
+    """ChosenInlineResult packed only the 32-bit inputBotInlineMessageID by hand
+    and left inline_message_id as None for the inputBotInlineMessageID64 the
+    server sends now, so a bot could never edit the message it just placed.
+    """
+
+    from pyrogram import raw, types, utils
+
+    msg_id = raw.types.InputBotInlineMessageID64(dc_id=2, owner_id=3, id=4, access_hash=5)
+    update = raw.types.UpdateBotInlineSend(user_id=1, query="q", id="r", msg_id=msg_id)
+
+    result = types.ChosenInlineResult._parse(None, update, {1: raw.types.User(id=1, usernames=[], restriction_reason=[])})
+
+    assert result.inline_message_id == utils.pack_inline_message_id(msg_id)
+    assert utils.unpack_inline_message_id(result.inline_message_id) == msg_id

@@ -2137,8 +2137,13 @@ class Story(Object, Update):
             RPCError: In case of a Telegram RPC error.
             ``ValueError``: If the message doesn't contain any downloadable media
         """
+        media = self.photo or self.video
+
+        if media is None:
+            raise ValueError("This story doesn't contain any downloadable media")
+
         return await self._client.download_media(
-            message=self,
+            message=media,
             file_name=file_name,
             in_memory=in_memory,
             block=block,

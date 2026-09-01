@@ -317,6 +317,9 @@ class SQLiteStorage(Storage):
         else:
             await self.create()
 
+            if self.session_string:
+                await self.load_session_string(self.session_string)
+
         await self._load_cache()
         await self._ensure_committed()
 
