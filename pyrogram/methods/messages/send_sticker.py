@@ -261,7 +261,7 @@ class SendSticker:
                         spoiler=has_spoiler
                     )
                 else:
-                    media = utils.get_input_media_from_file_id(sticker, FileType.STICKER)
+                    media = utils.get_input_media_from_file_id(sticker, FileType.STICKER, ttl_seconds=ttl_seconds, has_spoiler=has_spoiler)
             else:
                 file = await self.save_file(sticker, progress=progress, progress_args=progress_args)
                 media = raw.types.InputMediaUploadedDocument(

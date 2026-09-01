@@ -232,7 +232,7 @@ class SendMediaGroup:
                             spoiler=i.has_spoiler
                         )
                     else:
-                        media = utils.get_input_media_from_file_id(i.media, FileType.PHOTO)
+                        media = utils.get_input_media_from_file_id(i.media, FileType.PHOTO, has_spoiler=i.has_spoiler)
                 else:
                     media = await self.invoke(
                         raw.functions.messages.UploadMedia(
@@ -356,7 +356,7 @@ class SendMediaGroup:
                         )
                     else:
                         media = utils.get_input_media_from_file_id(
-                            i.media, FileType.VIDEO,
+                            i.media, FileType.VIDEO, has_spoiler=i.has_spoiler,
                             video_cover=vcover_file,
                             video_start_timestamp=i.video_start_timestamp
                         )
@@ -544,7 +544,7 @@ class SendMediaGroup:
                 raw.types.InputSingleMedia(
                     media=media,
                     random_id=self.rnd_id(),
-                    **await self.parser.parse(i.caption, i.parse_mode)
+                    **await utils.parse_text_entities(self, i.caption, i.parse_mode, i.caption_entities)
                 )
             )
 

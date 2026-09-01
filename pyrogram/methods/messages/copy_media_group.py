@@ -168,12 +168,16 @@ class CopyMediaGroup:
 
             media = utils.get_input_media_from_file_id(file_id=file_id, has_spoiler=has_spoilers)
 
-            text, entities = (await self.parser.parse(
-                captions[i] if isinstance(captions, list) and i < len(captions) and captions[i] is not None else
-                captions if isinstance(captions, str) and i == 0 else
-                message.caption if message.caption and message.caption != "None" and not type(
-                    captions) is str else ""
-            )).values()
+            if isinstance(captions, list) and i < len(captions) and captions[i] is not None:
+                text, entities = (await self.parser.parse(captions[i])).values()
+            elif isinstance(captions, str):
+                text, entities = (await self.parser.parse(captions if i == 0 else "")).values()
+            elif message.caption and message.caption != "None":
+                text, entities = (await utils.parse_text_entities(
+                    self, message.caption, None, message.caption_entities
+                )).values()
+            else:
+                text, entities = "", None
 
             multi_media.append(
                 raw.types.InputSingleMedia(

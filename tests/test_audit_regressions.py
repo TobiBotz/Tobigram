@@ -2996,3 +2996,156 @@ async def test_the_contacts_member_filter_carries_its_query():
     assert sent["filter"].q == ""
 
 
+async def test_a_formatted_poll_question_writes_its_entities():
+    """A FormattedText question, explanation or description put its MessageEntity
+    objects straight into the raw poll without awaiting write(), so the request
+    failed to serialise: expected a bytes-like object, coroutine found.
+    """
+
+    from unittest.mock import AsyncMock
+
+    from pyrogram import enums, raw, types
+    from pyrogram.methods.messages.send_poll import SendPoll
+
+    captured = {}
+
+    async def invoke(query, *args, **kw):
+        captured["query"] = query
+
+        return raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0)
+
+    client = AsyncMock()
+    client.invoke = invoke
+    client.resolve_peer = AsyncMock(return_value=raw.types.InputPeerSelf())
+    client.rnd_id = lambda: 1
+    client.parser.parse = AsyncMock(return_value={"message": "x", "entities": []})
+
+    bold = [types.MessageEntity(type=enums.MessageEntityType.BOLD, offset=0, length=1)]
+
+    await SendPoll.send_poll(
+        client,
+        chat_id=1,
+        question=types.FormattedText(text="Q?", entities=bold),
+        options=["a", "b"],
+        type=enums.PollType.QUIZ,
+        correct_option_id=0,
+        explanation=types.FormattedText(text="why", entities=bold),
+        description=types.FormattedText(text="d", entities=bold),
+    )
+
+    query = captured["query"]
+
+    assert isinstance(query.media.poll.question.entities[0], raw.types.MessageEntityBold)
+    assert isinstance(query.media.solution_entities[0], raw.types.MessageEntityBold)
+    assert isinstance(query.entities[0], raw.types.MessageEntityBold)
+    query.write()
+
+
+def _input_photo_from_file_id(*args, **kwargs):
+    from pyrogram import raw
+
+    _input_photo_from_file_id.calls.append((args, kwargs))
+
+    return raw.types.InputMediaPhoto(id=raw.types.InputPhoto(id=1, access_hash=1, file_reference=b""))
+
+
+_input_photo_from_file_id.calls = []
+
+
+def _sending_client(captured):
+    from unittest.mock import AsyncMock
+
+    from pyrogram import raw
+
+    async def invoke(query, *args, **kw):
+        captured["query"] = query
+
+        return raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0)
+
+    client = AsyncMock()
+    client.invoke = invoke
+    client.resolve_peer = AsyncMock(return_value=raw.types.InputPeerSelf())
+    client.rnd_id = lambda: 1
+    client.parser.parse = AsyncMock(return_value={"message": "plain", "entities": None})
+
+    return client
+
+
+async def test_a_media_group_carries_explicit_caption_entities(monkeypatch):
+    """send_media_group parsed only caption + parse_mode and never looked at the
+    caption_entities every InputMedia accepts, so explicit entities were dropped.
+    """
+
+    from pyrogram import enums, raw, types, utils
+    from pyrogram.methods.messages.send_media_group import SendMediaGroup
+
+    monkeypatch.setattr(utils, "get_input_media_from_file_id", _input_photo_from_file_id)
+    captured = {}
+    client = _sending_client(captured)
+    bold = [types.MessageEntity(type=enums.MessageEntityType.BOLD, offset=0, length=2)]
+
+    await SendMediaGroup.send_media_group(
+        client, 1, [types.InputMediaPhoto("AgACAgfake", caption="hi", caption_entities=bold)]
+    )
+
+    single = captured["query"].multi_media[0]
+
+    assert single.message == "hi"
+    assert isinstance(single.entities[0], raw.types.MessageEntityBold)
+
+
+async def test_copying_a_media_group_keeps_the_source_formatting(monkeypatch):
+    """copy_media_group fed the plain caption of each source message to the
+    markdown parser instead of forwarding its caption_entities, so bold and
+    italic vanished and any literal markup character was reinterpreted.
+    """
+
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock
+
+    from pyrogram import enums, raw, types, utils
+    from pyrogram.methods.messages.copy_media_group import CopyMediaGroup
+
+    monkeypatch.setattr(utils, "get_input_media_from_file_id", _input_photo_from_file_id)
+    captured = {}
+    client = _sending_client(captured)
+    bold = [types.MessageEntity(type=enums.MessageEntityType.BOLD, offset=0, length=3)]
+    source = SimpleNamespace(
+        photo=SimpleNamespace(file_id="AgACAgfake"), audio=None, document=None, video=None,
+        caption="one_two", caption_entities=bold,
+    )
+    client.get_media_group = AsyncMock(return_value=[source])
+
+    await CopyMediaGroup.copy_media_group(client, 1, 2, 3)
+
+    single = captured["query"].multi_media[0]
+
+    assert single.message == "one_two", "the caption is forwarded verbatim, not re-parsed"
+    assert isinstance(single.entities[0], raw.types.MessageEntityBold)
+
+
+async def test_a_spoiler_survives_a_send_by_file_id(monkeypatch):
+    """The upload and URL branches of every send_* passed has_spoiler, the
+    file_id branch did not (nor ttl_seconds in animation, audio and sticker), so
+    copying a spoilered video or re-sending a cached photo lost the spoiler.
+    """
+
+    from pyrogram import types, utils
+    from pyrogram.methods.messages.send_animation import SendAnimation
+    from pyrogram.methods.messages.send_media_group import SendMediaGroup
+    from pyrogram.methods.messages.send_photo import SendPhoto
+
+    monkeypatch.setattr(utils, "get_input_media_from_file_id", _input_photo_from_file_id)
+    _input_photo_from_file_id.calls.clear()
+    client = _sending_client({})
+
+    await SendPhoto.send_photo(client, 1, "AgACAgfake", has_spoiler=True)
+    await SendAnimation.send_animation(client, 1, "CgACAgfake", has_spoiler=True, ttl_seconds=5)
+    await SendMediaGroup.send_media_group(client, 1, [types.InputMediaPhoto("AgACAgfake", has_spoiler=True)])
+
+    kwargs = [call[1] for call in _input_photo_from_file_id.calls]
+
+    assert [k.get("has_spoiler") for k in kwargs] == [True, True, True]
+    assert kwargs[1]["ttl_seconds"] == 5
+
+
