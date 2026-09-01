@@ -2942,3 +2942,57 @@ def test_every_get_messages_call_in_the_types_uses_a_real_parameter():
     assert not bad, bad
 
 
+async def test_joining_a_chat_unwraps_the_layer_229_result():
+    """channels.joinChannel and messages.importChatInvite answer with
+    messages.ChatInviteJoinResult since layer 229; the Ok variant wraps the old
+    Updates. join_chat still read .chats[0] off the wrapper and raised
+    AttributeError after every successful join.
+    """
+
+    from pyrogram import raw
+    from pyrogram.methods.chats.join_chat import JoinChat
+
+    channel = raw.types.Channel(id=7, title="t", photo=raw.types.ChatPhotoEmpty(), date=0, megagroup=True, usernames=[], restriction_reason=[])
+
+    class _Client(JoinChat):
+        INVITE_LINK_RE = pyrogram.Client.INVITE_LINK_RE
+
+        async def resolve_peer(self, peer_id):
+            return raw.types.InputPeerChannel(channel_id=7, access_hash=0)
+
+        async def invoke(self, query, *args, **kwargs):
+            return raw.types.messages.ChatInviteJoinResultOk(
+                updates=raw.types.Updates(updates=[], users=[], chats=[channel], date=0, seq=0)
+            )
+
+    chat = await _Client().join_chat("somegroup")
+
+    assert chat.id == -1000000000007
+    assert chat.title == "t"
+
+
+async def test_the_contacts_member_filter_carries_its_query():
+    """channelParticipantsContacts requires q; the filter was not in the
+    queryable list, so filter.value() was called without it and raised TypeError.
+    """
+
+    from pyrogram import enums, raw
+    from pyrogram.methods.chats.get_chat_members import get_chunk
+
+    sent = {}
+
+    class _Client:
+        async def resolve_peer(self, peer_id):
+            return raw.types.InputPeerChannel(channel_id=1, access_hash=0)
+
+        async def invoke(self, query, *args, **kwargs):
+            sent["filter"] = query.filter  # noqa
+
+            return raw.types.channels.ChannelParticipants(count=0, participants=[], chats=[], users=[])
+
+    await get_chunk(_Client(), 1, 0, enums.ChatMembersFilter.CONTACTS, 10, "")
+
+    assert isinstance(sent["filter"], raw.types.ChannelParticipantsContacts)
+    assert sent["filter"].q == ""
+
+

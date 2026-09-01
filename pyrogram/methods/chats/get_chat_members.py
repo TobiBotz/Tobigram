@@ -35,7 +35,8 @@ async def get_chunk(
 ):
     is_queryable = filter in [enums.ChatMembersFilter.SEARCH,
                               enums.ChatMembersFilter.BANNED,
-                              enums.ChatMembersFilter.RESTRICTED]
+                              enums.ChatMembersFilter.RESTRICTED,
+                              enums.ChatMembersFilter.CONTACTS]
 
     filter = filter.value(q=query) if is_queryable else filter.value()
 

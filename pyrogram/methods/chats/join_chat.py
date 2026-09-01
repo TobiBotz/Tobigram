@@ -38,7 +38,9 @@ class JoinChat:
                 channel/supergroup (in the format @username) or a chat id of a linked chat (channel or supergroup).
 
         Returns:
-            :obj:`~pyrogram.types.Chat`: On success, a chat object is returned.
+            :obj:`~pyrogram.types.Chat` | :obj:`~pyrogram.types.ChatJoinResult`: On success, a chat object is
+            returned. When a guard bot has to approve the join first, a
+            :obj:`~pyrogram.types.ChatJoinResultGuardBotApprovalRequired` is returned instead.
 
         Example:
             .. code-block:: python
@@ -55,20 +57,24 @@ class JoinChat:
         match = self.INVITE_LINK_RE.match(str(chat_id))
 
         if match:
-            chat = await self.invoke(
+            r = await self.invoke(
                 raw.functions.messages.ImportChatInvite(
                     hash=match.group(1)
                 )
             )
-            if isinstance(chat.chats[0], raw.types.Chat):
-                return types.Chat._parse_chat_chat(self, chat.chats[0])
-            elif isinstance(chat.chats[0], raw.types.Channel):
-                return types.Chat._parse_channel_chat(self, chat.chats[0])
         else:
-            chat = await self.invoke(
+            r = await self.invoke(
                 raw.functions.channels.JoinChannel(
                     channel=await self.resolve_peer(chat_id)
                 )
             )
 
-            return types.Chat._parse_channel_chat(self, chat.chats[0])
+        if isinstance(r, raw.types.messages.ChatInviteJoinResultWebView):
+            return await types.ChatJoinResult._parse(self, r)
+
+        chat = r.updates if isinstance(r, raw.types.messages.ChatInviteJoinResultOk) else r
+
+        if isinstance(chat.chats[0], raw.types.Chat):
+            return types.Chat._parse_chat_chat(self, chat.chats[0])
+
+        return types.Chat._parse_channel_chat(self, chat.chats[0])
