@@ -746,7 +746,7 @@ class User(Object, Update):
         # parsed_user.bot_forum_view
 
         if user.pinned_msg_id:
-            parsed_user.pinned_message = await client.get_messages(chat_id=parsed_user.id, pinned=True)
+            parsed_user.pinned_message = await client.get_messages(chat_id=parsed_user.id, message_ids=user.pinned_msg_id)
 
         parsed_user.folder_id = user.folder_id
         parsed_user.message_auto_delete_time = user.ttl_period

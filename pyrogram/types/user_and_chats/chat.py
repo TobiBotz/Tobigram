@@ -1135,7 +1135,7 @@ class Chat(Object):
         # parsed_chat.bot_info = user.bot_info
 
         if user.pinned_msg_id:
-            parsed_chat.pinned_message = await client.get_messages(chat_id=parsed_chat.id, pinned=True)
+            parsed_chat.pinned_message = await client.get_messages(chat_id=parsed_chat.id, message_ids=user.pinned_msg_id)
 
         parsed_chat.folder_id = user.folder_id
         parsed_chat.message_auto_delete_time = user.ttl_period
@@ -1238,7 +1238,7 @@ class Chat(Object):
         # parsed_chat.bot_info
 
         if chat.pinned_msg_id:
-            parsed_chat.pinned_message = await client.get_messages(chat_id=parsed_chat.id, pinned=True)
+            parsed_chat.pinned_message = await client.get_messages(chat_id=parsed_chat.id, message_ids=chat.pinned_msg_id)
 
         parsed_chat.folder_id = chat.folder_id
         # parsed_chat.call

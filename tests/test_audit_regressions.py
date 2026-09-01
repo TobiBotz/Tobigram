@@ -2915,3 +2915,30 @@ async def test_a_personal_chat_history_asks_the_server_once(monkeypatch):
         "so asking a second time costs a round trip and can only come back "
         f"empty; it asked {len(client.asked)} times"
     )
+
+
+def test_every_get_messages_call_in_the_types_uses_a_real_parameter():
+    """Chat._parse_full_chat, _parse_full_user and User._parse_full asked for the
+    pinned message with ``pinned=True``, which get_messages has never accepted, so
+    get_chat raised TypeError on any private chat or basic group with a pin.
+    """
+
+    import inspect
+    import re
+    from pathlib import Path
+
+    from pyrogram.methods.messages.get_messages import GetMessages
+
+    accepted = set(inspect.signature(GetMessages.get_messages).parameters)
+    root = Path(pyrogram.__file__).parent / "types"
+    bad = []
+
+    for path in root.rglob("*.py"):
+        for call in re.finditer(r"client\.get_messages\(([^)]*)\)", path.read_text(encoding="utf-8")):
+            for kw in re.findall(r"(\w+)\s*=", call.group(1)):
+                if kw not in accepted:
+                    bad.append(f"{path.relative_to(root)}: {kw}")
+
+    assert not bad, bad
+
+
