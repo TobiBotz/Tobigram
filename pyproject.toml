@@ -78,6 +78,7 @@ redis = [
 docs = [
     "sphinx>=7",
     "furo>=2023",
+    "sphinx-copybutton>=0.5",
 ]
 botapi = [
     "requests>=2.32",
