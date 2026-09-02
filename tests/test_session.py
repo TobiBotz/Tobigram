@@ -313,3 +313,20 @@ async def test_invoke_raises_bounded_start_error_after_active_finishes(monkeypat
             )
     finally:
         await task
+
+async def test_restart_tolerates_storage_without_conn(monkeypatch, session_factory):
+    class NoConnStorage:
+        @staticmethod
+        async def api_id():
+            return 1
+
+        @staticmethod
+        async def open():
+            raise AssertionError("open must not be called for a storage without conn")
+
+    monkeypatch.setattr(DummyClient, "connection_factory", _AlwaysFails)
+    monkeypatch.setattr(DummyClient, "storage", NoConnStorage)
+    monkeypatch.setattr(Session, "MAX_RETRIES", 1)
+
+    with pytest.raises(OSError):
+        await asyncio.wait_for(session_factory().restart(), timeout=5)
