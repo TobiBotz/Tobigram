@@ -102,3 +102,45 @@ async def test_set_profile_photo_without_a_file_is_refused_before_the_request():
 
     with pytest.raises(ValueError):
         await _Client().set_profile_photo()
+
+
+def _bot_channel_client(chat_photo):
+    class _Client:
+        me = SimpleNamespace(is_bot=True)
+        queries = []
+
+        async def resolve_peer(self, chat_id):
+            return raw.types.InputPeerChannel(channel_id=1, access_hash=0)
+
+        async def invoke(self, query, *args, **kwargs):
+            self.queries.append(query)
+
+            if isinstance(query, raw.functions.channels.GetFullChannel):
+                return SimpleNamespace(full_chat=SimpleNamespace(chat_photo=chat_photo))
+
+            raise AssertionError(f"{query.QUALNAME} is user-only")
+
+    return _Client()
+
+
+async def test_a_bot_reads_a_channels_photo_from_the_full_chat(monkeypatch):
+    from pyrogram.methods.users.get_chat_photos import GetChatPhotos
+    from pyrogram.methods.users.get_chat_photos_count import GetChatPhotosCount
+
+    photo = raw.types.Photo(
+        id=1, access_hash=1, file_reference=b"", date=0, sizes=[], dc_id=2
+    )
+    parsed = SimpleNamespace(file_id="id", file_unique_id="current")
+
+    monkeypatch.setattr(
+        types.Photo, "_parse", staticmethod(lambda _c, p: parsed if p is photo else None)
+    )
+
+    client = _bot_channel_client(photo)
+    got = [p async for p in GetChatPhotos.get_chat_photos(client, 1)]
+    assert got == [parsed]
+    assert await GetChatPhotosCount.get_chat_photos_count(client, 1) == 1
+
+    client = _bot_channel_client(raw.types.PhotoEmpty(id=0))
+    assert [p async for p in GetChatPhotos.get_chat_photos(client, 1)] == []
+    assert await GetChatPhotosCount.get_chat_photos_count(client, 1) == 0

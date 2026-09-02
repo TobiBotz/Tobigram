@@ -2533,6 +2533,7 @@ def _channel_photos_client(pages, chat_photo_id):
 
     class _Client:
         searches = []
+        me = SimpleNamespace(is_bot=False)
 
         async def resolve_peer(self, chat_id):
             return raw.types.InputPeerChannel(channel_id=1, access_hash=0)

@@ -62,6 +62,12 @@ class GetChatPhotos:
 
             chat_photo = types.Photo._parse(self, r.full_chat.chat_photo)
 
+            if self.me.is_bot:
+                if chat_photo:
+                    yield chat_photo
+
+                return
+
             current = 0
             total = limit or (1 << 31) - 1
             limit = min(100, total)
