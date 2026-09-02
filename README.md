@@ -1,14 +1,14 @@
 <div align="center">
 
-<img src="assets/png/wzgram-icon-256.png" alt="wzgram" width="160">
+<img src="https://raw.githubusercontent.com/rjriajul/wzgram/dev/assets/png/wzgram-icon-256.png" alt="wzgram" width="160">
 
 # wzgram
 
 [![PyPI](https://img.shields.io/pypi/v/wzgram)](https://pypi.org/project/wzgram/)
 [![Python](https://img.shields.io/pypi/pyversions/wzgram)](https://pypi.org/project/wzgram/)
 [![Downloads](https://img.shields.io/pypi/dm/wzgram)](https://pypi.org/project/wzgram/)
-[![License](https://img.shields.io/github/license/rjriajul/wzgram)](COPYING.lesser)
-[![Documentation](https://img.shields.io/badge/docs-rjriajul.github.io/blue)](https://rjriajul.github.io/wzgram)
+[![License](https://img.shields.io/github/license/rjriajul/wzgram)](https://github.com/rjriajul/wzgram/blob/dev/COPYING.lesser)
+[![Documentation](https://img.shields.io/badge/docs-wzgram.com/blue)](https://wzgram.com)
 
 **Elegant, modern and asynchronous Telegram MTProto API framework in Python for users and bots**
 
@@ -30,7 +30,7 @@ async def hello(client, message):
 app.run()
 ```
 
-**wzgram** is a modern, elegant and asynchronous [MTProto API](https://docs.pyrogram.org/topics/mtproto-vs-botapi) framework. It enables you to easily interact with the main Telegram API through a user account (custom client) or a bot identity (bot API alternative) using Python.
+**wzgram** is a modern, elegant and asynchronous [MTProto API](https://wzgram.com/topics/mtproto-vs-botapi/) framework. It enables you to easily interact with the main Telegram API through a user account (custom client) or a bot identity (bot API alternative) using Python.
 
 ### Key Features
 
@@ -103,11 +103,11 @@ uv run poe test
 
 ### Documentation
 
-Full documentation at **[https://rjriajul.github.io/wzgram](https://rjriajul.github.io/wzgram)**
+Full documentation at **[https://wzgram.com](https://wzgram.com)**
 
 ### Resources
 
 - [Source code](https://github.com/rjriajul/wzgram)
-- [Documentation](https://rjriajul.github.io/wzgram)
+- [Documentation](https://wzgram.com)
 - [Issue tracker](https://github.com/rjriajul/wzgram/issues)
-- [Contributing guide](CONTRIBUTING.md)
+- [Contributing guide](https://github.com/rjriajul/wzgram/blob/dev/CONTRIBUTING.md)
