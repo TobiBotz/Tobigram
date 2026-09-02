@@ -64,3 +64,27 @@ def test_accepted_gift_types_only_disallows_what_was_set_to_false():
         written.disallow_stargifts_from_channels,
         written.disallow_premium_gifts,
     )), "a field left as None is not a refusal"
+
+
+async def test_update_birthday_refuses_a_partial_date_and_removes_on_no_arguments():
+    from pyrogram.methods.users.update_birthday import UpdateBirthday
+
+    class _Client(UpdateBirthday):
+        sent = None
+
+        async def invoke(self, query, *args, **kwargs):
+            self.sent = query
+            return True
+
+    client = _Client()
+
+    with pytest.raises(ValueError):
+        await client.update_birthday(year=2000)
+
+    assert client.sent is None, "a partial date must not reach the server as a removal"
+
+    assert await client.update_birthday() is True
+    assert client.sent.birthday is None
+
+    await client.update_birthday(day=1, month=2)
+    assert (client.sent.birthday.day, client.sent.birthday.month) == (1, 2)

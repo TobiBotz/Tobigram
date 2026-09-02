@@ -30,20 +30,25 @@ class UpdateBirthday:
     ) -> bool:
         """Update birthday in your profile.
 
+        Calling it with no arguments removes the birthday from your profile.
+
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             day (``int``, *optional*):
-                Birthday day.
+                Birthday day. Required together with *month* when setting a birthday.
 
             month (``int``, *optional*):
-                Birthday month.
+                Birthday month. Required together with *day* when setting a birthday.
 
             year (``int``, *optional*):
                 Birthday year.
 
         Returns:
             ``bool``: True on success.
+
+        Raises:
+            ValueError: If only some of the arguments are given.
 
         Example:
             .. code-block:: python
@@ -56,8 +61,10 @@ class UpdateBirthday:
         """
         birthday = None
 
-        if all((day, month)):
+        if day is not None and month is not None:
             birthday = raw.types.Birthday(day=day, month=month, year=year)
+        elif (day, month, year) != (None, None, None):
+            raise ValueError("Both day and month are required to set a birthday; pass no arguments to remove it")
 
         return bool(
             await self.invoke(
