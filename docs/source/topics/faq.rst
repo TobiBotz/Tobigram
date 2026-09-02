@@ -173,9 +173,10 @@ See :doc:`/features/listeners`.
 How do I avoid FloodWait?
 --------------------------
 
-Every client already runs a token-bucket rate limiter that paces requests below Telegram's
-limits, and ``sleep_threshold`` decides how long a ``FloodWait`` wzgram sits out for you
-rather than raising. See :doc:`/features/rate-limiting`.
+By default wzgram sends at full speed and lets ``sleep_threshold`` decide how long a
+``FloodWait`` it sits out for you rather than raising. If you would rather not reach one at
+all, pass ``rate_limits`` to enable the built-in token-bucket limiter, which paces requests
+below Telegram's limits. See :doc:`/features/rate-limiting`.
 
 Why does my bot use so much memory with many clients?
 -------------------------------------------------------

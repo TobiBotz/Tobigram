@@ -114,7 +114,7 @@ Rate limiting and floods
     :widths: 30 20 50
 
     ``sleep_threshold``, ``10``, "seconds of ``FloodWait`` wzgram waits out for you"
-    ``rate_limits``, ``None``, "override the client-side token buckets"
+    ``rate_limits``, ``None``, "turn on the client-side token buckets (off while ``None``)"
 
 .. code-block:: python
 
@@ -124,8 +124,9 @@ Rate limiting and floods
         rate_limits={"media": {"rate": 2, "burst": 4}},
     )
 
-A ``FloodWait`` longer than ``sleep_threshold`` is raised for you to handle. See
-:doc:`/features/rate-limiting`.
+A ``FloodWait`` longer than ``sleep_threshold`` is raised for you to handle. The client-side
+limiter is off unless you pass ``rate_limits``; pass ``{}`` to enable it with the built-in
+defaults. See :doc:`/features/rate-limiting`.
 
 Transfers and caches
 --------------------

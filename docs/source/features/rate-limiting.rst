@@ -8,10 +8,12 @@ must not send in. wzgram handles those when they arrive — but a limiter that *
 get there* is cheaper than one that recovers afterwards, because a flood wait charges for
 the request that triggered it too.
 
-Every client has one. :obj:`~pyrogram.Client` builds a
-``RateLimiter`` with sane defaults whether or not you ask for it, and
+**The limiter is off by default.** A client built without ``rate_limits`` sends without any
+client-side throttling and leans on Telegram's own ``FloodWait`` (see ``sleep_threshold``) to
+set the pace, which is the fastest option and what upstream Pyrogram does. Pass ``rate_limits``
+— even an empty dict, for the defaults below — to turn the limiter on. Once it exists,
 :meth:`~pyrogram.Client.invoke` — the choke point every raw call passes through — acquires
-from it before the request goes out.
+from it before the request goes out, and ``app.rate_limiter`` is ``None`` until then.
 
 
 -----
@@ -40,7 +42,8 @@ the right bucket without anything being registered by hand.
 Tuning it
 ---------
 
-Pass ``rate_limits`` to the client. Only the categories you name are changed:
+Pass ``rate_limits`` to the client. Only the categories you name are changed; the rest keep
+the defaults in the table above:
 
 .. code-block:: python
 
@@ -52,11 +55,16 @@ Pass ``rate_limits`` to the client. Only the categories you name are changed:
         },
     )
 
+    # Or take every default as-is:
+    app = Client("my_bot", rate_limits={})
+
 Lower is slower and safer. The defaults are already below what Telegram publishes, so raising
 them is how you get flood waits.
 
 Reading the pressure
 --------------------
+
+Only when the limiter is enabled — ``app.rate_limiter`` is ``None`` otherwise:
 
 .. code-block:: python
 

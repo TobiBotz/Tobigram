@@ -28,7 +28,7 @@ What you get
     media, gifts, stories, checklists, suggested posts, rich messages, ephemeral messages.
 -   **Conversations without state machines.** :doc:`features/listeners` waits for the next
     message or button press inline, inside the handler that asked for it.
--   **Built to stay up.** Client-side :doc:`rate limiting <features/rate-limiting>`, bounded
+-   **Built to stay up.** Opt-in client-side :doc:`rate limiting <features/rate-limiting>`, bounded
     memory on every transfer path, Rust cryptography, and a hot path measured rather than
     guessed — see :doc:`features/performance`.
 -   **Portable sessions.** Checksummed :doc:`session strings <features/session-strings>` that
