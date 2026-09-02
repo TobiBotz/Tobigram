@@ -363,7 +363,10 @@ class Client(Methods):
             Rate limits for different categories of API calls. Each category can have "rate" (calls/sec) and
             "burst" (max burst). Available categories: "message", "media", "query", "admin", "bulk", "account",
             "global". Example: ``{"message": {"rate": 20, "burst": 30}}``.
-            Defaults to built-in per-category defaults (20 msg/s, 5 media/s, etc.).
+            Passing any value (even an empty dict) enables the client-side rate limiter with the given limits
+            (or the built-in per-category defaults, 20 msg/s, 5 media/s, etc.). The limiter is **disabled by
+            default**; leave this ``None`` to match upstream Pyrogram behaviour and send without client-side
+            throttling, letting Telegram's server-side FloodWait handling (see *sleep_threshold*) manage the pace.
 
         auto_no_updates (``bool``, *optional*):
             Pass True to automatically wrap read-only and non-critical API calls with InvokeWithoutUpdates,
@@ -516,7 +519,7 @@ class Client(Methods):
         self.protocol_factory = protocol_factory
 
         from pyrogram.methods.rate_limiter import RateLimiter
-        self.rate_limiter = RateLimiter(rate_limits) if rate_limits else RateLimiter()
+        self.rate_limiter = RateLimiter(rate_limits) if rate_limits is not None else None
         self.auto_no_updates = auto_no_updates
 
         self.executor = get_handler_executor()
