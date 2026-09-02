@@ -1408,13 +1408,13 @@ async def test_get_users_survives_an_answer_the_server_left_short():
 
     client = _Client()
 
-    assert await client.get_users("durov") is None, (
-        "a peer the server declined to answer for is absent, not an IndexError"
-    )
+    with pytest.raises(ValueError):
+        await client.get_users("durov")
+
     assert (await client.get_users("someone")).id == 2, "a real user still parses"
-    assert [u.id for u in await client.get_users(["durov", "someone"])] == [2], (
-        "the iterable form still returns what came back, as it always has"
-    )
+
+    with pytest.raises(ValueError):
+        await client.get_users(["durov", "someone"])
 
 
 async def test_a_monoforum_message_still_asks_for_its_direct_messages_topic():

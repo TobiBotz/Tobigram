@@ -43,6 +43,9 @@ class GetUsers:
             :obj:`~pyrogram.types.User` | List of :obj:`~pyrogram.types.User`: In case *user_ids* was not a list,
             a single user is returned, otherwise a list of users is returned.
 
+        Raises:
+            ValueError: If a user_id doesn't belong to a user.
+
         Example:
             .. code-block:: python
 
@@ -55,7 +58,16 @@ class GetUsers:
 
         is_iterable = not isinstance(user_ids, (int, str))
         user_ids = list(user_ids) if is_iterable else [user_ids]
-        user_ids = await asyncio.gather(*[self.resolve_peer(i) for i in user_ids])
+        peers = await asyncio.gather(*[self.resolve_peer(i) for i in user_ids])
+
+        for user_id, peer in zip(user_ids, peers):
+            if not isinstance(peer, (
+                raw.types.InputPeerUser, raw.types.InputPeerSelf, raw.types.InputPeerUserFromMessage,
+                raw.types.InputUser, raw.types.InputUserSelf, raw.types.InputUserFromMessage
+            )):
+                raise ValueError(f'The user_id "{user_id}" doesn\'t belong to a user')
+
+        user_ids = peers
 
         r = await self.invoke(
             raw.functions.users.GetUsers(
