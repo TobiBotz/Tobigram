@@ -32,6 +32,9 @@ class UnbanChatMember:
         The user will **not** return to the group or channel automatically, but will be able to join via link, etc.
         You must be an administrator for this to work.
 
+        Basic groups keep no ban list: a member removed from one can be added back or rejoin via link at any
+        time, so unbanning there is a no-op that returns True.
+
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
@@ -51,9 +54,14 @@ class UnbanChatMember:
                 # Unban chat member right now
                 await app.unban_chat_member(chat_id, user_id)
         """
+        chat_peer = await self.resolve_peer(chat_id)
+
+        if isinstance(chat_peer, raw.types.InputPeerChat):
+            return True
+
         await self.invoke(
             raw.functions.channels.EditBanned(
-                channel=await self.resolve_peer(chat_id),
+                channel=chat_peer,
                 participant=await self.resolve_peer(user_id),
                 banned_rights=raw.types.ChatBannedRights(
                     until_date=0

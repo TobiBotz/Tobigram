@@ -201,3 +201,25 @@ async def test_the_pinned_archive_folder_is_not_a_dialog():
             )
 
     assert await _Client().get_dialogs_count(pinned_only=True) == 2
+
+
+async def test_unbanning_in_a_basic_group_does_not_ask_a_channel_rpc():
+    """unban_chat_member always sent channels.EditBanned, which the server
+    rejects with CHANNEL_INVALID for a basic group. Basic groups keep no ban
+    list, so there is nothing to undo and the call succeeds without a request.
+    """
+
+    from pyrogram.methods.chats.unban_chat_member import UnbanChatMember
+
+    sent = []
+
+    class _Client(UnbanChatMember):
+        async def resolve_peer(self, peer_id):
+            return raw.types.InputPeerChat(chat_id=5) if peer_id == -5 else raw.types.InputPeerUser(user_id=1, access_hash=0)
+
+        async def invoke(self, query, *args, **kwargs):
+            sent.append(query)
+            return raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0)
+
+    assert await _Client().unban_chat_member(-5, 1) is True
+    assert sent == []
