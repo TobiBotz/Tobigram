@@ -52,3 +52,15 @@ async def test_get_users_refuses_a_peer_that_is_not_a_user():
         await client.get_users(["someone", "channel"])
 
     assert (await client.get_users("someone")).id == 2
+
+
+def test_accepted_gift_types_only_disallows_what_was_set_to_false():
+    written = types.AcceptedGiftTypes(limited_gifts=False).write()
+
+    assert written.disallow_limited_stargifts is True
+    assert not any((
+        written.disallow_unlimited_stargifts,
+        written.disallow_unique_stargifts,
+        written.disallow_stargifts_from_channels,
+        written.disallow_premium_gifts,
+    )), "a field left as None is not a refusal"

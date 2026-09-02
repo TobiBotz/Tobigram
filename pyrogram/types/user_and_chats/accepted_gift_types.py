@@ -77,10 +77,10 @@ class AcceptedGiftTypes(Object):
 
     def write(self) -> "raw.types.DisallowedGiftsSettings":
         return raw.types.DisallowedGiftsSettings(
-            disallow_unlimited_stargifts=not self.unlimited_gifts,
-            disallow_limited_stargifts=not self.limited_gifts,
-            disallow_unique_stargifts=not self.upgraded_gifts,
-            disallow_stargifts_from_channels=not self.gifts_from_channels,
-            disallow_premium_gifts=not self.premium_subscription,
+            disallow_unlimited_stargifts=self.unlimited_gifts is False,
+            disallow_limited_stargifts=self.limited_gifts is False,
+            disallow_unique_stargifts=self.upgraded_gifts is False,
+            disallow_stargifts_from_channels=self.gifts_from_channels is False,
+            disallow_premium_gifts=self.premium_subscription is False,
         )
 
