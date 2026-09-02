@@ -1303,7 +1303,7 @@ class Chat(Object):
             parsed_chat.invite_link = channel.exported_invite.link
 
         parsed_chat.migrated_from_chat_id = channel.migrated_from_chat_id
-        parsed_chat.migrated_from_max_id = channel.migrated_from_max_id
+        parsed_chat.migrated_from_max_message_id = channel.migrated_from_max_id
 
         if channel.pinned_msg_id:
             parsed_chat.pinned_message = await client.get_messages(chat_id=parsed_chat.id, message_ids=channel.pinned_msg_id)

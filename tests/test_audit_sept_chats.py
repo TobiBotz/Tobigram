@@ -66,3 +66,37 @@ async def test_translating_without_a_target_language_is_a_clear_error():
 def test_join_by_request_is_parsed_for_a_channel():
     assert types.Chat._parse_channel_chat(None, _channel(join_request=True)).join_by_request is True
     assert types.Chat._parse_channel_chat(None, _channel()).join_by_request is None
+
+
+async def test_migrated_from_max_message_id_is_populated():
+    from pyrogram.types.user_and_chats.chat import Chat
+
+    class _Client:
+        me = None
+
+        async def get_messages(self, *args, **kwargs):
+            return None
+
+        async def invoke(self, query, *args, **kwargs):
+            return raw.types.messages.ChatFull(
+                full_chat=raw.types.ChannelFull(
+                    id=7,
+                    about="",
+                    read_inbox_max_id=0,
+                    read_outbox_max_id=0,
+                    unread_count=0,
+                    chat_photo=raw.types.PhotoEmpty(id=0),
+                    notify_settings=raw.types.PeerNotifySettings(),
+                    bot_info=[],
+                    pts=0,
+                    migrated_from_chat_id=5,
+                    migrated_from_max_id=42,
+                ),
+                chats=[_channel(megagroup=True)],
+                users=[],
+            )
+
+    chat = await Chat._parse_full(_Client(), await _Client().invoke(None))
+
+    assert chat.migrated_from_max_message_id == 42
+    assert not hasattr(chat, "migrated_from_max_id")
