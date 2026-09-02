@@ -36,3 +36,17 @@ async def test_an_expired_custom_emoji_id_is_skipped_not_crashed():
             return [raw.types.DocumentEmpty(id=1)]
 
     assert await _Client().get_custom_emoji_stickers([1]) == []
+
+
+async def test_pinning_in_a_private_chat_is_documented_to_return_none():
+    from pyrogram.methods.chats.pin_chat_message import PinChatMessage
+
+    class _Client(PinChatMessage):
+        async def resolve_peer(self, peer_id):
+            return raw.types.InputPeerSelf()
+
+        async def invoke(self, query, *args, **kwargs):
+            return raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0)
+
+    assert await _Client().pin_chat_message("me", 1) is None
+    assert "None" in PinChatMessage.pin_chat_message.__doc__

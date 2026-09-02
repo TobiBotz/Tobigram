@@ -30,7 +30,7 @@ class PinChatMessage:
         disable_notification: bool = False,
         both_sides: bool = False,
         business_connection_id: Optional[str] = None,
-    ) -> "types.Message":
+    ) -> Optional["types.Message"]:
         """Pin a message in a group, channel or your own chat.
         You must be an administrator in the chat for this to work and must have the "can_pin_messages" admin right in
         the supergroup or "can_edit_messages" admin right in the channel.
@@ -57,7 +57,8 @@ class PinChatMessage:
                 action is taken.
 
         Returns:
-            :obj:`~pyrogram.types.Message`: On success, the service message is returned.
+            :obj:`~pyrogram.types.Message` | ``None``: In groups and channels the service message is returned.
+            In private chats no service message is sent and None is returned.
 
         Example:
             .. code-block:: python
