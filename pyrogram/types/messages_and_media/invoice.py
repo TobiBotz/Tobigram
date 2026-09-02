@@ -85,6 +85,9 @@ class Invoice(Object):
         terms_url (``str``, *optional*):
             Terms of service URL.
 
+        photo_url (``str``, *optional*):
+            URL of the product photo.
+
         raw (:obj:`~raw.base.payments.MessageMediaInvoice` | :obj:`~raw.base.Invoice`, *optional*):
             The raw object, as received from the Telegram API.
     """
@@ -111,6 +114,7 @@ class Invoice(Object):
         max_tip_amount: Optional[int] = None,
         suggested_tip_amounts: Optional[List[int]] = None,
         terms_url: Optional[str] = None,
+        photo_url: Optional[str] = None,
         raw: Optional[Union["raw.types.MessageMediaInvoice", "raw.types.Invoice"]] = None
     ):
         super().__init__(client)
@@ -133,6 +137,7 @@ class Invoice(Object):
         self.max_tip_amount = max_tip_amount
         self.suggested_tip_amounts = suggested_tip_amounts
         self.terms_url = terms_url
+        self.photo_url = photo_url
         self.raw = raw
 
     @staticmethod
@@ -156,8 +161,8 @@ class Invoice(Object):
             max_tip_amount=getattr(invoice, "max_tip_amount", None),
             suggested_tip_amounts=getattr(invoice, "suggested_tip_amounts", None) or None,
             terms_url=getattr(invoice, "terms_url", None),
+            photo_url=getattr(getattr(invoice, "photo", None), "url", None),
             raw=invoice,
             client=client
-            # TODO: Add photo (raw.types.WebDocument) and extended_media fields
         )
 

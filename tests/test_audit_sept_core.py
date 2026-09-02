@@ -117,3 +117,14 @@ def test_identify_still_drops_an_outgoing_message_elsewhere():
 
 def test_restart_docstring_no_longer_promises_a_connection_error():
     assert "ConnectionError" not in pyrogram.Client.restart.__doc__
+
+
+def test_invoice_photo_url():
+    from pyrogram import raw, types
+
+    photo = raw.types.WebDocument(url="https://example.com/p.jpg", access_hash=1, size=1, mime_type="image/jpeg", attributes=[])
+    media = raw.types.MessageMediaInvoice(
+        title="t", description="d", currency="USD", total_amount=100, start_param="", photo=photo
+    )
+    assert types.Invoice._parse(None, media).photo_url == "https://example.com/p.jpg"
+    assert types.Invoice._parse(None, raw.types.Invoice(currency="XTR", prices=[])).photo_url is None
