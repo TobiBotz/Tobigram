@@ -480,6 +480,7 @@ class SendMediaGroup:
                                     mime_type=self.guess_mime_type(i.media) or "application/zip",
                                     file=await self.save_file(i.media, progress=progress, progress_args=progress_args),
                                     thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
+                                    force_file=True if i.disable_content_type_detection is None else i.disable_content_type_detection,
                                     attributes=[
                                         raw.types.DocumentAttributeFilename(file_name=utils.get_file_name(i.media, file_name=i.file_name, fallback="file.zip"))
                                     ]
@@ -523,6 +524,7 @@ class SendMediaGroup:
                                 ) or "application/zip",
                                 file=await self.save_file(i.media, progress=progress, progress_args=progress_args),
                                 thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
+                                force_file=True if i.disable_content_type_detection is None else i.disable_content_type_detection,
                                 attributes=[
                                     raw.types.DocumentAttributeFilename(file_name=utils.get_file_name(i.media, file_name=i.file_name, fallback="file.zip"))
                                 ]

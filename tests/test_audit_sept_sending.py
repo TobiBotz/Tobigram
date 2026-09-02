@@ -94,3 +94,15 @@ async def test_a_grouped_audio_or_document_keeps_its_file_name():
     assert names == ["song.ogg", "notes.txt"]
 
 
+async def test_a_grouped_document_is_forced_to_stay_a_file():
+    client = _Client()
+
+    await client.send_media_group("me", [
+        types.InputMediaDocument(io.BytesIO(b"d")),
+        types.InputMediaDocument(io.BytesIO(b"d"), disable_content_type_detection=False),
+    ])
+
+    uploads = [q.media for q in client.sent if isinstance(q, raw.functions.messages.UploadMedia)]
+    assert [m.force_file for m in uploads] == [True, False]
+
+
