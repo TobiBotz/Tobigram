@@ -150,3 +150,13 @@ def test_get_welcome_messages_is_documented_for_users():
     from pyrogram.methods.ephemeral.get_welcome_messages import GetWelcomeMessages
 
     assert "usable-by/users.rst" in GetWelcomeMessages.get_welcome_messages.__doc__
+
+
+async def test_get_bot_info_asks_for_the_default_localisation():
+    from pyrogram.methods.bots.get_bot_info import GetBotInfo
+
+    class _Client(GetBotInfo):
+        async def invoke(self, query, *args, **kwargs):
+            return query
+
+    assert (await _Client().get_bot_info()).lang_code == ""

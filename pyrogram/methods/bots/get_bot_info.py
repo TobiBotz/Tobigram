@@ -31,7 +31,7 @@ class GetBotInfo:
     async def get_bot_info(
         self: "pyrogram.Client",
         bot: Optional[Union[int, str]] = None,
-        lang_code: str = "en",
+        lang_code: str = "",
     ) -> "raw.types.bots.BotInfo":
         """Get bot info (name, about, description).
 
