@@ -20,6 +20,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
     "sphinx.ext.napoleon",
+    "sphinx_copybutton",
 ]
 
 autodoc_mock_imports = [
@@ -47,6 +48,8 @@ html_static_path = ["_static"]
 html_css_files = [
     "css/custom.css",
 ]
+copybutton_prompt_text = r">>> |\.\.\. |\$ "
+copybutton_prompt_is_regexp = True
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
