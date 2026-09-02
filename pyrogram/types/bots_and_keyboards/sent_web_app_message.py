@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Optional
+
 from pyrogram import raw, utils
 from ..object import Object
 
@@ -24,14 +26,14 @@ class SentWebAppMessage(Object):
     """Contains information about an inline message sent by a `Web App <https://core.telegram.org/bots/webapps>`_ on behalf of a user.
 
     Parameters:
-        inline_message_id (``str``):
+        inline_message_id (``str``, *optional*):
             Identifier of the sent inline message.
             Available only if there is an inline keyboard attached to the message.
     """
 
     def __init__(
         self, *,
-        inline_message_id: str,
+        inline_message_id: Optional[str] = None,
     ):
         super().__init__()
 
@@ -39,4 +41,4 @@ class SentWebAppMessage(Object):
 
     @staticmethod
     def _parse(obj: "raw.types.WebViewMessageSent"):
-        return SentWebAppMessage(inline_message_id=utils.pack_inline_message_id(obj.msg_id))
+        return SentWebAppMessage(inline_message_id=utils.pack_inline_message_id(obj.msg_id) if obj.msg_id else None)

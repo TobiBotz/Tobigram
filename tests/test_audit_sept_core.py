@@ -58,3 +58,9 @@ async def test_get_chat_menu_button_falls_back_to_default_when_unset():
     result = await _MenuClient(raw.types.BotInfo()).get_chat_menu_button()
 
     assert isinstance(result, types.MenuButtonDefault)
+
+
+def test_sent_web_app_message_without_inline_keyboard_has_no_id():
+    parsed = types.SentWebAppMessage._parse(raw.types.WebViewMessageSent())
+
+    assert parsed.inline_message_id is None
