@@ -1,5 +1,5 @@
-Storage Engines
-===============
+Storage
+=======
 
 A storage engine holds everything a client needs to resume a session: the datacenter and
 auth key, the peer cache, the usernames, and the update state. :obj:`~pyrogram.Client` takes
