@@ -187,3 +187,13 @@ async def test_copying_media_uses_the_callers_effect():
     assert client.send_cached_media.call_args.kwargs["effect_id"] == 2
 
 
+async def test_deleting_scheduled_messages_reports_the_servers_answer():
+    deleted = raw.types.Updates(
+        updates=[raw.types.UpdateDeleteScheduledMessages(
+            peer=raw.types.PeerUser(user_id=1), messages=[1]
+        )],
+        users=[], chats=[], date=0, seq=0
+    )
+
+    assert await _Client(deleted).delete_scheduled_messages("me", [1]) is True
+    assert await _Client().delete_scheduled_messages("me", [1]) is False

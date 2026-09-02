@@ -33,7 +33,7 @@ class DeleteScheduledMessages:
         self: "pyrogram.Client",
         chat_id: Union[int, str],
         id: Optional[List[int]] = None,
-    ) -> "types.Message":
+    ) -> bool:
         """Delete scheduled messages.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -48,7 +48,7 @@ class DeleteScheduledMessages:
 
 
         Returns:
-            :obj:`~pyrogram.types.Message`
+            ``bool``: True on success.
 
         Example:
             .. code-block:: python
@@ -64,13 +64,4 @@ class DeleteScheduledMessages:
             )
         )
 
-        for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
-                return await types.Message._parse(
-                    self, i.message,
-                    {i.id: i for i in r.users},
-                    {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
-                )
+        return any(isinstance(i, raw.types.UpdateDeleteScheduledMessages) for i in r.updates)
