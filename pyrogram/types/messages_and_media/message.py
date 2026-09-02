@@ -2365,7 +2365,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -2746,7 +2748,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -3054,7 +3058,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -3347,7 +3353,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -3638,7 +3646,7 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id
             )
 
         if quote is not None:
@@ -4263,7 +4271,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -4487,7 +4497,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -4709,7 +4721,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -5032,7 +5046,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -6003,7 +6019,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -6285,7 +6303,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -6642,7 +6662,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -7059,7 +7081,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -7400,7 +7424,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -7881,7 +7907,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
@@ -8122,7 +8150,9 @@ class Message(Object, Update):
         """
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
-                message_id=self.id
+                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
+                quote=quote_text,
+                quote_entities=quote_entities
             )
 
         if quote is not None:
