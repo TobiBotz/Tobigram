@@ -51,7 +51,6 @@ SHORTCUT_CALLS = {
     ("messages_and_media.message", "reply_dice"): "send_dice",
     ("messages_and_media.message", "answer_dice"): "send_dice",
     ("messages_and_media.message", "reply_text"): "send_message",
-    ("messages_and_media.message", "answer_text"): "send_message",
     ("messages_and_media.message", "reply_contact"): "send_contact",
     ("messages_and_media.message", "answer_contact"): "send_contact",
     ("messages_and_media.message", "reply_location"): "send_location",
@@ -81,26 +80,14 @@ SKIP_PARAMS = {
 
 def _get_client_send_params(target_method_name: str) -> set:
     """Return the set of parameter names for a client send_* method."""
-    import importlib
-    
-    # Load from the messages module dynamically
-    try:
-        mod = importlib.import_module("pyrogram.methods.messages")
-    except ImportError:
+    import pyrogram
+
+    method = getattr(pyrogram.Client, target_method_name, None)
+
+    if method is None:
         return set()
-    
-    # Get the actual classes that contain the methods
-    # send_video is in SendVideo class, etc.
-    # But we need the bound method from the Client-like class
-    # The methods module uses classes as mixins
-    for name in dir(mod):
-        obj = getattr(mod, name)
-        if isinstance(obj, type) and hasattr(obj, target_method_name):
-            method = getattr(obj, target_method_name)
-            sig = inspect.signature(method)
-            return {n for n in sig.parameters if n != "self"}
-    
-    return set()
+
+    return {n for n in inspect.signature(method).parameters if n != "self"}
 
 
 def _get_shortcut_passed_params(source_code: str, target_name: str) -> set:
@@ -184,14 +171,14 @@ def test_shortcut_params_in_send(module_name, shortcut_name, target_send):
     # Get shortcut passed params
     source = _get_shortcut_source(module_name, shortcut_name)
     if not source:
-        pytest.skip(f"Could not find source for {module_name}.{shortcut_name}")
+        pytest.fail(f"Could not find source for {module_name}.{shortcut_name}")
     
     passed = _get_shortcut_passed_params(source, target_send) - SKIP_PARAMS
     
     # Get target method signature params
     target_params = _get_client_send_params(target_send)
     if not target_params:
-        pytest.skip(f"Could not resolve signature for {target_send}")
+        pytest.fail(f"Client has no method named {target_send}")
     
     # Check every passed param exists in the target
     missing = passed - target_params
