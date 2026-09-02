@@ -521,7 +521,7 @@ get_bot_info:
       doc: Bot username or ID
     - name: lang_code
       type: str
-      default: "en"
+      default: ""
       doc: Language code for localized info
 
 get_admined_bots:
