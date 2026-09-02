@@ -26,13 +26,13 @@ It uses the :meth:`~pyrogram.Client.on_inline_query` decorator to register an :o
                     input_message_content=InputTextMessageContent(
                         "Here's how to install **wzgram**"
                     ),
-                    url="https://rjriajul.github.io/wzgram/intro/install",
+                    url="https://wzgram.com/intro/install",
                     description="How to install wzgram",
                     reply_markup=InlineKeyboardMarkup(
                         [
                             [InlineKeyboardButton(
                                 "Open website",
-                                url="https://rjriajul.github.io/wzgram/intro/install"
+                                url="https://wzgram.com/intro/install"
                             )]
                         ]
                     )
@@ -42,13 +42,13 @@ It uses the :meth:`~pyrogram.Client.on_inline_query` decorator to register an :o
                     input_message_content=InputTextMessageContent(
                         "Here's how to use **wzgram**"
                     ),
-                    url="https://rjriajul.github.io/wzgram/start/invoking",
+                    url="https://wzgram.com/start/invoking",
                     description="How to use wzgram",
                     reply_markup=InlineKeyboardMarkup(
                         [
                             [InlineKeyboardButton(
                                 "Open website",
-                                url="https://rjriajul.github.io/wzgram/start/invoking"
+                                url="https://wzgram.com/start/invoking"
                             )]
                         ]
                     )
