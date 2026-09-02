@@ -216,7 +216,7 @@ class SendVenue:
                     ),
                     title=title,
                     address=address,
-                    provider="",
+                    provider="foursquare" if foursquare_id or foursquare_type else "",
                     venue_id=foursquare_id,
                     venue_type=foursquare_type
                 ),

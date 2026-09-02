@@ -126,3 +126,12 @@ async def test_a_link_preview_url_is_sent_and_edited_as_a_web_page():
     assert isinstance(client.sent[0], raw.functions.messages.SendMessage)
 
 
+async def test_a_venue_with_a_foursquare_id_names_its_provider():
+    client = _Client()
+
+    await client.send_venue("me", 0.0, 0.0, "t", "a", foursquare_id="4a")
+    await client.send_venue("me", 0.0, 0.0, "t", "a")
+
+    assert [q.media.provider for q in client.sent] == ["foursquare", ""]
+
+
