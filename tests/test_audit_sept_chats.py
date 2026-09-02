@@ -100,3 +100,26 @@ async def test_migrated_from_max_message_id_is_populated():
 
     assert chat.migrated_from_max_message_id == 42
     assert not hasattr(chat, "migrated_from_max_id")
+
+
+async def test_banning_from_a_basic_group_by_username_uses_the_resolved_id():
+    from pyrogram.methods.chats.ban_chat_member import BanChatMember
+
+    class _Client(BanChatMember):
+        sent = None
+
+        async def resolve_peer(self, peer_id):
+            if peer_id == "@group":
+                return raw.types.InputPeerChat(chat_id=5)
+
+            return raw.types.InputPeerUser(user_id=9, access_hash=0)
+
+        async def invoke(self, query, *args, **kwargs):
+            self.sent = query
+
+            return raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0)
+
+    client = _Client()
+
+    assert await client.ban_chat_member("@group", 9) is True
+    assert client.sent.chat_id == 5

@@ -99,7 +99,7 @@ class BanChatMember:
         else:
             r = await self.invoke(
                 raw.functions.messages.DeleteChatUser(
-                    chat_id=abs(chat_id),
+                    chat_id=chat_peer.chat_id,
                     user_id=user_peer,
                     revoke_history=revoke_messages
                 )
