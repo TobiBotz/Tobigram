@@ -125,7 +125,7 @@ class GetChatMembers:
             members = getattr(r.full_chat.participants, "participants", [])
             users = {i.id: i for i in r.users}
 
-            for member in members:
+            for member in (members[:limit] if limit > 0 else members):
                 yield types.ChatMember._parse(self, member, users, {})
 
             return

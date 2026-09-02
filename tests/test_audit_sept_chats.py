@@ -140,3 +140,25 @@ async def test_a_non_user_peer_in_a_basic_group_is_not_a_participant():
 
     with pytest.raises(UserNotParticipant):
         await _Client().get_chat_member("@group", "@somechannel")
+
+
+async def test_basic_group_members_honour_the_limit():
+    from pyrogram.methods.chats.get_chat_members import GetChatMembers
+
+    participants = [raw.types.ChatParticipant(user_id=i, inviter_id=1, date=0) for i in (1, 2, 3)]
+
+    class _Client(GetChatMembers):
+        me = None
+
+        async def resolve_peer(self, peer_id):
+            return raw.types.InputPeerChat(chat_id=5)
+
+        async def invoke(self, query, *args, **kwargs):
+            return _chat_full(participants, [_user(i) for i in (1, 2, 3)])
+
+    async def ids(**kwargs):
+        return [m.user.id async for m in _Client().get_chat_members(5, **kwargs)]
+
+    assert await ids(limit=2) == [1, 2]
+    assert await ids() == [1, 2, 3]
+    assert await ids(limit=0) == [1, 2, 3]
