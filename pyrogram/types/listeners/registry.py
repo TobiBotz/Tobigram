@@ -103,7 +103,7 @@ def _identify(
             user_id
         )
 
-    if getattr(update, "outgoing", False) or getattr(update, "scheduled", False):
+    if getattr(update, "scheduled", False):
         return None
 
     chat = getattr(update, "chat", None)
@@ -111,6 +111,9 @@ def _identify(
 
     chat_id = getattr(chat, "id", None)
     user_id = getattr(from_user, "id", None)
+
+    if getattr(update, "outgoing", False) and (chat_id is None or chat_id != user_id):
+        return None
 
     if user_id is None:
         user_id = getattr(getattr(update, "sender_chat", None), "id", None)

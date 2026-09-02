@@ -88,3 +88,28 @@ async def test_story_privacy_survives_a_disallow_rule_after_the_public_rule():
 
     assert parsed.privacy is enums.StoriesPrivacyRules.PUBLIC
     assert [u.id for u in parsed.disallowed_users] == [7]
+
+
+def _message(chat_id, user_id, outgoing):
+    return SimpleNamespace(
+        chat=SimpleNamespace(id=chat_id),
+        from_user=SimpleNamespace(id=user_id),
+        id=100,
+        outgoing=outgoing,
+        scheduled=False,
+    )
+
+
+def test_identify_keeps_an_outgoing_message_in_saved_messages():
+    identified = registry_module._identify(
+        enums.ListenerTypes.MESSAGE, _message(chat_id=10, user_id=10, outgoing=True)
+    )
+
+    assert identified is not None
+    assert identified[1] == 10 and identified[2] == 10
+
+
+def test_identify_still_drops_an_outgoing_message_elsewhere():
+    assert registry_module._identify(
+        enums.ListenerTypes.MESSAGE, _message(chat_id=1, user_id=10, outgoing=True)
+    ) is None
