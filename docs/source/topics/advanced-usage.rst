@@ -125,4 +125,4 @@ high-level method.
     add fields. Code that builds raw objects by hand is what breaks on an upgrade — the
     high-level methods are updated for you.
 
-.. _Community: https://t.me/wzgram
+.. _Community: https://t.me/WzGram_Chat
