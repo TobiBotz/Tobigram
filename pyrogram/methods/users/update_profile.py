@@ -56,7 +56,7 @@ class UpdateProfile:
                 await app.update_profile(first_name="Pyrogram")
 
                 # Update first name and bio
-                await app.update_profile(first_name="wzgram", bio="https://rjriajul.github.io/wzgram/")
+                await app.update_profile(first_name="wzgram", bio="https://wzgram.com/")
 
                 # Remove the last name
                 await app.update_profile(last_name="")
