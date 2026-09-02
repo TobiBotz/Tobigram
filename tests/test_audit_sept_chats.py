@@ -123,3 +123,20 @@ async def test_banning_from_a_basic_group_by_username_uses_the_resolved_id():
 
     assert await client.ban_chat_member("@group", 9) is True
     assert client.sent.chat_id == 5
+
+
+async def test_a_non_user_peer_in_a_basic_group_is_not_a_participant():
+    from pyrogram.methods.chats.get_chat_member import GetChatMember
+
+    class _Client(GetChatMember):
+        async def resolve_peer(self, peer_id):
+            if peer_id == "@group":
+                return raw.types.InputPeerChat(chat_id=5)
+
+            return raw.types.InputPeerChannel(channel_id=7, access_hash=0)
+
+        async def invoke(self, query, *args, **kwargs):
+            raise AssertionError("must not reach the server")
+
+    with pytest.raises(UserNotParticipant):
+        await _Client().get_chat_member("@group", "@somechannel")

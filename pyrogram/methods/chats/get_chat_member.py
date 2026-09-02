@@ -56,6 +56,9 @@ class GetChatMember:
         user = await self.resolve_peer(user_id)
 
         if isinstance(chat, raw.types.InputPeerChat):
+            if not isinstance(user, (raw.types.InputPeerUser, raw.types.InputPeerSelf)):
+                raise UserNotParticipant
+
             r = await self.invoke(
                 raw.functions.messages.GetFullChat(
                     chat_id=chat.chat_id
