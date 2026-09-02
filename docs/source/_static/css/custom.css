@@ -176,12 +176,29 @@ body::-webkit-scrollbar {
 }
 
 .sidebar-brand {
-    padding: 0.5rem 1.5rem 1rem;
-    margin-bottom: 0.5rem;
-    border-bottom: 1px solid var(--color-border);
+    padding: 0.5rem 1.5rem 0.5rem;
     display: flex;
     align-items: center;
     gap: 0.6rem;
+}
+
+.sidebar-links {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 0 1.5rem 0.9rem;
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.sidebar-links a {
+    color: var(--color-sidebar-link-text);
+    display: inline-flex;
+    transition: color 0.2s ease;
+}
+
+.sidebar-links a:hover {
+    color: var(--color-brand-primary);
 }
 
 .sidebar-logo-container {
