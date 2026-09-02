@@ -320,6 +320,56 @@ class TestSQLiteStoragePersistence:
             await storage.close()
 
 
+class TestSQLiteStorageClosedGuards:
+    """A stopping client can leave update tasks in flight past ``close()``.
+
+    ``Session.stop()`` cancels the receive and packet tasks but never awaits
+    the ``_run_update`` tasks, so they can reach storage after
+    ``Client.disconnect()`` has already set ``conn`` to ``None``.
+    """
+
+    @staticmethod
+    async def _closed_storage(tmp_path):
+        storage = SQLiteStorage("closed", workdir=tmp_path)
+        await storage.open()
+        await storage.update_peers([(123, 456, "user", "+1234567890")])
+        await storage.close()
+        return storage
+
+    @pytest.mark.asyncio
+    async def test_writes_after_close_are_a_no_op(self, tmp_path):
+        storage = await self._closed_storage(tmp_path)
+
+        await storage.update_state((1, 100, 0, 1000, 5))
+        await storage.update_peers([(321, 654, "user", "+9876543210")])
+        await storage.update_usernames([(321, ["bob"])])
+
+    @pytest.mark.asyncio
+    async def test_state_read_after_close_returns_no_states(self, tmp_path):
+        storage = await self._closed_storage(tmp_path)
+
+        assert await storage.update_state() == []
+
+    @pytest.mark.asyncio
+    async def test_uncached_peer_reads_after_close_raise(self, tmp_path):
+        storage = await self._closed_storage(tmp_path)
+
+        with pytest.raises(ConnectionError):
+            await storage.get_peer_by_id(999)
+
+        with pytest.raises(ConnectionError):
+            await storage.get_peer_by_username("bob")
+
+        with pytest.raises(ConnectionError):
+            await storage.get_peer_by_phone_number("+1234567890")
+
+    @pytest.mark.asyncio
+    async def test_cached_peer_still_resolves_after_close(self, tmp_path):
+        storage = await self._closed_storage(tmp_path)
+
+        assert (await storage.get_peer_by_id(123)).user_id == 123
+
+
 AUTH_KEY = b"K" * 256
 USER_ID = 8305084482
 NEWLINE = chr(10)
