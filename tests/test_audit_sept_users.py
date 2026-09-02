@@ -160,3 +160,9 @@ async def test_get_bot_info_asks_for_the_default_localisation():
             return query
 
     assert (await _Client().get_bot_info()).lang_code == ""
+
+
+def test_set_bot_name_is_annotated_as_bool():
+    from pyrogram.methods.bots.set_bot_name import SetBotName
+
+    assert inspect.signature(SetBotName.set_bot_name).return_annotation is bool
