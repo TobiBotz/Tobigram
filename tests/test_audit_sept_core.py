@@ -64,3 +64,27 @@ def test_sent_web_app_message_without_inline_keyboard_has_no_id():
     parsed = types.SentWebAppMessage._parse(raw.types.WebViewMessageSent())
 
     assert parsed.inline_message_id is None
+
+
+async def test_story_privacy_survives_a_disallow_rule_after_the_public_rule():
+    client = SimpleNamespace(me=None, fetch_stories=False)
+    users = {7: raw.types.User(
+        id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1
+    )}
+    story = raw.types.StoryItem(
+        id=1,
+        date=0,
+        expire_date=0,
+        media=raw.types.MessageMediaUnsupported(),
+        entities=[],
+        media_areas=[],
+        privacy=[
+            raw.types.PrivacyValueAllowAll(),
+            raw.types.PrivacyValueDisallowUsers(users=[7]),
+        ],
+    )
+
+    parsed = await types.Story._parse(client, story, raw.types.PeerUser(user_id=7), users, {})
+
+    assert parsed.privacy is enums.StoriesPrivacyRules.PUBLIC
+    assert [u.id for u in parsed.disallowed_users] == [7]

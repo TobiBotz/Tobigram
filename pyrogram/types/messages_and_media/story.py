@@ -386,7 +386,8 @@ class Story(Object, Update):
         }
 
         for priv in story.privacy:
-            privacy = privacy_map.get(type(priv), None)
+            if type(priv) in privacy_map:
+                privacy = privacy_map[type(priv)]
 
             if isinstance(priv, raw.types.PrivacyValueAllowUsers):
                 allowed_users = types.List(types.User._parse(client, users.get(user_id, None)) for user_id in priv.users)
