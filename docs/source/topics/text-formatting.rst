@@ -49,7 +49,7 @@ list of the basic styles currently supported by wzgram.
       fixed-width
         code block
 - spoiler
-- `text URL <https://rjriajul.github.io/wzgram/>`_
+- `text URL <https://wzgram.com/>`_
 - `user text mention <tg://user?id=123456789>`_
 
 
@@ -75,7 +75,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.HTML` to the *pa
 
     <blockquote expandable>expandable block quotation</blockquote>
 
-    <a href="https://rjriajul.github.io/wzgram/">text URL</a>
+    <a href="https://wzgram.com/">text URL</a>
 
     <a href="tg://user?id=123456789">inline mention</a>
 
@@ -108,7 +108,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.HTML` to the *pa
 
             "<b>bold <i>italic bold <s>italic bold strike <tg-spoiler>italic bold strike spoiler</tg-spoiler></s> <u>underline italic bold</u></i> bold</b>\n\n"
 
-            "<a href=\"https://rjriajul.github.io/wzgram/\">inline URL</a> "
+            "<a href=\"https://wzgram.com/\">inline URL</a> "
             "<a href=\"tg://user?id=23122162\">inline mention of a user</a>\n"
             "<tg-emoji emoji-id=5469770542288478598>👍</tg-emoji> "
             "<code>inline fixed-width code</code> "
@@ -184,7 +184,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.MARKDOWN` to the
 
     ||spoiler||
 
-    [text URL](https://rjriajul.github.io/wzgram/)
+    [text URL](https://wzgram.com/)
 
     [text user mention](tg://user?id=123456789)
 
@@ -203,7 +203,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.MARKDOWN` to the
             "--underline--, "
             "~~strike~~, "
             "||spoiler||, "
-            "[URL](https://rjriajul.github.io/wzgram/), "
+            "[URL](https://wzgram.com/), "
             "`code`, "
             "```py"
             "for i in range(10):\n"
