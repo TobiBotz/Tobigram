@@ -140,6 +140,16 @@ body::-webkit-scrollbar {
     border-right: 1px solid var(--color-border);
 }
 
+@media (max-width: 63em) {
+    .sidebar-drawer {
+        z-index: 65;
+    }
+
+    .sidebar-overlay {
+        z-index: 61;
+    }
+}
+
 @media (min-width: 63em) {
     .sidebar-drawer {
         width: auto;
