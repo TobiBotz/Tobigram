@@ -55,6 +55,9 @@ class SetProfilePhoto:
         Returns:
             ``bool``: True on success.
 
+        Raises:
+            ValueError: If neither *photo* nor *video* is given.
+
         Example:
             .. code-block:: python
 
@@ -64,6 +67,9 @@ class SetProfilePhoto:
                 # Set a new profile video
                 await app.set_profile_photo(video="new_video.mp4")
         """
+
+        if photo is None and video is None:
+            raise ValueError("Either photo or video must be given")
 
         return bool(
             await self.invoke(

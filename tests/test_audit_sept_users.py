@@ -88,3 +88,17 @@ async def test_update_birthday_refuses_a_partial_date_and_removes_on_no_argument
 
     await client.update_birthday(day=1, month=2)
     assert (client.sent.birthday.day, client.sent.birthday.month) == (1, 2)
+
+
+async def test_set_profile_photo_without_a_file_is_refused_before_the_request():
+    from pyrogram.methods.users.set_profile_photo import SetProfilePhoto
+
+    class _Client(SetProfilePhoto):
+        async def save_file(self, *args, **kwargs):
+            raise AssertionError("nothing to upload")
+
+        async def invoke(self, query, *args, **kwargs):
+            raise AssertionError("an empty request must not go out")
+
+    with pytest.raises(ValueError):
+        await _Client().set_profile_photo()
