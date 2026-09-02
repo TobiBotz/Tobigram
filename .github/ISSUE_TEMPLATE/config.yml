@@ -1,8 +1,11 @@
 blank_issues_enabled: false
 contact_links:
-  - name: Ask Pyrogram related questions
-    url: https://stackoverflow.com/questions/tagged/pyrogram
-    about: This place is only for reporting issues about Pyrogram. You can ask questions on StackOverflow.
+  - name: Read the documentation
+    url: https://wzgram.com
+    about: Guides, the full API reference and the Pyrogram migration notes live here.
+  - name: Ask wzgram related questions
+    url: https://t.me/WzGram_Chat
+    about: This place is only for reporting issues about wzgram. Questions and discussion go to the Telegram group.
   - name: Join the Telegram channel
-    url: https://t.me/pyrogram
-    about: Join the official channel and stay tuned for news, updates and announcements.
+    url: https://t.me/wzgram_updates
+    about: Follow the channel for news, releases and announcements.
