@@ -66,10 +66,10 @@ class TestMarkdownParse:
 
     async def test_pre(self, markdown):
         result = await markdown.parse(f"Hello {PRE_DELIM}\ncode\n{PRE_DELIM}")
-        assert result["message"] == "Hello \ncode"
+        assert result["message"] == "Hello code"
         assert isinstance(result["entities"][0], MessageEntityPre)
         assert result["entities"][0].offset == 6
-        assert result["entities"][0].length == 5
+        assert result["entities"][0].length == 4
 
     async def test_pre_with_language(self, markdown):
         result = await markdown.parse(f"```python\nprint('hi')\n```")

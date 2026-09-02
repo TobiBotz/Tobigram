@@ -135,3 +135,25 @@ async def test_a_venue_with_a_foursquare_id_names_its_provider():
     assert [q.media.provider for q in client.sent] == ["foursquare", ""]
 
 
+async def test_a_markdown_code_fence_drops_its_own_newlines():
+    markdown = Markdown(None)
+    text = "a\n```py\nx\n```\nb"
+
+    result = await markdown.parse(text)
+    entity = result["entities"][0]
+
+    assert result["message"] == "a\nx\nb"
+    assert (entity.offset, entity.length, entity.language) == (2, 1, "py")
+
+    class Entity:
+        type = enums.MessageEntityType.PRE
+        offset = 2
+        length = 1
+        language = "py"
+
+    assert Markdown.unparse(result["message"], [Entity()]) == text, (
+        "the round trip must give the text back; a newline kept inside the "
+        "entity grows the text on every pass"
+    )
+
+

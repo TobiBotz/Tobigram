@@ -167,10 +167,20 @@ class Markdown:
                 tag = CLOSING_TAG.format(tag)
 
             if delim == PRE_DELIM and delim in delims:
-                delim_and_language = text[text.find(PRE_DELIM):].split("\n")[0]
+                pos = text.find(PRE_DELIM, start)
+                delim_and_language = text[pos:].split("\n")[0]
                 language = delim_and_language[len(PRE_DELIM):]
-                text = utils.replace_once(text, delim_and_language, f'<pre language="{language}">', start)
+                end = pos + len(delim_and_language)
+                if text[end:end + 1] == "\n":
+                    end += 1
+                text = text[:pos] + f'<pre language="{language}">' + text[end:]
                 continue
+
+            if delim == PRE_DELIM:
+                pos = text.find(PRE_DELIM, start)
+                if pos > 0 and text[pos - 1] == "\n":
+                    text = text[:pos - 1] + tag + text[pos + len(PRE_DELIM):]
+                    continue
 
             text = utils.replace_once(text, delim, tag, start)
 
