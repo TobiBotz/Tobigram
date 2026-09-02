@@ -48,17 +48,19 @@ class GetChatMenuButton:
                 )
             )
         else:
-            r = (await self.invoke(
+            bot_info = (await self.invoke(
                 raw.functions.users.GetFullUser(
                     id=raw.types.InputUserSelf()
                 )
-            )).full_user.bot_info.menu_button
+            )).full_user.bot_info
+
+            if bot_info is None:
+                raise ValueError("The current account is not a bot")
+
+            r = bot_info.menu_button
 
         if isinstance(r, raw.types.BotMenuButtonCommands):
             return types.MenuButtonCommands()
-
-        if isinstance(r, raw.types.BotMenuButtonDefault):
-            return types.MenuButtonDefault()
 
         if isinstance(r, raw.types.BotMenuButton):
             return types.MenuButtonWebApp(
@@ -67,3 +69,5 @@ class GetChatMenuButton:
                     url=r.url
                 )
             )
+
+        return types.MenuButtonDefault()
