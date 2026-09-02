@@ -411,7 +411,7 @@ class SendMediaGroup:
                                             performer=i.performer,
                                             title=i.title
                                         ),
-                                        raw.types.DocumentAttributeFilename(file_name=os.path.basename(i.media))
+                                        raw.types.DocumentAttributeFilename(file_name=utils.get_file_name(i.media, file_name=i.file_name, fallback="audio.mp3"))
                                     ]
                                 )
                             )
@@ -457,7 +457,7 @@ class SendMediaGroup:
                                         performer=i.performer,
                                         title=i.title
                                     ),
-                                    raw.types.DocumentAttributeFilename(file_name=getattr(i.media, "name", "audio.mp3"))
+                                    raw.types.DocumentAttributeFilename(file_name=utils.get_file_name(i.media, file_name=i.file_name, fallback="audio.mp3"))
                                 ]
                             )
                         )
@@ -481,7 +481,7 @@ class SendMediaGroup:
                                     file=await self.save_file(i.media, progress=progress, progress_args=progress_args),
                                     thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
                                     attributes=[
-                                        raw.types.DocumentAttributeFilename(file_name=os.path.basename(i.media))
+                                        raw.types.DocumentAttributeFilename(file_name=utils.get_file_name(i.media, file_name=i.file_name, fallback="file.zip"))
                                     ]
                                 )
                             )
@@ -524,7 +524,7 @@ class SendMediaGroup:
                                 file=await self.save_file(i.media, progress=progress, progress_args=progress_args),
                                 thumb=await self.save_file(i.thumb, progress=progress, progress_args=progress_args),
                                 attributes=[
-                                    raw.types.DocumentAttributeFilename(file_name=getattr(i.media, "name", "file.zip"))
+                                    raw.types.DocumentAttributeFilename(file_name=utils.get_file_name(i.media, file_name=i.file_name, fallback="file.zip"))
                                 ]
                             )
                         )

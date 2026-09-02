@@ -78,3 +78,19 @@ async def test_a_reply_shortcut_forwards_its_legacy_reply_and_quote_kwargs():
     assert client.send_message.call_args.kwargs["reply_parameters"].message_id == 7
 
 
+async def test_a_grouped_audio_or_document_keeps_its_file_name():
+    client = _Client()
+
+    await client.send_media_group("me", [
+        types.InputMediaAudio(io.BytesIO(b"a"), file_name="song.ogg"),
+        types.InputMediaDocument(io.BytesIO(b"d"), file_name="notes.txt"),
+    ])
+
+    uploads = [q.media for q in client.sent if isinstance(q, raw.functions.messages.UploadMedia)]
+    names = [
+        a.file_name for m in uploads for a in m.attributes
+        if isinstance(a, raw.types.DocumentAttributeFilename)
+    ]
+    assert names == ["song.ogg", "notes.txt"]
+
+
