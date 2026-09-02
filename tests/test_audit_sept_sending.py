@@ -157,3 +157,21 @@ async def test_a_markdown_code_fence_drops_its_own_newlines():
     )
 
 
+async def test_scheduled_history_is_parsed_as_scheduled(monkeypatch):
+    seen = {}
+
+    async def fake_parse(client, message, users, chats, **kwargs):
+        seen.update(kwargs)
+
+        return types.Message(id=message.id)
+
+    monkeypatch.setattr(types.Message, "_parse", fake_parse)
+    client = _Client(raw.types.messages.Messages(
+        messages=[raw.types.MessageEmpty(id=1)], topics=[], chats=[], users=[]
+    ))
+
+    await client.get_scheduled_messages("me")
+
+    assert seen.get("is_scheduled") is True
+
+

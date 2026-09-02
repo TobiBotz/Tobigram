@@ -177,7 +177,8 @@ async def get_input_stargift(client: "pyrogram.Client", owned_gift_id: str) -> "
 async def parse_messages(
     client: "pyrogram.Client",
     messages: Union["raw.base.messages.Messages", "raw.base.Updates"],
-    replies: int = 1
+    replies: int = 1,
+    is_scheduled: bool = False
 ) -> List["types.Message"]:
     users = {i.id: i for i in getattr(messages, "users", [])}
     chats = {i.id: i for i in getattr(messages, "chats", [])}
@@ -205,7 +206,8 @@ async def parse_messages(
                     users=users,
                     chats=chats,
                     topics=topics,
-                    replies=0
+                    replies=0,
+                    is_scheduled=is_scheduled
                 )
             )
 

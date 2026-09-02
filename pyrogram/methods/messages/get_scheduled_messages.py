@@ -58,5 +58,5 @@ class GetScheduledMessages:
             raw.functions.messages.GetScheduledHistory(peer=await self.resolve_peer(chat_id), hash=0)
         )
 
-        return await utils.parse_messages(self, r, replies=0)
+        return await utils.parse_messages(self, r, replies=0, is_scheduled=True)
 
