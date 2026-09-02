@@ -175,3 +175,15 @@ async def test_scheduled_history_is_parsed_as_scheduled(monkeypatch):
     assert seen.get("is_scheduled") is True
 
 
+async def test_copying_media_uses_the_callers_effect():
+    client = type("C", (), {"send_cached_media": AsyncMock()})()
+    message = _message(client)
+    message.media = enums.MessageMediaType.PHOTO
+    message.photo = object.__new__(type("P", (), {"file_id": "f"}))
+    message.effect_id = 1
+
+    await message.copy(chat_id="me", effect_id=2)
+
+    assert client.send_cached_media.call_args.kwargs["effect_id"] == 2
+
+

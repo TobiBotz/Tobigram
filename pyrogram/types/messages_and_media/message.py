@@ -9374,7 +9374,7 @@ class Message(Object, Update):
                 quote_entities=quote_entities,
                 schedule_date=schedule_date,
                 protect_content=protect_content,
-                effect_id=self.effect_id,
+                effect_id=effect_id,
                 has_spoiler=self.has_media_spoiler if has_spoiler is None else has_spoiler,
                 show_caption_above_media=self.show_caption_above_media if show_caption_above_media is None else show_caption_above_media,
                 business_connection_id=business_connection_id,
@@ -9417,7 +9417,7 @@ class Message(Object, Update):
                     reply_markup=self.reply_markup if reply_markup is object else reply_markup,
                     video_cover=video_cover if video_cover is not None else self.video.video_cover.file_id if self.video.video_cover else None,
                     video_start_timestamp=video_start_timestamp if video_start_timestamp is not None else self.video.video_start_timestamp,
-                    effect_id=self.effect_id
+                    effect_id=effect_id
                 )
             elif self.animation:
                 file_id = self.animation.file_id
