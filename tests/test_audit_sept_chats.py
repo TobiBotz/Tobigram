@@ -61,3 +61,8 @@ async def test_translating_without_a_target_language_is_a_clear_error():
 
     with pytest.raises(ValueError):
         await _Client().translate_text(text="hi")
+
+
+def test_join_by_request_is_parsed_for_a_channel():
+    assert types.Chat._parse_channel_chat(None, _channel(join_request=True)).join_by_request is True
+    assert types.Chat._parse_channel_chat(None, _channel()).join_by_request is None

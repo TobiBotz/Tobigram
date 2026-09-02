@@ -1023,6 +1023,7 @@ class Chat(Object):
                 if channel.emoji_status is not None else None
             ),
             join_to_send_messages=channel.join_to_send,
+            join_by_request=channel.join_request,
             subscription_until_date=utils.timestamp_to_datetime(channel.subscription_until_date),
             paid_message_star_count=channel.send_paid_messages_stars,
             has_automatic_translation=channel.autotranslation,
