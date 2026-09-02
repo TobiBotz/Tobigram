@@ -40,8 +40,8 @@ class PaymentForm(Object):
         description (``str``, *optional*):
             Form description.
 
-        photo (:obj:`~pyrogram.types.Photo`, *optional*):
-            Product photo.
+        photo_url (``str``, *optional*):
+            URL of the product photo.
 
         seller_bot_user_id (``int``, *optional*):
             User identifier of the seller bot.
@@ -88,7 +88,7 @@ class PaymentForm(Object):
         type: "enums.PaymentFormType",
         title: Optional[str] = None,
         description: Optional[str] = None,
-        photo: Optional["types.Photo"] = None,
+        photo_url: Optional[str] = None,
         seller_bot_user_id: Optional[int] = None,
         seller_bot: Optional["types.User"] = None,
         payment_provider_user_id: Optional[int] = None,
@@ -114,7 +114,7 @@ class PaymentForm(Object):
         self.saved_credentials = saved_credentials
         self.title = title
         self.description = description
-        self.photo = photo
+        self.photo_url = photo_url
         self.invoice = invoice
         self.url = url
         self.can_save_credentials = can_save_credentials
@@ -132,7 +132,7 @@ class PaymentForm(Object):
                 type=enums.PaymentFormType.REGULAR,
                 title=form.title,
                 description=form.description,
-                photo=types.Photo._parse(client, form.photo),
+                photo_url=getattr(form.photo, "url", None),
                 seller_bot_user_id=form.bot_id,
                 seller_bot=types.User._parse(client, users.get(form.bot_id)),
                 payment_provider_user_id=form.provider_id,
@@ -161,7 +161,7 @@ class PaymentForm(Object):
                 type=enums.PaymentFormType.STARS,
                 title=form.title,
                 description=form.description,
-                photo=types.Photo._parse(client, form.photo),
+                photo_url=getattr(form.photo, "url", None),
                 seller_bot_user_id=form.bot_id,
                 seller_bot=types.User._parse(client, users.get(form.bot_id)),
                 invoice=types.Invoice._parse(client, form.invoice),
