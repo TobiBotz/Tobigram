@@ -144,3 +144,9 @@ async def test_a_bot_reads_a_channels_photo_from_the_full_chat(monkeypatch):
     client = _bot_channel_client(raw.types.PhotoEmpty(id=0))
     assert [p async for p in GetChatPhotos.get_chat_photos(client, 1)] == []
     assert await GetChatPhotosCount.get_chat_photos_count(client, 1) == 0
+
+
+def test_get_welcome_messages_is_documented_for_users():
+    from pyrogram.methods.ephemeral.get_welcome_messages import GetWelcomeMessages
+
+    assert "usable-by/users.rst" in GetWelcomeMessages.get_welcome_messages.__doc__

@@ -33,7 +33,7 @@ class GetWelcomeMessages:
         server as a template and shown to each user the first time they open the chat,
         rather than delivered once.
 
-        .. include:: /_includes/usable-by/bots.rst
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             chat_id (``int`` | ``str``):
