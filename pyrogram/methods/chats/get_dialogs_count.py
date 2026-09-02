@@ -45,7 +45,9 @@ class GetDialogsCount:
         """
 
         if pinned_only:
-            return len((await self.invoke(raw.functions.messages.GetPinnedDialogs(folder_id=0))).dialogs)
+            r = await self.invoke(raw.functions.messages.GetPinnedDialogs(folder_id=0))
+
+            return sum(isinstance(d, raw.types.Dialog) for d in r.dialogs)
         else:
             r = await self.invoke(
                 raw.functions.messages.GetDialogs(

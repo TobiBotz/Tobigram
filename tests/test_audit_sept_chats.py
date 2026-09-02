@@ -162,3 +162,42 @@ async def test_basic_group_members_honour_the_limit():
     assert await ids(limit=2) == [1, 2]
     assert await ids() == [1, 2, 3]
     assert await ids(limit=0) == [1, 2, 3]
+
+
+async def test_the_pinned_archive_folder_is_not_a_dialog():
+    from pyrogram.methods.chats.get_dialogs_count import GetDialogsCount
+
+    def dialog(uid):
+        return raw.types.Dialog(
+            peer=raw.types.PeerUser(user_id=uid),
+            top_message=1,
+            read_inbox_max_id=0,
+            read_outbox_max_id=0,
+            unread_count=0,
+            unread_mentions_count=0,
+            unread_reactions_count=0,
+            unread_poll_votes_count=0,
+            notify_settings=raw.types.PeerNotifySettings(),
+        )
+
+    folder = raw.types.DialogFolder(
+        folder=raw.types.Folder(id=1, title="Archived"),
+        peer=raw.types.PeerUser(user_id=1),
+        top_message=1,
+        unread_muted_peers_count=0,
+        unread_unmuted_peers_count=0,
+        unread_muted_messages_count=0,
+        unread_unmuted_messages_count=0,
+    )
+
+    class _Client(GetDialogsCount):
+        async def invoke(self, query, *args, **kwargs):
+            return raw.types.messages.PeerDialogs(
+                dialogs=[folder, dialog(1), dialog(2)],
+                messages=[],
+                chats=[],
+                users=[],
+                state=raw.types.updates.State(pts=0, qts=0, date=0, seq=0, unread_count=0),
+            )
+
+    assert await _Client().get_dialogs_count(pinned_only=True) == 2
