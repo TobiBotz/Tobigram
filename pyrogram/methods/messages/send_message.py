@@ -268,35 +268,52 @@ class SendMessage:
                 no_webpage = disable_web_page_preview if disable_web_page_preview is not None else None
 
             plain_text, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
-            r = await self.invoke(
-                await as_ephemeral(self, ephemeral_message_parameters, raw.functions.messages.SendMessage(
-                    peer=await self.resolve_peer(chat_id),
-                    no_webpage=no_webpage,
-                    silent=disable_notification if disable_notification is not None else None,
-                    reply_to=await utils.get_reply_to(
-                        self,
-                        reply_parameters,
-                        message_thread_id,
-                        direct_messages_topic_id=direct_messages_topic_id
+            request = dict(
+                peer=await self.resolve_peer(chat_id),
+                silent=disable_notification if disable_notification is not None else None,
+                reply_to=await utils.get_reply_to(
+                    self,
+                    reply_parameters,
+                    message_thread_id,
+                    direct_messages_topic_id=direct_messages_topic_id
+                ),
+                random_id=self.rnd_id(),
+                schedule_date=utils.datetime_to_timestamp(schedule_date),
+                reply_markup=await reply_markup.write(self) if reply_markup else None,
+                message=plain_text,
+                entities=entities,
+                noforwards=protect_content,
+                effect=effect_id,
+                invert_media=invert_media if invert_media is not None else (show_caption_above_media if show_caption_above_media is not None else None),
+                schedule_repeat_period=repeat_period,
+                allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
+                allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
+                suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+                background=background,
+                clear_draft=clear_draft,
+                update_stickersets_order=update_stickersets_order,
+                send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+            )
+
+            if link_preview_options is not None and link_preview_options.url:
+                request = await as_ephemeral(self, ephemeral_message_parameters, raw.functions.messages.SendMedia(
+                    media=raw.types.InputMediaWebPage(
+                        url=link_preview_options.url,
+                        force_large_media=link_preview_options.prefer_large_media,
+                        force_small_media=link_preview_options.prefer_small_media,
+                        optional=True
                     ),
-                    random_id=self.rnd_id(),
-                    schedule_date=utils.datetime_to_timestamp(schedule_date),
-                    reply_markup=await reply_markup.write(self) if reply_markup else None,
-                    message=plain_text,
-                    entities=entities,
-                    noforwards=protect_content,
-                    effect=effect_id,
-                    invert_media=invert_media if invert_media is not None else (show_caption_above_media if show_caption_above_media is not None else None),
-                    schedule_repeat_period=repeat_period,
-                    allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
-                    allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
-                    suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
-                    background=background,
-                    clear_draft=clear_draft,
-                    update_stickersets_order=update_stickersets_order,
-                    send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                    quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
-                )),
+                    **request
+                ))
+            else:
+                request = await as_ephemeral(self, ephemeral_message_parameters, raw.functions.messages.SendMessage(
+                    no_webpage=no_webpage,
+                    **request
+                ))
+
+            r = await self.invoke(
+                request,
                 sleep_threshold=60,
                 business_connection_id=business_connection_id
             )

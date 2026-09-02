@@ -106,3 +106,23 @@ async def test_a_grouped_document_is_forced_to_stay_a_file():
     assert [m.force_file for m in uploads] == [True, False]
 
 
+async def test_a_link_preview_url_is_sent_and_edited_as_a_web_page():
+    client = _Client()
+    options = types.LinkPreviewOptions(url="https://example.com", prefer_large_media=True)
+
+    await client.send_message("me", "hi", link_preview_options=options)
+    await client.edit_message_text("me", 1, "hi", link_preview_options=options)
+
+    sent, edited = client.sent
+    assert isinstance(sent, raw.functions.messages.SendMedia)
+    assert sent.media == raw.types.InputMediaWebPage(
+        url="https://example.com", force_large_media=True, force_small_media=None, optional=True
+    )
+    assert sent.message == "hi"
+    assert edited.media == sent.media
+
+    client.sent.clear()
+    await client.send_message("me", "hi")
+    assert isinstance(client.sent[0], raw.functions.messages.SendMessage)
+
+

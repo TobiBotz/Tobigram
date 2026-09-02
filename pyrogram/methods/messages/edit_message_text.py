@@ -137,6 +137,12 @@ class EditMessageText:
                 id=message_id,
                 no_webpage=no_webpage,
                 invert_media=invert_media,
+                media=raw.types.InputMediaWebPage(
+                    url=link_preview_options.url,
+                    force_large_media=link_preview_options.prefer_large_media,
+                    force_small_media=link_preview_options.prefer_small_media,
+                    optional=True
+                ) if link_preview_options is not None and link_preview_options.url else None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 **text_params
             ),
