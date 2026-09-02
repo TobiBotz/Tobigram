@@ -44,7 +44,7 @@ class TranslateText:
             peer (Union[int, str], *optional*): Chat from which to translate an existing message
             id (List[int], *optional*): Message IDs to translate
             text (Union[str, List[raw.types.TextWithEntities]], *optional*): Text to translate (plain string or list of TextWithEntities)
-            to_lang (str, *optional*): Target language code (e.g. "en", "es")
+            to_lang (str): Target language code (e.g. "en", "es")
             tone (str, *optional*): AI translation tone preset
 
         Returns:
@@ -55,6 +55,9 @@ class TranslateText:
 
                 await app.translate_text(...)
         """
+
+        if to_lang is None:
+            raise ValueError("to_lang is required")
 
         if isinstance(text, str):
             text = [raw.types.TextWithEntities(text=text, entities=[])]

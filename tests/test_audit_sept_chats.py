@@ -50,3 +50,14 @@ async def test_pinning_in_a_private_chat_is_documented_to_return_none():
 
     assert await _Client().pin_chat_message("me", 1) is None
     assert "None" in PinChatMessage.pin_chat_message.__doc__
+
+
+async def test_translating_without_a_target_language_is_a_clear_error():
+    from pyrogram.methods.messages.translate_text import TranslateText
+
+    class _Client(TranslateText):
+        async def invoke(self, query, *args, **kwargs):
+            raise AssertionError("must not reach the server")
+
+    with pytest.raises(ValueError):
+        await _Client().translate_text(text="hi")
