@@ -18,6 +18,7 @@
 
 import os
 import time
+from collections import OrderedDict
 from typing import Any, Dict, Optional, Tuple
 
 from pyrogram import raw
@@ -61,7 +62,7 @@ class PeerRowCache:
     def __init__(self, size: int = PEER_CACHE_SIZE, write_ttl: float = PEER_WRITE_TTL):
         self.size = size
         self.write_ttl = write_ttl
-        self._rows: Dict[int, Tuple[Tuple[int, int, str], Optional[str], Optional[float]]] = {}
+        self._rows: "OrderedDict[int, Tuple[Tuple[int, int, str], Optional[str], Optional[float]]]" = OrderedDict()
 
     def __len__(self) -> int:
         return len(self._rows)
@@ -106,8 +107,8 @@ class PeerRowCache:
         )
 
         if len(rows) > self.size:
-            for key in list(rows)[:len(rows) - self.size]:
-                del rows[key]
+            while len(rows) > self.size:
+                rows.popitem(last=False)
 
     def forget(self, peer_id: int) -> None:
         self._rows.pop(peer_id, None)

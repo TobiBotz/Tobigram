@@ -28,6 +28,7 @@ import shutil
 import sys
 import weakref
 import time
+from collections import OrderedDict
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from hashlib import sha256
@@ -415,6 +416,7 @@ class Client(Methods):
     MAX_CONCURRENT_TRANSMISSIONS = 16
     MAX_MESSAGE_CACHE_SIZE = 1000
     MAX_TOPIC_CACHE_SIZE = 1000
+    MAX_BUSINESS_CONNECTIONS = 512
     LISTENER_TIMEOUT = 300
     UNALLOWED_CLICK_ALERT_TEXT = "You are not expected to click this button."
 
@@ -558,7 +560,7 @@ class Client(Methods):
 
         self.session: Optional[Session] = None
 
-        self.business_connections = {}
+        self.business_connections: "OrderedDict[str, int]" = OrderedDict()
 
         self.sessions = {}
         self.media_sessions = {}
@@ -1857,6 +1859,9 @@ class Client(Methods):
                     raise ValueError(f"Empty updates in GetBotBusinessConnection response for {business_connection_id}")
                 dc_id = self.business_connections[business_connection_id] = connection.updates[0].connection.dc_id
 
+                while len(self.business_connections) > self.MAX_BUSINESS_CONNECTIONS:
+                    self.business_connections.popitem(last=False)
+
         is_current_dc = await self.storage.dc_id() == dc_id
 
         if not temporary and is_current_dc and not is_media:
@@ -2113,13 +2118,17 @@ class Client(Methods):
 class Cache:
     def __init__(self, capacity: int):
         self.capacity = capacity
-        self.store = {}
+        self.store: "OrderedDict" = OrderedDict()
 
     def __getitem__(self, key):
-        return self.store.get(key, None)
+        value = self.store.pop(key, None)
+        if value is not None:
+            self.store[key] = value
+        return value
 
     def get(self, key, default=None):
-        return self.store.get(key, default)
+        value = self.__getitem__(key)
+        return value if value is not None else default
 
     def __setitem__(self, key, value):
         if key in self.store:
@@ -2128,6 +2137,5 @@ class Cache:
         self.store[key] = value
 
         if len(self.store) > self.capacity:
-            for _ in range(self.capacity // 2 + 1):
-                del self.store[next(iter(self.store))]
+            self.store.popitem(last=False)
 
