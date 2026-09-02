@@ -113,3 +113,7 @@ def test_identify_still_drops_an_outgoing_message_elsewhere():
     assert registry_module._identify(
         enums.ListenerTypes.MESSAGE, _message(chat_id=1, user_id=10, outgoing=True)
     ) is None
+
+
+def test_restart_docstring_no_longer_promises_a_connection_error():
+    assert "ConnectionError" not in pyrogram.Client.restart.__doc__

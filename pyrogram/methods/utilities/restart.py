@@ -31,7 +31,7 @@ class Restart:
 
 
         This method will first call :meth:`~pyrogram.Client.stop` and then :meth:`~pyrogram.Client.start` in a row in
-        order to restart a client using a single method.
+        order to restart a client using a single method. Restarting a client that is already stopped simply starts it.
 
         Parameters:
             block (``bool``, *optional*):
@@ -41,9 +41,6 @@ class Restart:
 
         Returns:
             :obj:`~pyrogram.Client`: The restarted client itself.
-
-        Raises:
-            ConnectionError: In case you try to restart a stopped Client.
 
         Example:
             .. code-block:: python
