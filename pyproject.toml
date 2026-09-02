@@ -52,7 +52,7 @@ keywords = [
 
 [project.urls]
 Homepage = "https://github.com/rjriajul/wzgram"
-Documentation = "https://rjriajul.github.io/wzgram"
+Documentation = "https://wzgram.com"
 Source = "https://github.com/rjriajul/wzgram"
 Issues = "https://github.com/rjriajul/wzgram/issues"
 
