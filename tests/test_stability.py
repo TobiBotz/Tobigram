@@ -441,7 +441,7 @@ async def test_the_receive_loop_stops_reading_once_the_decrypt_backlog_is_full()
         await asyncio.gather(worker, return_exceptions=True)
 
 
-async def _reads_under_cap(session, handler, cap=2, limit=20):
+async def _reads_under_cap(session, handler, cap=2, limit=20, timeout=5):
     reads = 0
 
     class CountingConnection(RecordingConnection):
@@ -458,7 +458,16 @@ async def _reads_under_cap(session, handler, cap=2, limit=20):
     session.handle_packet = handler
 
     worker = asyncio.ensure_future(session.recv_worker())
-    await asyncio.sleep(0.1)
+
+    # Wait for the loop to get past the cap rather than for a fixed stretch of
+    # wall clock. A handler that raises costs a formatted traceback per packet,
+    # so a timed window measures how fast the runner is, not whether the
+    # semaphore came back.
+    deadline = time.monotonic() + timeout
+
+    while reads <= cap and time.monotonic() < deadline:
+        await asyncio.sleep(0)
+
     worker.cancel()
     await asyncio.gather(worker, return_exceptions=True)
 
