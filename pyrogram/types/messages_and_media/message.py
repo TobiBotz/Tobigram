@@ -1415,6 +1415,7 @@ class Message(Object, Update):
         elif isinstance(action, raw.types.MessageActionChatJoinedViaCommunity):
             service_type = enums.MessageServiceType.COMMUNITY_CHAT_JOINED
             community_chat_joined = types.CommunityChatJoined._parse(client, action, chats)
+            new_chat_members = [types.User._parse(client, users[action.user_id])]
 
         parsed_message = Message(
             id=message.id,
