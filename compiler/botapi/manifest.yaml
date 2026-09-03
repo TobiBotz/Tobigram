@@ -340,6 +340,7 @@ methods:
     - getChat
     - getChatGifts
     - getChatMember
+    - getChatMemberCount
     - getChatMenuButton
     - getCustomEmojiStickers
     - getFile
@@ -381,6 +382,7 @@ methods:
     - sendVideo
     - sendVideoNote
     - sendVoice
+    - setChatAdministratorCustomTitle
     - setChatDescription
     - setChatMenuButton
     - setChatPermissions
@@ -388,6 +390,7 @@ methods:
     - setChatTitle
     - setGameScore
     - setManagedBotAccessSettings
+    - setMessageReaction
     - stopPoll
     - transferBusinessAccountStars
     - transferGift
@@ -396,4 +399,30 @@ methods:
     - unpinChatMessage
     - upgradeGift
   pending:
-    {}
+    deleteMyCommands:
+      mtproto: [lang_code]
+    deleteStory:
+      botapi: [business_connection_id]
+      mtproto: [id]
+    getMyCommands:
+      mtproto: [lang_code]
+    getMyDescription:
+      mtproto: [bot, lang_code]
+    getMyName:
+      mtproto: [bot, lang_code]
+    getMyShortDescription:
+      mtproto: [bot, lang_code]
+    getMyStarBalance:
+      mtproto: [ascending, inbound, limit, offset, outbound, subscription_id, ton]
+    removeMyProfilePhoto:
+      mtproto: [id]
+    setMyCommands:
+      mtproto: [lang_code]
+    setMyDescription:
+      mtproto: [about, bot, lang_code, name]
+    setMyName:
+      mtproto: [about, bot, description, lang_code]
+    setMyProfilePhoto:
+      mtproto: [bot, fallback, file, video_emoji_markup, video_start_ts]
+    setMyShortDescription:
+      mtproto: [about, bot, description, lang_code, name]
