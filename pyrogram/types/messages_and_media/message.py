@@ -1186,11 +1186,15 @@ class Message(Object, Update):
             new_chat_title = action.title
         elif isinstance(action, raw.types.MessageActionChatJoinedByLink):
             service_type = enums.MessageServiceType.NEW_CHAT_MEMBERS
-            new_chat_members = [types.User._parse(client, users[utils.get_raw_peer_id(message.from_id)])]
+            joined_peer_id = utils.get_raw_peer_id(message.from_id)
+            if joined_peer_id in users:
+                new_chat_members = [types.User._parse(client, users[joined_peer_id])]
             chat_join_type = enums.ChatJoinType.BY_LINK
         elif isinstance(action, raw.types.MessageActionChatJoinedByRequest):
             service_type = enums.MessageServiceType.NEW_CHAT_MEMBERS
-            new_chat_members = [types.User._parse(client, users[utils.get_raw_peer_id(message.from_id)])]
+            joined_peer_id = utils.get_raw_peer_id(message.from_id)
+            if joined_peer_id in users:
+                new_chat_members = [types.User._parse(client, users[joined_peer_id])]
             chat_join_type = enums.ChatJoinType.BY_REQUEST
         elif isinstance(action, raw.types.MessageActionChatMigrateTo):
             service_type = enums.MessageServiceType.MIGRATE_TO_CHAT_ID
@@ -1415,7 +1419,9 @@ class Message(Object, Update):
         elif isinstance(action, raw.types.MessageActionChatJoinedViaCommunity):
             service_type = enums.MessageServiceType.COMMUNITY_CHAT_JOINED
             community_chat_joined = types.CommunityChatJoined._parse(client, action, chats)
-            new_chat_members = [types.User._parse(client, users[utils.get_raw_peer_id(message.from_id)])]
+            joined_peer_id = utils.get_raw_peer_id(message.from_id)
+            if joined_peer_id in users:
+                new_chat_members = [types.User._parse(client, users[joined_peer_id])]
 
         parsed_message = Message(
             id=message.id,
