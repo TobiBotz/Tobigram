@@ -32,13 +32,9 @@ botapi:
     getMyDescription: get_bot_info_description
     setMyShortDescription: set_bot_info_short_description
     getMyShortDescription: get_bot_info_short_description
-    setMyProfilePhoto: set_profile_photo
-    removeMyProfilePhoto: delete_profile_photos
     getMyStarBalance: get_stars_balance
     getChatMemberCount: get_chat_members_count
     setChatAdministratorCustomTitle: set_administrator_title
-    setMessageReaction: send_reaction
-    deleteStory: delete_stories
 
   method_unsupported:
     getUpdates: long polling is a Bot API transport; MTProto pushes updates
@@ -294,11 +290,6 @@ botapi:
       thumbnail: thumb
     setChatAdministratorCustomTitle:
       custom_title: title
-    setMessageReaction:
-      reaction: emoji
-      is_big: big
-    deleteStory:
-      story_id: story_ids
     sendDocument:
       disable_content_type_detection: force_document
     sendVideo:
