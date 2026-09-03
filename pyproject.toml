@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "pyyaml", "jinja2", "trove-classifiers<2025.1.15"]
+requires = ["hatchling", "pyyaml", "jinja2"]
 build-backend = "hatchling.build"
 
 [project]
