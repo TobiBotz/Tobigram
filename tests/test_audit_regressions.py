@@ -3224,3 +3224,67 @@ def test_a_chosen_inline_result_keeps_a_64_bit_inline_message_id():
 
     assert result.inline_message_id == utils.pack_inline_message_id(msg_id)
     assert utils.unpack_inline_message_id(result.inline_message_id) == msg_id
+
+
+async def test_a_client_throttles_itself_only_when_it_was_asked_to():
+    """The client-side limiter used to be built unconditionally, so every invoke()
+    paid a token bucket the caller never asked for: broadcasts serialised at the
+    per-category rate on top of a 30/s global bucket, and seven TokenBuckets plus
+    their locks were allocated per client. It is opt-in now, and the four sites
+    that reach for it -- invoke, the dispatcher, initialize and terminate -- all
+    have to keep tolerating None.
+    """
+
+    from types import SimpleNamespace
+
+    from pyrogram import raw
+    from pyrogram.methods.rate_limiter import RateLimiter
+
+    def a_client(**kwargs):
+        return pyrogram.Client("ratelimit", api_id=1, api_hash="x", in_memory=True, **kwargs)
+
+    assert a_client().rate_limiter is None, (
+        "a client nobody asked to throttle must not build a limiter"
+    )
+
+    opted_in = a_client(rate_limits={})
+    assert isinstance(opted_in.rate_limiter, RateLimiter), (
+        "an empty dict is still a request for the limiter, at the built-in defaults"
+    )
+    assert opted_in.rate_limiter._buckets["message"].rate == 20.0
+
+    tuned = a_client(rate_limits={"message": {"rate": 1.0}})
+    assert tuned.rate_limiter._buckets["message"].rate == 1.0, "the override reaches its bucket"
+    assert tuned.rate_limiter._buckets["media"].rate == 5.0, "the rest keep their defaults"
+
+    # invoke() must not reach the limiter at all when there is none to reach.
+    acquired = []
+
+    async def recording_acquire(self, category, tokens=1.0):
+        acquired.append(category)
+
+    async def run_invoke(client):
+        client.is_connected = True
+        client.session = SimpleNamespace(invoke=lambda *a, **k: _answer())
+        client.fetch_peers = _nothing
+        await client.invoke(raw.functions.help.GetConfig())
+
+    async def _answer():
+        return raw.types.Config
+
+    async def _nothing(*args, **kwargs):
+        return None
+
+    original = RateLimiter.acquire
+    RateLimiter.acquire = recording_acquire
+
+    try:
+        await run_invoke(a_client())
+        assert acquired == [], "an opted-out client must not wait on a bucket"
+
+        await run_invoke(a_client(rate_limits={}))
+        assert acquired == ["query"], (
+            "an opted-in client still classifies the call and waits on its bucket"
+        )
+    finally:
+        RateLimiter.acquire = original
