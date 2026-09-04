@@ -789,7 +789,7 @@ def pyrogram_api():
             GiftCollection
             GiftedPremium
             GiftedStars
-            GiftedTon
+            GiftedGrams
             Giveaway
             GiveawayCompleted
             GiveawayCreated

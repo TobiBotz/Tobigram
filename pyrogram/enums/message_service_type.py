@@ -111,8 +111,8 @@ class MessageServiceType(AutoName):
     GIFTED_STARS = auto()
     "Gifted stars"
 
-    GIFTED_TON = auto()
-    "Gifted TON"
+    GIFTED_GRAMS = auto()
+    "Gifted TON Grams"
 
     GIVEAWAY_CREATED = auto()
     "Giveaway created"

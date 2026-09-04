@@ -68,7 +68,7 @@ from .gift_upgrade_price import GiftUpgradePrice
 from .gift_upgrade_variants import GiftUpgradeVariants
 from .gifted_premium import GiftedPremium
 from .gifted_stars import GiftedStars
-from .gifted_ton import GiftedTon
+from .gifted_grams import GiftedGrams
 from .giveaway import Giveaway
 from .giveaway_completed import GiveawayCompleted
 from .giveaway_created import GiveawayCreated
@@ -281,7 +281,7 @@ __all__ = [
     "GiftUpgradeVariants",
     "GiftedPremium",
     "GiftedStars",
-    "GiftedTon",
+    "GiftedGrams",
     "Giveaway",
     "GiveawayCompleted",
     "GiveawayCreated",

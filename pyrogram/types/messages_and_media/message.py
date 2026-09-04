@@ -471,8 +471,8 @@ class Message(Object, Update):
         gifted_stars (:obj:`~pyrogram.types.GiftedStars`, *optional*):
             Service message: gifted stars information.
 
-        gifted_ton (:obj:`~pyrogram.types.GiftedTon`, *optional*):
-            Service message: gifted ton information.
+        gifted_grams (:obj:`~pyrogram.types.GiftedGrams`, *optional*):
+            Service message: gifted grams information.
 
         gift (:obj:`~pyrogram.types.Gift`, *optional*):
             Service message: star gift information.
@@ -789,7 +789,7 @@ class Message(Object, Update):
         premium_gift_code: Optional["types.PremiumGiftCode"] = None,
         gifted_premium: Optional["types.GiftedPremium"] = None,
         gifted_stars: Optional["types.GiftedStars"] = None,
-        gifted_ton: Optional["types.GiftedTon"] = None,
+        gifted_grams: Optional["types.GiftedGrams"] = None,
         gift: Optional["types.Gift"] = None,
         is_prepaid_upgrade: Optional[bool] = None,
         is_from_auction: Optional[bool] = None,
@@ -978,7 +978,7 @@ class Message(Object, Update):
         self.premium_gift_code = premium_gift_code
         self.gifted_premium = gifted_premium
         self.gifted_stars = gifted_stars
-        self.gifted_ton = gifted_ton
+        self.gifted_grams = gifted_grams
         self.gift = gift
         self.is_prepaid_upgrade = is_prepaid_upgrade
         self.is_from_auction = is_from_auction
@@ -1083,7 +1083,7 @@ class Message(Object, Update):
         premium_gift_code = None
         gifted_premium = None
         gifted_stars = None
-        gifted_ton = None
+        gifted_grams = None
         giveaway_created = None
         giveaway_completed = None
         managed_bot_created = None
@@ -1229,8 +1229,8 @@ class Message(Object, Update):
                 receiver=users.get(peer_id or from_id)
             )
         elif isinstance(action, raw.types.MessageActionGiftTon):
-            service_type = enums.MessageServiceType.GIFTED_TON
-            gifted_ton = await types.GiftedTon._parse(
+            service_type = enums.MessageServiceType.GIFTED_GRAMS
+            gifted_grams = await types.GiftedGrams._parse(
                 client,
                 action,
                 gifter=users.get(from_id),
@@ -1452,7 +1452,7 @@ class Message(Object, Update):
             premium_gift_code=premium_gift_code,
             gifted_premium=gifted_premium,
             gifted_stars=gifted_stars,
-            gifted_ton=gifted_ton,
+            gifted_grams=gifted_grams,
             giveaway_created=giveaway_created,
             giveaway_completed=giveaway_completed,
             managed_bot_created=managed_bot_created,
