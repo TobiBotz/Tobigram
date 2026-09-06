@@ -1175,13 +1175,13 @@ class Client(Methods):
 
             await self.storage.api_id(self.api_id)
 
-            await self.storage.dc_id(2)
+            await self.storage.dc_id(5)
 
             if self.test_mode:
                 await self.storage.server_address("2001:67c:4e8:f002::e" if self.ipv6 else "149.154.167.40")
                 await self.storage.port(80)
             else:
-                await self.storage.server_address("2001:67c:4e8:f002::a" if self.ipv6 else "149.154.167.51")
+                await self.storage.server_address("2001:67c:4e8:f002::a" if self.ipv6 else "91.108.56.130")
                 await self.storage.port(443)
 
             await self.storage.date(0)
