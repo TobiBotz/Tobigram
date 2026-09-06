@@ -43,7 +43,7 @@ class ForwardStory:
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
         ]] = None,
-        message_effect_id: Optional[int] = None,
+        effect_id: Optional[int] = None,
         show_caption_above_media: Optional[bool] = None,
         background: Optional[bool] = None,
         clear_draft: Optional[bool] = None,
@@ -100,7 +100,7 @@ class ForwardStory:
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
-            message_effect_id (``int`` ``64-bit``, *optional*):
+            effect_id (``int`` ``64-bit``, *optional*):
                 Unique identifier of the message effect to be added to the message; for private chats only.
 
             show_caption_above_media (``bool``, *optional*):
@@ -155,7 +155,7 @@ class ForwardStory:
                 allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 noforwards=protect_content,
-                effect=message_effect_id,
+                effect=effect_id,
                 invert_media=show_caption_above_media if show_caption_above_media is not None else None,
                 background=background if background is not None else None,
                 clear_draft=clear_draft if clear_draft is not None else None,
