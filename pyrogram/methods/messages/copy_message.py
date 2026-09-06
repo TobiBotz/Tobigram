@@ -58,7 +58,7 @@ class CopyMessage:
         ]] = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
         direct_messages_topic_id: Optional[int] = None,
-        message_effect_id: Optional[int] = None,
+        effect_id: Optional[int] = None,
         suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None
     ) -> "types.Message":
         """Copy messages of any kind.
@@ -155,7 +155,7 @@ class CopyMessage:
             direct_messages_topic_id (``int``, *optional*):
                 Unique identifier of the direct messages topic to copy into.
 
-            message_effect_id (``int``, *optional*):
+            effect_id (``int``, *optional*):
                 Unique identifier of the message effect to add to the message.
 
             suggested_post_parameters (:obj:`~pyrogram.types.SuggestedPostParameters`, *optional*):
@@ -199,7 +199,7 @@ class CopyMessage:
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
             direct_messages_topic_id=direct_messages_topic_id,
-            effect_id=message_effect_id,
+            effect_id=effect_id,
             suggested_post_parameters=suggested_post_parameters,
             reply_markup=reply_markup
         )
