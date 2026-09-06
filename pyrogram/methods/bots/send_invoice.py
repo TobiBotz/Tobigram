@@ -54,7 +54,7 @@ class SendInvoice:
         is_flexible: Optional[bool] = None,
         disable_notification: Optional[bool] = None,
         protect_content: Optional[bool] = None,
-        message_effect_id: Optional[int] = None,
+        effect_id: Optional[int] = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
         allow_paid_broadcast: Optional[bool] = None,
         paid_message_star_count: Optional[int] = None,
@@ -168,7 +168,7 @@ class SendInvoice:
             protect_content (``bool``, *optional*):
                 Protects the contents of the sent message from forwarding and saving.
 
-            message_effect_id (``int`` ``64-bit``, *optional*):
+            effect_id (``int`` ``64-bit``, *optional*):
                 Unique identifier of the message effect to be added to the message; for private chats only.
 
             allow_paid_broadcast (``bool``, *optional*):
@@ -305,7 +305,7 @@ class SendInvoice:
             allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
             allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
             reply_markup=await reply_markup.write(self) if reply_markup else None,
-            effect=message_effect_id,
+            effect=effect_id,
             suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
             background=background,
             clear_draft=clear_draft,
