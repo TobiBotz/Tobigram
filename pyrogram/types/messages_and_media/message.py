@@ -3782,7 +3782,7 @@ class Message(Object, Update):
         is_flexible: Optional[bool] = None,
         disable_notification: Optional[bool] = None,
         protect_content: Optional[bool] = None,
-        message_effect_id: Optional[int] = None,
+        effect_id: Optional[int] = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
         allow_paid_broadcast: Optional[bool] = None,
         direct_messages_topic_id: Optional[int] = None,
@@ -3884,7 +3884,7 @@ class Message(Object, Update):
             protect_content (``bool``, *optional*):
                 Protects the contents of the sent message from forwarding and saving.
 
-            message_effect_id (``int`` ``64-bit``, *optional*):
+            effect_id (``int`` ``64-bit``, *optional*):
                 Unique identifier of the message effect to be added to the message; for private chats only.
 
             allow_paid_broadcast (``bool``, *optional*):
@@ -3958,7 +3958,7 @@ class Message(Object, Update):
             is_flexible=is_flexible,
             disable_notification=disable_notification,
             protect_content=protect_content,
-            message_effect_id=message_effect_id,
+            effect_id=effect_id,
             reply_parameters=reply_parameters,
             allow_paid_broadcast=allow_paid_broadcast,
             direct_messages_topic_id=direct_messages_topic_id,
@@ -3996,7 +3996,7 @@ class Message(Object, Update):
         is_flexible: Optional[bool] = None,
         disable_notification: Optional[bool] = None,
         protect_content: Optional[bool] = None,
-        message_effect_id: Optional[int] = None,
+        effect_id: Optional[int] = None,
         reply_parameters: Optional["types.ReplyParameters"] = None,
         allow_paid_broadcast: Optional[bool] = None,
         direct_messages_topic_id: Optional[int] = None,
@@ -4097,7 +4097,7 @@ class Message(Object, Update):
             protect_content (``bool``, *optional*):
                 Protects the contents of the sent message from forwarding and saving.
 
-            message_effect_id (``int`` ``64-bit``, *optional*):
+            effect_id (``int`` ``64-bit``, *optional*):
                 Unique identifier of the message effect to be added to the message; for private chats only.
 
             allow_paid_broadcast (``bool``, *optional*):
@@ -4166,7 +4166,7 @@ class Message(Object, Update):
             is_flexible=is_flexible,
             disable_notification=disable_notification,
             protect_content=protect_content,
-            message_effect_id=message_effect_id,
+            effect_id=effect_id,
             reply_parameters=reply_parameters,
             allow_paid_broadcast=allow_paid_broadcast,
             direct_messages_topic_id=direct_messages_topic_id,
