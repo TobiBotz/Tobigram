@@ -555,8 +555,6 @@ mtproto:
       query_id: guest_query_id
     answer_chat_join_request_query:
       query_id: chat_join_request_query_id
-    send_invoice:
-      effect: message_effect_id
     create_chat_invite_link:
       subscription_pricing: subscription_period
     export_chat_invite_link:
@@ -693,7 +691,6 @@ mtproto:
       entities: the method builds its own content from its arguments
       invert_media: the method sends no caption, so there is nothing to place above the media
     send_invoice:
-      effect: effect_id
       invert_media: the method sends no caption, so there is nothing to place above the media
     edit_message_text:
       media: edits the text; media is replaced through edit_message_media
