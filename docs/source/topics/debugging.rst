@@ -2,7 +2,7 @@ Debugging
 =========
 
 When working with the API, chances are you'll stumble upon bugs, get stuck and start wondering how to continue. Nothing
-to actually worry about since wzgram provides some commodities to help you in this.
+to actually worry about since pyrogram provides some commodities to help you in this.
 
 
 -----
@@ -15,7 +15,7 @@ Caveman Debugging
     -- Brian Kernighan, "Unix for Beginners" (1979)
 
 Adding ``print()`` statements in crucial parts of your code is by far the most ancient, yet efficient technique for
-debugging programs, especially considering the concurrent nature of the framework itself. wzgram goodness in this
+debugging programs, especially considering the concurrent nature of the framework itself. pyrogram goodness in this
 respect comes with the fact that any object can be nicely printed just by calling ``print(obj)``, thus giving to you
 an insight of all its inner details.
 
@@ -42,7 +42,7 @@ This will show a JSON representation of the object returned by :meth:`~pyrogram.
         "is_verified": false,
         "is_restricted": false,
         "is_support": false,
-        "first_name": "wzgram",
+        "first_name": "pyrogram",
         "photo": {
             "_": "ChatPhoto",
             "small_file_id": "AbCdE...EdCbA",
@@ -52,13 +52,13 @@ This will show a JSON representation of the object returned by :meth:`~pyrogram.
         }
     }
 
-As you've probably guessed already, wzgram objects can be nested. That's how compound data are built, and nesting
+As you've probably guessed already, pyrogram objects can be nested. That's how compound data are built, and nesting
 keeps going until we are left with base data types only, such as ``str``, ``int``, ``bool``, etc.
 
 Accessing Attributes
 --------------------
 
-Even though you see a JSON output, it doesn't mean we are dealing with dictionaries; in fact, all wzgram types are
+Even though you see a JSON output, it doesn't mean we are dealing with dictionaries; in fact, all pyrogram types are
 fully-fledged Python objects and the correct way to access any attribute of them is by using the dot notation ``.``:
 
 .. code-block:: python
@@ -99,7 +99,7 @@ And to check if an object is an instance of a given class, you use the built-in 
 .. code-block:: python
     :name: this-py
 
-    from wzgram.enums import UserStatus
+    from pyrogram.enums import UserStatus
 
     status = me.status
     print(isinstance(status, UserStatus))
@@ -120,8 +120,8 @@ And to check if an object is an instance of a given class, you use the built-in 
 Enabling logs
 -------------
 
-wzgram logs through the standard :py:mod:`logging` module under the ``pyrogram`` logger, so
-turning it up needs no wzgram-specific setting:
+pyrogram logs through the standard :py:mod:`logging` module under the ``pyrogram`` logger, so
+turning it up needs no pyrogram-specific setting:
 
 .. code-block:: python
 

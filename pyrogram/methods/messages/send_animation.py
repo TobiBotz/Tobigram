@@ -16,71 +16,70 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import os
 import re
+from collections.abc import Callable
 from datetime import datetime
-from typing import Union, BinaryIO, List, Optional, Callable
+from typing import BinaryIO
 
 import pyrogram
-from pyrogram import StopTransmission, enums
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
-
-from ..ephemeral.as_ephemeral import as_ephemeral
+from pyrogram import StopTransmission, enums, raw, types, utils
 from pyrogram.errors import FilePartMissing
 from pyrogram.file_id import FileType
+
+from ..ephemeral.as_ephemeral import as_ephemeral
 
 
 class SendAnimation:
     async def send_animation(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        animation: Union[str, BinaryIO],
+        self: pyrogram.Client,
+        chat_id: int | str,
+        animation: str | BinaryIO,
         caption: str = "",
         unsave: bool = False,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        has_spoiler: Optional[bool] = None,
-        ttl_seconds: Optional[int] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        has_spoiler: bool | None = None,
+        ttl_seconds: int | None = None,
         duration: int = 0,
         width: int = 0,
         height: int = 0,
-        thumb: Optional[Union[str, BinaryIO]] = None,
-        file_name: Optional[str] = None,
-        disable_notification: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        reply_to_chat_id: Optional[Union[int, str]] = None,
-        schedule_date: Optional[datetime] = None,
-        protect_content: Optional[bool] = None,
-        reply_markup: Optional[Union[
-            "types.InlineKeyboardMarkup",
-            "types.ReplyKeyboardMarkup",
-            "types.ReplyKeyboardRemove",
-            "types.ForceReply"
-        ]] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        message_thread_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        show_caption_above_media: Optional[bool] = None,
-        repeat_period: Optional[int] = None,
-        business_connection_id: Optional[str] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        background: Optional[bool] = None,
-        clear_draft: Optional[bool] = None,
-        update_stickersets_order: Optional[bool] = None,
-        send_as: Optional[Union[int, str]] = None,
-        quick_reply_shortcut: Optional[int] = None,
-        progress: Optional[Callable] = None,
+        thumb: str | BinaryIO | None = None,
+        file_name: str | None = None,
+        disable_notification: bool | None = None,
+        reply_to_message_id: int | None = None,
+        reply_to_chat_id: int | str | None = None,
+        schedule_date: datetime | None = None,
+        protect_content: bool | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        message_thread_id: int | None = None,
+        effect_id: int | None = None,
+        show_caption_above_media: bool | None = None,
+        repeat_period: int | None = None,
+        business_connection_id: str | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        direct_messages_topic_id: int | None = None,
+        background: bool | None = None,
+        clear_draft: bool | None = None,
+        update_stickersets_order: bool | None = None,
+        send_as: int | str | None = None,
+        quick_reply_shortcut: int | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-        ephemeral_message_parameters: Optional["types.EphemeralMessageParameters"] = None,
-        **kwargs
-    ) -> Optional["types.Message"]:
+        ephemeral_message_parameters: types.EphemeralMessageParameters | None = None,
+        **kwargs,
+    ) -> types.Message | None:
         """Send animation files (animation or H.264/MPEG-4 AVC video without sound).
 
 
@@ -296,7 +295,9 @@ class SendAnimation:
             if isinstance(animation, str):
                 if os.path.isfile(animation):
                     thumb = await self.save_file(thumb)
-                    file = await self.save_file(animation, progress=progress, progress_args=progress_args)
+                    file = await self.save_file(
+                        animation, progress=progress, progress_args=progress_args
+                    )
                     media = raw.types.InputMediaUploadedDocument(
                         mime_type=self.guess_mime_type(animation) or "video/mp4",
                         file=file,
@@ -305,96 +306,132 @@ class SendAnimation:
                         spoiler=has_spoiler,
                         attributes=[
                             raw.types.DocumentAttributeVideo(
-                                supports_streaming=True,
-                                duration=duration,
-                                w=width,
-                                h=height
+                                supports_streaming=True, duration=duration, w=width, h=height
                             ),
-                            raw.types.DocumentAttributeFilename(file_name=file_name or os.path.basename(animation)),
-                            raw.types.DocumentAttributeAnimated()
-                        ]
+                            raw.types.DocumentAttributeFilename(
+                                file_name=file_name or os.path.basename(animation)
+                            ),
+                            raw.types.DocumentAttributeAnimated(),
+                        ],
                     )
                 elif re.match("^https?://", animation):
                     media = raw.types.InputMediaDocumentExternal(
-                        url=animation,
-                        ttl_seconds=ttl_seconds,
-                        spoiler=has_spoiler
+                        url=animation, ttl_seconds=ttl_seconds, spoiler=has_spoiler
                     )
                 else:
-                    media = utils.get_input_media_from_file_id(animation, FileType.ANIMATION, ttl_seconds=ttl_seconds, has_spoiler=has_spoiler)
+                    media = utils.get_input_media_from_file_id(
+                        animation,
+                        FileType.ANIMATION,
+                        ttl_seconds=ttl_seconds,
+                        has_spoiler=has_spoiler,
+                    )
             else:
                 thumb = await self.save_file(thumb)
-                file = await self.save_file(animation, progress=progress, progress_args=progress_args)
+                file = await self.save_file(
+                    animation, progress=progress, progress_args=progress_args
+                )
                 media = raw.types.InputMediaUploadedDocument(
                     mime_type=self.guess_mime_type(
-                        utils.get_file_name(animation, file_name=file_name, fallback="animation.mp4")
-                    ) or "video/mp4",
+                        utils.get_file_name(
+                            animation, file_name=file_name, fallback="animation.mp4"
+                        )
+                    )
+                    or "video/mp4",
                     file=file,
                     ttl_seconds=ttl_seconds,
                     thumb=thumb,
                     spoiler=has_spoiler,
                     attributes=[
                         raw.types.DocumentAttributeVideo(
-                            supports_streaming=True,
-                            duration=duration,
-                            w=width,
-                            h=height
+                            supports_streaming=True, duration=duration, w=width, h=height
                         ),
                         raw.types.DocumentAttributeFilename(
-                            file_name=utils.get_file_name(animation, file_name=file_name, fallback="animation.mp4")
+                            file_name=utils.get_file_name(
+                                animation, file_name=file_name, fallback="animation.mp4"
+                            )
                         ),
-                        raw.types.DocumentAttributeAnimated()
-                    ]
+                        raw.types.DocumentAttributeAnimated(),
+                    ],
                 )
 
             while True:
                 try:
-                    text_params = await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
+                    text_params = await utils.parse_text_entities(
+                        self, caption, parse_mode, caption_entities
+                    )
 
                     r = await self.invoke(
-                        await as_ephemeral(self, ephemeral_message_parameters, raw.functions.messages.SendMedia(
-                            peer=await self.resolve_peer(chat_id),
-                            media=media,
-                            silent=disable_notification if disable_notification is not None else None,
-                            reply_to=await utils.get_reply_to(
-                                self,
-                                reply_parameters,
-                                message_thread_id,
-                                direct_messages_topic_id=direct_messages_topic_id
+                        await as_ephemeral(
+                            self,
+                            ephemeral_message_parameters,
+                            raw.functions.messages.SendMedia(
+                                peer=await self.resolve_peer(chat_id),
+                                media=media,
+                                silent=disable_notification
+                                if disable_notification is not None
+                                else None,
+                                reply_to=await utils.get_reply_to(
+                                    self,
+                                    reply_parameters,
+                                    message_thread_id,
+                                    direct_messages_topic_id=direct_messages_topic_id,
+                                ),
+                                random_id=self.rnd_id(),
+                                schedule_date=utils.datetime_to_timestamp(schedule_date),
+                                noforwards=protect_content,
+                                effect=effect_id,
+                                invert_media=show_caption_above_media
+                                if show_caption_above_media is not None
+                                else None,
+                                schedule_repeat_period=repeat_period,
+                                allow_paid_floodskip=allow_paid_broadcast
+                                if allow_paid_broadcast is not None
+                                else None,
+                                allow_paid_stars=paid_message_star_count
+                                if paid_message_star_count is not None
+                                else None,
+                                suggested_post=suggested_post_parameters.write()
+                                if suggested_post_parameters
+                                else None,
+                                reply_markup=await reply_markup.write(self)
+                                if reply_markup
+                                else None,
+                                background=background,
+                                clear_draft=clear_draft,
+                                update_stickersets_order=update_stickersets_order,
+                                send_as=await self.resolve_peer(send_as)
+                                if send_as is not None
+                                else None,
+                                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(
+                                    shortcut_id=quick_reply_shortcut
+                                )
+                                if quick_reply_shortcut is not None
+                                else None,
+                                **text_params,
                             ),
-                            random_id=self.rnd_id(),
-                            schedule_date=utils.datetime_to_timestamp(schedule_date),
-                            noforwards=protect_content,
-                            effect=effect_id,
-                            invert_media=show_caption_above_media if show_caption_above_media is not None else None,
-                            schedule_repeat_period=repeat_period,
-                            allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
-                            allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
-                            suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
-                            reply_markup=await reply_markup.write(self) if reply_markup else None,
-                            background=background,
-                            clear_draft=clear_draft,
-                            update_stickersets_order=update_stickersets_order,
-                            send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                            quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
-                            **text_params
-                        )),
+                        ),
                         sleep_threshold=60,
-                        business_connection_id=business_connection_id
+                        business_connection_id=business_connection_id,
                     )
                 except FilePartMissing as e:
                     await self.save_file(animation, file_id=file.id, file_part=e.value)
                 else:
                     for i in r.updates:
-                        if isinstance(i, (raw.types.UpdateNewMessage,
-                                          raw.types.UpdateNewChannelMessage,
-                                          raw.types.UpdateNewScheduledMessage,
-                                          raw.types.UpdateNewEphemeralMessage)):
+                        if isinstance(
+                            i,
+                            (
+                                raw.types.UpdateNewMessage,
+                                raw.types.UpdateNewChannelMessage,
+                                raw.types.UpdateNewScheduledMessage,
+                                raw.types.UpdateNewEphemeralMessage,
+                            ),
+                        ):
                             message = await types.Message._parse(
-                                self, i.message,
+                                self,
+                                i.message,
                                 {i.id: i for i in r.users},
                                 {i.id: i for i in r.chats},
-                                is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                                is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                             )
 
                             if unsave:
@@ -404,10 +441,7 @@ class SendAnimation:
                                 ).id
 
                                 await self.invoke(
-                                    raw.functions.messages.SaveGif(
-                                        id=document_id,
-                                        unsave=True
-                                    )
+                                    raw.functions.messages.SaveGif(id=document_id, unsave=True)
                                 )
 
                             return message

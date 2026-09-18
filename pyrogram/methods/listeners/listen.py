@@ -16,9 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import List, Optional, Union
 
 import pyrogram
 from pyrogram import enums, types, utils
@@ -29,7 +30,7 @@ from pyrogram.types.listeners.listener import UNSET
 log = logging.getLogger(__name__)
 
 
-async def resolve_listener_ids(client: "pyrogram.Client", value):
+async def resolve_listener_ids(client: pyrogram.Client, value):
     """Turn whatever the caller passed into canonical peer ids.
 
     Listeners are filed by id, so a username has to become one at registration
@@ -50,16 +51,16 @@ async def resolve_listener_ids(client: "pyrogram.Client", value):
 
 class Listen:
     async def listen(
-        self: "pyrogram.Client",
-        filters: Optional[Filter] = None,
-        listener_type: "enums.ListenerTypes" = enums.ListenerTypes.MESSAGE,
-        timeout: Optional[float] = UNSET,
-        unallowed_click_alert: Union[bool, str] = True,
-        chat_id: Optional[Union[int, str, List[Union[int, str]]]] = None,
-        user_id: Optional[Union[int, str, List[Union[int, str]]]] = None,
-        message_id: Optional[Union[int, List[int]]] = None,
-        inline_message_id: Optional[Union[str, List[str]]] = None
-    ) -> Union["types.Message", "types.CallbackQuery"]:
+        self: pyrogram.Client,
+        filters: Filter | None = None,
+        listener_type: enums.ListenerTypes = enums.ListenerTypes.MESSAGE,
+        timeout: float | None = UNSET,
+        unallowed_click_alert: bool | str = True,
+        chat_id: int | str | list[int | str] | None = None,
+        user_id: int | str | list[int | str] | None = None,
+        message_id: int | list[int] | None = None,
+        inline_message_id: str | list[str] | None = None,
+    ) -> types.Message | types.CallbackQuery:
         """Wait for the next update matching the given criteria.
 
         The update is consumed: handlers do not see it. Raw update handlers still
@@ -121,9 +122,7 @@ class Listen:
                 )
         """
         if self.no_updates:
-            raise ListenerStopped(
-                "Cannot listen for updates on a client started with no_updates"
-            )
+            raise ListenerStopped("Cannot listen for updates on a client started with no_updates")
 
         if timeout is UNSET:
             timeout = self.listener_timeout
@@ -132,7 +131,7 @@ class Listen:
             chat_id=await resolve_listener_ids(self, chat_id),
             user_id=await resolve_listener_ids(self, user_id),
             message_id=message_id,
-            inline_message_id=inline_message_id
+            inline_message_id=inline_message_id,
         )
 
         future = self.loop.create_future()
@@ -142,7 +141,7 @@ class Listen:
             identifier=identifier,
             filters=filters,
             future=future,
-            unallowed_click_alert=unallowed_click_alert
+            unallowed_click_alert=unallowed_click_alert,
         )
 
         self.listeners.add(listener, timeout)

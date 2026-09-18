@@ -15,7 +15,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
-from typing import Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types
@@ -23,9 +24,9 @@ from pyrogram import raw, types
 
 class FixTextWithAI:
     async def fix_text_with_ai(
-        self: "pyrogram.Client",
-        text: Union[str, "types.FormattedText"],
-    ) -> "types.FormattedText":
+        self: pyrogram.Client,
+        text: str | types.FormattedText,
+    ) -> types.FormattedText:
         """Fixes text using an AI model.
 
         .. include:: /_includes/usable-by/users.rst
@@ -37,9 +38,9 @@ class FixTextWithAI:
         Returns:
             :obj:`~pyrogram.types.FormattedText`: On success, information about the fixed text is returned.
 
-        Example: 
+        Example:
             .. code-block:: python
-            
+
                 app.fix_text_with_ai(
                     "This statement maay havve feew mistakes"
                 )
@@ -55,4 +56,3 @@ class FixTextWithAI:
         )
 
         return types.FormattedText._parse(self, r.result_text)
-

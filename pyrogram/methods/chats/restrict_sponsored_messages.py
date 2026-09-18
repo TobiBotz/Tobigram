@@ -21,19 +21,19 @@
 # Source: tl:channels.restrictSponsoredMessages
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class RestrictSponsoredMessages:
     async def restrict_sponsored_messages(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        restricted: Optional[bool] = None,
-    ) -> "types.Message":
+        self: pyrogram.Client,
+        chat_id: int | str,
+        restricted: bool | None = None,
+    ) -> types.Message:
         """Restrict sponsored messages in a channel.
 
         .. include:: /_includes/usable-by/users.rst
@@ -58,19 +58,24 @@ class RestrictSponsoredMessages:
 
         r = await self.invoke(
             raw.functions.channels.RestrictSponsoredMessages(
-                
                 channel=await self.resolve_peer(chat_id),
                 restricted=restricted,
             )
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
+                    self,
+                    i.message,
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                 )

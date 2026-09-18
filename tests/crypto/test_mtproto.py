@@ -1,11 +1,7 @@
 import os
-from hashlib import sha1
-from io import BytesIO
-
-import pytest
 
 from pyrogram import raw
-from pyrogram.crypto import mtproto, aes
+from pyrogram.crypto import aes, mtproto
 from pyrogram.session.internals import MsgFactory
 
 

@@ -16,11 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime
-from typing import Optional
+from __future__ import annotations
 
-import pyrogram
-from pyrogram import raw, types, utils
+
+from pyrogram import raw
 
 from ..object import Object
 
@@ -48,11 +47,11 @@ class AcceptedGiftTypes(Object):
     def __init__(
         self,
         *,
-        unlimited_gifts: Optional[bool] = None,
-        limited_gifts: Optional[bool] = None,
-        upgraded_gifts: Optional[bool] = None,
-        gifts_from_channels: Optional[bool] = None,
-        premium_subscription: Optional[bool] = None,
+        unlimited_gifts: bool | None = None,
+        limited_gifts: bool | None = None,
+        upgraded_gifts: bool | None = None,
+        gifts_from_channels: bool | None = None,
+        premium_subscription: bool | None = None,
     ):
         super().__init__()
 
@@ -63,7 +62,9 @@ class AcceptedGiftTypes(Object):
         self.premium_subscription = premium_subscription
 
     @staticmethod
-    def _parse(disallowed_gifts: "raw.types.DisallowedGiftsSettings") -> Optional["AcceptedGiftTypes"]:
+    def _parse(
+        disallowed_gifts: raw.types.DisallowedGiftsSettings,
+    ) -> AcceptedGiftTypes | None:
         if not disallowed_gifts:
             return None
 
@@ -75,7 +76,7 @@ class AcceptedGiftTypes(Object):
             premium_subscription=not disallowed_gifts.disallow_premium_gifts,
         )
 
-    def write(self) -> "raw.types.DisallowedGiftsSettings":
+    def write(self) -> raw.types.DisallowedGiftsSettings:
         return raw.types.DisallowedGiftsSettings(
             disallow_unlimited_stargifts=self.unlimited_gifts is False,
             disallow_limited_stargifts=self.limited_gifts is False,
@@ -83,4 +84,3 @@ class AcceptedGiftTypes(Object):
             disallow_stargifts_from_channels=self.gifts_from_channels is False,
             disallow_premium_gifts=self.premium_subscription is False,
         )
-

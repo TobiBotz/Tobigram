@@ -16,7 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
+
 from pyrogram import types
 
 from ..object import Object
@@ -72,18 +74,19 @@ class KeyboardButtonRequestChat(Object):
     """
 
     def __init__(
-        self, *,
+        self,
+        *,
         button_id: int,
         chat_is_channel: bool,
-        chat_is_forum: Optional[bool] = None,
-        chat_has_username: Optional[bool] = None,
-        chat_is_created: Optional[bool] = None,
-        bot_is_member: Optional[bool] = None,
-        user_administrator_rights: Optional["types.ChatAdministratorRights"] = None,
-        bot_administrator_rights: Optional["types.ChatAdministratorRights"] = None,
-        request_title: Optional[bool] = None,
-        request_username: Optional[bool] = None,
-        request_photo: Optional[bool] = None,
+        chat_is_forum: bool | None = None,
+        chat_has_username: bool | None = None,
+        chat_is_created: bool | None = None,
+        bot_is_member: bool | None = None,
+        user_administrator_rights: types.ChatAdministratorRights | None = None,
+        bot_administrator_rights: types.ChatAdministratorRights | None = None,
+        request_title: bool | None = None,
+        request_username: bool | None = None,
+        request_photo: bool | None = None,
         max_quantity: int = 1,  # Telegram ignores this field for chats
     ):
         super().__init__()
@@ -100,4 +103,3 @@ class KeyboardButtonRequestChat(Object):
         self.request_username = request_username
         self.request_photo = request_photo
         self.max_quantity = max_quantity
-

@@ -7,7 +7,7 @@ This example demonstrates a basic API usage
 
 .. code-block:: python
 
-    from wzgram import Client
+    from pyrogram import Client
 
     # Create a new Client instance
     app = Client("my_account")
@@ -16,7 +16,7 @@ This example demonstrates a basic API usage
     async def main():
         async with app:
             # Send a message, Markdown is enabled by default
-            await app.send_message(chat_id="me", text="Hi there! I'm using **wzgram**")
+            await app.send_message(chat_id="me", text="Hi there! I'm using **Tobigram**")
 
 
     app.run(main())

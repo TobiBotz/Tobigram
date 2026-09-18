@@ -34,8 +34,7 @@ async def test_a_failed_connect_says_what_went_wrong(monkeypatch):
         await connection.connect()
 
     assert "Connect call failed" in str(caught.value), (
-        "the socket error that actually stopped the connection must survive; "
-        f"got {caught.value!r}"
+        f"the socket error that actually stopped the connection must survive; got {caught.value!r}"
     )
 
 

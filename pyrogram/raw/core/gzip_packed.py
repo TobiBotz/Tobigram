@@ -18,7 +18,7 @@
 
 from gzip import compress, decompress
 from io import BytesIO
-from typing import cast, Any
+from typing import Any, cast
 
 from .primitives.bytes import Bytes
 from .primitives.int import Int
@@ -38,25 +38,13 @@ class GzipPacked(TLObject):
     @staticmethod
     def read(data: BytesIO, *args: Any) -> "GzipPacked":
         # Return the Object itself instead of a GzipPacked wrapping it
-        return cast(GzipPacked, TLObject.read(
-            BytesIO(
-                decompress(
-                    Bytes.read(data)
-                )
-            )
-        ))
+        return cast(GzipPacked, TLObject.read(BytesIO(decompress(Bytes.read(data)))))
 
     def write(self, *args: Any) -> bytes:
         b = BytesIO()
 
         b.write(Int(self.ID, False))
 
-        b.write(
-            Bytes(
-                compress(
-                    self.packed_data.write()
-                )
-            )
-        )
+        b.write(Bytes(compress(self.packed_data.write())))
 
         return b.getvalue()

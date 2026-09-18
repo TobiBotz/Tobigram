@@ -19,7 +19,7 @@ Posting
 
 .. code-block:: python
 
-    from wzgram import enums
+    from pyrogram import enums
 
     story = await app.send_story(
         chat_id="me",
@@ -46,8 +46,8 @@ of the media's own size, and ``type`` says what the area *is*.
 
 .. code-block:: python
 
-    from wzgram import enums
-    from wzgram.types import MediaArea
+    from pyrogram import enums
+    from pyrogram.types import MediaArea
 
     await app.send_story(
         chat_id="me",

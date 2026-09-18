@@ -4,7 +4,6 @@ from pyrogram.handlers import (
     Handler,
     MessageHandler,
 )
-from pyrogram.handlers import handler as handler_module
 
 
 async def dummy_callback(client, update):

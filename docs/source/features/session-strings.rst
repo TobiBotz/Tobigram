@@ -1,13 +1,13 @@
 Session Strings
 ===============
 
-*A wzgram extension*
+*A pyrogram extension*
 
 A session string packs everything a client needs to resume an authorised session — the
 datacenter, the auth key, who you are — into one line of text you can move between machines,
 put in an environment variable, or hand to a deployment.
 
-wzgram's format adds a checksum and a prefix, and its decoder accepts every format the
+pyrogram's format adds a checksum, and its decoder accepts every format the
 library has ever produced.
 
 
@@ -21,7 +21,7 @@ Exporting
     async with Client("my_account", api_id, api_hash) as app:
         print(await app.export_session_string())
 
-The result starts with ``WZ_``. Using it back is a constructor argument:
+The result is a URL-safe base64 string. Using it back is a constructor argument:
 
 .. code-block:: python
 
@@ -65,8 +65,7 @@ two, from the alphabet. A repaired string is only ever accepted when the CRC vou
 Without that rule the auth key handed back would be assembled from a guess, which is worse
 than an error.
 
-The ``WZ_`` prefix is stripped whatever the string is wrapped in, and characters outside the
-alphabet are dropped before decoding — so a stray newline is not corruption.
+Characters outside the alphabet are dropped before decoding — so a stray newline is not corruption.
 
 Gotchas
 -------

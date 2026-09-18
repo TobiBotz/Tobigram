@@ -1,4 +1,4 @@
-# Contributing to wzgram
+# Contributing to pyrogram
 
 Thanks for your interest in contributing!
 
@@ -7,8 +7,8 @@ Thanks for your interest in contributing!
 This project uses [uv](https://docs.astral.sh/uv/) for package management and [poethepoet](https://github.com/nat-n/poethepoet) for task running.
 
 ```bash
-git clone https://github.com/rjriajul/wzgram
-cd wzgram
+git clone https://github.com/TobiBotz/Tobigram
+cd pyrogram
 uv sync --frozen --extra dev
 uv run poe api
 ```
@@ -17,6 +17,21 @@ uv run poe api
 
 ```bash
 uv run poe test
+# Or fast parallel tests:
+uv run poe test-fast
+```
+
+## Linting & Formatting
+
+```bash
+# Check code style & linting
+uv run poe lint
+
+# Auto-fix safe lint issues
+uv run poe lint-fix
+
+# Auto-format code with Ruff
+uv run poe fmt
 ```
 
 ## Building Docs
@@ -32,7 +47,11 @@ uv run poe docs
 | `uv run poe venv` | Sync frozen environment |
 | `uv run poe venv-dev` | Sync dev environment |
 | `uv run poe api` | Generate TL API types |
-| `uv run poe test` | Run tests |
+| `uv run poe test` | Run tests sequentially |
+| `uv run poe test-fast` | Run tests in parallel (multi-core) |
+| `uv run poe lint` | Check code quality with Ruff |
+| `uv run poe lint-fix` | Automatically fix safe lint issues |
+| `uv run poe fmt` | Auto-format code with Ruff |
 | `uv run poe docs` | Build documentation |
 | `uv run poe build` | Build sdist and wheel |
 | `uv run poe publish` | Publish to PyPI |

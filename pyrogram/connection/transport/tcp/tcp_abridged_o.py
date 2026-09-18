@@ -16,42 +16,45 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-import os
+from __future__ import annotations
+
 import asyncio
-from typing import Optional
+import logging
 
 from pyrogram.crypto import aes
-from .tcp import TCP
+
+from .tcp import TCP, finalize_obfuscated2_tag, generate_obfuscated2_nonce
 
 log = logging.getLogger(__name__)
 
 
 class TCPAbridgedO(TCP):
-    RESERVED = (b"HEAD", b"POST", b"GET ", b"OPTI", b"\xee" * 4)
-
-    def __init__(self, ipv6: bool, proxy: dict, crypto_executor=None, loop: Optional[asyncio.AbstractEventLoop] = None):
-        super().__init__(ipv6, proxy, crypto_executor, loop)
+    def __init__(
+        self,
+        ipv6: bool = False,
+        proxy=None,
+        crypto_executor=None,
+        loop: asyncio.AbstractEventLoop | None = None,
+        dc_id: int | None = None,
+    ):
+        super().__init__(ipv6, proxy, crypto_executor, loop, dc_id=dc_id)
 
         self.encrypt = None
         self.decrypt = None
+        self.stream_lock = asyncio.Lock()
 
     async def connect(self, address: tuple):
         await super().connect(address)
 
-        while True:
-            nonce = bytearray(os.urandom(64))
-
-            if bytes([nonce[0]]) != b"\xef" and nonce[:4] not in self.RESERVED and nonce[4:8] != b"\x00" * 4:
-                nonce[56] = nonce[57] = nonce[58] = nonce[59] = 0xef
-                break
+        nonce = generate_obfuscated2_nonce()
+        nonce[56] = nonce[57] = nonce[58] = nonce[59] = 0xEF
 
         temp = bytearray(nonce[55:7:-1])
 
         self.encrypt = (bytes(nonce[8:40]), nonce[40:56], bytearray(1))
         self.decrypt = (bytes(temp[0:32]), temp[32:48], bytearray(1))
 
-        nonce[56:64] = aes.ctr256_encrypt(bytes(nonce), *self.encrypt)[56:64]
+        nonce[56:64] = finalize_obfuscated2_tag(nonce, self.encrypt)
 
         await super().send(nonce)
 
@@ -59,9 +62,11 @@ class TCPAbridgedO(TCP):
         length = len(data) // 4
         data = (bytes([length]) if length <= 126 else b"\x7f" + length.to_bytes(3, "little")) + data
 
-        await super().send(aes.ctr256_encrypt(data, *self.encrypt))
+        async with self.stream_lock:
+            encrypted = aes.ctr256_encrypt(data, *self.encrypt)
+            await super().send(encrypted)
 
-    async def recv(self, length: int = 0) -> Optional[bytes]:
+    async def recv(self, length: int = 0) -> bytes | None:
         length = await super().recv(1)
 
         if length is None:

@@ -16,7 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+
+from __future__ import annotations
+
 from pyrogram import raw
 
 from ..object import Object
@@ -34,23 +36,15 @@ class StarAmount(Object):
             From -999999999 to 999999999.
     """
 
-    def __init__(
-        self, *,
-        star_count: Optional[int] = None,
-        nanostar_count: Optional[int] = None
-    ):
+    def __init__(self, *, star_count: int | None = None, nanostar_count: int | None = None):
         super().__init__()
 
         self.star_count = star_count
         self.nanostar_count = nanostar_count
 
     @staticmethod
-    def _parse(action: "raw.types.StarsAmount") -> "StarAmount":
+    def _parse(action: raw.types.StarsAmount) -> StarAmount:
         if not isinstance(action, raw.types.StarsAmount):
             return None
 
-        return StarAmount(
-            star_count=action.amount,
-            nanostar_count=action.nanos
-        )
-
+        return StarAmount(star_count=action.amount, nanostar_count=action.nanos)

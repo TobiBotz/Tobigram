@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import errors, raw, types, utils
@@ -24,12 +25,12 @@ from pyrogram import errors, raw, types, utils
 
 class TransferGift:
     async def transfer_gift(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         owned_gift_id: str,
-        new_owner_chat_id: Union[int, str],
+        new_owner_chat_id: int | str,
         # stars_count: int = None,
-        business_connection_id: Optional[str] = None
-    ) -> Optional["types.Message"]:
+        business_connection_id: str | None = None,
+    ) -> types.Message | None:
         """Transfers an owned unique gift to another user.
 
         .. note::
@@ -70,35 +71,28 @@ class TransferGift:
 
         try:
             r = await self.invoke(
-                raw.functions.payments.TransferStarGift(
-                    stargift=stargift,
-                    to_id=peer
-                ),
-                business_connection_id=business_connection_id
+                raw.functions.payments.TransferStarGift(stargift=stargift, to_id=peer),
+                business_connection_id=business_connection_id,
             )
         except errors.PaymentRequired:
-            invoice = raw.types.InputInvoiceStarGiftTransfer(
-                stargift=stargift,
-                to_id=peer
-            )
+            invoice = raw.types.InputInvoiceStarGiftTransfer(stargift=stargift, to_id=peer)
 
             r = await self.invoke(
                 raw.functions.payments.SendStarsForm(
-                    form_id=(await self.invoke(
-                        raw.functions.payments.GetPaymentForm(
-                            invoice=invoice
-                        ),
-                        business_connection_id=business_connection_id
-                    )).form_id,
-                    invoice=invoice
+                    form_id=(
+                        await self.invoke(
+                            raw.functions.payments.GetPaymentForm(invoice=invoice),
+                            business_connection_id=business_connection_id,
+                        )
+                    ).form_id,
+                    invoice=invoice,
                 ),
-                business_connection_id=business_connection_id
+                business_connection_id=business_connection_id,
             )
 
         messages = await utils.parse_messages(
             client=self,
-            messages=r.updates if isinstance(r, raw.types.payments.PaymentResult) else r
+            messages=r.updates if isinstance(r, raw.types.payments.PaymentResult) else r,
         )
 
         return messages[0] if messages else None
-

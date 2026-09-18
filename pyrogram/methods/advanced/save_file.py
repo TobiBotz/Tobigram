@@ -16,7 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import asyncio
+import contextlib
 import functools
 import inspect
 import io
@@ -24,14 +27,14 @@ import logging
 import math
 import os
 import time
+from collections.abc import Callable
 from hashlib import md5
-from pathlib import PurePath
-from typing import Union, BinaryIO, Callable, Optional
+from typing import BinaryIO
 
 import pyrogram
-from pyrogram import StopTransmission
-from pyrogram import raw
+from pyrogram import StopTransmission, raw
 from pyrogram.errors import RPCError
+from pyrogram.methods.rate_limiter import TokenBucket
 from pyrogram.session import Session
 
 log = logging.getLogger(__name__)
@@ -42,6 +45,7 @@ MAX_RETRIES = 16
 STALL_TIMEOUT = 900
 READ_BUFFER = 4 * 1024 * 1024
 MAX_BATCH = 4 * 1024 * 1024
+PACER_BURST = 8
 
 
 async def _stop_workers(queue: asyncio.Queue, workers: list) -> list:
@@ -76,11 +80,11 @@ async def _stop_workers(queue: asyncio.Queue, workers: list) -> list:
 
 class SaveFile:
     async def save_file(
-        self: "pyrogram.Client",
-        path: Union[str, BinaryIO],
-        file_id: Optional[int] = None,
+        self: pyrogram.Client,
+        path: str | os.PathLike | BinaryIO,
+        file_id: int | None = None,
         file_part: int = 0,
-        progress: Optional[Callable] = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
     ):
         """Upload a file onto Telegram servers, without sending the message to anyone.
@@ -134,9 +138,7 @@ class SaveFile:
             async def _send_part(session, data):
                 for attempt in range(MAX_RETRIES):
                     try:
-                        await session.invoke(
-                            data, timeout=Session.MEDIA_WAIT_TIMEOUT
-                        )
+                        await session.invoke(data, timeout=Session.MEDIA_WAIT_TIMEOUT)
                         break
                     except StopTransmission:
                         raise
@@ -147,7 +149,7 @@ class SaveFile:
                                 MAX_RETRIES,
                             )
                             raise
-                        delay = min(2 ** attempt, 30)
+                        delay = min(2**attempt, 30)
                         err_str = str(e)
                         if "FLOOD" in err_str:
                             for part in err_str.split():
@@ -156,19 +158,19 @@ class SaveFile:
                                     break
                         log.warning(
                             "Retrying upload part (attempt %d/%d): %s",
-                            attempt + 1, MAX_RETRIES, err_str[:120],
+                            attempt + 1,
+                            MAX_RETRIES,
+                            err_str[:120],
                         )
                         await asyncio.sleep(delay)
 
             async def read_batch():
                 batch_size = min(PART_SIZE * n_workers, MAX_BATCH)
-                return await self.loop.run_in_executor(
-                    self.executor, fp.read, batch_size
-                )
+                return await self.loop.run_in_executor(self.executor, fp.read, batch_size)
 
             part_size = PART_SIZE
 
-            if isinstance(path, (str, PurePath)):
+            if isinstance(path, (str, os.PathLike)):
                 fp = open(path, "rb", buffering=READ_BUFFER)
             elif isinstance(path, io.IOBase):
                 fp = path
@@ -187,47 +189,66 @@ class SaveFile:
             if file_size == 0:
                 raise ValueError("File size equals to 0 B")
 
-            is_bot = self.me.is_bot if hasattr(self.me, 'is_bot') else False
-            is_premium = self.me.is_premium if hasattr(self.me, 'is_premium') else False
+            is_bot = self.me.is_bot if hasattr(self.me, "is_bot") else False
+            is_premium = self.me.is_premium if hasattr(self.me, "is_premium") else False
 
             file_size_limit_mib = 4000 if is_premium else 2000
 
             if file_size > file_size_limit_mib * 1024 * 1024:
-                raise ValueError(
-                    f"Can't upload files bigger than {file_size_limit_mib} MiB"
-                )
+                raise ValueError(f"Can't upload files bigger than {file_size_limit_mib} MiB")
 
             file_total_parts = int(math.ceil(file_size / part_size))
             is_big = file_size > 10 * 1024 * 1024
+            pool_cap = max(1, math.ceil((file_total_parts - file_part) / 2))
             if is_bot:
-                rate_limit = 40  # ~20 MiB/s
-                pool_size = min(8, POOL_SIZE) if is_big else 1
+                rate_limit = int(os.environ.get("TOBIGRAM_UPLOAD_RATE_BOT", 120))
+                pool_size = min(
+                    int(os.environ.get("TOBIGRAM_UPLOAD_POOL_BOT", 5)),
+                    POOL_SIZE,
+                    pool_cap,
+                )
             elif is_premium:
-                rate_limit = 300
-                pool_size = min(14, POOL_SIZE) if is_big else 1
+                rate_limit = int(os.environ.get("TOBIGRAM_UPLOAD_RATE_PREMIUM", 300))
+                pool_size = min(
+                    int(os.environ.get("TOBIGRAM_UPLOAD_POOL_PREMIUM", 14)),
+                    POOL_SIZE,
+                    pool_cap,
+                )
             else:
-                rate_limit = 50  # ~25 MiB/s
-                pool_size = min(12, POOL_SIZE) if is_big else 1
+                rate_limit = int(os.environ.get("TOBIGRAM_UPLOAD_RATE_USER", 120))
+                pool_size = min(
+                    int(os.environ.get("TOBIGRAM_UPLOAD_POOL_USER", 5)),
+                    POOL_SIZE,
+                    pool_cap,
+                )
 
             is_missing_part = file_id is not None
             file_id = file_id or self.rnd_id()
             md5_sum = md5() if not is_big and not is_missing_part else None
 
             dc_id = await self.storage.dc_id()
-            pool = await self._get_media_session_pool(dc_id, pool_size)
+            pool_lease = contextlib.AsyncExitStack()
 
-            _acked = [0]
+            try:
+                pool_task = await pool_lease.enter_async_context(self._media_pool(dc_id, pool_size))
+                pool = await pool_task
 
-            n_workers = len(pool) * 2
-            queue = asyncio.Queue(n_workers)
-            budget = ReadAhead(self.read_ahead_slots)
-            workers = [
-                self.loop.create_task(worker(pool[i % len(pool)]))
-                for i in range(n_workers)
-            ]
+                if not pool:
+                    raise OSError(f"No media session available for DC {dc_id}")
+
+                _acked = [0]
+
+                n_workers = len(pool) * 2
+                queue = asyncio.Queue(n_workers)
+                budget = ReadAhead(self.read_ahead_slots)
+                workers = [
+                    self.loop.create_task(worker(pool[i % len(pool)])) for i in range(n_workers)
+                ]
+            except BaseException:
+                await pool_lease.aclose()
+                raise
             next_batch_task = None
-            _next_dispatch = 0.0
-            _dispatch_interval = 1.0 / rate_limit
+            _pacer = TokenBucket(rate=rate_limit, burst=PACER_BURST)
             _stalled_since = 0.0
 
             async def _report(parts: int) -> None:
@@ -273,7 +294,7 @@ class SaveFile:
                     await _check_workers()
 
                     for start in range(0, len(batch), part_size):
-                        chunk = batch[start:start + part_size]
+                        chunk = batch[start : start + part_size]
 
                         if is_big:
                             rpc = raw.functions.upload.SaveBigFilePart(
@@ -287,10 +308,7 @@ class SaveFile:
                                 file_id=file_id, file_part=file_part, bytes=chunk
                             )
 
-                        _now = time.monotonic()
-                        if _now < _next_dispatch:
-                            await asyncio.sleep(_next_dispatch - _now)
-                        _next_dispatch = max(time.monotonic(), _next_dispatch) + _dispatch_interval
+                        await _pacer.acquire()
 
                         await budget.acquire()
 
@@ -347,9 +365,7 @@ class SaveFile:
                 results = await _stop_workers(queue, workers)
 
                 for r in results:
-                    if isinstance(r, BaseException) and not isinstance(
-                        r, asyncio.CancelledError
-                    ):
+                    if isinstance(r, BaseException) and not isinstance(r, asyncio.CancelledError):
                         raise r
 
                 await _report(file_total_parts)
@@ -373,6 +389,7 @@ class SaveFile:
 
                 await _stop_workers(queue, workers)
                 budget.release_all()
+                await pool_lease.aclose()
 
-                if isinstance(path, (str, PurePath)):
+                if isinstance(path, (str, os.PathLike)):
                     fp.close()

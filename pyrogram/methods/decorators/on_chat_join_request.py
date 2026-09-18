@@ -16,18 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Callable
+from __future__ import annotations
+
+from collections.abc import Callable
 
 import pyrogram
 from pyrogram.filters import Filter
 
 
 class OnChatJoinRequest:
-    def on_chat_join_request(
-        self=None,
-        filters=None,
-        group: int = 0
-    ) -> Callable:
+    def on_chat_join_request(self=None, filters=None, group: int = 0) -> Callable:
         """Decorator for handling chat join requests.
 
         .. include:: /_includes/usable-by/bots.rst
@@ -54,7 +52,7 @@ class OnChatJoinRequest:
                 func.handlers.append(
                     (
                         pyrogram.handlers.ChatJoinRequestHandler(func, self),
-                        group if filters is None else filters
+                        group if filters is None else filters,
                     )
                 )
 

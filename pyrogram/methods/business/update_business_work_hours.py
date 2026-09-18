@@ -21,7 +21,8 @@
 # Source: tl:account.updateBusinessWorkHours
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -29,8 +30,8 @@ from pyrogram import raw
 
 class UpdateBusinessWorkHours:
     async def update_business_work_hours(
-        self: "pyrogram.Client",
-        business_work_hours: Optional[raw.types.BusinessWorkHours] = None,
+        self: pyrogram.Client,
+        business_work_hours: raw.types.BusinessWorkHours | None = None,
     ) -> bool:
         """Update business work hours for your business account.
 

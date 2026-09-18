@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import asyncio
 import bisect
 import logging
@@ -24,24 +26,51 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha1
 from io import BytesIO
-from typing import Optional
+import struct
 
 import warpcrypto
 
 import pyrogram
-from pyrogram import utils
-from pyrogram import raw
+from pyrogram import raw, utils
 from pyrogram.connection import Connection, transport_error
+from pyrogram.connection.proxy import client_proxy_address
 from pyrogram.crypto.executor import get_crypto_executor
 from pyrogram.errors import (
-    RPCError, InternalServerError, AuthKeyDuplicated, FloodWait, FloodPremiumWait, ServiceUnavailable,
-    BadMsgNotification, SecurityCheckMismatch
+    AuthKeyDuplicated,
+    BadMsgNotification,
+    FloodPremiumWait,
+    FloodWait,
+    InternalServerError,
+    RPCError,
+    SecurityCheckMismatch,
+    ServiceUnavailable,
 )
 from pyrogram.raw.all import layer
-from pyrogram.raw.core import TLObject, Message, MsgContainer, Int, FutureSalts
-from .internals import MsgId, MsgFactory
+from pyrogram.raw.core import FutureSalts, Message, MsgContainer, TLObject
+
+from .internals import MsgFactory, MsgId
 
 log = logging.getLogger(__name__)
+
+
+def _serialize_file_part(data: TLObject) -> bytes | None:
+    if isinstance(data, raw.functions.upload.SaveBigFilePart):
+        header = struct.pack("<Iqii", data.ID, data.file_id, data.file_part, data.file_total_parts)
+    elif isinstance(data, raw.functions.upload.SaveFilePart):
+        header = struct.pack("<Iqi", data.ID, data.file_id, data.file_part)
+    else:
+        return None
+
+    length = len(data.bytes)
+
+    if length > 253:
+        prefix = b"\xfe" + length.to_bytes(3, "little")
+        padding = -length % 4
+    else:
+        prefix = bytes((length,))
+        padding = -(length + 1) % 4
+
+    return b"".join((header, prefix, data.bytes, bytes(padding)))
 
 
 class Result:
@@ -57,7 +86,7 @@ class ConnectionLost:
 class Session:
     START_TIMEOUT = 2
     WAIT_TIMEOUT = 15
-    MEDIA_WAIT_TIMEOUT = int(os.environ.get("WZGRAM_MEDIA_TIMEOUT", 60))
+    MEDIA_WAIT_TIMEOUT = int(os.environ.get("PYROGRAM_MEDIA_TIMEOUT", 60))
     SLEEP_THRESHOLD = 10
     MAX_RETRIES = 10
     ACKS_THRESHOLD = 10
@@ -66,23 +95,23 @@ class Session:
     MAX_SKEW_AHEAD = 30
     MAX_SKEW_BEHIND = 300
     MAX_SKEW_BREACHES = 3
-    MAX_INFLIGHT_PACKETS = int(os.environ.get("WZGRAM_MAX_INFLIGHT_PACKETS", 16))
-    MAX_INFLIGHT_MEDIA = int(os.environ.get("WZGRAM_MAX_INFLIGHT_MEDIA", 6))
-    INLINE_CRYPTO_MAX = int(os.environ.get("WZGRAM_INLINE_CRYPTO_MAX", 32 * 1024))
+    MAX_INFLIGHT_PACKETS = int(os.environ.get("PYROGRAM_MAX_INFLIGHT_PACKETS", 16))
+    MAX_INFLIGHT_MEDIA = int(os.environ.get("PYROGRAM_MAX_INFLIGHT_MEDIA", 6))
+    INLINE_CRYPTO_MAX = int(os.environ.get("PYROGRAM_INLINE_CRYPTO_MAX", 32 * 1024))
 
     TRANSPORT_ERRORS = Connection.TRANSPORT_ERRORS
 
     def __init__(
         self,
-        client: "pyrogram.Client",
+        client: pyrogram.Client,
         dc_id: int,
         auth_key: bytes,
         test_mode: bool,
         is_media: bool = False,
         is_cdn: bool = False,
-        server_address: Optional[str] = None,
-        port: Optional[int] = None,
-        crypto_executor: Optional[ThreadPoolExecutor] = None
+        server_address: str | None = None,
+        port: int | None = None,
+        crypto_executor: ThreadPoolExecutor | None = None,
     ):
         self.client = client
         self.dc_id = dc_id
@@ -113,9 +142,7 @@ class Session:
         self._packet_tasks = set()
         self._packet_semaphore = asyncio.Semaphore(Session.MAX_INFLIGHT_PACKETS)
         self._update_semaphore = asyncio.Semaphore(32)
-        self._invoke_semaphore = (
-            asyncio.Semaphore(Session.MAX_INFLIGHT_MEDIA) if is_media else None
-        )
+        self._invoke_semaphore = asyncio.Semaphore(Session.MAX_INFLIGHT_MEDIA) if is_media else None
 
         self.ping_task = None
         self.ping_task_event = asyncio.Event()
@@ -136,15 +163,12 @@ class Session:
         self._start_completed = asyncio.Event()
         self._stopping = False
 
-        try:
-            self.loop = asyncio.get_running_loop()
-        except RuntimeError:
-            self.loop = asyncio.get_event_loop_policy().get_event_loop()
+        self.loop = utils.get_event_loop()
 
         self.last_packet_received = 0.0
         self.last_used = time.monotonic()
 
-    async def start(self, max_attempts: Optional[int] = None):
+    async def start(self, max_attempts: int | None = None):
         self._stopping = False
         self._start_exc = None
         self._start_active = True
@@ -179,6 +203,15 @@ class Session:
 
                     await self.send(raw.functions.Ping(ping_id=0), timeout=handshake_timeout)
 
+                    proxy_address = client_proxy_address(self.client.proxy)
+                    client_proxy: raw.types.InputClientProxy | None = None
+
+                    if proxy_address is not None:
+                        client_proxy = raw.types.InputClientProxy(
+                            address=proxy_address.hostname,
+                            port=proxy_address.port,
+                        )
+
                     if not self.is_cdn:
                         await self.send(
                             raw.functions.InvokeWithLayer(
@@ -197,9 +230,10 @@ class Session:
                                         if self.client.init_connection_params
                                         else None
                                     ),
-                                )
+                                    proxy=client_proxy,
+                                ),
                             ),
-                            timeout=handshake_timeout
+                            timeout=handshake_timeout,
                         )
 
                     self.ping_task = self.loop.create_task(self.ping_worker())
@@ -222,8 +256,7 @@ class Session:
                     # an unbounded start logs its way through an outage; at debug
                     # only, a client that cannot reach Telegram looks hung
                     (log.warning if attempt >= 3 else log.debug)(
-                        "Session start attempt %d flood-limited, retrying in %ss",
-                        attempt, backoff
+                        "Session start attempt %d flood-limited, retrying in %ss", attempt, backoff
                     )
                     await asyncio.sleep(backoff)
                 except (InternalServerError, ServiceUnavailable, TimeoutError, OSError) as e:
@@ -236,7 +269,9 @@ class Session:
                     backoff = min(2 ** (attempt - 1), 30)
                     (log.warning if attempt >= 3 else log.debug)(
                         "Session start attempt %d failed, retrying in %ss: %s",
-                        attempt, backoff, str(e) or type(e).__name__
+                        attempt,
+                        backoff,
+                        str(e) or type(e).__name__,
                     )
                     await asyncio.sleep(backoff)
                 except RPCError as e:
@@ -292,6 +327,7 @@ class Session:
 
         self.stored_msg_ids.clear()
         self._msg_id_floor = 0
+        self.pending_acks.clear()
 
         if self.connection:
             await self.connection.close()
@@ -327,6 +363,19 @@ class Session:
                 if getattr(self.client.storage, "conn", True) is None:
                     await self.client.storage.open()
                 await self.start(max_attempts=self.MAX_RETRIES)
+                if (
+                    not self.is_media
+                    and not self.is_cdn
+                    and self.client
+                    and getattr(self.client, "is_initialized", False)
+                    and not getattr(self.client, "no_updates", False)
+                ):
+                    try:
+                        await self.client.invoke(raw.functions.updates.GetState())
+                        if not getattr(self.client, "skip_updates", True):
+                            await self.client.recover_gaps()
+                    except Exception as e:
+                        log.debug("Failed to re-sync updates state after session restart: %s", e)
             finally:
                 self._restart_done.set()
 
@@ -348,10 +397,7 @@ class Session:
             # loop for milliseconds, which is what the pool is for.
             if len(packet) <= Session.INLINE_CRYPTO_MAX:
                 msg_id, seq_no, length, body_bytes, total_len = warpcrypto.unpack_message(
-                    packet,
-                    self.session_id,
-                    self.auth_key,
-                    self.auth_key_id
+                    packet, self.session_id, self.auth_key, self.auth_key_id
                 )
             else:
                 msg_id, seq_no, length, body_bytes, total_len = await self.loop.run_in_executor(
@@ -360,7 +406,7 @@ class Session:
                     packet,
                     self.session_id,
                     self.auth_key,
-                    self.auth_key_id
+                    self.auth_key_id,
                 )
         except Exception as e:
             log.warning("Failed to decrypt packet: %s %s", type(e).__name__, e)
@@ -386,11 +432,7 @@ class Session:
         body = TLObject.read(BytesIO(body_bytes))
         message = Message(body, msg_id, seq_no, length)
 
-        messages = (
-            message.body.messages
-            if isinstance(message.body, MsgContainer)
-            else [message]
-        )
+        messages = message.body.messages if isinstance(message.body, MsgContainer) else [message]
 
         log.debug("Received: %s", message)
 
@@ -427,13 +469,19 @@ class Session:
                     else:
                         index = bisect.bisect_left(self.stored_msg_ids, msg.msg_id)
 
-                        if index < len(self.stored_msg_ids) and self.stored_msg_ids[index] == msg.msg_id:
+                        if (
+                            index < len(self.stored_msg_ids)
+                            and self.stored_msg_ids[index] == msg.msg_id
+                        ):
                             replayed = "The msg_id is equal to any of the stored values"
 
                     if replayed is None and not is_bad_notification:
                         time_diff = (msg.msg_id >> 32) - MsgId.now()
 
-                        if time_diff > Session.MAX_SKEW_AHEAD or time_diff < -Session.MAX_SKEW_BEHIND:
+                        if (
+                            time_diff > Session.MAX_SKEW_AHEAD
+                            or time_diff < -Session.MAX_SKEW_BEHIND
+                        ):
                             skew = time_diff
 
                 if replayed is not None:
@@ -445,7 +493,9 @@ class Session:
 
                     log.debug(
                         "Discarding message %ss out of step (%s/%s)",
-                        int(skew), self._skew_breaches, Session.MAX_SKEW_BREACHES
+                        int(skew),
+                        self._skew_breaches,
+                        Session.MAX_SKEW_BREACHES,
                     )
 
                     if self._skew_breaches >= Session.MAX_SKEW_BREACHES:
@@ -455,7 +505,8 @@ class Session:
                         log.warning(
                             "Client clock is %ss out of step with the server; "
                             "time offset resynchronised to %.1fs",
-                            int(skew), MsgId.time_offset
+                            int(skew),
+                            MsgId.time_offset,
                         )
 
                     continue
@@ -516,7 +567,8 @@ class Session:
                 await self.send(
                     raw.functions.PingDelayDisconnect(
                         ping_id=0, disconnect_delay=self.WAIT_TIMEOUT + 10
-                    ), False
+                    ),
+                    False,
                 )
 
                 await self.flush_acks()
@@ -612,12 +664,20 @@ class Session:
         except (Exception, asyncio.CancelledError) as e:
             log.error("Session restart failed: %s", e)
 
-    async def send(self, data: TLObject, wait_response: bool = True, timeout: float = WAIT_TIMEOUT,
-                   retry: int = 0):
+    async def send(
+        self,
+        data: TLObject,
+        wait_response: bool = True,
+        timeout: float = WAIT_TIMEOUT,
+        retry: int = 0,
+    ):
         if self.connection is None or self.connection.protocol is None:
             raise OSError("Connection is not established")
 
-        serialized = data.write()
+        serialized = _serialize_file_part(data)
+        if serialized is None:
+            serialized = data.write()
+
         message = self.msg_factory(data, len(serialized))
         msg_id = message.msg_id
 
@@ -637,7 +697,7 @@ class Session:
                     self.salt,
                     self.session_id,
                     self.auth_key,
-                    self.auth_key_id
+                    self.auth_key_id,
                 )
             else:
                 payload = await self.loop.run_in_executor(
@@ -649,11 +709,13 @@ class Session:
                     self.salt,
                     self.session_id,
                     self.auth_key,
-                    self.auth_key_id
+                    self.auth_key_id,
                 )
 
             try:
-                await asyncio.wait_for(self.connection.send(payload), timeout=timeout or self.WAIT_TIMEOUT)
+                await asyncio.wait_for(
+                    self.connection.send(payload), timeout=timeout or self.WAIT_TIMEOUT
+                )
             except asyncio.TimeoutError:
                 raise TimeoutError("Request send timed out")
 
@@ -682,7 +744,9 @@ class Session:
                 raise TimeoutError("Request timed out")
 
             if isinstance(result, raw.types.RpcError):
-                if isinstance(data, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)):
+                if isinstance(
+                    data, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)
+                ):
                     data = data.query
 
                 RPCError.raise_it(result, type(data))
@@ -707,15 +771,17 @@ class Session:
         if not self.is_started.is_set():
             await self.restart()
 
-        if not self.is_started.is_set() and self._start_exc is not None:
-            raise self._start_exc
+        if not self.is_started.is_set():
+            if self._start_exc is not None:
+                raise self._start_exc
+            raise TimeoutError(f"Waited to invoke, but {self} is not started")
 
     async def invoke(
         self,
         query: TLObject,
         retries: int = MAX_RETRIES,
         timeout: float = WAIT_TIMEOUT,
-        sleep_threshold: float = SLEEP_THRESHOLD
+        sleep_threshold: float = SLEEP_THRESHOLD,
     ):
         self.last_used = time.monotonic()
 
@@ -725,21 +791,18 @@ class Session:
         async with self._invoke_semaphore:
             return await self._invoke(query, retries, timeout, sleep_threshold)
 
-    async def _invoke(
-        self,
-        query: TLObject,
-        retries: int,
-        timeout: float,
-        sleep_threshold: float
-    ):
+    async def _invoke(self, query: TLObject, retries: int, timeout: float, sleep_threshold: float):
         slept = 0.0
         flood_budget = sleep_threshold * Session.MAX_RETRIES
+        retries = max(1, retries)
 
         while retries > 0:
             if not self.is_started.is_set():
                 await self._wait_started()
 
-            if isinstance(query, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)):
+            if isinstance(
+                query, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)
+            ):
                 inner_query = query.query
             else:
                 inner_query = query
@@ -759,8 +822,12 @@ class Session:
 
                 slept += amount
 
-                log.warning('[%s] Waiting for %s seconds before continuing (required by "%s")',
-                            self.client.name, amount, query_name)
+                log.warning(
+                    '[%s] Waiting for %s seconds before continuing (required by "%s")',
+                    self.client.name,
+                    amount,
+                    query_name,
+                )
 
                 await asyncio.sleep(amount)
             except (OSError, InternalServerError, ServiceUnavailable, TimeoutError) as e:
@@ -770,9 +837,11 @@ class Session:
 
                 (log.warning if retries < 2 else log.info)(
                     '[%s] Retrying "%s" (attempt %s/%s) due to: %s',
-                    self.client.name, query_name,
-                    Session.MAX_RETRIES - retries, Session.MAX_RETRIES,
-                    str(e) or repr(e)
+                    self.client.name,
+                    query_name,
+                    Session.MAX_RETRIES - retries,
+                    Session.MAX_RETRIES,
+                    str(e) or repr(e),
                 )
 
                 if isinstance(e, ConnectionResetError):

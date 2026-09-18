@@ -21,7 +21,8 @@
 # Source: tl:bots.getBotInfo
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -29,10 +30,10 @@ from pyrogram import raw
 
 class GetBotInfo:
     async def get_bot_info(
-        self: "pyrogram.Client",
-        bot: Optional[Union[int, str]] = None,
+        self: pyrogram.Client,
+        bot: int | str | None = None,
         lang_code: str = "",
-    ) -> "raw.types.bots.BotInfo":
+    ) -> raw.types.bots.BotInfo:
         """Get bot info (name, about, description).
 
         .. include:: /_includes/usable-by/users-bots.rst

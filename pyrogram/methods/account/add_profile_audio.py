@@ -16,8 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import os
-from typing import BinaryIO, Callable, Optional, Union
+from collections.abc import Callable
+from typing import BinaryIO
 
 import pyrogram
 from pyrogram import StopTransmission, raw, utils
@@ -27,15 +30,15 @@ from pyrogram.file_id import FileType
 
 class AddProfileAudio:
     async def add_profile_audio(
-        self: "pyrogram.Client",
-        audio: Union[str, BinaryIO],
-        duration: Optional[int] = 0,
-        performer: Optional[str] = None,
-        title: Optional[str] = None,
-        thumb: Optional[Union[str, BinaryIO]] = None,
-        file_name: Optional[str] = None,
-        progress: Optional[Callable] = None,
-        progress_args: Optional[tuple] = (),
+        self: pyrogram.Client,
+        audio: str | BinaryIO,
+        duration: int | None = 0,
+        performer: str | None = None,
+        title: str | None = None,
+        thumb: str | BinaryIO | None = None,
+        file_name: str | None = None,
+        progress: Callable | None = None,
+        progress_args: tuple | None = (),
     ):
         """Adds an audio file to the beginning of the profile audio files of the current user.
 
@@ -138,9 +141,12 @@ class AddProfileAudio:
                 else:
                     media = (utils.get_input_media_from_file_id(audio, FileType.AUDIO)).id
             else:
-                mime_type = self.guess_mime_type(
-                    utils.get_file_name(audio, file_name=file_name, fallback="audio.mp3")
-                ) or "audio/mpeg"
+                mime_type = (
+                    self.guess_mime_type(
+                        utils.get_file_name(audio, file_name=file_name, fallback="audio.mp3")
+                    )
+                    or "audio/mpeg"
+                )
                 if mime_type == "audio/ogg":
                     mime_type = "audio/opus"
                 thumb = await self.save_file(thumb)
@@ -182,4 +188,3 @@ class AddProfileAudio:
                     return r
         except StopTransmission:
             return None
-

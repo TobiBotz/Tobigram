@@ -16,9 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional
+
+from __future__ import annotations
 
 from pyrogram import raw, types
+
 from ..object import Object
 
 
@@ -59,10 +61,10 @@ class BoostsStatus(Object):
         current_level_boosts: int,
         boosts: int,
         boost_url: str,
-        my_boost: Optional[bool] = None,
-        gift_boosts: Optional[int] = None,
-        next_level_boosts: Optional[int] = None,
-        my_boost_slots: Optional[List[int]] = None
+        my_boost: bool | None = None,
+        gift_boosts: int | None = None,
+        next_level_boosts: int | None = None,
+        my_boost_slots: list[int] | None = None,
     ):
         super().__init__()
 
@@ -76,7 +78,7 @@ class BoostsStatus(Object):
         self.my_boost_slots = my_boost_slots
 
     @staticmethod
-    def _parse(boosts_status: "raw.types.premium.BoostsStatus") -> "BoostsStatus":
+    def _parse(boosts_status: raw.types.premium.BoostsStatus) -> BoostsStatus:
         return BoostsStatus(
             level=boosts_status.level,
             current_level_boosts=boosts_status.current_level_boosts,
@@ -87,4 +89,3 @@ class BoostsStatus(Object):
             next_level_boosts=getattr(boosts_status, "next_level_boosts", None),
             my_boost_slots=types.List(boosts_status.my_boost_slots) or None,
         )
-

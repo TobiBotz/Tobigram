@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types
@@ -40,9 +41,8 @@ class ChatJoinResult(Object):
 
     @staticmethod
     async def _parse(
-        client: "pyrogram.Client",
-        result: "raw.base.messages.ChatInviteJoinResult"
-    ) -> "ChatJoinResult":
+        client: pyrogram.Client, result: raw.base.messages.ChatInviteJoinResult
+    ) -> ChatJoinResult:
         if isinstance(result, raw.types.messages.ChatInviteJoinResultOk):
             return ChatJoinResultSuccess(
                 chat=types.Chat._parse_chat(client, result.updates.chats[0])
@@ -51,8 +51,7 @@ class ChatJoinResult(Object):
             users = {i.id: i for i in result.users}
 
             return ChatJoinResultGuardBotApprovalRequired(
-                bot=types.User._parse(client, users[result.bot_id]),
-                query_id=str(result.query_id)
+                bot=types.User._parse(client, users[result.bot_id]), query_id=str(result.query_id)
             )
 
 
@@ -67,11 +66,12 @@ class ChatJoinResultSuccess(ChatJoinResult):
     def __init__(
         self,
         *,
-        chat: "types.Chat",
+        chat: types.Chat,
     ):
         super().__init__()
 
         self.chat = chat
+
 
 class ChatJoinResultRequestSent(ChatJoinResult):
     """The join request was sent and have to be approved by administrators of the chat."""
@@ -97,18 +97,13 @@ class ChatJoinResultGuardBotApprovalRequired(ChatJoinResult):
             Can be obtained by calling :meth:`~pyrogram.Client.request_chat_join_web_view`.
     """
 
-    def __init__(
-        self,
-        *,
-        bot: "types.User",
-        query_id: str,
-        url: Optional[str] = None
-    ):
+    def __init__(self, *, bot: types.User, query_id: str, url: str | None = None):
         super().__init__()
 
         self.bot = bot
         self.query_id = query_id
         self.url = url
+
 
 class ChatJoinResultDeclined(Object):
     """The join was declined by the guard bot."""
@@ -117,4 +112,3 @@ class ChatJoinResultDeclined(Object):
         self,
     ):
         super().__init__()
-

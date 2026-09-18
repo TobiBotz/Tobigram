@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional
+
+from __future__ import annotations
 
 from pyrogram import raw
 
@@ -46,11 +47,11 @@ class SwitchInlineQueryChosenChat(Object):
 
     def __init__(
         self,
-        query: Optional[str] = None,
-        allow_user_chats: Optional[bool] = None,
-        allow_bot_chats: Optional[bool] = None,
-        allow_group_chats: Optional[bool] = None,
-        allow_channel_chats: Optional[bool] = None
+        query: str | None = None,
+        allow_user_chats: bool | None = None,
+        allow_bot_chats: bool | None = None,
+        allow_group_chats: bool | None = None,
+        allow_channel_chats: bool | None = None,
     ):
         super().__init__()
 
@@ -62,9 +63,8 @@ class SwitchInlineQueryChosenChat(Object):
 
     @staticmethod
     def _parse(
-        query: Optional[str],
-        peer_types: Optional[List["raw.base.InlineQueryPeerType"]]
-    ) -> "SwitchInlineQueryChosenChat":
+        query: str | None, peer_types: list[raw.base.InlineQueryPeerType] | None
+    ) -> SwitchInlineQueryChosenChat:
         kinds = {type(peer_type) for peer_type in peer_types or []}
 
         return SwitchInlineQueryChosenChat(
@@ -72,15 +72,13 @@ class SwitchInlineQueryChosenChat(Object):
             allow_user_chats=raw.types.InlineQueryPeerTypePM in kinds or None,
             allow_bot_chats=raw.types.InlineQueryPeerTypeBotPM in kinds or None,
             allow_group_chats=bool(
-                kinds & {
-                    raw.types.InlineQueryPeerTypeChat,
-                    raw.types.InlineQueryPeerTypeMegagroup
-                }
-            ) or None,
-            allow_channel_chats=raw.types.InlineQueryPeerTypeBroadcast in kinds or None
+                kinds & {raw.types.InlineQueryPeerTypeChat, raw.types.InlineQueryPeerTypeMegagroup}
+            )
+            or None,
+            allow_channel_chats=raw.types.InlineQueryPeerTypeBroadcast in kinds or None,
         )
 
-    def _peer_types(self) -> List["raw.base.InlineQueryPeerType"]:
+    def _peer_types(self) -> list[raw.base.InlineQueryPeerType]:
         peer_types = []
 
         if self.allow_user_chats:

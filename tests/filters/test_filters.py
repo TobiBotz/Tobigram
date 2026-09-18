@@ -1,6 +1,6 @@
 import pytest
 
-from pyrogram import filters, enums
+from pyrogram import enums, filters
 from pyrogram.types import (
     Animation,
     Audio,
@@ -34,10 +34,7 @@ from pyrogram.types import (
 
 class FakeClient:
     def __init__(self):
-        self.me = User(
-            id=123, is_self=True, is_bot=False,
-            first_name="User", username="username"
-        )
+        self.me = User(id=123, is_self=True, is_bot=False, first_name="User", username="username")
 
 
 c = FakeClient()
@@ -47,12 +44,15 @@ c = FakeClient()
 # Media filters
 # ============================================================
 
+
 @pytest.mark.asyncio
 async def test_photo_filter():
-    m = Message(id=1, photo=Photo(
-        file_id="f", file_unique_id="f", width=100, height=100,
-        file_size=1000, date=None
-    ))
+    m = Message(
+        id=1,
+        photo=Photo(
+            file_id="f", file_unique_id="f", width=100, height=100, file_size=1000, date=None
+        ),
+    )
     assert await filters.photo(c, m)
     m2 = Message(id=2)
     assert not await filters.photo(c, m2)
@@ -60,10 +60,12 @@ async def test_photo_filter():
 
 @pytest.mark.asyncio
 async def test_video_filter():
-    m = Message(id=1, video=Video(
-        file_id="f", file_unique_id="f", width=100, height=100,
-        codec="h264", duration=10
-    ))
+    m = Message(
+        id=1,
+        video=Video(
+            file_id="f", file_unique_id="f", width=100, height=100, codec="h264", duration=10
+        ),
+    )
     assert await filters.video(c, m)
     m2 = Message(id=2)
     assert not await filters.video(c, m2)
@@ -71,9 +73,7 @@ async def test_video_filter():
 
 @pytest.mark.asyncio
 async def test_audio_filter():
-    m = Message(id=1, audio=Audio(
-        file_id="f", file_unique_id="f", duration=10
-    ))
+    m = Message(id=1, audio=Audio(file_id="f", file_unique_id="f", duration=10))
     assert await filters.audio(c, m)
     m2 = Message(id=2)
     assert not await filters.audio(c, m2)
@@ -81,9 +81,7 @@ async def test_audio_filter():
 
 @pytest.mark.asyncio
 async def test_document_filter():
-    m = Message(id=1, document=Document(
-        file_id="f", file_unique_id="f"
-    ))
+    m = Message(id=1, document=Document(file_id="f", file_unique_id="f"))
     assert await filters.document(c, m)
     m2 = Message(id=2)
     assert not await filters.document(c, m2)
@@ -91,11 +89,18 @@ async def test_document_filter():
 
 @pytest.mark.asyncio
 async def test_sticker_filter():
-    m = Message(id=1, sticker=Sticker(
-        file_id="f", file_unique_id="f",
-        type=enums.StickerType.REGULAR,
-        width=100, height=100, is_animated=False, is_video=False
-    ))
+    m = Message(
+        id=1,
+        sticker=Sticker(
+            file_id="f",
+            file_unique_id="f",
+            type=enums.StickerType.REGULAR,
+            width=100,
+            height=100,
+            is_animated=False,
+            is_video=False,
+        ),
+    )
     assert await filters.sticker(c, m)
     m2 = Message(id=2)
     assert not await filters.sticker(c, m2)
@@ -103,9 +108,10 @@ async def test_sticker_filter():
 
 @pytest.mark.asyncio
 async def test_animation_filter():
-    m = Message(id=1, animation=Animation(
-        file_id="f", file_unique_id="f", width=100, height=100, duration=10
-    ))
+    m = Message(
+        id=1,
+        animation=Animation(file_id="f", file_unique_id="f", width=100, height=100, duration=10),
+    )
     assert await filters.animation(c, m)
     m2 = Message(id=2)
     assert not await filters.animation(c, m2)
@@ -113,9 +119,7 @@ async def test_animation_filter():
 
 @pytest.mark.asyncio
 async def test_voice_filter():
-    m = Message(id=1, voice=Voice(
-        file_id="f", file_unique_id="f", duration=10
-    ))
+    m = Message(id=1, voice=Voice(file_id="f", file_unique_id="f", duration=10))
     assert await filters.voice(c, m)
     m2 = Message(id=2)
     assert not await filters.voice(c, m2)
@@ -123,9 +127,9 @@ async def test_voice_filter():
 
 @pytest.mark.asyncio
 async def test_video_note_filter():
-    m = Message(id=1, video_note=VideoNote(
-        file_id="f", file_unique_id="f", length=100, duration=10
-    ))
+    m = Message(
+        id=1, video_note=VideoNote(file_id="f", file_unique_id="f", length=100, duration=10)
+    )
     assert await filters.video_note(c, m)
     m2 = Message(id=2)
     assert not await filters.video_note(c, m2)
@@ -133,9 +137,7 @@ async def test_video_note_filter():
 
 @pytest.mark.asyncio
 async def test_contact_filter():
-    m = Message(id=1, contact=Contact(
-        phone_number="12345", first_name="Test"
-    ))
+    m = Message(id=1, contact=Contact(phone_number="12345", first_name="Test"))
     assert await filters.contact(c, m)
     m2 = Message(id=2)
     assert not await filters.contact(c, m2)
@@ -143,13 +145,9 @@ async def test_contact_filter():
 
 @pytest.mark.asyncio
 async def test_location_filter():
-    m = Message(id=1, location=Location(
-        longitude=0.0, latitude=0.0
-    ))
+    m = Message(id=1, location=Location(longitude=0.0, latitude=0.0))
     assert await filters.location(c, m)
-    m_live = Message(id=2, location=Location(
-        longitude=0.0, latitude=0.0, live_period=60
-    ))
+    m_live = Message(id=2, location=Location(longitude=0.0, latitude=0.0, live_period=60))
     assert not await filters.location(c, m_live)
     m3 = Message(id=3)
     assert not await filters.location(c, m3)
@@ -157,10 +155,10 @@ async def test_location_filter():
 
 @pytest.mark.asyncio
 async def test_venue_filter():
-    m = Message(id=1, venue=Venue(
-        location=Location(longitude=0.0, latitude=0.0),
-        title="Venue", address="Addr"
-    ))
+    m = Message(
+        id=1,
+        venue=Venue(location=Location(longitude=0.0, latitude=0.0), title="Venue", address="Addr"),
+    )
     assert await filters.venue(c, m)
     m2 = Message(id=2)
     assert not await filters.venue(c, m2)
@@ -168,9 +166,7 @@ async def test_venue_filter():
 
 @pytest.mark.asyncio
 async def test_poll_filter():
-    m = Message(id=1, poll=Poll(
-        id="1", question="?", options=[], is_closed=False
-    ))
+    m = Message(id=1, poll=Poll(id="1", question="?", options=[], is_closed=False))
     assert await filters.poll(c, m)
     m2 = Message(id=2)
     assert not await filters.poll(c, m2)
@@ -178,13 +174,18 @@ async def test_poll_filter():
 
 @pytest.mark.asyncio
 async def test_game_filter():
-    m = Message(id=1, game=Game(
-        id=1, title="G", short_name="g", description="d",
-        photo=Photo(
-            file_id="f", file_unique_id="f", width=100, height=100,
-            file_size=1000, date=None
-        )
-    ))
+    m = Message(
+        id=1,
+        game=Game(
+            id=1,
+            title="G",
+            short_name="g",
+            description="d",
+            photo=Photo(
+                file_id="f", file_unique_id="f", width=100, height=100, file_size=1000, date=None
+            ),
+        ),
+    )
     assert await filters.game(c, m)
     m2 = Message(id=2)
     assert not await filters.game(c, m2)
@@ -208,9 +209,7 @@ async def test_story_filter():
 
 @pytest.mark.asyncio
 async def test_web_page_filter():
-    m = Message(id=1, web_page=WebPage(
-        id="1", url="https://example.com"
-    ))
+    m = Message(id=1, web_page=WebPage(id="1", url="https://example.com"))
     assert await filters.web_page(c, m)
     m2 = Message(id=2)
     assert not await filters.web_page(c, m2)
@@ -226,11 +225,17 @@ async def test_giveaway_filter():
 
 @pytest.mark.asyncio
 async def test_giveaway_winners_filter():
-    m = Message(id=1, giveaway_winners=GiveawayWinners(
-        chat=Chat(id=1), giveaway_message_id=1,
-        winners_selection_date=None, quantity=1,
-        winner_count=1, winners=[]
-    ))
+    m = Message(
+        id=1,
+        giveaway_winners=GiveawayWinners(
+            chat=Chat(id=1),
+            giveaway_message_id=1,
+            winners_selection_date=None,
+            quantity=1,
+            winner_count=1,
+            winners=[],
+        ),
+    )
     assert await filters.giveaway_winners(c, m)
     m2 = Message(id=2)
     assert not await filters.giveaway_winners(c, m2)
@@ -239,6 +244,7 @@ async def test_giveaway_winners_filter():
 # ============================================================
 # Service message filters
 # ============================================================
+
 
 @pytest.mark.asyncio
 async def test_new_chat_members_filter():
@@ -266,10 +272,12 @@ async def test_new_chat_title_filter():
 
 @pytest.mark.asyncio
 async def test_new_chat_photo_filter():
-    m = Message(id=1, new_chat_photo=[
-        Photo(file_id="f", file_unique_id="f", width=100, height=100,
-              file_size=1000, date=None)
-    ])
+    m = Message(
+        id=1,
+        new_chat_photo=[
+            Photo(file_id="f", file_unique_id="f", width=100, height=100, file_size=1000, date=None)
+        ],
+    )
     assert await filters.new_chat_photo(c, m)
     m2 = Message(id=2)
     assert not await filters.new_chat_photo(c, m2)
@@ -317,9 +325,7 @@ async def test_pinned_message_filter():
 
 @pytest.mark.asyncio
 async def test_game_high_score_filter():
-    m = Message(id=1, game_high_score=GameHighScore(
-        user=User(id=1), score=100
-    ))
+    m = Message(id=1, game_high_score=GameHighScore(user=User(id=1), score=100))
     assert await filters.game_high_score(c, m)
     m2 = Message(id=2)
     assert not await filters.game_high_score(c, m2)
@@ -343,9 +349,7 @@ async def test_video_chat_ended_filter():
 
 @pytest.mark.asyncio
 async def test_video_chat_members_invited_filter():
-    m = Message(id=1, video_chat_members_invited=VideoChatMembersInvited(
-        users=[User(id=1)]
-    ))
+    m = Message(id=1, video_chat_members_invited=VideoChatMembersInvited(users=[User(id=1)]))
     assert await filters.video_chat_members_invited(c, m)
     m2 = Message(id=2)
     assert not await filters.video_chat_members_invited(c, m2)
@@ -353,10 +357,16 @@ async def test_video_chat_members_invited_filter():
 
 @pytest.mark.asyncio
 async def test_successful_payment_filter():
-    m = Message(id=1, successful_payment=SuccessfulPayment(
-        currency="USD", total_amount=100, invoice_payload="p",
-        telegram_payment_charge_id="t", provider_payment_charge_id="p"
-    ))
+    m = Message(
+        id=1,
+        successful_payment=SuccessfulPayment(
+            currency="USD",
+            total_amount=100,
+            invoice_payload="p",
+            telegram_payment_charge_id="t",
+            provider_payment_charge_id="p",
+        ),
+    )
     assert await filters.successful_payment(c, m)
     m2 = Message(id=2)
     assert not await filters.successful_payment(c, m2)
@@ -389,6 +399,7 @@ async def test_incoming_filter():
 # ============================================================
 # Chat type filters
 # ============================================================
+
 
 @pytest.mark.asyncio
 async def test_group_filter():
@@ -423,6 +434,7 @@ async def test_channel_filter():
 # ============================================================
 # User / bot filters
 # ============================================================
+
 
 @pytest.mark.asyncio
 async def test_bot_filter():
@@ -462,6 +474,7 @@ async def test_sender_chat_filter():
 # Reply / forward filters
 # ============================================================
 
+
 @pytest.mark.asyncio
 async def test_reply_filter():
     m = Message(id=1, reply_to_message_id=5)
@@ -482,35 +495,46 @@ async def test_forwarded_filter():
 # Combinator filters (&, |, ~)
 # ============================================================
 
+
 @pytest.mark.asyncio
 async def test_and_filter():
     combined = filters.photo & filters.media_group
-    m = Message(id=1, photo=Photo(
-        file_id="f", file_unique_id="f", width=100, height=100,
-        file_size=1000, date=None
-    ), media_group_id=None)
+    m = Message(
+        id=1,
+        photo=Photo(
+            file_id="f", file_unique_id="f", width=100, height=100, file_size=1000, date=None
+        ),
+        media_group_id=None,
+    )
     assert not await combined(c, m)
 
-    m2 = Message(id=2, photo=Photo(
-        file_id="f", file_unique_id="f", width=100, height=100,
-        file_size=1000, date=None
-    ), media_group_id=10)
+    m2 = Message(
+        id=2,
+        photo=Photo(
+            file_id="f", file_unique_id="f", width=100, height=100, file_size=1000, date=None
+        ),
+        media_group_id=10,
+    )
     assert await combined(c, m2)
 
 
 @pytest.mark.asyncio
 async def test_or_filter():
     combined = filters.photo | filters.video
-    m = Message(id=1, photo=Photo(
-        file_id="f", file_unique_id="f", width=100, height=100,
-        file_size=1000, date=None
-    ))
+    m = Message(
+        id=1,
+        photo=Photo(
+            file_id="f", file_unique_id="f", width=100, height=100, file_size=1000, date=None
+        ),
+    )
     assert await combined(c, m)
 
-    m2 = Message(id=2, video=Video(
-        file_id="f", file_unique_id="f", width=100, height=100,
-        codec="h264", duration=10
-    ))
+    m2 = Message(
+        id=2,
+        video=Video(
+            file_id="f", file_unique_id="f", width=100, height=100, codec="h264", duration=10
+        ),
+    )
     assert await combined(c, m2)
 
     m3 = Message(id=3)
@@ -520,10 +544,12 @@ async def test_or_filter():
 @pytest.mark.asyncio
 async def test_invert_filter():
     not_photo = ~filters.photo
-    m = Message(id=1, photo=Photo(
-        file_id="f", file_unique_id="f", width=100, height=100,
-        file_size=1000, date=None
-    ))
+    m = Message(
+        id=1,
+        photo=Photo(
+            file_id="f", file_unique_id="f", width=100, height=100, file_size=1000, date=None
+        ),
+    )
     assert not await not_photo(c, m)
 
     m2 = Message(id=2)
@@ -533,6 +559,7 @@ async def test_invert_filter():
 # ============================================================
 # Misc filters
 # ============================================================
+
 
 @pytest.mark.asyncio
 async def test_mentioned_filter():

@@ -16,8 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
+
 from pyrogram import raw
+
 from ..object import Object
 
 
@@ -43,12 +46,13 @@ class UserRating(Object):
     """
 
     def __init__(
-        self, *,
+        self,
+        *,
         level: int,
         is_maximum_level_reached: bool,
         rating: int,
         current_level_rating: int,
-        next_level_rating: Optional[int] = None
+        next_level_rating: int | None = None,
     ):
         super().__init__(None)
 
@@ -59,7 +63,7 @@ class UserRating(Object):
         self.next_level_rating = next_level_rating
 
     @staticmethod
-    def _parse(rating: "raw.types.StarsRating") -> Optional["UserRating"]:
+    def _parse(rating: raw.types.StarsRating) -> UserRating | None:
         if not rating:
             return None
 
@@ -68,6 +72,5 @@ class UserRating(Object):
             is_maximum_level_reached=rating.next_level_stars == 0 and rating.level > 0,
             rating=rating.stars,
             current_level_rating=rating.current_level_stars,
-            next_level_rating=rating.next_level_stars
+            next_level_rating=rating.next_level_stars,
         )
-

@@ -16,25 +16,32 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
+import asyncio
+import logging
 import os
 import random
-import logging
-import asyncio
 from struct import pack, unpack
-from typing import Optional
 
 from pyrogram.crypto import aes
-from .tcp import TCP
+
+from .tcp import TCP, finalize_obfuscated2_tag, generate_obfuscated2_nonce
 from .tcp_padded_intermediate import strip_padding
 
 log = logging.getLogger(__name__)
 
 
 class TCPPaddedIntermediateO(TCP):
-    RESERVED = (b"HEAD", b"POST", b"GET ", b"OPTI", b"\xdd" * 4, b"\xee" * 4)
-
-    def __init__(self, ipv6: bool, proxy: dict, crypto_executor=None, loop: Optional[asyncio.AbstractEventLoop] = None):
-        super().__init__(ipv6, proxy, crypto_executor, loop)
+    def __init__(
+        self,
+        ipv6: bool = False,
+        proxy=None,
+        crypto_executor=None,
+        loop: asyncio.AbstractEventLoop | None = None,
+        dc_id: int | None = None,
+    ):
+        super().__init__(ipv6, proxy, crypto_executor, loop, dc_id=dc_id)
 
         self.encrypt = None
         self.decrypt = None
@@ -42,32 +49,25 @@ class TCPPaddedIntermediateO(TCP):
     async def connect(self, address: tuple):
         await super().connect(address)
 
-        while True:
-            nonce = bytearray(os.urandom(64))
-
-            if bytes([nonce[0]]) != b"\xef" and nonce[:4] not in self.RESERVED and nonce[4:8] != b"\x00" * 4:
-                nonce[56] = nonce[57] = nonce[58] = nonce[59] = 0xdd
-                break
+        nonce = generate_obfuscated2_nonce()
+        nonce[56] = nonce[57] = nonce[58] = nonce[59] = 0xDD
 
         temp = bytearray(nonce[55:7:-1])
 
         self.encrypt = (bytes(nonce[8:40]), nonce[40:56], bytearray(1))
         self.decrypt = (bytes(temp[0:32]), temp[32:48], bytearray(1))
 
-        nonce[56:64] = aes.ctr256_encrypt(bytes(nonce), *self.encrypt)[56:64]
+        nonce[56:64] = finalize_obfuscated2_tag(nonce, self.encrypt)
 
         await super().send(nonce)
 
     async def send(self, data: bytes, *args):
         padding = os.urandom(random.randint(0, 15))
         await super().send(
-            aes.ctr256_encrypt(
-                pack("<i", len(data) + len(padding)) + data + padding,
-                *self.encrypt
-            )
+            aes.ctr256_encrypt(pack("<i", len(data) + len(padding)) + data + padding, *self.encrypt)
         )
 
-    async def recv(self, length: int = 0) -> Optional[bytes]:
+    async def recv(self, length: int = 0) -> bytes | None:
         length = await super().recv(4)
 
         if length is None:

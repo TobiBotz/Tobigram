@@ -16,8 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import re
-from typing import Iterable, List, Optional, Union
+from collections.abc import Iterable
 
 import pyrogram
 from pyrogram import raw, types
@@ -25,10 +27,10 @@ from pyrogram import raw, types
 
 class GetStories:
     async def get_stories(
-        self: "pyrogram.Client",
-        chat_id: Optional[Union[int, str]] = None,
-        story_ids: Optional[Union[int, Iterable[int], str]] = None,
-    ) -> Optional[Union["types.Story", List["types.Story"]]]:
+        self: pyrogram.Client,
+        chat_id: int | str | None = None,
+        story_ids: int | Iterable[int] | str | None = None,
+    ) -> types.Story | list[types.Story] | None:
         """Get one or more stories from a chat by using stories identifiers.
 
         .. include:: /_includes/usable-by/users.rst
@@ -63,7 +65,10 @@ class GetStories:
         ids = None if story_ids is None else list(story_ids) if is_iterable else [story_ids]
 
         if isinstance(story_ids, str):
-            match = re.match(r"^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/)([\w]+)/s/(\d+)/?$", story_ids.lower())
+            match = re.match(
+                r"^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/)([\w]+)/s/(\d+)/?$",
+                story_ids.lower(),
+            )
 
             if match:
                 chat_id = match.group(1)
@@ -78,12 +83,7 @@ class GetStories:
                 raise ValueError("Invalid story_ids.")
 
         peer = await self.resolve_peer(chat_id)
-        r = await self.invoke(
-            raw.functions.stories.GetStoriesByID(
-                peer=peer,
-                id=ids
-            )
-        )
+        r = await self.invoke(raw.functions.stories.GetStoriesByID(peer=peer, id=ids))
 
         stories = types.List()
 
@@ -91,15 +91,6 @@ class GetStories:
         chats = {i.id: i for i in r.chats}
 
         for story in r.stories:
-            stories.append(
-                await types.Story._parse(
-                    self,
-                    story,
-                    peer,
-                    users,
-                    chats
-                )
-            )
+            stories.append(await types.Story._parse(self, story, peer, users, chats))
 
         return stories if is_iterable else stories[0] if stories else None
-

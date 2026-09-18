@@ -11,8 +11,8 @@ cannot re-trigger the command that asked it.
 
 .. code-block:: python
 
-    from wzgram import Client, filters
-    from wzgram.errors import ListenerTimeout
+    from pyrogram import Client, filters
+    from pyrogram.errors import ListenerTimeout
 
     app = Client("my_bot")
 
@@ -40,7 +40,7 @@ cannot re-trigger the command that asked it.
     app.run()
 
 Each wait has its own ``timeout``, and a listener that expires raises ``ListenerTimeout``
-rather than leaving the conversation hanging. Waiting inside a handler is safe: wzgram covers
+rather than leaving the conversation hanging. Waiting inside a handler is safe: pyrogram covers
 the parked dispatcher worker with a relief worker, so concurrent conversations do not starve
 the pool.
 

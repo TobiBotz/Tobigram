@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from random import randint
 
 CURRENT_DH_PRIME = int(
@@ -27,13 +29,14 @@ CURRENT_DH_PRIME = int(
     "FD17ED950D5965B4B9DD46582DB1178D169C6BC465B0D6FF9CA3928FEF5B9AE4"
     "E418FC15E83EBEA0F87FA9FF5EED70050DED2849F47BF959D956850CE929851F"
     "0D8115F635B105EE2E4E15D04B2454BF6F4FADF034B10403119CD8E3B92FCC5B",
-    16
+    16,
 )
 
 
 # Recursive variant
 # def gcd(cls, a: int, b: int) -> int:
 #     return cls.gcd(b, a % b) if b else a
+
 
 def gcd(a: int, b: int) -> int:
     while b:
@@ -47,36 +50,38 @@ def decompose(pq: int) -> int:
     if pq % 2 == 0:
         return 2
 
-    y, c, m = randint(1, pq - 1), randint(1, pq - 1), randint(1, pq - 1)
-    g = r = q = 1
-    x = ys = 0
+    while True:
+        y, c, m = randint(1, pq - 1), randint(1, pq - 1), randint(1, pq - 1)
+        g = r = q = 1
+        x = ys = 0
 
-    while g == 1:
-        x = y
+        while g == 1:
+            x = y
 
-        for i in range(r):
-            y = (pow(y, 2, pq) + c) % pq
-
-        k = 0
-
-        while k < r and g == 1:
-            ys = y
-
-            for i in range(min(m, r - k)):
+            for i in range(r):
                 y = (pow(y, 2, pq) + c) % pq
-                q = q * (abs(x - y)) % pq
 
-            g = gcd(q, pq)
-            k += m
+            k = 0
 
-        r *= 2
+            while k < r and g == 1:
+                ys = y
 
-    if g == pq:
-        while True:
-            ys = (pow(ys, 2, pq) + c) % pq
-            g = gcd(abs(x - ys), pq)
+                for i in range(min(m, r - k)):
+                    y = (pow(y, 2, pq) + c) % pq
+                    q = (q * abs(x - y)) % pq
 
-            if g > 1:
-                break
+                g = gcd(q, pq)
+                k += m
 
-    return g
+            r *= 2
+
+        if g == pq:
+            while True:
+                ys = (pow(ys, 2, pq) + c) % pq
+                g = gcd(abs(x - ys), pq)
+
+                if g > 1:
+                    break
+
+        if 1 < g < pq:
+            return g

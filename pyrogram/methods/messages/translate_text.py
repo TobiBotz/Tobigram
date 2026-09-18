@@ -21,7 +21,8 @@
 # Source: tl:messages.translateText
 # ***************************
 
-from typing import Union, List, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -29,13 +30,13 @@ from pyrogram import raw
 
 class TranslateText:
     async def translate_text(
-        self: "pyrogram.Client",
-        peer: Optional[Union[int, str]] = None,
-        id: Optional[List[int]] = None,
-        text: Optional[Union[str, List[raw.types.TextWithEntities]]] = None,
-        to_lang: Optional[str] = None,
-        tone: Optional[str] = None,
-    ) -> List["raw.types.TextWithEntities"]:
+        self: pyrogram.Client,
+        peer: int | str | None = None,
+        id: list[int] | None = None,
+        text: str | list[raw.types.TextWithEntities] | None = None,
+        to_lang: str | None = None,
+        tone: str | None = None,
+    ) -> list[raw.types.TextWithEntities]:
         """Translate text or a message to another language.
 
         .. include:: /_includes/usable-by/users.rst

@@ -16,7 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from pyrogram import raw
+
 from ..object import Object
 
 
@@ -31,14 +34,12 @@ class PollStats(Object):
     def __init__(
         self,
         *,
-        votes_graph: "raw.base.StatsGraph",
+        votes_graph: raw.base.StatsGraph,
     ):
         super().__init__()
 
         self.votes_graph = votes_graph
 
     @staticmethod
-    def _parse(poll_stats: "raw.types.stats.PollStats") -> "PollStats":
-        return PollStats(
-            votes_graph=poll_stats.votes_graph
-        )
+    def _parse(poll_stats: raw.types.stats.PollStats) -> PollStats:
+        return PollStats(votes_graph=poll_stats.votes_graph)

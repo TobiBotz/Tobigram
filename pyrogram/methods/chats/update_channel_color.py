@@ -21,21 +21,21 @@
 # Source: tl:channels.updateColor
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class UpdateChannelColor:
     async def update_channel_color(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        for_profile: Optional[bool] = None,
-        color: Optional[int] = None,
-        background_emoji_id: Optional[int] = None,
-    ) -> "types.Message":
+        self: pyrogram.Client,
+        chat_id: int | str,
+        for_profile: bool | None = None,
+        color: int | None = None,
+        background_emoji_id: int | None = None,
+    ) -> types.Message:
         """Update the accent color of a channel.
 
         .. include:: /_includes/usable-by/users.rst
@@ -66,7 +66,6 @@ class UpdateChannelColor:
 
         r = await self.invoke(
             raw.functions.channels.UpdateColor(
-                
                 for_profile=for_profile,
                 channel=await self.resolve_peer(chat_id),
                 color=color,
@@ -75,12 +74,18 @@ class UpdateChannelColor:
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
+                    self,
+                    i.message,
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                 )

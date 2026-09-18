@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types
@@ -24,10 +25,8 @@ from pyrogram import raw, types
 
 class SetChatTTL:
     async def set_chat_ttl(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        ttl_seconds: int
-    ) -> Optional["types.Message"]:
+        self: pyrogram.Client, chat_id: int | str, ttl_seconds: int
+    ) -> types.Message | None:
         """Set the auto-delete timer of a chat.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -50,8 +49,7 @@ class SetChatTTL:
 
         r = await self.invoke(
             raw.functions.messages.SetHistoryTTL(
-                peer=await self.resolve_peer(chat_id),
-                period=ttl_seconds
+                peer=await self.resolve_peer(chat_id), period=ttl_seconds
             )
         )
 
@@ -59,6 +57,5 @@ class SetChatTTL:
         chats = {i.id: i for i in r.chats}
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage)):
+            if isinstance(i, (raw.types.UpdateNewMessage, raw.types.UpdateNewChannelMessage)):
                 return await types.Message._parse(self, i.message, users, chats)

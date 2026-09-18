@@ -40,9 +40,7 @@ import pytest
 from pyrogram.methods import Methods
 
 ROOT = Path(__file__).resolve().parents[1]
-FROZEN = json.loads(
-    (ROOT / "tests" / "data_undocumented_params.json").read_text(encoding="utf-8")
-)
+FROZEN = json.loads((ROOT / "tests" / "data_undocumented_params.json").read_text(encoding="utf-8"))
 
 IGNORE = {"self", "args", "kwargs"}
 

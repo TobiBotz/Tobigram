@@ -16,9 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .remote_storage import PeerRow, RemoteStorage, StoredPeer
 
@@ -26,7 +28,7 @@ log = logging.getLogger(__name__)
 
 DRIVER_MISSING = (
     "RedisStorage needs the redis package. Install it with "
-    '`pip install "wzgram[redis]"`, or pass an already-created '
+    '`pip install "tobigram[redis]"`, or pass an already-created '
     "redis.asyncio client as the connection argument."
 )
 
@@ -54,7 +56,7 @@ class RedisStorage(RemoteStorage):
 
         An evicted session key is a lost login. Peers are a cache and can be
         evicted safely, but the session hash cannot - run the database with
-        ``maxmemory-policy noeviction``, or give wzgram a database of its own.
+        ``maxmemory-policy noeviction``, or give pyrogram a database of its own.
         Opening this storage logs a warning when the server reports any other
         policy.
 
@@ -66,7 +68,7 @@ class RedisStorage(RemoteStorage):
             A connection URI, or an already-created ``redis.asyncio`` client.
 
         prefix (``str``, *optional*):
-            Key prefix. Defaults to ``wzgram:<name>``.
+            Key prefix. Defaults to ``pyrogram:<name>``.
 
         session_string (``str``, *optional*):
             Load this session string into the store when opening.
@@ -78,13 +80,13 @@ class RedisStorage(RemoteStorage):
         self,
         name: str,
         connection: Any,
-        prefix: Optional[str] = None,
-        session_string: Optional[str] = None,
+        prefix: str | None = None,
+        session_string: str | None = None,
     ):
         super().__init__(name, session_string=session_string)
 
         self._connection = connection
-        self._prefix = prefix or f"wzgram:{name}"
+        self._prefix = prefix or f"pyrogram:{name}"
         self._owns_client = isinstance(connection, str)
 
         self._redis = None
@@ -104,7 +106,7 @@ class RedisStorage(RemoteStorage):
         if policy and policy != "noeviction":
             log.warning(
                 "Redis eviction policy is %s: an evicted session key is a lost login. "
-                "Use noeviction, or a database wzgram has to itself.",
+                "Use noeviction, or a database pyrogram has to itself.",
                 policy,
             )
 
@@ -114,7 +116,7 @@ class RedisStorage(RemoteStorage):
 
         self._redis = None
 
-    async def _load_session(self) -> Optional[Dict[str, Any]]:
+    async def _load_session(self) -> dict[str, Any] | None:
         stored = await self._redis.hgetall(self._key("session"))
 
         if not stored:
@@ -138,7 +140,7 @@ class RedisStorage(RemoteStorage):
 
         return session
 
-    async def _save_session(self, fields: Dict[str, Any]) -> None:
+    async def _save_session(self, fields: dict[str, Any]) -> None:
         mapping = {}
 
         for key, value in fields.items():
@@ -153,7 +155,7 @@ class RedisStorage(RemoteStorage):
 
         await self._redis.hset(self._key("session"), mapping=mapping)
 
-    async def _load_version(self) -> Optional[int]:
+    async def _load_version(self) -> int | None:
         stored = await self._redis.get(self._key("version"))
 
         return int(stored) if stored is not None else None
@@ -161,7 +163,7 @@ class RedisStorage(RemoteStorage):
     async def _save_version(self, version: int) -> None:
         await self._redis.set(self._key("version"), version)
 
-    async def _upsert_peers(self, rows: List[PeerRow]) -> None:
+    async def _upsert_peers(self, rows: list[PeerRow]) -> None:
         now = int(time.time())
         pipe = self._redis.pipeline()
 
@@ -182,7 +184,7 @@ class RedisStorage(RemoteStorage):
 
         await pipe.execute()
 
-    async def _peer_row(self, peer_id: int) -> Optional[StoredPeer]:
+    async def _peer_row(self, peer_id: int) -> StoredPeer | None:
         stored = await self._redis.hgetall(self._key("peer", peer_id))
 
         if not stored:
@@ -198,10 +200,10 @@ class RedisStorage(RemoteStorage):
             int(stored.get("last_update_on") or 0),
         )
 
-    async def _fetch_peer(self, peer_id: int) -> Optional[StoredPeer]:
+    async def _fetch_peer(self, peer_id: int) -> StoredPeer | None:
         return await self._peer_row(peer_id)
 
-    async def _fetch_peer_by_username(self, username: str) -> Optional[StoredPeer]:
+    async def _fetch_peer_by_username(self, username: str) -> StoredPeer | None:
         peer_id = await self._redis.get(self._key("username", username))
 
         if peer_id is None:
@@ -209,7 +211,7 @@ class RedisStorage(RemoteStorage):
 
         return await self._peer_row(int(peer_id))
 
-    async def _fetch_peer_by_phone(self, phone_number: str) -> Optional[StoredPeer]:
+    async def _fetch_peer_by_phone(self, phone_number: str) -> StoredPeer | None:
         peer_id = await self._redis.get(self._key("phone", phone_number))
 
         if peer_id is None:
@@ -217,7 +219,7 @@ class RedisStorage(RemoteStorage):
 
         return await self._peer_row(int(peer_id))
 
-    async def _iter_peers(self, limit: Optional[int] = None) -> List[PeerRow]:
+    async def _iter_peers(self, limit: int | None = None) -> list[PeerRow]:
         rows = []
 
         for raw_id in await self._redis.smembers(self._key("peers")):
@@ -244,7 +246,7 @@ class RedisStorage(RemoteStorage):
 
         return rows
 
-    async def _replace_usernames(self, usernames: List[Tuple[int, List[str]]]) -> None:
+    async def _replace_usernames(self, usernames: list[tuple[int, list[str]]]) -> None:
         pipe = self._redis.pipeline()
 
         for peer_id, names in usernames:
@@ -261,7 +263,7 @@ class RedisStorage(RemoteStorage):
 
         await pipe.execute()
 
-    async def _load_states(self) -> List[Tuple[int, int, int, int, int]]:
+    async def _load_states(self) -> list[tuple[int, int, int, int, int]]:
         states = []
 
         for raw_id in await self._redis.smembers(self._key("states")):
@@ -287,7 +289,7 @@ class RedisStorage(RemoteStorage):
 
         return states
 
-    async def _save_state(self, state: Tuple[int, int, int, int, int]) -> None:
+    async def _save_state(self, state: tuple[int, int, int, int, int]) -> None:
         state_id, pts, qts, date, seq = state
 
         pipe = self._redis.pipeline()

@@ -19,17 +19,17 @@
 import csv
 from pathlib import Path
 
-for p in Path("source").glob("*.tsv"):
-    with open(p) as f:
+HOME = Path(__file__).parent
+SOURCE = HOME / "source"
+
+for p in sorted(SOURCE.glob("*.tsv")):
+    with open(p, encoding="utf-8") as f:
         reader = csv.reader(f, delimiter="\t")
-        dct = {k: v for k, v in reader if k != "id"}
+        dct = {row[0]: row[1] for row in reader if row and row[0] != "id"}
         keys = sorted(dct)
 
-    with open(p, "w") as f:
+    with open(p, "w", encoding="utf-8", newline="") as f:
         f.write("id\tmessage\n")
 
         for i, item in enumerate(keys, start=1):
-            f.write(f"{item}\t{dct[item]}")
-
-            if i != len(keys):
-                f.write("\n")
+            f.write(f"{item}\t{dct[item]}\n")

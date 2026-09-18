@@ -16,8 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
+from collections.abc import AsyncGenerator
 from datetime import datetime
-from typing import AsyncGenerator, Optional, Union
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -25,8 +27,8 @@ from pyrogram import raw, types, utils
 
 async def get_chunk(
     *,
-    client: "pyrogram.Client",
-    chat_id: Union[int, str],
+    client: pyrogram.Client,
+    chat_id: int | str,
     message_id: int,
     limit: int = 0,
     offset: int = 0,
@@ -62,8 +64,8 @@ async def get_chunk(
 
 class GetDiscussionReplies:
     async def get_discussion_replies(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         message_id: int,
         limit: int = 0,
         offset: int = 0,
@@ -72,7 +74,7 @@ class GetDiscussionReplies:
         min_id: int = 0,
         max_id: int = 0,
         reverse: bool = False,
-    ) -> Optional[AsyncGenerator["types.Message", None]]:
+    ) -> AsyncGenerator[types.Message, None] | None:
         """Get the message replies of a discussion thread.
 
         .. include:: /_includes/usable-by/users.rst

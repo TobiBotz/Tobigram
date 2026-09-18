@@ -39,19 +39,29 @@ def run():
 
     # CTR standard
     b1 = bytearray(16)
-    bench("ctr256_encrypt 1MB (standard)", lambda: aes.ctr256_encrypt(DATA_MB, KEY, bytearray(os.urandom(16)), bytearray(1)), 200)
+    bench(
+        "ctr256_encrypt 1MB (standard)",
+        lambda: aes.ctr256_encrypt(DATA_MB, KEY, bytearray(os.urandom(16)), bytearray(1)),
+        200,
+    )
     b2 = bytearray(16)
-    bench("ctr256_decrypt 1MB (standard)", lambda: aes.ctr256_decrypt(DATA_MB, KEY, bytearray(os.urandom(16)), bytearray(1)), 200)
+    bench(
+        "ctr256_decrypt 1MB (standard)",
+        lambda: aes.ctr256_decrypt(DATA_MB, KEY, bytearray(os.urandom(16)), bytearray(1)),
+        200,
+    )
 
     # CTR in-place
     buf = bytearray(DATA_MB)
     iv = bytearray(16)
     st = bytearray(1)
+
     def _inplace():
         iv[:] = os.urandom(16)
         st[0] = 0
         buf[:] = DATA_MB
         aes.ctr256_encrypt_inplace(buf, KEY, iv, st)
+
     bench("ctr256_encrypt_inplace 1MB", _inplace, 200)
 
     # CTR batch: 10 chunks of 100KB each
@@ -62,16 +72,19 @@ def run():
         sizes += len(c).to_bytes(4, "little")
     batch_ivs = bytearray(16 * 10)
     batch_states = bytearray(10)
+
     def _batch():
         batch_ivs[:] = os.urandom(16 * 10)
         batch_states[:] = b"\x00" * 10
         aes.ctr256_encrypt_batch(data_flat, sizes, KEY, batch_ivs, batch_states)
+
     bench("ctr256_encrypt_batch 10x100KB", _batch, 200)
 
     # Individual calls to compare with batch
     c2 = [os.urandom(100 * 1024) for _ in range(10)]
     ivs2 = [bytearray(16) for _ in range(10)]
     sts2 = [bytearray(1) for _ in range(10)]
+
     def _individual():
         for iv in ivs2:
             iv[:] = os.urandom(16)
@@ -79,6 +92,7 @@ def run():
             st[0] = 0
         for d, iv, st in zip(c2, ivs2, sts2):
             aes.ctr256_encrypt(d, KEY, iv, st)
+
     bench("ctr256_encrypt 10x100KB (individual)", _individual, 200)
 
 

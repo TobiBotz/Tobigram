@@ -16,26 +16,25 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Union, Optional
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import utils
-from pyrogram import types
+from pyrogram import raw, types, utils
 
 
 class EditMessageReplyMarkup:
     async def edit_message_reply_markup(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         message_id: int,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        business_connection_id: Optional[str] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        quick_reply_shortcut: Optional[int] = None,
-    ) -> "types.Message":
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        business_connection_id: str | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        quick_reply_shortcut: int | None = None,
+    ) -> types.Message:
         """Edit only the reply markup of messages sent by the bot.
 
         .. include:: /_includes/usable-by/bots.rst
@@ -70,7 +69,7 @@ class EditMessageReplyMarkup:
         Example:
             .. code-block:: python
 
-                from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
+                from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
                 # Bots only
                 await app.edit_message_reply_markup(
@@ -88,13 +87,18 @@ class EditMessageReplyMarkup:
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
             ),
             sleep_threshold=60,
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateEditMessage, raw.types.UpdateEditChannelMessage, raw.types.UpdateEditEphemeralMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateEditMessage,
+                    raw.types.UpdateEditChannelMessage,
+                    raw.types.UpdateEditEphemeralMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
-                    {i.id: i for i in r.users},
-                    {i.id: i for i in r.chats}
+                    self, i.message, {i.id: i for i in r.users}, {i.id: i for i in r.chats}
                 )

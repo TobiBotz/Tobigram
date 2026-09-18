@@ -16,18 +16,19 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Iterable
+from __future__ import annotations
+
+from collections.abc import Iterable
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class AnswerInlineQuery:
     async def answer_inline_query(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         inline_query_id: str,
-        results: Iterable["types.InlineQueryResult"],
+        results: Iterable[types.InlineQueryResult],
         cache_time: int = 300,
         is_gallery: bool = False,
         is_personal: bool = False,
@@ -94,7 +95,7 @@ class AnswerInlineQuery:
         Example:
             .. code-block:: python
 
-                from wzgram.types import InlineQueryResultArticle, InputTextMessageContent
+                from pyrogram.types import InlineQueryResultArticle, InputTextMessageContent
 
                 await app.answer_inline_query(
                     inline_query_id,
@@ -113,12 +114,14 @@ class AnswerInlineQuery:
                 private=is_personal if is_personal is not None else None,
                 next_offset=next_offset or None,
                 switch_pm=raw.types.InlineBotSwitchPM(
-                    text=switch_pm_text,
-                    start_param=switch_pm_parameter
-                ) if switch_pm_text else None,
+                    text=switch_pm_text, start_param=switch_pm_parameter
+                )
+                if switch_pm_text
+                else None,
                 switch_webview=raw.types.InlineBotWebView(
-                    text=switch_webview_text,
-                    url=switch_webview_url
-                ) if switch_webview_text else None
+                    text=switch_webview_text, url=switch_webview_url
+                )
+                if switch_webview_text
+                else None,
             )
         )

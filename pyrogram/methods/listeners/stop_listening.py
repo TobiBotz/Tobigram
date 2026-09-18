@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional, Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import enums, types
@@ -26,12 +27,12 @@ from .listen import resolve_listener_ids
 
 class StopListening:
     async def stop_listening(
-        self: "pyrogram.Client",
-        listener_type: "enums.ListenerTypes" = enums.ListenerTypes.MESSAGE,
-        chat_id: Optional[Union[int, str, List[Union[int, str]]]] = None,
-        user_id: Optional[Union[int, str, List[Union[int, str]]]] = None,
-        message_id: Optional[Union[int, List[int]]] = None,
-        inline_message_id: Optional[Union[str, List[str]]] = None
+        self: pyrogram.Client,
+        listener_type: enums.ListenerTypes = enums.ListenerTypes.MESSAGE,
+        chat_id: int | str | list[int | str] | None = None,
+        user_id: int | str | list[int | str] | None = None,
+        message_id: int | list[int] | None = None,
+        inline_message_id: str | list[str] | None = None,
     ) -> int:
         """Stop the listeners covered by the given criteria.
 
@@ -69,7 +70,7 @@ class StopListening:
             chat_id=await resolve_listener_ids(self, chat_id),
             user_id=await resolve_listener_ids(self, user_id),
             message_id=message_id,
-            inline_message_id=inline_message_id
+            inline_message_id=inline_message_id,
         )
 
         return sum(

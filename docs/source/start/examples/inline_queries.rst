@@ -10,8 +10,8 @@ It uses the :meth:`~pyrogram.Client.on_inline_query` decorator to register an :o
 
 .. code-block:: python
 
-    from wzgram import Client
-    from wzgram.types import (InlineQueryResultArticle, InputTextMessageContent,
+    from pyrogram import Client
+    from pyrogram.types import (InlineQueryResultArticle, InputTextMessageContent,
                                 InlineKeyboardMarkup, InlineKeyboardButton)
 
     app = Client("my_bot", bot_token="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11")
@@ -24,15 +24,15 @@ It uses the :meth:`~pyrogram.Client.on_inline_query` decorator to register an :o
                 InlineQueryResultArticle(
                     title="Installation",
                     input_message_content=InputTextMessageContent(
-                        "Here's how to install **wzgram**"
+                        "Here's how to install **Tobigram**"
                     ),
-                    url="https://wzgram.com/intro/install",
-                    description="How to install wzgram",
+                    url="https://docs.tobigram.com/intro/install",
+                    description="How to install Tobigram",
                     reply_markup=InlineKeyboardMarkup(
                         [
                             [InlineKeyboardButton(
                                 "Open website",
-                                url="https://wzgram.com/intro/install"
+                                url="https://docs.tobigram.com/intro/install"
                             )]
                         ]
                     )
@@ -40,15 +40,15 @@ It uses the :meth:`~pyrogram.Client.on_inline_query` decorator to register an :o
                 InlineQueryResultArticle(
                     title="Usage",
                     input_message_content=InputTextMessageContent(
-                        "Here's how to use **wzgram**"
+                        "Here's how to use **Tobigram**"
                     ),
-                    url="https://wzgram.com/start/invoking",
-                    description="How to use wzgram",
+                    url="https://docs.tobigram.com/start/invoking",
+                    description="How to use Tobigram",
                     reply_markup=InlineKeyboardMarkup(
                         [
                             [InlineKeyboardButton(
                                 "Open website",
-                                url="https://wzgram.com/start/invoking"
+                                url="https://docs.tobigram.com/start/invoking"
                             )]
                         ]
                     )

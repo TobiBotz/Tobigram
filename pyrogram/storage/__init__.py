@@ -39,4 +39,3 @@ __all__ = [
     "Storage",
     "get_input_peer",
 ]
-

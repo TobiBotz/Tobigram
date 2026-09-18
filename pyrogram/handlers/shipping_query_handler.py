@@ -16,7 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import TYPE_CHECKING, Any, Callable
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from .handler import Handler
 
@@ -51,7 +54,6 @@ class ShippingQueryHandler(Handler):
     """
 
     def __init__(
-        self, callback: Callable[["pyrogram.Client", "types.ShippingQuery"], Any], filters=None
+        self, callback: Callable[[pyrogram.Client, types.ShippingQuery], Any], filters=None
     ):
         super().__init__(callback, filters)
-

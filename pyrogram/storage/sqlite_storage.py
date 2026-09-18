@@ -16,13 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-import aiosqlite
+from __future__ import annotations
+
 import asyncio
 import logging
 import os
 import time
 from pathlib import Path
-from typing import Any, List, Optional, Tuple
+from typing import Any
+
+import aiosqlite
 
 from .caching import PEER_CACHE_SIZE, PeerRowCache, SessionAttrCache, get_input_peer
 from .storage import PROD, TEST, Storage
@@ -116,7 +119,8 @@ CREATE TABLE update_state
 );
 """
 
-def _try_lock(path: Path) -> Optional[object]:
+
+def _try_lock(path: Path) -> object | None:
     if fcntl is None:
         return None
 
@@ -155,13 +159,13 @@ class SQLiteStorage(Storage):
         self,
         name: str,
         workdir: Path,
-        session_string: Optional[str] = None,
-        in_memory: Optional[bool] = False,
-        use_wal: Optional[bool] = True,
+        session_string: str | None = None,
+        in_memory: bool | None = False,
+        use_wal: bool | None = True,
     ):
         super().__init__(name)
 
-        self.conn: Optional[aiosqlite.Connection] = None
+        self.conn: aiosqlite.Connection | None = None
 
         self.session_string = session_string
         self.in_memory = in_memory
@@ -171,8 +175,8 @@ class SQLiteStorage(Storage):
         self._peer_cache = PeerRowCache(self._PEER_CACHE_SIZE, self.USERNAME_TTL / 2)
         self._dirty: bool = False
         self._write_count: int = 0
-        self._flush_task: Optional[asyncio.Task] = None
-        self._lock_fd: Optional[object] = None
+        self._flush_task: asyncio.Task | None = None
+        self._lock_fd: object | None = None
 
         if self.in_memory:
             self.database = ":memory:"
@@ -266,7 +270,7 @@ class SQLiteStorage(Storage):
             if address is not None:
                 await self.conn.execute(
                     "UPDATE sessions SET server_address = ?, port = ?;",
-                    (address, 80 if test_mode else 443)
+                    (address, 80 if test_mode else 443),
                 )
                 await self.conn.commit()
 
@@ -281,7 +285,8 @@ class SQLiteStorage(Storage):
         row = (2, "149.154.167.51", 443, None, None, None, 0, None, None)
         await self.conn.execute(
             "INSERT INTO sessions (dc_id, server_address, port, api_id, test_mode, auth_key, date, user_id, is_bot) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", row
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            row,
         )
         await self.conn.commit()
 
@@ -302,7 +307,10 @@ class SQLiteStorage(Storage):
         lock_path = path.with_suffix(".session.lock")
         self._lock_fd = _try_lock(lock_path)
         if self._lock_fd is None and fcntl is not None and file_exists:
-            log.warning("Could not acquire lock on %s — another client may be using the same session", lock_path)
+            log.warning(
+                "Could not acquire lock on %s — another client may be using the same session",
+                lock_path,
+            )
 
         self.conn = await aiosqlite.connect(str(path), timeout=5)
 
@@ -331,8 +339,17 @@ class SQLiteStorage(Storage):
         )
         row = await cursor.fetchone()
         if row:
-            keys = ["dc_id", "server_address", "port", "api_id",
-                    "test_mode", "auth_key", "date", "user_id", "is_bot"]
+            keys = [
+                "dc_id",
+                "server_address",
+                "port",
+                "api_id",
+                "test_mode",
+                "auth_key",
+                "date",
+                "user_id",
+                "is_bot",
+            ]
             self._cache.load(dict(zip(keys, row)))
 
     async def save(self):
@@ -373,7 +390,7 @@ class SQLiteStorage(Storage):
             if lock_path.exists():
                 lock_path.unlink()
 
-    async def update_peers(self, peers: List[Tuple[int, int, str, str]]):
+    async def update_peers(self, peers: list[tuple[int, int, str, str]]):
         if not peers or self.conn is None:
             return
 
@@ -387,16 +404,16 @@ class SQLiteStorage(Storage):
         )
 
         for peer_id, access_hash, peer_type, phone_number in fresh:
-            self._peer_cache.remember(
-                (peer_id, access_hash, peer_type), phone_number, written=True
-            )
+            self._peer_cache.remember((peer_id, access_hash, peer_type), phone_number, written=True)
 
         await self._maybe_commit()
 
-    async def update_usernames(self, usernames: List[Tuple[int, List[str]]]):
+    async def update_usernames(self, usernames: list[tuple[int, list[str]]]):
         if not usernames or self.conn is None:
             return
-        await self.conn.executemany("DELETE FROM usernames WHERE id = ?", [(id,) for id, _ in usernames])
+        await self.conn.executemany(
+            "DELETE FROM usernames WHERE id = ?", [(id,) for id, _ in usernames]
+        )
 
         await self.conn.executemany(
             "REPLACE INTO usernames (id, username) VALUES (?, ?)",
@@ -404,7 +421,7 @@ class SQLiteStorage(Storage):
         )
         await self._maybe_commit()
 
-    async def update_state(self, value: Tuple[int, int, int, int, int] = object):
+    async def update_state(self, value: tuple[int, int, int, int, int] = object):
         if self.conn is None:
             return [] if value is object else None
 

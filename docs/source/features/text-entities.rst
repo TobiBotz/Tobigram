@@ -24,7 +24,7 @@ In HTML it is ``tg-time``:
 
 .. code-block:: python
 
-    from wzgram.enums import ParseMode
+    from pyrogram.enums import ParseMode
 
     await app.send_message(
         chat_id="me",
@@ -75,8 +75,8 @@ Styled buttons
 
 .. code-block:: python
 
-    from wzgram import enums
-    from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    from pyrogram import enums
+    from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
     await app.send_message(
         chat_id="me",
@@ -106,5 +106,5 @@ Gotchas
   readable as a fallback — the entity replaces it, but only where the client understands it.
 - Custom emoji ids belong to a pack, not to your bot. If the pack is removed, the fallback
   text is all that is left.
-- Entity offsets are in UTF-16 code units. wzgram handles that for you when you use a parse
+- Entity offsets are in UTF-16 code units. pyrogram handles that for you when you use a parse
   mode; building entities by hand is where the surprises are.

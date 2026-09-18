@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -24,11 +25,11 @@ from pyrogram import raw, types, utils
 
 class DeletePollOption:
     async def delete_poll_option(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         message_id: int,
-        option: Union[str, "types.InputPollOption"],
-    ) -> Union["types.Message", bool]:
+        option: str | types.InputPollOption,
+    ) -> types.Message | bool:
         """Deletes an option from a poll.
 
         .. include:: /_includes/usable-by/users.rst
@@ -60,11 +61,8 @@ class DeletePollOption:
         """
         r = await self.invoke(
             raw.functions.messages.DeletePollAnswer(
-                peer=await self.resolve_peer(chat_id),
-                msg_id=message_id,
-                option=option.encode()
+                peer=await self.resolve_peer(chat_id), msg_id=message_id, option=option.encode()
             )
         )
 
         return next(iter(await utils.parse_messages(client=self, messages=r)), True)
-

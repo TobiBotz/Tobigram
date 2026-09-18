@@ -16,7 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import AsyncGenerator
+from __future__ import annotations
+
+from collections.abc import AsyncGenerator
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
@@ -24,10 +26,10 @@ from pyrogram import enums, raw, types, utils
 
 class GetTopChats:
     async def get_top_chats(
-        self: "pyrogram.Client",
-        category: "enums.TopChatCategory",
+        self: pyrogram.Client,
+        category: enums.TopChatCategory,
         limit: int = 0,
-    ) -> AsyncGenerator["types.Chat", None]:
+    ) -> AsyncGenerator[types.Chat, None]:
         """Returns a list of frequently used chats.
 
         .. include:: /_includes/usable-by/users.rst
@@ -73,7 +75,7 @@ class GetTopChats:
                     bots_app=category == enums.TopChatCategory.WEB_APP_BOTS,
                     bots_guestchat=category == enums.TopChatCategory.GUEST_BOTS,
                 ),
-                sleep_threshold=60
+                sleep_threshold=60,
             )
 
             if not isinstance(r, raw.types.contacts.TopPeers):
@@ -88,7 +90,9 @@ class GetTopChats:
                 for top_peer in cat.peers:
                     peer_id = utils.get_raw_peer_id(top_peer.peer)
 
-                    top_chats.append(types.Chat._parse_chat(self, users.get(peer_id) or chats.get(peer_id)))
+                    top_chats.append(
+                        types.Chat._parse_chat(self, users.get(peer_id) or chats.get(peer_id))
+                    )
 
             if not top_chats:
                 return
@@ -102,4 +106,3 @@ class GetTopChats:
 
                 if current >= total:
                     return
-

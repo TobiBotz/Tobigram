@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
@@ -38,11 +39,13 @@ class SuggestedPostRefunded(Object):
         reason (:obj:`~pyrogram.enums.SuggestedPostRefundReason`, *optional*):
             Reason for the refund.
     """
+
     def __init__(
-        self, *,
-        suggested_post_message_id: Optional[int] = None,
-        suggested_post_message: Optional["types.Message"] = None,
-        reason: Optional["enums.SuggestedPostRefundReason"] = None
+        self,
+        *,
+        suggested_post_message_id: int | None = None,
+        suggested_post_message: types.Message | None = None,
+        reason: enums.SuggestedPostRefundReason | None = None,
     ):
         super().__init__()
 
@@ -52,10 +55,9 @@ class SuggestedPostRefunded(Object):
 
     @staticmethod
     async def _parse(
-        client: "pyrogram.Client",
-        message: "raw.types.MessageService"
-    ) -> "SuggestedPostRefunded":
-        action: "raw.types.MessageActionSuggestedPostRefund" = message.action
+        client: pyrogram.Client, message: raw.types.MessageService
+    ) -> SuggestedPostRefunded:
+        action: raw.types.MessageActionSuggestedPostRefund = message.action
 
         if not isinstance(action, raw.types.MessageActionSuggestedPostRefund):
             return None
@@ -74,8 +76,7 @@ class SuggestedPostRefunded(Object):
             if client.fetch_replies:
                 try:
                     suggested_post_message = await client.get_messages(
-                        chat_id=chat_id,
-                        message_ids=suggested_post_message_id
+                        chat_id=chat_id, message_ids=suggested_post_message_id
                     )
                 except MessageIdsEmpty:
                     pass
@@ -88,6 +89,5 @@ class SuggestedPostRefunded(Object):
         return SuggestedPostRefunded(
             suggested_post_message_id=suggested_post_message_id,
             suggested_post_message=suggested_post_message,
-            reason=reason
+            reason=reason,
         )
-

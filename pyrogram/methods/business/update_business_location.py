@@ -21,7 +21,8 @@
 # Source: tl:account.updateBusinessLocation
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -29,9 +30,9 @@ from pyrogram import raw
 
 class UpdateBusinessLocation:
     async def update_business_location(
-        self: "pyrogram.Client",
-        geo_point: Optional[raw.types.InputGeoPoint] = None,
-        address: Optional[str] = None,
+        self: pyrogram.Client,
+        geo_point: raw.types.InputGeoPoint | None = None,
+        address: str | None = None,
     ) -> bool:
         """Update the business location shown on your business page.
 

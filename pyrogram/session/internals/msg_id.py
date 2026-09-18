@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 import threading
 import time
@@ -51,7 +53,7 @@ class _MsgIdGenerator:
         now = self.now()
 
         with _MsgIdGenerator._lock:
-            msg_id = int(now * 2 ** 32) & ~3
+            msg_id = int(now * 2**32) & ~3
 
             if msg_id <= _MsgIdGenerator._last_msg_id:
                 msg_id = _MsgIdGenerator._last_msg_id + 4

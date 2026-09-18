@@ -1,10 +1,10 @@
 Rate Limiting
 =============
 
-*A wzgram extension*
+*A pyrogram extension*
 
 Telegram answers a client that sends too fast with a ``FloodWait``: a number of seconds you
-must not send in. wzgram handles those when they arrive — but a limiter that *never lets you
+must not send in. pyrogram handles those when they arrive — but a limiter that *never lets you
 get there* is cheaper than one that recovers afterwards, because a flood wait charges for
 the request that triggered it too.
 
@@ -97,5 +97,5 @@ Gotchas
 - It bounds requests per second, not bytes. A slow uploader is not what it protects against;
   that is :doc:`performance`.
 - ``sleep_threshold`` on the client is the other half of this: it decides how long a
-  ``FloodWait`` wzgram will sit out for you rather than raise. The limiter tries to keep you
+  ``FloodWait`` pyrogram will sit out for you rather than raise. The limiter tries to keep you
   from ever finding out.

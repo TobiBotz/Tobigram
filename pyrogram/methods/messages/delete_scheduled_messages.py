@@ -21,18 +21,18 @@
 # Source: tl:messages.deleteScheduledMessages
 # ***************************
 
-from typing import Union, List, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
-from pyrogram import types
 
 
 class DeleteScheduledMessages:
     async def delete_scheduled_messages(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        id: Optional[List[int]] = None,
+        self: pyrogram.Client,
+        chat_id: int | str,
+        id: list[int] | None = None,
     ) -> bool:
         """Delete scheduled messages.
 
@@ -58,7 +58,6 @@ class DeleteScheduledMessages:
 
         r = await self.invoke(
             raw.functions.messages.DeleteScheduledMessages(
-                
                 peer=await self.resolve_peer(chat_id),
                 id=id,
             )

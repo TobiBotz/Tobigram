@@ -16,40 +16,40 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
-from typing import Union, List, Optional
 
 import pyrogram
-from pyrogram import raw, types, utils, enums
+from pyrogram import enums, raw, types, utils
 
 log = logging.getLogger(__name__)
 
 
 class SendEphemeralMessage:
     async def send_ephemeral_message(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        receiver_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
+        receiver_id: int | str,
         text: str,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        reply_markup: Optional[Union[
-            "types.InlineKeyboardMarkup",
-            "types.ReplyKeyboardMarkup",
-            "types.ReplyKeyboardRemove",
-            "types.ForceReply"
-        ]] = None,
-        query_id: Optional[int] = None,
-        rich_text: Optional[Union[str, "types.InputRichMessage"]] = None,
-        rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
-        rich_text_media: Optional[List["types.InputRichMessageMedia"]] = None,
-        disable_web_page_preview: Optional[bool] = None,
-        welcome: Optional[bool] = None,
-        anchor: Optional[bool] = None,
-        show_caption_above_media: Optional[bool] = None,
-        protect_content: Optional[bool] = None,
-    ) -> "types.Message":
+        parse_mode: enums.ParseMode | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        query_id: int | None = None,
+        rich_text: str | types.InputRichMessage | None = None,
+        rich_text_parse_mode: enums.ParseMode = enums.ParseMode.MARKDOWN,
+        rich_text_media: list[types.InputRichMessageMedia] | None = None,
+        disable_web_page_preview: bool | None = None,
+        welcome: bool | None = None,
+        anchor: bool | None = None,
+        show_caption_above_media: bool | None = None,
+        protect_content: bool | None = None,
+    ) -> types.Message:
         """Send an ephemeral message visible only to a specific user and the bot in a group.
 
         .. include:: /_includes/usable-by/bots.rst
@@ -127,9 +127,11 @@ class SendEphemeralMessage:
             if isinstance(rich_text, types.InputRichMessage):
                 rich_message = rich_text.write()
             else:
-                files = types.InputRichMessage(
-                    html="_", media=rich_text_media
-                ).write_files() if rich_text_media else None
+                files = (
+                    types.InputRichMessage(html="_", media=rich_text_media).write_files()
+                    if rich_text_media
+                    else None
+                )
 
                 if rich_text_parse_mode == enums.ParseMode.HTML:
                     rich_message = raw.types.InputRichMessageHTML(
@@ -159,7 +161,9 @@ class SendEphemeralMessage:
                 )
             )
         else:
-            plain_text, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
+            plain_text, entities = (
+                await utils.parse_text_entities(self, text, parse_mode, entities)
+            ).values()
 
             r = await self.invoke(
                 raw.functions.ephemeral.SendMessage(

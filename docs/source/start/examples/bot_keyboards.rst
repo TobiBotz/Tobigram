@@ -13,8 +13,8 @@ like :meth:`~pyrogram.Client.send_audio`, :meth:`~pyrogram.Client.send_document`
 
 .. code-block:: python
 
-    from wzgram import Client
-    from wzgram.types import (ReplyKeyboardMarkup, InlineKeyboardMarkup,
+    from pyrogram import Client
+    from pyrogram.types import (ReplyKeyboardMarkup, InlineKeyboardMarkup,
                                 InlineKeyboardButton)
 
     # Create a client using your bot token
@@ -49,17 +49,17 @@ like :meth:`~pyrogram.Client.send_audio`, :meth:`~pyrogram.Client.send_document`
                             ),
                             InlineKeyboardButton(  # Opens a web URL
                                 "URL",
-                                url="https://wzgram.com/"
+                                url="https://tobigram.com/"
                             ),
                         ],
                         [  # Second row
                             InlineKeyboardButton(  # Opens the inline interface
                                 "Choose chat",
-                                switch_inline_query="pyrogram"
+                                switch_inline_query="tobigram"
                             ),
                             InlineKeyboardButton(  # Opens the inline interface in the current chat
                                 "Inline here",
-                                switch_inline_query_current_chat="pyrogram"
+                                switch_inline_query_current_chat="tobigram"
                             )
                         ]
                     ]

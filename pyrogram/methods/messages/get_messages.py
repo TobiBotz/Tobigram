@@ -16,13 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
-from typing import Union, List, Iterable, Optional
+from collections.abc import Iterable
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
 
 log = logging.getLogger(__name__)
 
@@ -32,12 +32,12 @@ log = logging.getLogger(__name__)
 
 class GetMessages:
     async def get_messages(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        message_ids: Optional[Union[int, Iterable[int]]] = None,
-        reply_to_message_ids: Optional[Union[int, Iterable[int]]] = None,
-        replies: int = 1
-    ) -> Union["types.Message", List["types.Message"]]:
+        self: pyrogram.Client,
+        chat_id: int | str,
+        message_ids: int | Iterable[int] | None = None,
+        reply_to_message_ids: int | Iterable[int] | None = None,
+        replies: int = 1,
+    ) -> types.Message | list[types.Message]:
         """Get one or more messages from a chat by using message identifiers.
 
         You can retrieve up to 200 messages at once.
@@ -90,13 +90,17 @@ class GetMessages:
             ValueError: In case of invalid arguments.
         """
         ids, ids_type = (
-            (message_ids, raw.types.InputMessageID) if message_ids
-            else (reply_to_message_ids, raw.types.InputMessageReplyTo) if reply_to_message_ids
+            (message_ids, raw.types.InputMessageID)
+            if message_ids
+            else (reply_to_message_ids, raw.types.InputMessageReplyTo)
+            if reply_to_message_ids
             else (None, None)
         )
 
         if ids is None:
-            raise ValueError("No argument supplied. Either pass message_ids or reply_to_message_ids")
+            raise ValueError(
+                "No argument supplied. Either pass message_ids or reply_to_message_ids"
+            )
 
         peer = await self.resolve_peer(chat_id)
 
@@ -107,8 +111,8 @@ class GetMessages:
         if replies < 0:
             replies = (1 << 31) - 1
 
-        if isinstance(peer, raw.types.InputPeerChannel):
-            rpc = raw.functions.channels.GetMessages(channel=peer, id=ids)
+        if isinstance(peer, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)):
+            rpc = raw.functions.channels.GetMessages(channel=utils.get_input_channel(peer), id=ids)
         else:
             rpc = raw.functions.messages.GetMessages(id=ids)
 

@@ -16,51 +16,52 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime
-from typing import Union, List, Optional, BinaryIO
+from typing import BinaryIO
 
 import pyrogram
-from pyrogram import types, enums
+from pyrogram import enums, types
 
 log = logging.getLogger(__name__)
 
 
 class CopyMessage:
     async def copy_message(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        from_chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
+        from_chat_id: int | str,
         message_id: int,
-        caption: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        video_cover: Optional[Union[str, BinaryIO]] = None,
-        video_start_timestamp: Optional[int] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        reply_to_message_id: Optional[int] = None,
-        reply_to_chat_id: Optional[Union[int, str]] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-        schedule_date: Optional[datetime] = None,
-        protect_content: Optional[bool] = None,
-        has_spoiler: Optional[bool] = None,
-        show_caption_above_media: Optional[bool] = None,
-        business_connection_id: Optional[str] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        reply_markup: Optional[Union[
-            "types.InlineKeyboardMarkup",
-            "types.ReplyKeyboardMarkup",
-            "types.ReplyKeyboardRemove",
-            "types.ForceReply"
-        ]] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None
-    ) -> "types.Message":
+        caption: str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        video_cover: str | BinaryIO | None = None,
+        video_start_timestamp: int | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        reply_to_message_id: int | None = None,
+        reply_to_chat_id: int | str | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+        schedule_date: datetime | None = None,
+        protect_content: bool | None = None,
+        has_spoiler: bool | None = None,
+        show_caption_above_media: bool | None = None,
+        business_connection_id: str | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+    ) -> types.Message:
         """Copy messages of any kind.
 
         The method is analogous to the method :meth:`~Client.forward_messages`, but the copied message doesn't have a
@@ -201,5 +202,5 @@ class CopyMessage:
             direct_messages_topic_id=direct_messages_topic_id,
             effect_id=effect_id,
             suggested_post_parameters=suggested_post_parameters,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )

@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 from datetime import datetime
 
 from pyrogram import enums
@@ -37,17 +38,14 @@ class MessageOriginHiddenUser(MessageOrigin):
         sender_user_name (``str``):
             Name of the user that sent the message originally.
     """
+
     def __init__(
         self,
         *,
-        type: "enums.MessageOriginType" = enums.MessageOriginType.HIDDEN_USER,
-        date: Optional[datetime] = None,
-        sender_user_name: Optional[str] = None
+        type: enums.MessageOriginType = enums.MessageOriginType.HIDDEN_USER,
+        date: datetime | None = None,
+        sender_user_name: str | None = None,
     ):
-        super().__init__(
-            type=type,
-            date=date
-        )
+        super().__init__(type=type, date=date)
 
         self.sender_user_name = sender_user_name
-

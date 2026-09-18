@@ -21,7 +21,8 @@
 # Source: tl:account.createBusinessChatLink
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -29,9 +30,9 @@ from pyrogram import raw
 
 class CreateBusinessChatLink:
     async def create_business_chat_link(
-        self: "pyrogram.Client",
-        link: Optional[raw.types.InputBusinessChatLink] = None,
-    ) -> "raw.types.BusinessChatLink":
+        self: pyrogram.Client,
+        link: raw.types.InputBusinessChatLink | None = None,
+    ) -> raw.types.BusinessChatLink:
         """Create a business chat link with a predefined message.
 
         .. include:: /_includes/usable-by/users.rst

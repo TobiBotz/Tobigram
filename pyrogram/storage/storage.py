@@ -16,11 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 import struct
 import zlib
 from abc import ABC, abstractmethod
-from typing import List, Tuple
 
 from pyrogram import raw
 
@@ -28,13 +29,8 @@ log = logging.getLogger(__name__)
 
 SESSION_STRING_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 SESSION_STRING_DECODE = {c: i for i, c in enumerate(SESSION_STRING_ALPHABET)}
-WZ_PREFIX = "WZ_"
 
-TEST = {
-    1: "149.154.175.10",
-    2: "149.154.167.40",
-    3: "149.154.175.117"
-}
+TEST = {1: "149.154.175.10", 2: "149.154.167.40", 3: "149.154.175.117"}
 
 PROD = {
     1: "149.154.175.53",
@@ -42,7 +38,7 @@ PROD = {
     3: "149.154.175.100",
     4: "149.154.167.91",
     5: "91.108.56.130",
-    203: "91.105.192.100"
+    203: "91.105.192.100",
 }
 
 
@@ -75,27 +71,29 @@ class Storage(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    async def update_peers(self, peers: List[Tuple[int, int, str, str]]) -> None:
+    async def update_peers(self, peers: list[tuple[int, int, str, str]]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def update_usernames(self, usernames: List[Tuple[int, List[str]]]) -> None:
+    async def update_usernames(self, usernames: list[tuple[int, list[str]]]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def update_state(self, update_state: Tuple[int, int, int, int, int] = object) -> Tuple[int, int, int, int, int]:
+    async def update_state(
+        self, update_state: tuple[int, int, int, int, int] = object
+    ) -> tuple[int, int, int, int, int]:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_peer_by_id(self, peer_id: int) -> "raw.base.InputPeer":
+    async def get_peer_by_id(self, peer_id: int) -> raw.base.InputPeer:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_peer_by_username(self, username: str) -> "raw.base.InputPeer":
+    async def get_peer_by_username(self, username: str) -> raw.base.InputPeer:
         raise NotImplementedError
 
     @abstractmethod
-    async def get_peer_by_phone_number(self, phone_number: str) -> "raw.base.InputPeer":
+    async def get_peer_by_phone_number(self, phone_number: str) -> raw.base.InputPeer:
         raise NotImplementedError
 
     @abstractmethod
@@ -138,7 +136,7 @@ class Storage(ABC):
     def _encode(raw: bytes) -> str:
         result = []
         for i in range(0, len(raw), 3):
-            chunk = raw[i:i + 3]
+            chunk = raw[i : i + 3]
             if len(chunk) == 3:
                 n = (chunk[0] << 16) | (chunk[1] << 8) | chunk[2]
                 result.append(SESSION_STRING_ALPHABET[(n >> 18) & 63])
@@ -163,7 +161,7 @@ class Storage(ABC):
         while i < len(s):
             if i + 4 <= len(s):
                 n = 0
-                for c in s[i:i + 4]:
+                for c in s[i : i + 4]:
                     n = (n << 6) | SESSION_STRING_DECODE[c]
                 result.append((n >> 16) & 255)
                 result.append((n >> 8) & 255)
@@ -198,11 +196,16 @@ class Storage(ABC):
             Storage.SESSION_STRING_FORMAT_V3, raw
         )
         server_address = addr_bytes.rstrip(b"\x00").decode("ascii")
-        return dict(
-            dc_id=dc_id, api_id=api_id, test_mode=test_mode,
-            auth_key=auth_key, user_id=user_id, is_bot=is_bot,
-            port=port, server_address=server_address,
-        )
+        return {
+            "dc_id": dc_id,
+            "api_id": api_id,
+            "test_mode": test_mode,
+            "auth_key": auth_key,
+            "user_id": user_id,
+            "is_bot": is_bot,
+            "port": port,
+            "server_address": server_address,
+        }
 
     @staticmethod
     def _try_decode_v3_with_crc(raw: bytes):
@@ -222,11 +225,16 @@ class Storage(ABC):
             Storage.SESSION_STRING_FORMAT_V2, raw
         )
         server_address = addr_bytes.rstrip(b"\x00").decode("ascii")
-        return dict(
-            dc_id=dc_id, api_id=api_id, test_mode=test_mode,
-            auth_key=auth_key, user_id=user_id, is_bot=is_bot,
-            port=port, server_address=server_address,
-        )
+        return {
+            "dc_id": dc_id,
+            "api_id": api_id,
+            "test_mode": test_mode,
+            "auth_key": auth_key,
+            "user_id": user_id,
+            "is_bot": is_bot,
+            "port": port,
+            "server_address": server_address,
+        }
 
     @staticmethod
     def _try_decode_v2_with_crc(raw: bytes):
@@ -247,12 +255,6 @@ class Storage(ABC):
         return "".join(clean)
 
     @staticmethod
-    def _strip_prefix(s: str) -> Tuple[str, bool]:
-        if s.startswith(WZ_PREFIX):
-            return s[len(WZ_PREFIX):], True
-        return s, False
-
-    @staticmethod
     def _try_decode_legacy(raw: bytes):
         if len(raw) not in (263, 267, 271):
             return None
@@ -264,29 +266,33 @@ class Storage(ABC):
         )
 
         if len(raw) == 271:
-            dc_id, api_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
-                ">BI?256sQ?", raw
-            )
-            return dict(
-                dc_id=dc_id, api_id=api_id, test_mode=test_mode,
-                auth_key=auth_key, user_id=user_id, is_bot=is_bot,
-                port=None, server_address=None,
-            )
+            dc_id, api_id, test_mode, auth_key, user_id, is_bot = struct.unpack(">BI?256sQ?", raw)
+            return {
+                "dc_id": dc_id,
+                "api_id": api_id,
+                "test_mode": test_mode,
+                "auth_key": auth_key,
+                "user_id": user_id,
+                "is_bot": is_bot,
+                "port": None,
+                "server_address": None,
+            }
 
         if len(raw) == 267:
-            dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
-                ">B?256sQ?", raw
-            )
+            dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(">B?256sQ?", raw)
         else:
-            dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(
-                ">B?256sI?", raw
-            )
+            dc_id, test_mode, auth_key, user_id, is_bot = struct.unpack(">B?256sI?", raw)
 
-        return dict(
-            dc_id=dc_id, api_id=None, test_mode=test_mode,
-            auth_key=auth_key, user_id=user_id, is_bot=is_bot,
-            port=None, server_address=None,
-        )
+        return {
+            "dc_id": dc_id,
+            "api_id": None,
+            "test_mode": test_mode,
+            "auth_key": auth_key,
+            "user_id": user_id,
+            "is_bot": is_bot,
+            "port": None,
+            "server_address": None,
+        }
 
     @staticmethod
     def _try_every_format(raw: bytes, allow_unverified: bool):
@@ -315,8 +321,7 @@ class Storage(ABC):
         if not s:
             raise ValueError("Session string is empty")
 
-        body, _ = Storage._strip_prefix(s)
-        clean = Storage._validate_char_set(body)
+        clean = Storage._validate_char_set(s)
 
         try:
             raw = Storage._decode(clean)
@@ -433,4 +438,4 @@ class Storage(ABC):
         )
 
         crc = struct.pack("<I", zlib.crc32(packed))
-        return WZ_PREFIX + Storage._encode(packed + crc)
+        return Storage._encode(packed + crc)

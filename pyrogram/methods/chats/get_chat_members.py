@@ -16,39 +16,43 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
-from typing import Union, Optional, AsyncGenerator
+from collections.abc import AsyncGenerator
 
 import pyrogram
-from pyrogram import raw, types, enums
+from pyrogram import enums, raw, types, utils
 
 log = logging.getLogger(__name__)
 
 
 async def get_chunk(
-    client: "pyrogram.Client",
-    chat_id: Union[int, str],
+    client: pyrogram.Client,
+    chat_id: int | str,
     offset: int,
-    filter: "enums.ChatMembersFilter",
+    filter: enums.ChatMembersFilter,
     limit: int,
     query: str,
 ):
-    is_queryable = filter in [enums.ChatMembersFilter.SEARCH,
-                              enums.ChatMembersFilter.BANNED,
-                              enums.ChatMembersFilter.RESTRICTED,
-                              enums.ChatMembersFilter.CONTACTS]
+    is_queryable = filter in [
+        enums.ChatMembersFilter.SEARCH,
+        enums.ChatMembersFilter.BANNED,
+        enums.ChatMembersFilter.RESTRICTED,
+        enums.ChatMembersFilter.CONTACTS,
+    ]
 
     filter = filter.value(q=query) if is_queryable else filter.value()
 
     r = await client.invoke(
         raw.functions.channels.GetParticipants(
-            channel=await client.resolve_peer(chat_id),
+            channel=utils.get_input_channel(await client.resolve_peer(chat_id)),
             filter=filter,
             offset=offset,
             limit=limit,
-            hash=0
+            hash=0,
         ),
-        sleep_threshold=60
+        sleep_threshold=60,
     )
 
     members = r.participants
@@ -60,12 +64,12 @@ async def get_chunk(
 
 class GetChatMembers:
     async def get_chat_members(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         query: str = "",
         limit: int = 0,
-        filter: "enums.ChatMembersFilter" = enums.ChatMembersFilter.SEARCH
-    ) -> Optional[AsyncGenerator["types.ChatMember", None]]:
+        filter: enums.ChatMembersFilter = enums.ChatMembersFilter.SEARCH,
+    ) -> AsyncGenerator[types.ChatMember, None] | None:
         """Get the members list of a chat.
 
         A chat can be either a basic group, a supergroup or a channel.
@@ -97,7 +101,7 @@ class GetChatMembers:
         Example:
             .. code-block:: python
 
-                from wzgram import enums
+                from pyrogram import enums
 
                 # Get members
                 async for member in app.get_chat_members(chat_id):
@@ -116,16 +120,12 @@ class GetChatMembers:
         peer = await self.resolve_peer(chat_id)
 
         if isinstance(peer, raw.types.InputPeerChat):
-            r = await self.invoke(
-                raw.functions.messages.GetFullChat(
-                    chat_id=peer.chat_id
-                )
-            )
+            r = await self.invoke(raw.functions.messages.GetFullChat(chat_id=peer.chat_id))
 
             members = getattr(r.full_chat.participants, "participants", [])
             users = {i.id: i for i in r.users}
 
-            for member in (members[:limit] if limit > 0 else members):
+            for member in members[:limit] if limit > 0 else members:
                 yield types.ChatMember._parse(self, member, users, {})
 
             return
@@ -137,12 +137,7 @@ class GetChatMembers:
 
         while True:
             members = await get_chunk(
-                client=self,
-                chat_id=chat_id,
-                offset=offset,
-                filter=filter,
-                limit=limit,
-                query=query
+                client=self, chat_id=chat_id, offset=offset, filter=filter, limit=limit, query=query
             )
 
             if not members:

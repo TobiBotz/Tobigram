@@ -21,17 +21,17 @@
 # Source: tl:bots.getAdminedBots
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class GetAdminedBots:
     async def get_admined_bots(
-        self: "pyrogram.Client",
-    ) -> "types.Message":
+        self: pyrogram.Client,
+    ) -> types.Message:
         """Get a list of bots you administrate.
 
         .. include:: /_includes/usable-by/users.rst
@@ -45,12 +45,6 @@ class GetAdminedBots:
                 await app.get_admined_bots(...)
         """
 
-        r = await self.invoke(
-            raw.functions.bots.GetAdminedBots(
+        r = await self.invoke(raw.functions.bots.GetAdminedBots())
 
-            )
-        )
-
-        return types.List(
-            types.User._parse(self, x) for x in r
-        )
+        return types.List(types.User._parse(self, x) for x in r)

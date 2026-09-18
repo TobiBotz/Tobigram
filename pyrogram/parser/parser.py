@@ -16,21 +16,23 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import enums
+
 from .html import HTML
 from .markdown import Markdown
 
 
 class Parser:
-    def __init__(self, client: Optional["pyrogram.Client"]):
+    def __init__(self, client: pyrogram.Client | None):
         self.client = client
         self.html = HTML(client)
         self.markdown = Markdown(client)
 
-    async def parse(self, text: str, mode: Optional[enums.ParseMode] = None):
+    async def parse(self, text: str, mode: enums.ParseMode | None = None):
         text = str(text if text else "").strip()
 
         if mode is None:

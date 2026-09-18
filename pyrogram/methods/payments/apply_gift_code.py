@@ -15,6 +15,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import annotations
+
 import re
 
 import pyrogram
@@ -23,7 +25,7 @@ from pyrogram import raw
 
 class ApplyGiftCode:
     async def apply_gift_code(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         link: str,
     ) -> bool:
         """Apply a gift code.
@@ -46,7 +48,10 @@ class ApplyGiftCode:
                 # apply a gift code
                 await app.apply_gift_code("t.me/giftcode/abc1234567def")
         """
-        match = re.match(r"^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:giftcode/|\+))([\w-]+)$", link)
+        match = re.match(
+            r"^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:giftcode/|\+))([\w-]+)$",
+            link,
+        )
 
         if match:
             slug = match.group(1)
@@ -55,11 +60,6 @@ class ApplyGiftCode:
         else:
             raise ValueError("Invalid gift code link")
 
-        await self.invoke(
-            raw.functions.payments.ApplyGiftCode(
-                slug=slug
-            )
-        )
+        await self.invoke(raw.functions.payments.ApplyGiftCode(slug=slug))
 
         return True
-

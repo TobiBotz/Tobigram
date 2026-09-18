@@ -16,17 +16,18 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
+
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class SetBotDefaultPrivileges:
     async def set_bot_default_privileges(
-        self: "pyrogram.Client",
-        privileges: Optional["types.ChatPrivileges"] = None,
-        for_channels: Optional[bool] = None
+        self: pyrogram.Client,
+        privileges: types.ChatPrivileges | None = None,
+        for_channels: bool | None = None,
     ) -> bool:
         """Change the default privileges requested by the bot when it's added as an administrator to groups or channels.
 
@@ -49,7 +50,7 @@ class SetBotDefaultPrivileges:
         Example:
             .. code-block:: python
 
-                from wzgram.types import ChatPrivileges
+                from pyrogram.types import ChatPrivileges
 
                 await app.set_bot_default_privileges(
                     ChatPrivileges(
@@ -65,26 +66,30 @@ class SetBotDefaultPrivileges:
             else raw.functions.bots.SetBotGroupDefaultAdminRights
         )
 
-        admin_rights = raw.types.ChatAdminRights(
-            change_info=privileges.can_change_info,
-            post_messages=privileges.can_post_messages,
-            edit_messages=privileges.can_edit_messages,
-            delete_messages=privileges.can_delete_messages,
-            ban_users=privileges.can_restrict_members,
-            invite_users=privileges.can_invite_users,
-            pin_messages=privileges.can_pin_messages,
-            add_admins=privileges.can_promote_members,
-            anonymous=privileges.is_anonymous,
-            manage_call=privileges.can_manage_video_chats,
-            other=privileges.can_manage_chat,
-            manage_welcome_messages=privileges.can_send_welcome_messages,
-            post_stories=privileges.can_post_stories,
-            edit_stories=privileges.can_edit_stories,
-            delete_stories=privileges.can_delete_stories,
-            manage_topics=privileges.can_manage_topics,
-            manage_direct_messages=privileges.can_manage_direct_messages,
-            manage_ranks=privileges.can_manage_tags,
-            manage_linked_peers=privileges.can_manage_linked_peers
-        ) if privileges else raw.types.ChatAdminRights()
+        admin_rights = (
+            raw.types.ChatAdminRights(
+                change_info=privileges.can_change_info,
+                post_messages=privileges.can_post_messages,
+                edit_messages=privileges.can_edit_messages,
+                delete_messages=privileges.can_delete_messages,
+                ban_users=privileges.can_restrict_members,
+                invite_users=privileges.can_invite_users,
+                pin_messages=privileges.can_pin_messages,
+                add_admins=privileges.can_promote_members,
+                anonymous=privileges.is_anonymous,
+                manage_call=privileges.can_manage_video_chats,
+                other=privileges.can_manage_chat,
+                manage_welcome_messages=privileges.can_send_welcome_messages,
+                post_stories=privileges.can_post_stories,
+                edit_stories=privileges.can_edit_stories,
+                delete_stories=privileges.can_delete_stories,
+                manage_topics=privileges.can_manage_topics,
+                manage_direct_messages=privileges.can_manage_direct_messages,
+                manage_ranks=privileges.can_manage_tags,
+                manage_linked_peers=privileges.can_manage_linked_peers,
+            )
+            if privileges
+            else raw.types.ChatAdminRights()
+        )
 
         return await self.invoke(function(admin_rights=admin_rights))

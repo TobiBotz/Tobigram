@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -24,11 +25,11 @@ from pyrogram import raw
 
 class DeleteAllMessageReactions:
     async def delete_all_message_reactions(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         *,
-        user_id: Optional[Union[int, str]] = None,
-        actor_chat_id: Optional[Union[int, str]] = None,
+        user_id: int | str | None = None,
+        actor_chat_id: int | str | None = None,
     ) -> bool:
         """Use this method to remove up to 10000 recent reactions in a group or a supergroup chat added by a given user or chat.
 
@@ -56,12 +57,21 @@ class DeleteAllMessageReactions:
         if user_id is not None:
             peer = await self.resolve_peer(user_id)
 
-            if not isinstance(peer, (raw.types.InputPeerUser, raw.types.InputPeerSelf)):
+            if not isinstance(
+                peer,
+                (
+                    raw.types.InputPeerUser,
+                    raw.types.InputPeerSelf,
+                    raw.types.InputPeerUserFromMessage,
+                ),
+            ):
                 return False
         elif actor_chat_id is not None:
             peer = await self.resolve_peer(actor_chat_id)
 
-            if not isinstance(peer, raw.types.InputPeerChannel):
+            if not isinstance(
+                peer, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)
+            ):
                 return False
         else:
             raise ValueError("Invalid user_id or actor_chat_id")
@@ -72,4 +82,3 @@ class DeleteAllMessageReactions:
                 participant=peer,
             )
         )
-

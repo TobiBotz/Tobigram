@@ -16,7 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from pyrogram import raw
+
 from ..object import Object
 
 
@@ -79,7 +82,7 @@ class ChatPrivileges(Object):
         can_edit_messages: bool = False,  # Channels only
         can_invite_users: bool = False,
         can_pin_messages: bool = False,  # Groups and supergroups only
-        is_anonymous: bool = False
+        is_anonymous: bool = False,
     ):
         super().__init__(None)
 
@@ -96,7 +99,7 @@ class ChatPrivileges(Object):
         self.is_anonymous: bool = is_anonymous
 
     @staticmethod
-    def _parse(admin_rights: "raw.base.ChatAdminRights") -> "ChatPrivileges":
+    def _parse(admin_rights: raw.base.ChatAdminRights) -> ChatPrivileges:
         return ChatPrivileges(
             can_manage_chat=admin_rights.other,
             can_delete_messages=admin_rights.delete_messages,
@@ -108,5 +111,5 @@ class ChatPrivileges(Object):
             can_edit_messages=admin_rights.edit_messages,
             can_invite_users=admin_rights.invite_users,
             can_pin_messages=admin_rights.pin_messages,
-            is_anonymous=admin_rights.anonymous
+            is_anonymous=admin_rights.anonymous,
         )

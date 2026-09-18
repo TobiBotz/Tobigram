@@ -16,18 +16,20 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime
-from typing import Union, Optional
-import pyrogram
-from pyrogram import raw
-from pyrogram import utils
+from __future__ import annotations
 
-class ApproveSuggestedPost():
+from datetime import datetime
+
+import pyrogram
+from pyrogram import raw, utils
+
+
+class ApproveSuggestedPost:
     async def approve_suggested_post(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         message_id: int,
-        send_date: Optional[datetime] = None
+        send_date: datetime | None = None,
     ) -> bool:
         """Use this method to approve a suggested post in a direct messages chat.
 
@@ -59,9 +61,8 @@ class ApproveSuggestedPost():
                 peer=await self.resolve_peer(chat_id),
                 msg_id=message_id,
                 reject=False,
-                schedule_date=utils.datetime_to_timestamp(send_date)
+                schedule_date=utils.datetime_to_timestamp(send_date),
             )
         )
 
         return True
-

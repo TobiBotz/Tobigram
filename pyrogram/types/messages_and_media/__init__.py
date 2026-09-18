@@ -26,7 +26,9 @@ from .boosts_status import BoostsStatus
 from .business_message import BusinessMessage
 from .chat_background import ChatBackground
 from .chat_boost import ChatBoost
-from .chat_has_protected_content_disable_requested import ChatHasProtectedContentDisableRequested
+from .chat_has_protected_content_disable_requested import (
+    ChatHasProtectedContentDisableRequested,
+)
 from .chat_has_protected_content_toggled import ChatHasProtectedContentToggled
 from .chat_owner_changed import ChatOwnerChanged
 from .chat_owner_left import ChatOwnerLeft
@@ -38,11 +40,16 @@ from .checklist_tasks_added import ChecklistTasksAdded
 from .checklist_tasks_done import ChecklistTasksDone
 from .contact import Contact
 from .contact_registered import ContactRegistered
-from .craft_gift_result import CraftGiftResult, CraftGiftResultFail, CraftGiftResultSuccess
+from .craft_gift_result import (
+    CraftGiftResult,
+    CraftGiftResultFail,
+    CraftGiftResultSuccess,
+)
 from .dice import Dice
 from .direct_message_price_changed import DirectMessagePriceChanged
 from .direct_messages_topic import DirectMessagesTopic
 from .document import Document
+from .ephemeral_message_parameters import EphemeralMessageParameters
 from .external_reply_info import ExternalReplyInfo
 from .fact_check import FactCheck
 from .formatted_text import FormattedText
@@ -55,10 +62,10 @@ from .game import Game
 from .general_forum_topic_hidden import GeneralForumTopicHidden
 from .general_forum_topic_unhidden import GeneralForumTopicUnhidden
 from .gift import Gift
-from .gift_background import GiftBackground
 from .gift_attribute import GiftAttribute
 from .gift_auction import GiftAuction
 from .gift_auction_state import GiftAuctionState
+from .gift_background import GiftBackground
 from .gift_collection import GiftCollection
 from .gift_purchase_limit import GiftPurchaseLimit
 from .gift_resale_parameters import GiftResaleParameters
@@ -66,9 +73,9 @@ from .gift_resale_price import GiftResalePrice, GiftResalePriceStar, GiftResaleP
 from .gift_upgrade_preview import GiftUpgradePreview
 from .gift_upgrade_price import GiftUpgradePrice
 from .gift_upgrade_variants import GiftUpgradeVariants
+from .gifted_grams import GiftedGrams
 from .gifted_premium import GiftedPremium
 from .gifted_stars import GiftedStars
-from .gifted_grams import GiftedGrams
 from .giveaway import Giveaway
 from .giveaway_completed import GiveawayCompleted
 from .giveaway_created import GiveawayCreated
@@ -84,7 +91,6 @@ from .mask_position import MaskPosition
 from .media_area import MediaArea
 from .message import Message, Str
 from .message_content import MessageContent
-from .ephemeral_message_parameters import EphemeralMessageParameters
 from .message_entity import MessageEntity
 from .message_generation_stopped import MessageGenerationStopped
 from .message_origin import MessageOrigin
@@ -93,6 +99,7 @@ from .message_origin_chat import MessageOriginChat
 from .message_origin_hidden_user import MessageOriginHiddenUser
 from .message_origin_import import MessageOriginImport
 from .message_origin_user import MessageOriginUser
+from .message_peer_reaction import MessagePeerReaction
 from .message_reactions import MessageReactions
 from .my_boost import MyBoost
 from .paid_media_info import PaidMediaInfo
@@ -111,6 +118,7 @@ from .poll_option_deleted import PollOptionDeleted
 from .premium_gift_code import PremiumGiftCode
 from .proximity_alert_triggered import ProximityAlertTriggered
 from .reaction import Reaction
+from .read_participant_date import ReadParticipantDate
 from .refunded_payment import RefundedPayment
 from .reply_parameters import ReplyParameters
 from .restriction_reason import RestrictionReason
@@ -153,8 +161,8 @@ from .rich_text import (
     RichTextAnchorLink,
     RichTextBankCardNumber,
     RichTextBold,
-    RichTextButton,
     RichTextBotCommand,
+    RichTextButton,
     RichTextCashtag,
     RichTextCode,
     RichTextCustomEmoji,
@@ -181,6 +189,8 @@ from .rich_text import (
 from .saved_credentials import SavedCredentials
 from .screenshot_taken import ScreenshotTaken
 from .star_amount import StarAmount
+from .stars_revenue_stats import StarsRevenueStats, StarsRevenueStatus
+from .stars_transaction import StarsTransaction
 from .sticker import Sticker
 from .story import Story
 from .story_view import StoryView
@@ -192,10 +202,15 @@ from .suggested_post_declined import SuggestedPostDeclined
 from .suggested_post_info import SuggestedPostInfo
 from .suggested_post_paid import SuggestedPostPaid
 from .suggested_post_parameters import SuggestedPostParameters
-from .suggested_post_price import SuggestedPostPrice, SuggestedPostPriceStar, SuggestedPostPriceTon
+from .suggested_post_price import (
+    SuggestedPostPrice,
+    SuggestedPostPriceStar,
+    SuggestedPostPriceTon,
+)
 from .suggested_post_refunded import SuggestedPostRefunded
 from .text_quote import TextQuote
 from .thumbnail import Thumbnail
+from .transcribed_audio import TranscribedAudio
 from .upgraded_gift_attribute_id import UpgradedGiftAttributeId
 from .upgraded_gift_attribute_id_backdrop import UpgradedGiftAttributeIdBackdrop
 from .upgraded_gift_attribute_id_model import UpgradedGiftAttributeIdModel
@@ -217,6 +232,7 @@ from .upgraded_gift_value_info import UpgradedGiftValueInfo
 from .venue import Venue
 from .video import Video
 from .video_note import VideoNote
+from .video_quality import VideoQuality
 from .voice import Voice
 from .web_app_data import WebAppData
 from .web_page import WebPage
@@ -254,6 +270,7 @@ __all__ = [
     "DirectMessagePriceChanged",
     "DirectMessagesTopic",
     "Document",
+    "EphemeralMessageParameters",
     "ExternalReplyInfo",
     "FactCheck",
     "FormattedText",
@@ -266,10 +283,10 @@ __all__ = [
     "GeneralForumTopicHidden",
     "GeneralForumTopicUnhidden",
     "Gift",
-    "GiftBackground",
     "GiftAttribute",
     "GiftAuction",
     "GiftAuctionState",
+    "GiftBackground",
     "GiftCollection",
     "GiftPurchaseLimit",
     "GiftResaleParameters",
@@ -279,9 +296,9 @@ __all__ = [
     "GiftUpgradePreview",
     "GiftUpgradePrice",
     "GiftUpgradeVariants",
+    "GiftedGrams",
     "GiftedPremium",
     "GiftedStars",
-    "GiftedGrams",
     "Giveaway",
     "GiveawayCompleted",
     "GiveawayCreated",
@@ -296,9 +313,7 @@ __all__ = [
     "MaskPosition",
     "MediaArea",
     "Message",
-    "Str",
     "MessageContent",
-    "EphemeralMessageParameters",
     "MessageEntity",
     "MessageGenerationStopped",
     "MessageOrigin",
@@ -307,6 +322,7 @@ __all__ = [
     "MessageOriginHiddenUser",
     "MessageOriginImport",
     "MessageOriginUser",
+    "MessagePeerReaction",
     "MessageReactions",
     "MyBoost",
     "PaidMediaInfo",
@@ -325,6 +341,7 @@ __all__ = [
     "PremiumGiftCode",
     "ProximityAlertTriggered",
     "Reaction",
+    "ReadParticipantDate",
     "RefundedPayment",
     "ReplyParameters",
     "RestrictionReason",
@@ -364,8 +381,8 @@ __all__ = [
     "RichTextAnchorLink",
     "RichTextBankCardNumber",
     "RichTextBold",
-    "RichTextButton",
     "RichTextBotCommand",
+    "RichTextButton",
     "RichTextCashtag",
     "RichTextCode",
     "RichTextCustomEmoji",
@@ -391,9 +408,13 @@ __all__ = [
     "SavedCredentials",
     "ScreenshotTaken",
     "StarAmount",
+    "StarsRevenueStats",
+    "StarsRevenueStatus",
+    "StarsTransaction",
     "Sticker",
     "Story",
     "StoryView",
+    "Str",
     "StrippedThumbnail",
     "SuccessfulPayment",
     "SuggestedPostApprovalFailed",
@@ -408,6 +429,7 @@ __all__ = [
     "SuggestedPostRefunded",
     "TextQuote",
     "Thumbnail",
+    "TranscribedAudio",
     "UpgradedGiftAttributeId",
     "UpgradedGiftAttributeIdBackdrop",
     "UpgradedGiftAttributeIdModel",
@@ -425,9 +447,9 @@ __all__ = [
     "Venue",
     "Video",
     "VideoNote",
+    "VideoQuality",
     "Voice",
     "WebAppData",
     "WebPage",
     "WriteAccessAllowed",
 ]
-

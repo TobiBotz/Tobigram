@@ -16,18 +16,18 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class GetCustomEmojiStickers:
     async def get_custom_emoji_stickers(
-        self: "pyrogram.Client",
-        custom_emoji_ids: List[int],
-    ) -> List["types.Sticker"]:
+        self: pyrogram.Client,
+        custom_emoji_ids: list[int],
+    ) -> list[types.Sticker]:
         """Get information about custom emoji stickers by their identifiers.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -41,9 +41,7 @@ class GetCustomEmojiStickers:
             List of :obj:`~pyrogram.types.Sticker`: On success, a list of sticker objects is returned.
         """
         result = await self.invoke(
-            raw.functions.messages.GetCustomEmojiDocuments(
-                document_id=custom_emoji_ids
-            )
+            raw.functions.messages.GetCustomEmojiDocuments(document_id=custom_emoji_ids)
         )
 
         stickers = []

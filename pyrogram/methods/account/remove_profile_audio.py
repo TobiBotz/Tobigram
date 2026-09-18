@@ -16,13 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import raw, utils
 from pyrogram.file_id import FileType
 
 
 class RemoveProfileAudio:
-    async def remove_profile_audio(self: "pyrogram.Client", file_id: str):
+    async def remove_profile_audio(self: pyrogram.Client, file_id: str):
         """Removes an audio file from the profile audio files of the current user.
 
         .. include:: /_includes/usable-by/users.rst
@@ -42,10 +44,8 @@ class RemoveProfileAudio:
         """
         r = await self.invoke(
             raw.functions.account.SaveMusic(
-                id=(utils.get_input_media_from_file_id(file_id, FileType.AUDIO)).id,
-                unsave=True
+                id=(utils.get_input_media_from_file_id(file_id, FileType.AUDIO)).id, unsave=True
             )
         )
 
         return r
-

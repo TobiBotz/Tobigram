@@ -1,32 +1,31 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Union, List, Optional
 
 import pyrogram
-from pyrogram import raw, enums
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import enums, raw, types, utils
 
 
 class EditMessageText:
     async def edit_message_text(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         message_id: int,
         text: str,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        link_preview_options: Optional["types.LinkPreviewOptions"] = None,
-        show_caption_above_media: Optional[bool] = None,
-        disable_web_page_preview: Optional[bool] = None,
-        business_connection_id: Optional[str] = None,
-        rich_text: Optional[Union[str, "types.InputRichMessage"]] = None,
-        rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
-        rich_text_media: Optional[List["types.InputRichMessageMedia"]] = None,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        quick_reply_shortcut: Optional[int] = None,
-    ) -> "types.Message":
+        parse_mode: enums.ParseMode | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        link_preview_options: types.LinkPreviewOptions | None = None,
+        show_caption_above_media: bool | None = None,
+        disable_web_page_preview: bool | None = None,
+        business_connection_id: str | None = None,
+        rich_text: str | types.InputRichMessage | None = None,
+        rich_text_parse_mode: enums.ParseMode = enums.ParseMode.MARKDOWN,
+        rich_text_media: list[types.InputRichMessageMedia] | None = None,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        quick_reply_shortcut: int | None = None,
+    ) -> types.Message:
         """Edit the text of a message.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -93,6 +92,7 @@ class EditMessageText:
             .. code-block:: python
 
                 # Edit a message text
+
                 await app.edit_message_text(chat_id, message_id, "New text")
         """
         if link_preview_options is None:
@@ -110,15 +110,21 @@ class EditMessageText:
         if disable_web_page_preview is not None:
             no_webpage = disable_web_page_preview if disable_web_page_preview is not None else None
 
-        invert_media = invert_media if invert_media is not None else (show_caption_above_media if show_caption_above_media is not None else None)
+        invert_media = (
+            invert_media
+            if invert_media is not None
+            else (show_caption_above_media if show_caption_above_media is not None else None)
+        )
 
         if rich_text is not None:
             if isinstance(rich_text, types.InputRichMessage):
                 rich_msg = rich_text.write()
             else:
-                files = types.InputRichMessage(
-                    html="_", media=rich_text_media
-                ).write_files() if rich_text_media else None
+                files = (
+                    types.InputRichMessage(html="_", media=rich_text_media).write_files()
+                    if rich_text_media
+                    else None
+                )
 
                 if rich_text_parse_mode == enums.ParseMode.HTML:
                     rich_msg = raw.types.InputRichMessageHTML(html=rich_text, files=files)
@@ -141,19 +147,27 @@ class EditMessageText:
                     url=link_preview_options.url,
                     force_large_media=link_preview_options.prefer_large_media,
                     force_small_media=link_preview_options.prefer_small_media,
-                    optional=True
-                ) if link_preview_options is not None and link_preview_options.url else None,
+                    optional=True,
+                )
+                if link_preview_options is not None and link_preview_options.url
+                else None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
-                **text_params
+                **text_params,
             ),
             sleep_threshold=60,
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateEditMessage, raw.types.UpdateEditChannelMessage, raw.types.UpdateEditEphemeralMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateEditMessage,
+                    raw.types.UpdateEditChannelMessage,
+                    raw.types.UpdateEditEphemeralMessage,
+                    raw.types.UpdateBotEditBusinessMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
-                    {i.id: i for i in r.users},
-                    {i.id: i for i in r.chats}
+                    self, i.message, {i.id: i for i in r.users}, {i.id: i for i in r.chats}
                 )

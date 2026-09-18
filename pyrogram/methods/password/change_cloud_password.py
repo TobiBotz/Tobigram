@@ -16,19 +16,18 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import os
 
 import pyrogram
 from pyrogram import raw
-from pyrogram.utils import compute_password_hash, compute_password_check, btoi, itob
+from pyrogram.utils import btoi, compute_password_check, compute_password_hash, itob
 
 
 class ChangeCloudPassword:
     async def change_cloud_password(
-        self: "pyrogram.Client",
-        current_password: str,
-        new_password: str,
-        new_hint: str = ""
+        self: pyrogram.Client, current_password: str, new_password: str, new_hint: str = ""
     ) -> bool:
         """Change your Two-Step Verification password (Cloud Password) with a new one.
 
@@ -72,10 +71,8 @@ class ChangeCloudPassword:
             raw.functions.account.UpdatePasswordSettings(
                 password=compute_password_check(r, current_password),
                 new_settings=raw.types.account.PasswordInputSettings(
-                    new_algo=r.new_algo,
-                    new_password_hash=new_hash,
-                    hint=new_hint
-                )
+                    new_algo=r.new_algo, new_password_hash=new_hash, hint=new_hint
+                ),
             )
         )
 

@@ -16,17 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
 
 
 class GetChatPhotosCount:
-    async def get_chat_photos_count(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str]
-    ) -> int:
+    async def get_chat_photos_count(self: pyrogram.Client, chat_id: int | str) -> int:
         """Get the total count of photos for a chat.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -49,12 +47,10 @@ class GetChatPhotosCount:
 
         peer_id = await self.resolve_peer(chat_id)
 
-        if isinstance(peer_id, raw.types.InputPeerChannel):
+        if isinstance(peer_id, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)):
             if self.me.is_bot:
                 r = await self.invoke(
-                    raw.functions.channels.GetFullChannel(
-                        channel=peer_id
-                    )
+                    raw.functions.channels.GetFullChannel(channel=utils.get_input_channel(peer_id))
                 )
 
                 return int(isinstance(r.full_chat.chat_photo, raw.types.Photo))
@@ -69,12 +65,7 @@ class GetChatPhotosCount:
             return r[0].count
         else:
             r = await self.invoke(
-                raw.functions.photos.GetUserPhotos(
-                    user_id=peer_id,
-                    offset=0,
-                    max_id=0,
-                    limit=1
-                )
+                raw.functions.photos.GetUserPhotos(user_id=peer_id, offset=0, max_id=0, limit=1)
             )
 
             if isinstance(r, raw.types.photos.Photos):

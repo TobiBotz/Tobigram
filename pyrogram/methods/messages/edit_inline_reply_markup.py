@@ -16,20 +16,21 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
+
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
+
 from .inline_session import invoke_inline
 
 
 class EditInlineReplyMarkup:
     async def edit_inline_reply_markup(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         inline_message_id: str,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        business_connection_id: Optional[str] = None,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        business_connection_id: str | None = None,
     ) -> bool:
         """Edit only the reply markup of inline messages sent via the bot (for inline bots).
 
@@ -51,7 +52,7 @@ class EditInlineReplyMarkup:
         Example:
             .. code-block:: python
 
-                from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
+                from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
                 # Bots only
                 await app.edit_inline_reply_markup(
@@ -64,10 +65,11 @@ class EditInlineReplyMarkup:
         dc_id = unpacked.dc_id
 
         return await invoke_inline(
-            self, dc_id,
+            self,
+            dc_id,
             raw.functions.messages.EditInlineBotMessage(
                 id=unpacked,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
             ),
-            business_connection_id
+            business_connection_id,
         )

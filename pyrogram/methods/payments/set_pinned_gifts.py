@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, utils
@@ -24,9 +25,9 @@ from pyrogram import raw, utils
 
 class SetPinnedGifts:
     async def set_pinned_gifts(
-        self: "pyrogram.Client",
-        owner_id: Union[int, str],
-        owned_gift_ids: List[str],
+        self: pyrogram.Client,
+        owner_id: int | str,
+        owned_gift_ids: list[str],
     ) -> bool:
         """Change the list of pinned gifts on the current user.
 
@@ -60,9 +61,11 @@ class SetPinnedGifts:
         r = await self.invoke(
             raw.functions.payments.ToggleStarGiftsPinnedToTop(
                 peer=await self.resolve_peer(owner_id),
-                stargift=[await utils.get_input_stargift(self, owned_gift_id) for owned_gift_id in owned_gift_ids],
+                stargift=[
+                    await utils.get_input_stargift(self, owned_gift_id)
+                    for owned_gift_id in owned_gift_ids
+                ],
             )
         )
 
         return r
-

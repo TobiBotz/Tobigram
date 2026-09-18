@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -38,9 +39,9 @@ class FoundContacts(Object):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
-        my_results: Optional[List["types.Chat"]] = None,
-        global_results: Optional[List["types.Chat"]] = None
+        client: pyrogram.Client | None = None,
+        my_results: list[types.Chat] | None = None,
+        global_results: list[types.Chat] | None = None,
     ):
         super().__init__(client)
 
@@ -48,7 +49,7 @@ class FoundContacts(Object):
         self.global_results = global_results
 
     @staticmethod
-    def _parse(client, found: "raw.types.contacts.Found") -> "FoundContacts":
+    def _parse(client, found: raw.types.contacts.Found) -> FoundContacts:
         users = {u.id: u for u in found.users}
         chats = {c.id: c for c in found.chats}
 
@@ -70,6 +71,5 @@ class FoundContacts(Object):
         return FoundContacts(
             my_results=types.List(my_results) or None,
             global_results=types.List(global_results) or None,
-            client=client
+            client=client,
         )
-

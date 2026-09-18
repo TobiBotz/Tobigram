@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+
+from __future__ import annotations
 
 from pyrogram import raw
 
@@ -39,24 +40,20 @@ class BotCommand(Object):
             the user's command list after the first use.
     """
 
-    def __init__(self, command: str, description: str, ephemeral: Optional[bool] = None):
+    def __init__(self, command: str, description: str, ephemeral: bool | None = None):
         super().__init__()
 
         self.command = command
         self.description = description
         self.ephemeral = ephemeral
 
-    def write(self) -> "raw.types.BotCommand":
+    def write(self) -> raw.types.BotCommand:
         return raw.types.BotCommand(
             command=self.command,
             description=self.description,
-            ephemeral=self.ephemeral if self.ephemeral is not None else None
+            ephemeral=self.ephemeral if self.ephemeral is not None else None,
         )
 
     @staticmethod
-    def read(c: "raw.types.BotCommand") -> "BotCommand":
-        return BotCommand(
-            command=c.command,
-            description=c.description,
-            ephemeral=c.ephemeral
-        )
+    def read(c: raw.types.BotCommand) -> BotCommand:
+        return BotCommand(command=c.command, description=c.description, ephemeral=c.ephemeral)

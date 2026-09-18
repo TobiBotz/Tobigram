@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -24,10 +25,10 @@ from pyrogram import raw
 
 class UnpinAllChatMessages:
     async def unpin_all_chat_messages(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        top_msg_id: Optional[int] = None,
-        saved_peer_id: Optional[Union[int, str]] = None,
+        self: pyrogram.Client,
+        chat_id: int | str,
+        top_msg_id: int | None = None,
+        saved_peer_id: int | str | None = None,
     ) -> bool:
         """Use this method to clear the list of pinned messages in a chat.
         If the chat is not a private chat, the bot must be an administrator in the chat for this to work and must have
@@ -58,11 +59,7 @@ class UnpinAllChatMessages:
         rpc = raw.functions.messages.UnpinAllMessages(
             peer=await self.resolve_peer(chat_id),
             top_msg_id=top_msg_id,
-            saved_peer_id=(
-                await self.resolve_peer(saved_peer_id)
-                if saved_peer_id
-                else None
-            )
+            saved_peer_id=(await self.resolve_peer(saved_peer_id) if saved_peer_id else None),
         )
 
         while (await self.invoke(rpc)).offset:

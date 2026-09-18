@@ -21,19 +21,19 @@
 # Source: tl:messages.getPollResults
 # ***************************
 
-from typing import Union, Optional
+from __future__ import annotations
+
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class GetPollResults:
     async def get_poll_results(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         msg_id: int,
-    ) -> Optional["types.Poll"]:
+    ) -> types.Poll | None:
         """Get the current results of a poll.
 
         .. include:: /_includes/usable-by/users.rst

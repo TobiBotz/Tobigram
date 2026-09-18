@@ -16,18 +16,20 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Iterable
+from __future__ import annotations
+
+from collections.abc import Iterable
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
 
 
 class DeleteMessages:
     async def delete_messages(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        message_ids: Union[int, Iterable[int]],
-        revoke: bool = True
+        self: pyrogram.Client,
+        chat_id: int | str,
+        message_ids: int | Iterable[int],
+        revoke: bool = True,
     ) -> int:
         """Delete messages, including service messages.
 
@@ -66,19 +68,15 @@ class DeleteMessages:
         peer = await self.resolve_peer(chat_id)
         message_ids = list(message_ids) if not isinstance(message_ids, int) else [message_ids]
 
-        if isinstance(peer, raw.types.InputPeerChannel):
+        if isinstance(peer, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)):
             r = await self.invoke(
                 raw.functions.channels.DeleteMessages(
-                    channel=peer,
-                    id=message_ids
+                    channel=utils.get_input_channel(peer), id=message_ids
                 )
             )
         else:
             r = await self.invoke(
-                raw.functions.messages.DeleteMessages(
-                    id=message_ids,
-                    revoke=revoke
-                )
+                raw.functions.messages.DeleteMessages(id=message_ids, revoke=revoke)
             )
 
         return r.pts_count

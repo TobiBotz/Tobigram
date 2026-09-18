@@ -16,15 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import raw
 
 
 class UpdateStatus:
-    async def update_status(
-        self: "pyrogram.Client",
-        offline: bool = False
-    ) -> bool:
+    async def update_status(self: pyrogram.Client, offline: bool = False) -> bool:
         """Update your profile status.
 
         .. include:: /_includes/usable-by/users.rst
@@ -45,11 +44,6 @@ class UpdateStatus:
                 # Change status to offline
                 await app.update_status(offline=True)
         """
-        r = await self.invoke(
-            raw.functions.account.UpdateStatus(
-                offline=offline
-            )
-        )
+        r = await self.invoke(raw.functions.account.UpdateStatus(offline=offline))
 
         return bool(r)
-

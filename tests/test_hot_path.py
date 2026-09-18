@@ -1,8 +1,3 @@
-import asyncio
-import tempfile
-from pathlib import Path
-from types import SimpleNamespace
-
 import pytest
 
 import pyrogram
@@ -10,8 +5,7 @@ import pyrogram.session.session as session_mod
 from pyrogram import raw
 from pyrogram.session.session import Session
 from pyrogram.storage import SQLiteStorage
-
-from tests.test_stability import DummyClient, RecordingConnection, make_session
+from tests.test_stability import RecordingConnection, make_session
 
 
 @pytest.fixture
@@ -133,9 +127,7 @@ async def test_one_state_write_per_peer_per_batch():
 
     updates = raw.types.Updates(
         updates=[
-            raw.types.UpdateNewMessage(
-                message=raw.types.MessageEmpty(id=i), pts=i + 1, pts_count=1
-            )
+            raw.types.UpdateNewMessage(message=raw.types.MessageEmpty(id=i), pts=i + 1, pts_count=1)
             for i in range(30)
         ],
         users=[],

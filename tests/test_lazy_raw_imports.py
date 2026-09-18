@@ -238,6 +238,4 @@ def test_the_compiler_emits_the_lazy_form():
 
     assert "def __getattr__(name):" in source
     assert "_names" in source and "_subpackages" in source
-    assert "from .{snake(module)} import" not in source, (
-        "the compiler writes eager imports again"
-    )
+    assert "from .{snake(module)} import" not in source, "the compiler writes eager imports again"

@@ -1,13 +1,13 @@
 Available Types
 ===============
 
-This page is about wzgram types. All types listed here are available through the ``pyrogram.types`` package.
+This page is about pyrogram types. All types listed here are available through the ``pyrogram.types`` package.
 Unless required as argument to a client method, most of the types don't need to be manually instantiated because they
 are only returned by other methods. You also don't need to import them, unless you want to type-hint your variables.
 
 .. code-block:: python
 
-    from wzgram.types import User, Message, ...
+    from pyrogram.types import User, Message, ...
 
 .. note::
 
@@ -123,7 +123,7 @@ This page lists all available enums from the ``pyrogram.enums`` package.
 
 .. code-block:: python
 
-    from wzgram.enums import ParseMode, ChatAction, ...
+    from pyrogram.enums import ParseMode, ChatAction, ...
 
 .. currentmodule:: pyrogram.enums
 

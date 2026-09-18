@@ -9,7 +9,6 @@ from pyrogram import raw
 from pyrogram.errors import UnknownError
 from pyrogram.errors.rpc_error import RPCError
 from pyrogram.storage import SQLiteStorage
-
 from tests.test_audit_regressions import make_dispatcher
 
 

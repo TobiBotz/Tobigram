@@ -16,10 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import io
 import pathlib
 import re
-from typing import BinaryIO, Callable, List, Optional, Union
+from collections.abc import Callable
+from typing import BinaryIO
 
 import pyrogram
 from pyrogram import raw, utils
@@ -96,20 +99,20 @@ class InputMediaVideo(InputMedia):
 
     def __init__(
         self,
-        media: Union[str, BinaryIO],
-        thumb: Optional[str] = None,
+        media: str | BinaryIO,
+        thumb: str | None = None,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List[MessageEntity]] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[MessageEntity] | None = None,
         width: int = 0,
         height: int = 0,
         duration: int = 0,
-        file_name: Optional[str] = None,
+        file_name: str | None = None,
         supports_streaming: bool = True,
-        has_spoiler: Optional[bool] = None,
-        no_sound: Optional[bool] = None,
-        video_start_timestamp: Optional[int] = None,
-        video_cover: Optional[Union[str, BinaryIO]] = None,
+        has_spoiler: bool | None = None,
+        no_sound: bool | None = None,
+        video_start_timestamp: int | None = None,
+        video_cover: str | BinaryIO | None = None,
     ):
         super().__init__(media, caption, parse_mode, caption_entities)
 
@@ -127,13 +130,13 @@ class InputMediaVideo(InputMedia):
     async def write(
         self,
         *,
-        client: "pyrogram.Client",
-        chat_id: Optional[Union[int, str]] = None,
-        progress: Optional[Callable] = None,
+        client: pyrogram.Client,
+        chat_id: int | str | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-        ttl_seconds: Optional[int] = None,
-        **kwargs
-    ) -> "raw.base.InputMedia":
+        ttl_seconds: int | None = None,
+        **kwargs,
+    ) -> raw.base.InputMedia:
         if chat_id is None:
             peer = raw.types.InputPeerSelf()
         else:
@@ -142,10 +145,7 @@ class InputMediaVideo(InputMedia):
         input_video_cover = None
 
         if self.video_cover is not None:
-            if (
-                isinstance(self.video_cover, io.BytesIO)
-                or pathlib.Path(self.video_cover).is_file()
-            ):
+            if isinstance(self.video_cover, io.BytesIO) or pathlib.Path(self.video_cover).is_file():
                 uploaded_media = await client.invoke(
                     raw.functions.messages.UploadMedia(
                         peer=peer,
@@ -193,7 +193,7 @@ class InputMediaVideo(InputMedia):
                         nosound_video=self.no_sound,
                         attributes=[
                             raw.types.DocumentAttributeVideo(
-                                supports_streaming=self.supports_streaming or None,
+                                supports_streaming=self.supports_streaming,
                                 duration=self.duration,
                                 w=self.width,
                                 h=self.height,
@@ -238,4 +238,3 @@ class InputMediaVideo(InputMedia):
             video_cover=input_video_cover,
             video_start_timestamp=self.video_start_timestamp,
         )
-

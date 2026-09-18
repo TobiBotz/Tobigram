@@ -1,7 +1,7 @@
 # Bot API and MTProto name reconciliation.
 #
-# rename:      the spec calls it X, wzgram calls it Y
-# unsupported: the spec has it, wzgram deliberately does not, with the reason
+# rename:       the spec calls it X, pyrogram calls it Y
+# unsupported: the spec has it, pyrogram deliberately does not, with the reason
 #
 # Lookup order is entity, then raw function (MTProto only), then "*".
 
@@ -12,16 +12,17 @@ botapi:
     PaidMessagePriceChanged: PaidMessagesPriceChanged
     ReactionType: Reaction
     ChatFullInfo: Chat
-
   type_unsupported:
     Update: MTProto pushes parsed updates straight to handlers; there is no Update object
     WebhookInfo: webhooks are a Bot API transport and do not exist over MTProto
     MessageId: send_* return a full Message, not a bare identifier
     InaccessibleMessage: MTProto always delivers the message itself
     MaybeInaccessibleMessage: union of Message and InaccessibleMessage, neither modelled
+    BackgroundFill: union of concrete BackgroundFill* types, not a standalone class
+    BackgroundType: union of concrete BackgroundType* types, not a standalone class
     ResponseParameters: MTProto surfaces these as typed RPCError subclasses
     InputFile: uploads take a path or a file object directly, with no wrapper type
-
+    
   method_rename:
     setMyCommands: set_bot_commands
     getMyCommands: get_bot_commands
@@ -207,11 +208,11 @@ botapi:
         the game TL constructor carries no text, so it carries no entities either
     LivePhoto:
       photo: >-
-        wzgram models the moving half of a live photo, which MTProto sends as a
+        pyrogram models the moving half of a live photo, which MTProto sends as a
         document; the still frame arrives as the message's own photo
     SuggestedPostPrice:
       amount: >-
-        wzgram keeps one class per currency, SuggestedPostPriceStar and
+        pyrogram keeps one class per currency, SuggestedPostPriceStar and
         SuggestedPostPriceTon, each with its own amount
       currency: implied by the class, SuggestedPostPriceStar or SuggestedPostPriceTon
     ChatBoost:
@@ -280,7 +281,7 @@ botapi:
       unique_gift_colors: no MTProto equivalent; the TL schema has no gift colour scheme
     "*":
       type: >-
-        Bot API discriminates union members with a type string; wzgram uses a
+        Bot API discriminates union members with a type string; pyrogram uses a
         distinct class per member, or an enum, so there is nothing to carry
 
   method_field_rename:
@@ -424,13 +425,13 @@ botapi:
   enum_value_unsupported:
     MessageEntityType:
       expandable_blockquote: >-
-        wzgram keeps one BLOCKQUOTE member and an expandable flag on the entity
+        pyrogram keeps one BLOCKQUOTE member and an expandable flag on the entity
 
   enum_skip:
     sendGift:
       text_parse_mode: >-
         the quoted values in this description are the entity types the text may
-        contain, not the parse modes the field accepts
+        contain, not the parse modes the field accept
 
 mtproto:
   internal:
@@ -444,6 +445,7 @@ mtproto:
   field_rename:
     "*":
       peer: chat_id
+      lang_code: language_code
       message: text
       silent: disable_notification
       no_webpage: disable_web_page_preview
@@ -458,7 +460,21 @@ mtproto:
       schedule_repeat_period: repeat_period
       suggested_post: suggested_post_parameters
 
-
+    get_bot_name:
+      bot: for_my_bot
+    get_bot_info_description:
+      bot: for_my_bot
+    get_bot_info_short_description:
+      bot: for_my_bot
+    set_bot_name:
+      bot: for_my_bot
+    set_bot_info_description:
+      bot: for_my_bot
+    set_bot_info_short_description:
+      bot: for_my_bot
+      about: short_description
+    get_stars_balance:
+      peer: chat_id
     approve_suggested_post:
       msg_id: message_id
       schedule_date: send_date
@@ -595,6 +611,23 @@ mtproto:
       title_missing: the method always sends a title, so it never marks one absent
     get_me:
       id: the method exists to fetch the current user, so it passes InputUserSelf
+    set_bot_name:
+      about: the method only sets the name; use set_bot_info_short_description
+      description: the method only sets the name; use set_bot_info_description
+    set_bot_info_description:
+      name: the method only sets the description; use set_bot_name
+      about: the method only sets the description; use set_bot_info_short_description
+    set_bot_info_short_description:
+      name: the method only sets the short description; use set_bot_name
+      description: the method only sets the short description; use set_bot_info_description
+    get_stars_balance:
+      ascending: pagination sorting is used in get_star_transactions
+      inbound: filtering transactions is done via get_star_transactions
+      limit: pagination limit is used in get_star_transactions
+      offset: pagination offset is used in get_star_transactions
+      outbound: filtering transactions is done via get_star_transactions
+      subscription_id: subscription filtering is done via get_star_transactions
+      ton: the TON balance is read with get_business_account_ton_balance
     approve_chat_join_request:
       approved: the method exists to approve, so it sets this itself
     decline_chat_join_request:

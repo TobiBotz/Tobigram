@@ -22,7 +22,7 @@ import re
 import shutil
 from functools import partial
 from pathlib import Path
-from typing import NamedTuple, List, Tuple
+from typing import NamedTuple
 
 # from autoflake import fix_code
 # from black import format_str, FileMode
@@ -60,15 +60,20 @@ namespaces_to_types = {}
 namespaces_to_constructors = {}
 namespaces_to_functions = {}
 
-try:
-    with open("docs.json") as f:
-        docs = json.load(f)
-except FileNotFoundError:
-    docs = {
-        "type": {},
-        "constructor": {},
-        "method": {}
-    }
+docs = {"type": {}, "constructor": {}, "method": {}}
+for _p in [
+    HOME_PATH / "docs.json",
+    Path(__file__).resolve().parent / "docs.json",
+    Path("docs.json"),
+]:
+    try:
+        if _p.exists():
+            with open(_p, encoding="utf-8") as f:
+                docs = json.load(f)
+            if docs.get("method"):
+                break
+    except Exception:
+        pass
 
 
 class Combinator(NamedTuple):
@@ -78,7 +83,7 @@ class Combinator(NamedTuple):
     name: str
     id: str
     has_flags: bool
-    args: List[Tuple[str, str]]
+    args: list[tuple[str, str]]
     qualtype: str
     typespace: str
     type: str
@@ -132,7 +137,7 @@ def get_type_hint(type: str) -> str:
     if type in ["Object", "!X"]:
         return "TLObject"
 
-    if re.match("^vector", type, re.I):
+    if re.match("^vector", type, re.IGNORECASE):
         is_core = True
 
         sub_type = type.split("<")[1][:-1]
@@ -144,7 +149,7 @@ def get_type_hint(type: str) -> str:
         ns, name = type.split(".") if "." in type else ("", type)
         type = '"raw.base.' + ".".join([ns, name]).strip(".") + '"'
 
-        return f'{type}{" = None" if is_flag else ""}'
+        return f"{type}{' = None' if is_flag else ''}"
 
 
 def sort_args(args):
@@ -220,9 +225,7 @@ def indent_desc(desc: str, indent: str = "    ") -> str:
 
     first, *rest = lines
 
-    return first + "\n" + "\n".join(
-        (indent + line if line.strip() else "") for line in rest
-    )
+    return first + "\n" + "\n".join((indent + line if line.strip() else "") for line in rest)
 
 
 # noinspection PyShadowingBuiltins
@@ -287,17 +290,37 @@ def write_package(path, notice, types, subpackages):
 
 
 def start(format: bool = False):
+    global docs
+    if not docs.get("method"):
+        for _p in [
+            HOME_PATH / "docs.json",
+            Path("docs.json"),
+            Path(__file__).resolve().parent / "docs.json",
+        ]:
+            try:
+                if _p.exists():
+                    with open(_p, encoding="utf-8") as f:
+                        docs = json.load(f)
+                    if docs.get("method"):
+                        break
+            except Exception:
+                pass
+
     shutil.rmtree(DESTINATION_PATH / "types", ignore_errors=True)
     shutil.rmtree(DESTINATION_PATH / "functions", ignore_errors=True)
     shutil.rmtree(DESTINATION_PATH / "base", ignore_errors=True)
 
-    with open(HOME_PATH / "source/auth_key.tl") as f1, \
-        open(HOME_PATH / "source/sys_msgs.tl") as f2, \
-        open(HOME_PATH / "source/main_api.tl") as f3:
+    with (
+        open(HOME_PATH / "source/auth_key.tl") as f1,
+        open(HOME_PATH / "source/sys_msgs.tl") as f2,
+        open(HOME_PATH / "source/main_api.tl") as f3,
+    ):
         schema = (f1.read() + f2.read() + f3.read()).splitlines()
 
-    with open(HOME_PATH / "template/type.txt") as f1, \
-        open(HOME_PATH / "template/combinator.txt") as f2:
+    with (
+        open(HOME_PATH / "template/type.txt") as f1,
+        open(HOME_PATH / "template/combinator.txt") as f2,
+    ):
         type_tmpl = f1.read()
         combinator_tmpl = f2.read()
 
@@ -340,7 +363,7 @@ def start(format: bool = False):
             qualtype = ".".join([typespace, type]).lstrip(".")
 
             # Pingu!
-            has_flags = not not FLAGS_RE_3.findall(line)
+            has_flags = bool(FLAGS_RE_3.findall(line))
 
             args = ARGS_RE.findall(line)
 
@@ -362,7 +385,7 @@ def start(format: bool = False):
                 args=args,
                 qualtype=qualtype,
                 typespace=typespace,
-                type=type
+                type=type,
             )
 
             combinators.append(combinator)
@@ -423,22 +446,26 @@ def start(format: bool = False):
 
         docstring = indent_desc(type_docs)
 
-        docstring += f"\n\n    Constructors:\n" \
-                     f"        This base type has {constr_count} constructor{'s' if constr_count > 1 else ''} available.\n\n" \
-                     f"        .. currentmodule:: pyrogram.raw.types\n\n" \
-                     f"        .. autosummary::\n" \
-                     f"            :nosignatures:\n\n" \
-                     f"            {items}"
+        docstring += (
+            f"\n\n    Constructors:\n"
+            f"        This base type has {constr_count} constructor{'s' if constr_count > 1 else ''} available.\n\n"
+            f"        .. currentmodule:: pyrogram.raw.types\n\n"
+            f"        .. autosummary::\n"
+            f"            :nosignatures:\n\n"
+            f"            {items}"
+        )
 
         references, ref_count = get_references(qualtype, "types")
 
         if references:
-            docstring += f"\n\n    Functions:\n        This object can be returned by " \
-                         f"{ref_count} function{'s' if ref_count > 1 else ''}.\n\n" \
-                         f"        .. currentmodule:: pyrogram.raw.functions\n\n" \
-                         f"        .. autosummary::\n" \
-                         f"            :nosignatures:\n\n" \
-                         f"            " + references
+            docstring += (
+                f"\n\n    Functions:\n        This object can be returned by "
+                f"{ref_count} function{'s' if ref_count > 1 else ''}.\n\n"
+                f"        .. currentmodule:: pyrogram.raw.functions\n\n"
+                f"        .. autosummary::\n"
+                f"            :nosignatures:\n\n"
+                f"            " + references
+            )
 
         with open(dir_path / f"{snake(module)}.py", "w") as f:
             f.write(
@@ -449,25 +476,24 @@ def start(format: bool = False):
                     name=type,
                     qualname=qualtype,
                     types=", ".join([f"raw.types.{c}" for c in constructors]),
-                    doc_name=snake(type).replace("_", "-")
+                    doc_name=snake(type).replace("_", "-"),
                 )
             )
 
     for c in combinators:
         sorted_args = sort_args(c.args)
 
-        arguments = (
-            (", *, " if c.args else "") +
-            (", ".join(
-                [f"{i[0]}: {get_type_hint(i[1])}"
-                 for i in sorted_args]
-            ) if sorted_args else "")
+        arguments = (", *, " if c.args else "") + (
+            ", ".join([f"{i[0]}: {get_type_hint(i[1])}" for i in sorted_args])
+            if sorted_args
+            else ""
         )
 
-        fields = "\n        ".join(
-            [f"self.{i[0]} = {i[0]}  # {i[1]}"
-             for i in sorted_args]
-        ) if sorted_args else "pass"
+        fields = (
+            "\n        ".join([f"self.{i[0]} = {i[0]}  # {i[1]}" for i in sorted_args])
+            if sorted_args
+            else "pass"
+        )
 
         docstring = ""
         docstring_args = []
@@ -485,7 +511,9 @@ def start(format: bool = False):
             arg_docs = combinator_docs.get(c.qualname, None)
 
             if arg_docs:
-                arg_docs = indent_desc(arg_docs["params"].get(arg_name, "N/A"), indent="            ")
+                arg_docs = indent_desc(
+                    arg_docs["params"].get(arg_name, "N/A"), indent="            "
+                )
             else:
                 arg_docs = "N/A"
 
@@ -494,7 +522,7 @@ def start(format: bool = False):
                     arg_name,
                     get_docstring_arg_type(arg_type),
                     ", *optional*" if is_optional else "",
-                    arg_docs
+                    arg_docs,
                 )
             )
 
@@ -515,19 +543,30 @@ def start(format: bool = False):
                 docstring += indent_desc(function_docs.get("desc", "").strip()) + "\n"
 
                 if function_docs.get("usable_by"):
-                    docstring += "\n    .. include:: /_includes/usable-by/" + function_docs["usable_by"] + ".rst"
+                    docstring += (
+                        "\n    .. include:: /_includes/usable-by/"
+                        + function_docs["usable_by"]
+                        + ".rst"
+                    )
 
                 if function_docs.get("can_use_without_auth"):
-                    docstring += "\n\n    .. note::\n\n        " + "This method can be used by not yet logged in connections."
+                    docstring += (
+                        "\n\n    .. note::\n\n        "
+                        "This method can be used by not yet logged in connections."
+                    )
 
                 if function_docs.get("can_use_business_connection"):
-                    docstring += "\n\n    .. note::\n\n        " + "This method can be invoked over a `business connection » <https://corefork.telegram.org/api/bots/connected-business-bots>`__"
+                    docstring += (
+                        "\n\n    .. note::\n\n        "
+                        "This method can be invoked over a `business connection » <https://corefork.telegram.org/api/bots/connected-business-bots>`__"
+                    )
             else:
                 docstring += "Telegram API function."
 
         docstring += f"\n\n    Details:\n        - Layer: ``{layer}``\n        - ID: ``{c.id[2:].upper()}``\n\n"
-        docstring += "    Parameters:\n        " + \
-                     ("\n        ".join(docstring_args) if docstring_args else "No parameters required.\n")
+        docstring += "    Parameters:\n        " + (
+            "\n        ".join(docstring_args) if docstring_args else "No parameters required.\n"
+        )
 
         if c.section == "functions":
             docstring += "\n    Returns:\n        " + get_docstring_arg_type(c.qualtype)
@@ -535,12 +574,14 @@ def start(format: bool = False):
             references, count = get_references(c.qualname, "constructors")
 
             if references:
-                docstring += f"\n    Functions:\n        This object can be returned by " \
-                             f"{count} function{'s' if count > 1 else ''}.\n\n" \
-                             f"        .. currentmodule:: pyrogram.raw.functions\n\n" \
-                             f"        .. autosummary::\n" \
-                             f"            :nosignatures:\n\n" \
-                             f"            " + references
+                docstring += (
+                    f"\n    Functions:\n        This object can be returned by "
+                    f"{count} function{'s' if count > 1 else ''}.\n\n"
+                    f"        .. currentmodule:: pyrogram.raw.functions\n\n"
+                    f"        .. autosummary::\n"
+                    f"            :nosignatures:\n\n"
+                    f"            " + references
+                )
 
         write_types = read_types = "" if c.has_flags else "# No flags\n        "
 
@@ -558,16 +599,21 @@ def start(format: bool = False):
                             continue
 
                         if flag.group(3) == "true" or flag.group(3).startswith("Vector"):
-                            write_flags.append(f"{arg_name} |= (1 << {flag.group(2)}) if self.{i[0]} else 0")
+                            write_flags.append(
+                                f"{arg_name} |= (1 << {flag.group(2)}) if self.{i[0]} else 0"
+                            )
                         else:
                             write_flags.append(
-                                f"{arg_name} |= (1 << {flag.group(2)}) if self.{i[0]} is not None else 0")
+                                f"{arg_name} |= (1 << {flag.group(2)}) if self.{i[0]} is not None else 0"
+                            )
 
-                write_flags = "\n        ".join([
-                    f"{arg_name} = 0",
-                    "\n        ".join(write_flags),
-                    f"b.write(Int({arg_name}))\n        "
-                ])
+                write_flags = "\n        ".join(
+                    [
+                        f"{arg_name} = 0",
+                        "\n        ".join(write_flags),
+                        f"b.write(Int({arg_name}))\n        ",
+                    ]
+                )
 
                 write_types += write_flags
                 read_types += f"\n        {arg_name} = Int.read(b)\n        "
@@ -597,8 +643,13 @@ def start(format: bool = False):
                     )
 
                     read_types += "\n        "
-                    read_types += "{} = TLObject.read(b{}) if flags{} & (1 << {}) else []\n        ".format(
-                        arg_name, f", {sub_type.title()}" if sub_type in CORE_TYPES else "", number, index
+                    read_types += (
+                        "{} = TLObject.read(b{}) if flags{} & (1 << {}) else []\n        ".format(
+                            arg_name,
+                            f", {sub_type.title()}" if sub_type in CORE_TYPES else "",
+                            number,
+                            index,
+                        )
                     )
                 else:
                     write_types += "\n        "
@@ -655,7 +706,7 @@ def start(format: bool = False):
             read_types=read_types,
             write_types=write_types,
             return_arguments=return_arguments,
-            generic_type=generic_type
+            generic_type=generic_type,
         )
 
         directory = "types" if c.section == "types" else c.section
@@ -721,4 +772,3 @@ if "__main__" == __name__:
     NOTICE_PATH = _root / "NOTICE"
 
     start(format=False)
-

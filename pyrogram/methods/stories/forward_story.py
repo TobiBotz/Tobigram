@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional, Union
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -25,33 +26,32 @@ from pyrogram import raw, types, utils
 
 class ForwardStory:
     async def forward_story(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        from_chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
+        from_chat_id: int | str,
         story_id: int,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        paid_message_star_count: Optional[int] = None,
-        protect_content: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        reply_markup: Optional[Union[
-            "types.InlineKeyboardMarkup",
-            "types.ReplyKeyboardMarkup",
-            "types.ReplyKeyboardRemove",
-            "types.ForceReply"
-        ]] = None,
-        effect_id: Optional[int] = None,
-        show_caption_above_media: Optional[bool] = None,
-        background: Optional[bool] = None,
-        clear_draft: Optional[bool] = None,
-        update_stickersets_order: Optional[bool] = None,
-        send_as: Optional[Union[int, str]] = None,
-        quick_reply_shortcut: Optional[int] = None,
-        business_connection_id: Optional[str] = None,
-    ) -> Optional["types.Message"]:
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        paid_message_star_count: int | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        effect_id: int | None = None,
+        show_caption_above_media: bool | None = None,
+        background: bool | None = None,
+        clear_draft: bool | None = None,
+        update_stickersets_order: bool | None = None,
+        send_as: int | str | None = None,
+        quick_reply_shortcut: int | None = None,
+        business_connection_id: str | None = None,
+    ) -> types.Message | None:
         """Forward story.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -137,38 +137,44 @@ class ForwardStory:
             raw.functions.messages.SendMedia(
                 peer=await self.resolve_peer(chat_id),
                 media=raw.types.InputMediaStory(
-                    peer=await self.resolve_peer(from_chat_id),
-                    id=story_id
+                    peer=await self.resolve_peer(from_chat_id), id=story_id
                 ),
-                silent=disable_notification if disable_notification is not None else None,
+                silent=disable_notification,
                 random_id=self.rnd_id(),
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
                 schedule_repeat_period=repeat_period,
                 message="",
                 entities=None,
-                reply_to=await utils.get_reply_to(
-                    self,
-                    reply_parameters,
-                    message_thread_id
-                ),
-                allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
-                allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
+                reply_to=await utils.get_reply_to(self, reply_parameters, message_thread_id),
+                allow_paid_stars=paid_message_star_count
+                if paid_message_star_count is not None
+                else None,
+                allow_paid_floodskip=allow_paid_broadcast
+                if allow_paid_broadcast is not None
+                else None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 noforwards=protect_content,
                 effect=effect_id,
-                invert_media=show_caption_above_media if show_caption_above_media is not None else None,
+                invert_media=show_caption_above_media
+                if show_caption_above_media is not None
+                else None,
                 background=background if background is not None else None,
                 clear_draft=clear_draft if clear_draft is not None else None,
-                update_stickersets_order=update_stickersets_order if update_stickersets_order is not None else None,
+                update_stickersets_order=update_stickersets_order
+                if update_stickersets_order is not None
+                else None,
                 send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(
+                    shortcut_id=quick_reply_shortcut
+                )
+                if quick_reply_shortcut is not None
+                else None,
                 suggested_post=None,
             ),
             sleep_threshold=60,
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
         messages = await utils.parse_messages(client=self, messages=r)
 
         return messages[0] if messages else None
-

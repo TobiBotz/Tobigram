@@ -16,13 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import raw, types
 
 
 class AnswerGuestQuery:
     async def answer_guest_query(
-        self: "pyrogram.Client", guest_query_id: str, result: "types.InlineQueryResult"
+        self: pyrogram.Client, guest_query_id: str, result: types.InlineQueryResult
     ):
         """Use this method to reply to a received guest message.
 
@@ -41,7 +43,7 @@ class AnswerGuestQuery:
         Example:
             .. code-block:: python
 
-                from wzgram.types import InlineQueryResultArticle, InputTextMessageContent
+                from pyrogram.types import InlineQueryResultArticle, InputTextMessageContent
 
                 await app.answer_guest_query(
                     guest_query_id,
@@ -59,4 +61,3 @@ class AnswerGuestQuery:
         )
 
         return await types.SentGuestMessage._parse(r)
-

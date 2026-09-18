@@ -16,21 +16,23 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
+from collections.abc import AsyncGenerator
 from datetime import datetime
-from typing import Union, Optional, AsyncGenerator
 
 import pyrogram
-from pyrogram import types, raw, utils
+from pyrogram import raw, types, utils
 
 
 async def get_chunk(
     *,
-    client: "pyrogram.Client",
-    chat_id: Union[int, str],
+    client: pyrogram.Client,
+    chat_id: int | str,
     limit: int = 0,
     offset: int = 0,
     from_message_id: int = 0,
-    from_date: datetime = utils.zero_datetime()
+    from_date: datetime = utils.zero_datetime(),
 ):
     messages = await client.invoke(
         raw.functions.messages.GetHistory(
@@ -41,9 +43,9 @@ async def get_chunk(
             limit=limit,
             max_id=0,
             min_id=0,
-            hash=0
+            hash=0,
         ),
-        sleep_threshold=60
+        sleep_threshold=60,
     )
 
     return await utils.parse_messages(client, messages, replies=0)
@@ -51,13 +53,13 @@ async def get_chunk(
 
 class GetChatHistory:
     async def get_chat_history(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         limit: int = 0,
         offset: int = 0,
         offset_id: int = 0,
-        offset_date: datetime = utils.zero_datetime()
-    ) -> Optional[AsyncGenerator["types.Message", None]]:
+        offset_date: datetime = utils.zero_datetime(),
+    ) -> AsyncGenerator[types.Message, None] | None:
         """Get messages from a chat history.
 
         The messages are returned in reverse chronological order.
@@ -104,7 +106,7 @@ class GetChatHistory:
                 limit=limit,
                 offset=offset,
                 from_message_id=offset_id,
-                from_date=offset_date
+                from_date=offset_date,
             )
 
             if not messages:

@@ -16,9 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 import time
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .remote_storage import PeerRow, RemoteStorage, StoredPeer
 
@@ -26,7 +28,7 @@ log = logging.getLogger(__name__)
 
 DRIVER_MISSING = (
     "MongoStorage needs an async MongoDB driver. Install one with "
-    '`pip install "wzgram[mongo]"`, or pass an already-created client '
+    '`pip install "tobigram[mongo]"`, or pass an already-created client '
     "(motor or async_pymongo) as the connection argument."
 )
 
@@ -75,8 +77,8 @@ class MongoStorage(RemoteStorage):
         self,
         name: str,
         connection: Any,
-        database: Optional[str] = None,
-        session_string: Optional[str] = None,
+        database: str | None = None,
+        session_string: str | None = None,
     ):
         super().__init__(name, session_string=session_string)
 
@@ -118,7 +120,7 @@ class MongoStorage(RemoteStorage):
         self._client = None
         self._db = None
 
-    async def _load_session(self) -> Optional[Dict[str, Any]]:
+    async def _load_session(self) -> dict[str, Any] | None:
         document = await self._session.find_one({"_id": 0})
 
         if document is None:
@@ -134,10 +136,10 @@ class MongoStorage(RemoteStorage):
 
         return document
 
-    async def _save_session(self, fields: Dict[str, Any]) -> None:
+    async def _save_session(self, fields: dict[str, Any]) -> None:
         await self._session.update_one({"_id": 0}, {"$set": dict(fields)}, upsert=True)
 
-    async def _load_version(self) -> Optional[int]:
+    async def _load_version(self) -> int | None:
         document = await self._version.find_one({"_id": 0})
 
         return document.get("number") if document else None
@@ -145,7 +147,7 @@ class MongoStorage(RemoteStorage):
     async def _save_version(self, version: int) -> None:
         await self._version.update_one({"_id": 0}, {"$set": {"number": version}}, upsert=True)
 
-    async def _upsert_peers(self, rows: List[PeerRow]) -> None:
+    async def _upsert_peers(self, rows: list[PeerRow]) -> None:
         now = int(time.time())
 
         for peer_id, access_hash, peer_type, phone_number in rows:
@@ -163,7 +165,7 @@ class MongoStorage(RemoteStorage):
             )
 
     @staticmethod
-    def _peer_row(document: Optional[Dict[str, Any]]) -> Optional[StoredPeer]:
+    def _peer_row(document: dict[str, Any] | None) -> StoredPeer | None:
         if document is None:
             return None
 
@@ -174,10 +176,10 @@ class MongoStorage(RemoteStorage):
             document.get("last_update_on", 0),
         )
 
-    async def _fetch_peer(self, peer_id: int) -> Optional[StoredPeer]:
+    async def _fetch_peer(self, peer_id: int) -> StoredPeer | None:
         return self._peer_row(await self._peers.find_one({"_id": peer_id}))
 
-    async def _fetch_peer_by_username(self, username: str) -> Optional[StoredPeer]:
+    async def _fetch_peer_by_username(self, username: str) -> StoredPeer | None:
         mapping = await self._usernames.find_one({"_id": username})
 
         if mapping is None:
@@ -185,10 +187,10 @@ class MongoStorage(RemoteStorage):
 
         return self._peer_row(await self._peers.find_one({"_id": mapping["peer_id"]}))
 
-    async def _fetch_peer_by_phone(self, phone_number: str) -> Optional[StoredPeer]:
+    async def _fetch_peer_by_phone(self, phone_number: str) -> StoredPeer | None:
         return self._peer_row(await self._peers.find_one({"phone_number": phone_number}))
 
-    async def _iter_peers(self, limit: Optional[int] = None) -> List[PeerRow]:
+    async def _iter_peers(self, limit: int | None = None) -> list[PeerRow]:
         rows = []
 
         cursor = self._peers.find({})
@@ -208,7 +210,7 @@ class MongoStorage(RemoteStorage):
 
         return rows
 
-    async def _replace_usernames(self, usernames: List[Tuple[int, List[str]]]) -> None:
+    async def _replace_usernames(self, usernames: list[tuple[int, list[str]]]) -> None:
         peer_ids = [peer_id for peer_id, _ in usernames]
 
         await self._usernames.delete_many({"peer_id": {"$in": peer_ids}})
@@ -219,7 +221,7 @@ class MongoStorage(RemoteStorage):
                     {"_id": username}, {"$set": {"peer_id": peer_id}}, upsert=True
                 )
 
-    async def _load_states(self) -> List[Tuple[int, int, int, int, int]]:
+    async def _load_states(self) -> list[tuple[int, int, int, int, int]]:
         states = []
 
         cursor = self._states.find({})
@@ -239,7 +241,7 @@ class MongoStorage(RemoteStorage):
 
         return states
 
-    async def _save_state(self, state: Tuple[int, int, int, int, int]) -> None:
+    async def _save_state(self, state: tuple[int, int, int, int, int]) -> None:
         state_id, pts, qts, date, seq = state
 
         await self._states.update_one(

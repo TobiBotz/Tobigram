@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types
@@ -38,9 +39,9 @@ class ChatLocation(Object):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
-        location: Optional["types.Location"] = None,
-        address: Optional[str] = None
+        client: pyrogram.Client | None = None,
+        location: types.Location | None = None,
+        address: str | None = None,
     ):
         super().__init__(client)
 
@@ -48,15 +49,12 @@ class ChatLocation(Object):
         self.address = address
 
     @staticmethod
-    def _parse(
-        client,
-        chat_location: "raw.base.ChannelLocation"
-    ) -> Optional["ChatLocation"]:
+    def _parse(client, chat_location: raw.base.ChannelLocation) -> ChatLocation | None:
         if not isinstance(chat_location, raw.types.ChannelLocation):
             return None
 
         return ChatLocation(
             client=client,
             location=types.Location._parse(chat_location.geo_point),
-            address=chat_location.address
+            address=chat_location.address,
         )

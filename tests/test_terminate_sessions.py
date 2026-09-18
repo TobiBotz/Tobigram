@@ -130,9 +130,7 @@ async def test_stopping_a_cached_session_does_not_fire_the_disconnect_handler():
     async def on_disconnect(client):
         fired.append(client)
 
-    client = SimpleNamespace(
-        session=None, disconnect_handler=on_disconnect, ipv6=False, proxy=None
-    )
+    client = SimpleNamespace(session=None, disconnect_handler=on_disconnect, ipv6=False, proxy=None)
 
     main = Session(client, 1, b"k" * 256, False)
     client.session = main
@@ -187,9 +185,7 @@ async def test_stopping_a_half_started_client_still_disconnects_it(caplog):
         "terminate raising ConnectionError used to abandon the socket, because "
         "both calls shared one try block"
     )
-    assert not caplog.records, (
-        "a client that never finished starting up is not an error to report"
-    )
+    assert not caplog.records, "a client that never finished starting up is not an error to report"
 
 
 async def test_stopping_a_started_client_does_both():

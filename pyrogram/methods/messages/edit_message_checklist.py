@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional, Union
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -25,16 +26,16 @@ from pyrogram import raw, types, utils
 
 class EditMessageChecklist:
     async def edit_message_checklist(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         message_id: int,
-        checklist: "types.InputChecklist",
-        business_connection_id: Optional[str] = None,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        quick_reply_shortcut: Optional[int] = None,
-    ) -> "types.Message":
+        checklist: types.InputChecklist,
+        business_connection_id: str | None = None,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        quick_reply_shortcut: int | None = None,
+    ) -> types.Message:
         """Use this method to edit a checklist.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -85,9 +86,11 @@ class EditMessageChecklist:
                     )
                 )
         """
-        title, entities = (await utils.parse_text_entities(
-            self, checklist.title, checklist.parse_mode, checklist.entities
-        )).values()
+        title, entities = (
+            await utils.parse_text_entities(
+                self, checklist.title, checklist.parse_mode, checklist.entities
+            )
+        ).values()
 
         r = await self.invoke(
             raw.functions.messages.EditMessage(
@@ -98,25 +101,26 @@ class EditMessageChecklist:
                 id=message_id,
                 media=raw.types.InputMediaTodo(
                     todo=raw.types.TodoList(
-                        title=raw.types.TextWithEntities(
-                            text=title,
-                            entities=entities or []
-                        ),
+                        title=raw.types.TextWithEntities(text=title, entities=entities or []),
                         list=[await task.write(self) for task in checklist.tasks],
                         others_can_append=checklist.others_can_add_tasks,
-                        others_can_complete=checklist.others_can_mark_tasks_as_done
+                        others_can_complete=checklist.others_can_mark_tasks_as_done,
                     )
                 ),
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
             ),
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateEditMessage, raw.types.UpdateEditChannelMessage, raw.types.UpdateEditEphemeralMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateEditMessage,
+                    raw.types.UpdateEditChannelMessage,
+                    raw.types.UpdateEditEphemeralMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
-                    {i.id: i for i in r.users},
-                    {i.id: i for i in r.chats}
+                    self, i.message, {i.id: i for i in r.users}, {i.id: i for i in r.chats}
                 )
-

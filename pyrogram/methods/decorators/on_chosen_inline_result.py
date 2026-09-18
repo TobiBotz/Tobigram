@@ -16,18 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Callable
+from __future__ import annotations
+
+from collections.abc import Callable
 
 import pyrogram
 from pyrogram.filters import Filter
 
 
 class OnChosenInlineResult:
-    def on_chosen_inline_result(
-        self=None,
-        filters=None,
-        group: int = 0
-    ) -> Callable:
+    def on_chosen_inline_result(self=None, filters=None, group: int = 0) -> Callable:
         """Decorator for handling chosen inline results.
 
         .. include:: /_includes/usable-by/bots.rst
@@ -55,7 +53,7 @@ class OnChosenInlineResult:
                 func.handlers.append(
                     (
                         pyrogram.handlers.ChosenInlineResultHandler(func, self),
-                        group if filters is None else filters
+                        group if filters is None else filters,
                     )
                 )
 

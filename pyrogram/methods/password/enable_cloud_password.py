@@ -16,20 +16,18 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 import os
 
 import pyrogram
 from pyrogram import raw
-from pyrogram.utils import compute_password_hash, btoi, itob
+from pyrogram.utils import btoi, compute_password_hash, itob
 
 
 class EnableCloudPassword:
     async def enable_cloud_password(
-        self: "pyrogram.Client",
-        password: str,
-        hint: str = "",
-        email: Optional[str] = None
+        self: pyrogram.Client, password: str, hint: str = "", email: str | None = None
     ) -> bool:
         """Enable the Two-Step Verification security feature (Cloud Password) on your account.
 
@@ -78,11 +76,8 @@ class EnableCloudPassword:
             raw.functions.account.UpdatePasswordSettings(
                 password=raw.types.InputCheckPasswordEmpty(),
                 new_settings=raw.types.account.PasswordInputSettings(
-                    new_algo=r.new_algo,
-                    new_password_hash=new_hash,
-                    hint=hint,
-                    email=email
-                )
+                    new_algo=r.new_algo, new_password_hash=new_hash, hint=hint, email=email
+                ),
             )
         )
 

@@ -21,7 +21,8 @@
 # Source: tl:account.updateBusinessAwayMessage
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -29,8 +30,8 @@ from pyrogram import raw
 
 class UpdateBusinessAwayMessage:
     async def update_business_away_message(
-        self: "pyrogram.Client",
-        message: Optional[raw.types.InputBusinessAwayMessage] = None,
+        self: pyrogram.Client,
+        message: raw.types.InputBusinessAwayMessage | None = None,
     ) -> bool:
         """Set an automatic away message when you are offline.
 

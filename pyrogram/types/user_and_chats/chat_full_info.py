@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Dict, List, Optional, Union
+from __future__ import annotations
+
 
 from pyrogram import raw, types
 
@@ -34,7 +35,7 @@ class ChatFullInfo(Object):
     def __init__(
         self,
         *,
-        community: Optional["types.Community"] = None,
+        community: types.Community | None = None,
     ):
         super().__init__()
 
@@ -43,9 +44,9 @@ class ChatFullInfo(Object):
     @staticmethod
     def _parse(
         client,
-        chat_full: "raw.base.ChatFull",
-        chats: Optional[Union[Dict[int, "raw.base.Chat"], List["raw.base.Chat"]]] = None,
-    ) -> Optional["ChatFullInfo"]:
+        chat_full: raw.base.ChatFull,
+        chats: dict[int, raw.base.Chat] | list[raw.base.Chat] | None = None,
+    ) -> ChatFullInfo | None:
         if chat_full is None:
             return None
 

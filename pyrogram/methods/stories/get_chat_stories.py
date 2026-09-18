@@ -16,18 +16,18 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import AsyncGenerator, Union
+from __future__ import annotations
+
+from collections.abc import AsyncGenerator
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class GetChatStories:
     async def get_chat_stories(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str]
-    ) -> AsyncGenerator["types.Story", None]:
+        self: pyrogram.Client, chat_id: int | str
+    ) -> AsyncGenerator[types.Story, None]:
         """Get all non expired stories from a chat by using chat identifier.
 
         .. include:: /_includes/usable-by/users.rst
@@ -53,21 +53,10 @@ class GetChatStories:
         """
         peer = await self.resolve_peer(chat_id)
 
-        r = await self.invoke(
-            raw.functions.stories.GetPeerStories(
-                peer=peer
-            )
-        )
+        r = await self.invoke(raw.functions.stories.GetPeerStories(peer=peer))
 
         users = {i.id: i for i in r.users}
         chats = {i.id: i for i in r.chats}
 
         for story in r.stories.stories:
-            yield await types.Story._parse(
-                self,
-                story,
-                r.stories.peer,
-                users,
-                chats
-            )
-
+            yield await types.Story._parse(self, story, r.stories.peer, users, chats)

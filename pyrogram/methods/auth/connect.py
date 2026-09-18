@@ -16,13 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import pyrogram
 from pyrogram.session import Session
 
 
 class Connect:
     async def connect(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
     ) -> bool:
         """
         Connect the client to Telegram servers.
@@ -46,8 +48,10 @@ class Connect:
             server_address = port = None
 
         self.session = Session(
-            self, await self.storage.dc_id(),
-            await self.storage.auth_key(), await self.storage.test_mode(),
+            self,
+            await self.storage.dc_id(),
+            await self.storage.auth_key(),
+            await self.storage.test_mode(),
             server_address=server_address,
             port=port,
             crypto_executor=self.crypto_executor,

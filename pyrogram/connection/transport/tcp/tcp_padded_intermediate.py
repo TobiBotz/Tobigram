@@ -16,12 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
+import asyncio
+import logging
 import os
 import random
-import logging
-import asyncio
 from struct import pack, unpack
-from typing import Optional
 
 from .tcp import TCP
 
@@ -30,24 +31,34 @@ log = logging.getLogger(__name__)
 
 def strip_padding(payload: bytes) -> bytes:
     if len(payload) >= 20 and int.from_bytes(payload[:8], "little") == 0:
-        return payload[:20 + int.from_bytes(payload[16:20], "little")]
+        return payload[: 20 + int.from_bytes(payload[16:20], "little")]
 
-    return payload[:len(payload) - (len(payload) - 8) % 16]
+    return payload[: len(payload) - (len(payload) - 8) % 16]
 
 
 class TCPPaddedIntermediate(TCP):
-    def __init__(self, ipv6: bool, proxy: dict, crypto_executor=None, loop: Optional[asyncio.AbstractEventLoop] = None):
-        super().__init__(ipv6, proxy, crypto_executor, loop)
+    OBFUSCATE_TAG = b"\xdd\xdd\xdd\xdd"
+
+    def __init__(
+        self,
+        ipv6: bool = False,
+        proxy=None,
+        crypto_executor=None,
+        loop: asyncio.AbstractEventLoop | None = None,
+        dc_id: int | None = None,
+    ):
+        super().__init__(ipv6, proxy, crypto_executor, loop, dc_id=dc_id)
 
     async def connect(self, address: tuple):
         await super().connect(address)
-        await super().send(b"\xdd" * 4)
+        if not self.opens_with_obfuscated2_header:
+            await super().send(b"\xdd" * 4)
 
     async def send(self, data: bytes, *args):
         padding = os.urandom(random.randint(0, 15))
         await super().send(pack("<i", len(data) + len(padding)) + data + padding)
 
-    async def recv(self, length: int = 0) -> Optional[bytes]:
+    async def recv(self, length: int = 0) -> bytes | None:
         length = await super().recv(4)
 
         if length is None:

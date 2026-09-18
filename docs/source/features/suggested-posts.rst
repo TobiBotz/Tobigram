@@ -22,7 +22,7 @@ send into a proposal:
 .. code-block:: python
 
     from datetime import datetime, timedelta
-    from wzgram.types import SuggestedPostParameters, SuggestedPostPriceStar
+    from pyrogram.types import SuggestedPostParameters, SuggestedPostPriceStar
 
     await app.send_photo(
         chat_id=channel_direct_messages_id,
@@ -84,7 +84,7 @@ A suggestion's state is on the message itself, in
     print(info.send_date)  # when it will be published
     print(info.price)
 
-Telegram also posts service messages as the suggestion moves along, and wzgram parses each
+Telegram also posts service messages as the suggestion moves along, and pyrogram parses each
 into its own field on :obj:`~pyrogram.types.Message`:
 ``suggested_post_approved``, ``suggested_post_declined``, ``suggested_post_paid``,
 ``suggested_post_refunded`` and ``suggested_post_approval_failed`` — the last one being an

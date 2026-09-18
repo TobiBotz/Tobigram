@@ -16,15 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import raw
 
 
 class GetDialogsCount:
-    async def get_dialogs_count(
-        self: "pyrogram.Client",
-        pinned_only: bool = False
-    ) -> int:
+    async def get_dialogs_count(self: pyrogram.Client, pinned_only: bool = False) -> int:
         """Get the total count of your dialogs.
 
         .. include:: /_includes/usable-by/users.rst
@@ -55,7 +54,7 @@ class GetDialogsCount:
                     offset_id=0,
                     offset_peer=raw.types.InputPeerEmpty(),
                     limit=1,
-                    hash=0
+                    hash=0,
                 )
             )
 

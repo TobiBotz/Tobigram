@@ -1,7 +1,7 @@
 Examples
 ========
 
-This page contains example scripts to show you what wzgram looks like in practice.
+This page contains example scripts to show you what Tobigram looks like in practice.
 
 Every script is working right away (provided you correctly set up your credentials), meaning you can simply copy-paste
 and run. The only things you have to change are session names and target chats, where applicable.

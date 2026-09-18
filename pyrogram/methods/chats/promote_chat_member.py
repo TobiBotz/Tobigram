@@ -16,18 +16,19 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+from __future__ import annotations
+
 
 import pyrogram
-from pyrogram import raw, types, errors
+from pyrogram import errors, raw, types
 
 
 class PromoteChatMember:
     async def promote_chat_member(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        user_id: Union[int, str],
-        privileges: Optional["types.ChatPrivileges"] = None,
+        self: pyrogram.Client,
+        chat_id: int | str,
+        user_id: int | str,
+        privileges: types.ChatPrivileges | None = None,
     ) -> bool:
         """Promote or demote a user in a supergroup or a channel.
 
@@ -64,12 +65,11 @@ class PromoteChatMember:
             privileges = types.ChatPrivileges()
 
         try:
-            raw_chat_member = (await self.invoke(
-                raw.functions.channels.GetParticipant(
-                    channel=chat_id,
-                    participant=user_id
+            raw_chat_member = (
+                await self.invoke(
+                    raw.functions.channels.GetParticipant(channel=chat_id, participant=user_id)
                 )
-            )).participant
+            ).participant
         except errors.RPCError:
             raw_chat_member = None
 
@@ -100,9 +100,9 @@ class PromoteChatMember:
                     manage_topics=privileges.can_manage_topics,
                     manage_direct_messages=privileges.can_manage_direct_messages,
                     manage_ranks=privileges.can_manage_tags,
-                    manage_linked_peers=privileges.can_manage_linked_peers
+                    manage_linked_peers=privileges.can_manage_linked_peers,
                 ),
-                rank=rank or ""
+                rank=rank or "",
             )
         )
 

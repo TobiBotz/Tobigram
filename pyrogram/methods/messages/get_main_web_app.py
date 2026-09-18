@@ -16,19 +16,20 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+from __future__ import annotations
+
 
 import pyrogram
-from pyrogram import raw, enums
+from pyrogram import enums, raw
 
 
 class GetMainWebApp:
     async def get_main_web_app(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        bot_user_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
+        bot_user_id: int | str,
         start_parameter: str = "",
-        platform: Optional["enums.ClientPlatform"] = None
+        platform: enums.ClientPlatform | None = None,
     ) -> str:
         """Returns information needed to open the main Web App of a bot.
 
@@ -64,9 +65,7 @@ class GetMainWebApp:
                 bot=await self.resolve_peer(bot_user_id),
                 platform=platform.value,
                 start_param=start_parameter,
-
             )
         )
 
         return r.url
-

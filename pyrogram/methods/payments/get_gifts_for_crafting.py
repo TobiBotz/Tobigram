@@ -16,7 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import AsyncGenerator
+from __future__ import annotations
+
+from collections.abc import AsyncGenerator
 
 import pyrogram
 from pyrogram import raw, types
@@ -24,10 +26,8 @@ from pyrogram import raw, types
 
 class GetGiftsForCrafting:
     async def get_gifts_for_crafting(
-        self: "pyrogram.Client",
-        regular_gift_id: int,
-        limit: int = 0
-    ) -> AsyncGenerator["types.Gift", None]:
+        self: pyrogram.Client, regular_gift_id: int, limit: int = 0
+    ) -> AsyncGenerator[types.Gift, None]:
         """Returns upgraded gifts of the current user that can be used to craft another gifts.
 
         .. include:: /_includes/usable-by/users.rst
@@ -52,11 +52,9 @@ class GetGiftsForCrafting:
         while True:
             r = await self.invoke(
                 raw.functions.payments.GetCraftStarGifts(
-                    gift_id=regular_gift_id,
-                    offset=offset,
-                    limit=limit
+                    gift_id=regular_gift_id, offset=offset, limit=limit
                 ),
-                sleep_threshold=60
+                sleep_threshold=60,
             )
 
             users = {i.id: i for i in r.users}
@@ -84,4 +82,3 @@ class GetGiftsForCrafting:
 
             if not offset:
                 return
-

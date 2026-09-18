@@ -21,6 +21,7 @@ from .business_message_handler import BusinessMessageHandler
 from .callback_query_handler import CallbackQueryHandler
 from .chat_boost_handler import ChatBoostHandler
 from .chat_join_request_handler import ChatJoinRequestHandler
+from .chat_left_handler import ChatLeftHandler
 from .chat_member_updated_handler import ChatMemberUpdatedHandler
 from .chosen_inline_result_handler import ChosenInlineResultHandler
 from .connect_handler import ConnectHandler

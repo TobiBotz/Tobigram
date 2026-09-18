@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import re
-from typing import List, Optional, Union
 
 from pyrogram import raw, utils
 
@@ -65,11 +66,11 @@ class InputRichMessageMedia(Object):
 
     def __init__(
         self,
-        id: Optional[str] = None,
-        media: Optional[Union[str, "raw.base.InputPhoto", "raw.base.InputDocument"]] = None,
-        photos: Optional[List["raw.base.InputPhoto"]] = None,
-        documents: Optional[List["raw.base.InputDocument"]] = None,
-        users: Optional[List["raw.base.InputUser"]] = None,
+        id: str | None = None,
+        media: str | raw.base.InputPhoto | raw.base.InputDocument | None = None,
+        photos: list[raw.base.InputPhoto] | None = None,
+        documents: list[raw.base.InputDocument] | None = None,
+        users: list[raw.base.InputUser] | None = None,
     ):
         super().__init__()
 
@@ -98,7 +99,7 @@ class InputRichMessageMedia(Object):
             self.users,
         )
 
-    def write_file(self) -> "raw.base.InputRichFile":
+    def write_file(self) -> raw.base.InputRichFile:
         """Return the ``InputRichFile`` an html or markdown rich message carries."""
         if not self.id:
             raise ValueError(

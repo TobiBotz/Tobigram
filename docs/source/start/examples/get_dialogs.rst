@@ -7,7 +7,7 @@ This example shows how to get the full dialogs list (as user).
 
 .. code-block:: python
 
-    from wzgram import Client
+    from pyrogram import Client
 
     app = Client("my_account")
 

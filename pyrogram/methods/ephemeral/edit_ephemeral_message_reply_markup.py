@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import types
@@ -26,13 +27,13 @@ from .edit_ephemeral_message import edit_ephemeral
 
 class EditEphemeralMessageReplyMarkup:
     async def edit_ephemeral_message_reply_markup(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        receiver_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
+        receiver_id: int | str,
         message_id: int,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        welcome: Optional[bool] = None,
-    ) -> Optional["types.Message"]:
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        welcome: bool | None = None,
+    ) -> types.Message | None:
         """Edit only the inline keyboard of an ephemeral message.
 
         .. include:: /_includes/usable-by/bots.rst
@@ -62,7 +63,7 @@ class EditEphemeralMessageReplyMarkup:
         Example:
             .. code-block:: python
 
-                from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
+                from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
                 await app.edit_ephemeral_message_reply_markup(
                     chat_id, receiver_id, message_id,
@@ -70,7 +71,10 @@ class EditEphemeralMessageReplyMarkup:
                 )
         """
         return await edit_ephemeral(
-            self, chat_id, receiver_id, message_id,
+            self,
+            chat_id,
+            receiver_id,
+            message_id,
             reply_markup=reply_markup,
             welcome=welcome,
         )

@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from ..object import Object
 
 
@@ -55,4 +57,3 @@ class FirebaseAuthenticationSettingsIos(FirebaseAuthenticationSettings):
 
         self.device_token = device_token
         self.is_app_sandbox = is_app_sandbox
-

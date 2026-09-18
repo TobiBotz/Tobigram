@@ -16,9 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 import re
-from typing import List, Optional
 
 import pyrogram
 from pyrogram import enums, raw, types
@@ -29,20 +30,20 @@ log = logging.getLogger(__name__)
 
 class SendPhoneNumberCode:
     async def send_phone_number_code(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         phone_number: str,
-        settings: Optional["types.PhoneNumberAuthenticationSettings"] = None,
-        type: "enums.PhoneNumberCodeType" = enums.PhoneNumberCodeType.AUTHENTICATION,
+        settings: types.PhoneNumberAuthenticationSettings | None = None,
+        type: enums.PhoneNumberCodeType = enums.PhoneNumberCodeType.AUTHENTICATION,
         # Deprecated params
-        current_number: Optional[bool] = None,
-        allow_flashcall: Optional[bool] = None,
-        allow_app_hash: Optional[bool] = None,
-        allow_missed_call: Optional[bool] = None,
-        allow_firebase: Optional[bool] = None,
-        logout_tokens: Optional[List[bytes]] = None,
-        token: Optional[str] = None,
-        app_sandbox: Optional[bool] = None,
-    ) -> "types.SentCode":
+        current_number: bool | None = None,
+        allow_flashcall: bool | None = None,
+        allow_app_hash: bool | None = None,
+        allow_missed_call: bool | None = None,
+        allow_firebase: bool | None = None,
+        logout_tokens: list[bytes] | None = None,
+        token: str | None = None,
+        app_sandbox: bool | None = None,
+    ) -> types.SentCode:
         """Sends a code to the specified phone number. Aborts previous phone number verification if there was one.
 
         .. include:: /_includes/usable-by/users.rst
@@ -213,4 +214,3 @@ class SendPhoneNumberCode:
                 await self.storage.auth_key(self.session.auth_key)
             else:
                 return types.SentCode._parse(r)
-

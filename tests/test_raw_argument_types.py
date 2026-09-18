@@ -119,16 +119,13 @@ def local_kinds(scope):
         for target in targets:
             assigned.setdefault(target.id, set()).add(kind)
 
-    return {
-        name: next(iter(kinds)) for name, kinds in assigned.items() if len(kinds) == 1
-    }
+    return {name: next(iter(kinds)) for name, kinds in assigned.items() if len(kinds) == 1}
 
 
 def scopes(tree):
     """Each function body, plus the module for anything outside one."""
     functions = [
-        node for node in ast.walk(tree)
-        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        node for node in ast.walk(tree) if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
     ]
 
     return [*functions, tree]
@@ -212,15 +209,14 @@ CASES = list(mismatched())
 
 def test_the_schema_was_read():
     assert len(list(raw_arguments())) > 50, (
-        "no raw constructor arguments were typed, so this check proves nothing; "
-        "run `poe api` first"
+        "no raw constructor arguments were typed, so this check proves nothing; run `poe api` first"
     )
 
 
 @pytest.mark.parametrize(
     "path,lineno,target,field,expected,actual",
     CASES,
-    ids=[f"{t}.{f}" for _, _, t, f, _, _ in CASES]
+    ids=[f"{t}.{f}" for _, _, t, f, _, _ in CASES],
 )
 def test_no_literal_contradicts_the_schema(path, lineno, target, field, expected, actual):
     """A literal of the wrong TL type only fails when the request is serialised.
@@ -230,6 +226,5 @@ def test_no_literal_contradicts_the_schema(path, lineno, target, field, expected
     object has no attribute 'to_bytes'.
     """
     pytest.fail(
-        f"{path}:{lineno} passes {target}.{field} a {actual} "
-        f"where the schema declares {expected}"
+        f"{path}:{lineno} passes {target}.{field} a {actual} where the schema declares {expected}"
     )

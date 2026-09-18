@@ -18,9 +18,15 @@
 
 import importlib
 from io import BytesIO
-from json import dumps
 from struct import Struct
-from typing import List, Any, Union, Dict
+from typing import Any
+
+import orjson
+
+
+def dumps(obj: Any, default: Any = None) -> str:
+    return orjson.dumps(obj, default=default, option=orjson.OPT_INDENT_2).decode()
+
 
 from ..all import objects as _paths
 
@@ -72,15 +78,15 @@ class _Objects(dict):
 
 objects = _Objects()
 
-_legacy_objects: Dict[int, str] = {
-    0xf2355507: "pyrogram.raw.types.ChannelFull",
-    0xc9d31138: "pyrogram.raw.types.ChatFull",
+_legacy_objects: dict[int, str] = {
+    0xF2355507: "pyrogram.raw.types.ChannelFull",
+    0xC9D31138: "pyrogram.raw.types.ChatFull",
     0x31774388: "pyrogram.raw.types.User",
 }
 
 
 class TLObject:
-    __slots__: List[str] = []
+    __slots__: tuple[str, ...] = ()
 
     QUALNAME = "Base"
 
@@ -108,21 +114,19 @@ class TLObject:
         pass
 
     @staticmethod
-    def default(obj: "TLObject") -> Union[str, Dict[str, str]]:
+    def default(obj: "TLObject") -> str | dict[str, Any]:
         if isinstance(obj, bytes):
             return repr(obj)
 
-        return {
-            "_": obj.QUALNAME,
-            **{
-                attr: getattr(obj, attr)
-                for attr in obj.__slots__
-                if getattr(obj, attr) is not None
-            }
-        }
+        d: dict[str, Any] = {"_": obj.QUALNAME}
+        for attr in getattr(obj, "__slots__", ()):
+            val = getattr(obj, attr, None)
+            if val is not None:
+                d[attr] = val
+        return d
 
     def __str__(self) -> str:
-        return dumps(self, indent=4, default=TLObject.default, ensure_ascii=False)
+        return dumps(self, default=TLObject.default)
 
     def __repr__(self) -> str:
         if not hasattr(self, "QUALNAME"):
@@ -131,13 +135,13 @@ class TLObject:
         return "pyrogram.raw.{}({})".format(
             self.QUALNAME,
             ", ".join(
-                f"{attr}={repr(getattr(self, attr))}"
+                f"{attr}={getattr(self, attr)!r}"
                 for attr in self.__slots__
                 if getattr(self, attr) is not None
-            )
+            ),
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         for attr in self.__slots__:
             try:
                 if getattr(self, attr) != getattr(other, attr):

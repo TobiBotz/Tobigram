@@ -9,9 +9,7 @@ async def parse(text):
 
 
 def shape(parsed):
-    return [
-        (type(e).__name__, e.offset, e.length) for e in (parsed["entities"] or [])
-    ]
+    return [(type(e).__name__, e.offset, e.length) for e in (parsed["entities"] or [])]
 
 
 def quote_of(parsed):

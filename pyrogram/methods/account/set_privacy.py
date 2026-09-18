@@ -16,30 +16,31 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Union
+from __future__ import annotations
+
 
 import pyrogram
-from pyrogram import raw, types, enums
+from pyrogram import enums, raw, types
 
 
 class SetPrivacy:
     async def set_privacy(
-        self: "pyrogram.Client",
-        key: "enums.PrivacyKey",
-        rules: List[Union[
-            "types.InputPrivacyRuleAllowAll",
-            "types.InputPrivacyRuleAllowBots",
-            "types.InputPrivacyRuleAllowChats",
-            "types.InputPrivacyRuleAllowCloseFriends",
-            "types.InputPrivacyRuleAllowContacts",
-            "types.InputPrivacyRuleAllowPremium",
-            "types.InputPrivacyRuleAllowUsers",
-            "types.InputPrivacyRuleDisallowAll",
-            "types.InputPrivacyRuleDisallowBots",
-            "types.InputPrivacyRuleDisallowChats",
-            "types.InputPrivacyRuleDisallowContacts",
-            "types.InputPrivacyRuleDisallowUsers"
-        ]],
+        self: pyrogram.Client,
+        key: enums.PrivacyKey,
+        rules: list[
+            types.InputPrivacyRuleAllowAll
+            | types.InputPrivacyRuleAllowBots
+            | types.InputPrivacyRuleAllowChats
+            | types.InputPrivacyRuleAllowCloseFriends
+            | types.InputPrivacyRuleAllowContacts
+            | types.InputPrivacyRuleAllowPremium
+            | types.InputPrivacyRuleAllowUsers
+            | types.InputPrivacyRuleDisallowAll
+            | types.InputPrivacyRuleDisallowBots
+            | types.InputPrivacyRuleDisallowChats
+            | types.InputPrivacyRuleDisallowContacts
+            | types.InputPrivacyRuleDisallowUsers
+        ],
     ):
         """Set account privacy rules.
 
@@ -58,15 +59,14 @@ class SetPrivacy:
         Example:
             .. code-block:: python
 
-                from wzgram import enums, types
+                from pyrogram import enums, types
 
                 # Prevent everyone from seeing your phone number
                 await app.set_privacy(enums.PrivacyKey.PHONE_NUMBER, [types.InputPrivacyRuleDisallowAll()])
         """
         r = await self.invoke(
             raw.functions.account.SetPrivacy(
-                key=key.value(),
-                rules=[await rule.write(self) for rule in rules]
+                key=key.value(), rules=[await rule.write(self) for rule in rules]
             )
         )
 
@@ -74,4 +74,3 @@ class SetPrivacy:
         chats = {i.id: i for i in r.chats}
 
         return types.List(types.PrivacyRule._parse(self, rule, users, chats) for rule in r.rules)
-

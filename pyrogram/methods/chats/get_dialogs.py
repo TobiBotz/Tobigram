@@ -16,17 +16,18 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import AsyncGenerator, Optional
+from __future__ import annotations
+
+from collections.abc import AsyncGenerator
 
 import pyrogram
-from pyrogram import types, raw, utils
+from pyrogram import raw, types, utils
 
 
 class GetDialogs:
     async def get_dialogs(
-        self: "pyrogram.Client",
-        limit: int = 0
-    ) -> Optional[AsyncGenerator["types.Dialog", None]]:
+        self: pyrogram.Client, limit: int = 0
+    ) -> AsyncGenerator[types.Dialog, None] | None:
         """Get a user's dialogs sequentially.
 
         .. include:: /_includes/usable-by/users.rst
@@ -61,9 +62,9 @@ class GetDialogs:
                     offset_id=offset_id,
                     offset_peer=offset_peer,
                     limit=limit,
-                    hash=0
+                    hash=0,
                 ),
-                sleep_threshold=60
+                sleep_threshold=60,
             )
 
             users = {i.id: i for i in r.users}

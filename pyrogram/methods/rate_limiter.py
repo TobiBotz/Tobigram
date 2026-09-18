@@ -16,13 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import Dict, Optional
 
 
 class TokenBucket:
-    def __init__(self, rate: float, burst: Optional[float] = None):
+    def __init__(self, rate: float, burst: float | None = None):
         self._rate = rate
         self._burst = burst if burst is not None else rate
         self._tokens = float(self._burst)
@@ -104,7 +105,7 @@ class RateLimiter:
         CATEGORY_ACCOUNT: {"rate": 10.0, "burst": 15.0},
     }
 
-    def __init__(self, limits: Optional[Dict[str, Dict[str, float]]] = None):
+    def __init__(self, limits: dict[str, dict[str, float]] | None = None):
         resolved = {k: dict(v) for k, v in self.DEFAULT_LIMITS.items()}
         if limits:
             for cat, cfg in limits.items():
@@ -113,7 +114,7 @@ class RateLimiter:
                 else:
                     resolved[cat] = cfg
 
-        self._buckets: Dict[str, TokenBucket] = {}
+        self._buckets: dict[str, TokenBucket] = {}
         self._global = TokenBucket(
             rate=resolved.get("global", {}).get("rate", 30.0),
             burst=resolved.get("global", {}).get("burst", 40.0),
@@ -121,7 +122,9 @@ class RateLimiter:
         for cat, cfg in resolved.items():
             if cat == "global":
                 continue
-            self._buckets[cat] = TokenBucket(rate=cfg.get("rate", 30.0), burst=cfg.get("burst", cfg.get("rate", 30.0)))
+            self._buckets[cat] = TokenBucket(
+                rate=cfg.get("rate", 30.0), burst=cfg.get("burst", cfg.get("rate", 30.0))
+            )
 
         self._closed = False
 
@@ -156,7 +159,7 @@ class RateLimiter:
         return max(scores) if scores else 0.0
 
     @property
-    def available(self) -> Dict[str, float]:
+    def available(self) -> dict[str, float]:
         result = {k: b.available for k, b in self._buckets.items()}
         result["global"] = self._global.available
         return result

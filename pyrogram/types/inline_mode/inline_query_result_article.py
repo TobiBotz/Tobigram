@@ -16,10 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
+
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 from .inline_query_result import InlineQueryResult
 
@@ -60,14 +61,14 @@ class InlineQueryResultArticle(InlineQueryResult):
     def __init__(
         self,
         title: str,
-        input_message_content: "types.InputMessageContent",
-        id: Optional[str] = None,
-        url: Optional[str] = None,
-        description: Optional[str] = None,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        thumb_url: Optional[str] = None,
+        input_message_content: types.InputMessageContent,
+        id: str | None = None,
+        url: str | None = None,
+        description: str | None = None,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        thumb_url: str | None = None,
         thumb_width: int = 0,
-        thumb_height: int = 0
+        thumb_height: int = 0,
     ):
         super().__init__("article", id, input_message_content, reply_markup)
 
@@ -78,7 +79,7 @@ class InlineQueryResultArticle(InlineQueryResult):
         self.thumb_width = thumb_width
         self.thumb_height = thumb_height
 
-    async def write(self, client: "pyrogram.Client"):
+    async def write(self, client: pyrogram.Client):
         return raw.types.InputBotInlineResult(
             id=self.id,
             type=self.type,
@@ -91,10 +92,9 @@ class InlineQueryResultArticle(InlineQueryResult):
                 size=0,
                 mime_type="image/jpeg",
                 attributes=[
-                    raw.types.DocumentAttributeImageSize(
-                        w=self.thumb_width,
-                        h=self.thumb_height
-                    )
-                ]
-            ) if self.thumb_url else None
+                    raw.types.DocumentAttributeImageSize(w=self.thumb_width, h=self.thumb_height)
+                ],
+            )
+            if self.thumb_url
+            else None,
         )

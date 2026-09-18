@@ -16,18 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Callable
+from __future__ import annotations
+
+from collections.abc import Callable
 
 import pyrogram
 from pyrogram.filters import Filter
 
 
 class OnMessageReactionCount:
-    def on_message_reaction_count(
-        self=None,
-        filters=None,
-        group: int = 0
-    ) -> Callable:
+    def on_message_reaction_count(self=None, filters=None, group: int = 0) -> Callable:
         """Decorator for handling anonymous reaction changes on messages.
 
         This does the same thing as :meth:`~pyrogram.Client.add_handler` using the
@@ -45,7 +43,9 @@ class OnMessageReactionCount:
 
         def decorator(func: Callable) -> Callable:
             if isinstance(self, pyrogram.Client):
-                self.add_handler(pyrogram.handlers.MessageReactionCountHandler(func, filters), group)
+                self.add_handler(
+                    pyrogram.handlers.MessageReactionCountHandler(func, filters), group
+                )
             elif isinstance(self, Filter) or self is None:
                 if not hasattr(func, "handlers"):
                     func.handlers = []
@@ -53,11 +53,10 @@ class OnMessageReactionCount:
                 func.handlers.append(
                     (
                         pyrogram.handlers.MessageReactionCountHandler(func, self),
-                        group if filters is None else filters
+                        group if filters is None else filters,
                     )
                 )
 
             return func
 
         return decorator
-

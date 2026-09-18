@@ -16,22 +16,20 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 import re
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from pyrogram.errors import PhoneMigrate, NetworkMigrate
+from pyrogram import raw, types
+from pyrogram.errors import NetworkMigrate, PhoneMigrate
 
 log = logging.getLogger(__name__)
 
 
 class SendCode:
-    async def send_code(
-        self: "pyrogram.Client",
-        phone_number: str
-    ) -> "types.SentCode":
+    async def send_code(self: pyrogram.Client, phone_number: str) -> types.SentCode:
         """Send the confirmation code to the given phone number.
 
         .. include:: /_includes/usable-by/users.rst
@@ -56,7 +54,7 @@ class SendCode:
                         phone_number=phone_number,
                         api_id=self.api_id,
                         api_hash=self.api_hash,
-                        settings=raw.types.CodeSettings()
+                        settings=raw.types.CodeSettings(),
                     )
                 )
             except (PhoneMigrate, NetworkMigrate) as e:

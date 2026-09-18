@@ -1,7 +1,7 @@
 Listeners
 =========
 
-*A wzgram extension*
+*A pyrogram extension*
 
 A listener waits for the next update inline, inside the code that asked for it. Instead of
 registering a handler, storing state keyed by user id and picking the conversation back up
@@ -25,7 +25,7 @@ listen and ask
 
 .. code-block:: python
 
-    from wzgram import filters
+    from pyrogram import filters
 
     reply = await app.ask(
         chat_id=user_id,
@@ -74,7 +74,7 @@ Two errors end a wait, and the difference matters:
 
 .. code-block:: python
 
-    from wzgram.errors import ListenerTimeout
+    from pyrogram.errors import ListenerTimeout
 
     try:
         answer = await message.chat.ask("Still there?", timeout=30)
@@ -100,7 +100,7 @@ Conversations inside handlers
 -----------------------------
 
 Handler callbacks are awaited inline in their dispatcher worker, so a handler parked in
-``await listen()`` is holding a worker. wzgram covers each parked worker with a relief
+``await listen()`` is holding a worker. pyrogram covers each parked worker with a relief
 worker for as long as it is parked — without that, the worker-th concurrent conversation
 would exhaust the pool, and the workers left would be exactly the ones needed to deliver the
 updates everyone is waiting for.
@@ -110,8 +110,8 @@ You do not have to do anything for this. It is why nesting conversations works.
 Limits
 ------
 
-``WZGRAM_MAX_LISTENERS`` (1000) is the process-wide ceiling on outstanding waiters, shared by
-every client in the process — like every other budget in wzgram, see :doc:`performance`. It
+``PYROGRAM_MAX_LISTENERS`` (1000) is the process-wide ceiling on outstanding waiters, shared by
+every client in the process — like every other budget in pyrogram, see :doc:`performance`. It
 can also be set per client with ``max_listeners``.
 
 Expiry is one deadline heap and one reaper task per client rather than a timer per listener,

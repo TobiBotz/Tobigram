@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types
@@ -24,13 +25,13 @@ from pyrogram import raw, types
 
 class CreateForumTopic:
     async def create_forum_topic(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         title: str,
-        icon_color: Optional[int] = None,
-        icon_emoji_id: Optional[int] = None,
-        send_as: Optional[Union[int, str]] = None,
-    ) -> "types.ForumTopicCreated":
+        icon_color: int | None = None,
+        icon_emoji_id: int | None = None,
+        send_as: int | str | None = None,
+    ) -> types.ForumTopicCreated:
         """Create a new forum topic.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -67,12 +68,10 @@ class CreateForumTopic:
                 random_id=self.rnd_id(),
                 icon_color=icon_color,
                 icon_emoji_id=icon_emoji_id,
-                send_as=await self.resolve_peer(send_as) if send_as is not None else None
+                send_as=await self.resolve_peer(send_as) if send_as is not None else None,
             )
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage)):
+            if isinstance(i, (raw.types.UpdateNewMessage, raw.types.UpdateNewChannelMessage)):
                 return types.ForumTopicCreated._parse(i.message)
-

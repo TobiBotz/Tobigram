@@ -1,7 +1,7 @@
 Invoking Methods
 ================
 
-At this point, we have successfully :doc:`installed wzgram <../intro/install>` and :doc:`authorized <auth>` our
+At this point, we have successfully :doc:`installed pyrogram <../intro/install>` and :doc:`authorized <auth>` our
 account; we are now aiming towards the core of the framework.
 
 
@@ -10,11 +10,11 @@ account; we are now aiming towards the core of the framework.
 Basic Usage
 -----------
 
-Making API calls with wzgram is very simple. Here's a basic example we are going to examine step by step:
+Making API calls with pyrogram is very simple. Here's a basic example we are going to examine step by step:
 
 .. code-block:: python
 
-    from wzgram import Client
+    from pyrogram import Client
 
     app = Client("my_account")
 
@@ -33,7 +33,7 @@ Step-by-step
 
     .. code-block:: python
 
-        from wzgram import Client
+        from pyrogram import Client
 
 #.  Now instantiate a new Client object, "my_account" is a session name of your choice.
 
@@ -51,7 +51,7 @@ Step-by-step
             async with app:
                 await app.send_message(chat_id="me", text="Hi!")
 
-#.  Finally, we tell Python to schedule our ``main()`` async function by using wzgram's :meth:`~pyrogram.Client.run`
+#.  Finally, we tell Python to schedule our ``main()`` async function by using pyrogram's :meth:`~pyrogram.Client.run`
     method.
 
     .. code-block:: python
@@ -70,7 +70,7 @@ Below there's the same example as above, but without the use of the context mana
 
 .. code-block:: python
 
-    from wzgram import Client
+    from pyrogram import Client
 
     app = Client("my_account")
 
@@ -93,7 +93,7 @@ be instantiated inside the main function.
 .. code-block:: python
 
     import asyncio
-    from wzgram import Client
+    from pyrogram import Client
 
 
     async def main():

@@ -16,7 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Callable, Optional
+from __future__ import annotations
+
+from collections.abc import Callable
 
 import pyrogram
 from pyrogram.filters import Filter, check_filter
@@ -24,9 +26,9 @@ from pyrogram.types import Update
 
 
 class Handler:
-    def __init__(self, callback: Callable, filters: Optional[Filter] = None):
+    def __init__(self, callback: Callable, filters: Filter | None = None):
         self.callback = callback
         self.filters = filters
 
-    async def check(self, client: "pyrogram.Client", update: Update):
+    async def check(self, client: pyrogram.Client, update: Update):
         return await check_filter(self.filters, client, update)

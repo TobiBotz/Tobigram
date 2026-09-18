@@ -9,10 +9,10 @@ from pyrogram.types import Object
 from pyrogram.types.messages_and_media.message import Str as MessageStr
 from pyrogram.types.user_and_chats.user import Link as UserLink
 
-
 # ---------------------------------------------------------------------------
 # 1.  Test creating each type with the MINIMUM required parameters
 # ---------------------------------------------------------------------------
+
 
 class TestMinimalConstruction:
     def test_object_minimal(self):
@@ -154,8 +154,12 @@ class TestMinimalConstruction:
     def test_game_minimal(self):
         dt = datetime(2023, 1, 1)
         photo = types.Photo(
-            file_id="fid", file_unique_id="fuid",
-            width=100, height=100, file_size=1000, date=dt,
+            file_id="fid",
+            file_unique_id="fuid",
+            width=100,
+            height=100,
+            file_size=1000,
+            date=dt,
         )
         game = types.Game(
             id=1,
@@ -199,6 +203,7 @@ class TestMinimalConstruction:
 # ---------------------------------------------------------------------------
 # 2.  Test common properties / methods
 # ---------------------------------------------------------------------------
+
 
 class TestCommonProperties:
     def test_object_str_repr(self):
@@ -279,8 +284,16 @@ class TestCommonProperties:
 # 3.  Test that all expected types are exported from pyrogram.types
 # ---------------------------------------------------------------------------
 
+
 class TestExports:
     _expected_types = [
+        "BackgroundFillSolid",
+        "BackgroundFillGradient",
+        "BackgroundFillFreeformGradient",
+        "BackgroundTypeFill",
+        "BackgroundTypeWallpaper",
+        "BackgroundTypePattern",
+        "BackgroundTypeChatTheme",
         "Object",
         "Message",
         "User",
@@ -333,6 +346,7 @@ class TestExports:
 # ---------------------------------------------------------------------------
 # 4.  Test type conversions / __init__ keyword-only behaviour
 # ---------------------------------------------------------------------------
+
 
 class TestInits:
     def test_message_requires_id(self):
@@ -418,6 +432,7 @@ class TestInits:
 # 5.  Test __setstate__ / __getstate__ (pickle support)
 # ---------------------------------------------------------------------------
 
+
 class TestPickle:
     def test_object_getstate_no_client(self):
         obj = Object()
@@ -451,6 +466,7 @@ class TestPickle:
 # 6.  Test InlineKeyboardButton customisation
 # ---------------------------------------------------------------------------
 
+
 class TestInlineKeyboardButton:
     def test_button_style_default(self):
         btn = types.InlineKeyboardButton(text="X", callback_data="d")
@@ -474,6 +490,7 @@ class TestInlineKeyboardButton:
 # 7.  Test ReplyKeyboardButton
 # ---------------------------------------------------------------------------
 
+
 class TestKeyboardButton:
     def test_button_text_converted_to_str(self):
         btn = types.KeyboardButton(text=42)
@@ -488,6 +505,7 @@ class TestKeyboardButton:
 # ---------------------------------------------------------------------------
 # 8.  Test Location edge cases
 # ---------------------------------------------------------------------------
+
 
 class TestLocation:
     def test_defaults(self):
@@ -517,6 +535,7 @@ class TestLocation:
 # 9.  Test the Link helper
 # ---------------------------------------------------------------------------
 
+
 class TestUserLink:
     def test_link_class(self):
         link = UserLink(url="tg://user?id=1", text="Alice", style=enums.ParseMode.HTML)
@@ -525,7 +544,7 @@ class TestUserLink:
 
     def test_link_format_html(self):
         result = UserLink.format(url="tg://user?id=1", text="Alice", style=enums.ParseMode.HTML)
-        assert 'href=' in result
+        assert "href=" in result
         assert "tg://user?id=1" in result
         assert "Alice</a>" in result
 
@@ -537,6 +556,7 @@ class TestUserLink:
 # ---------------------------------------------------------------------------
 # 10.  Test Message.Str helper
 # ---------------------------------------------------------------------------
+
 
 class TestMessageStr:
     def test_str_init(self):
@@ -553,6 +573,7 @@ class TestMessageStr:
 # ---------------------------------------------------------------------------
 # 11.  Test nested objects
 # ---------------------------------------------------------------------------
+
 
 class TestNestedTypes:
     def test_message_with_reply_markup(self):
@@ -589,6 +610,7 @@ class TestNestedTypes:
 # 12.  Test attribute assignment compatibility (no __slots__ used by these types)
 # ---------------------------------------------------------------------------
 
+
 class TestDynamicAttributes:
     def test_message_dynamic_attr(self):
         msg = types.Message(id=1)
@@ -612,9 +634,13 @@ class TestDynamicAttributes:
 
     def test_sticker_dynamic_attr(self):
         st = types.Sticker(
-            file_id="fid", file_unique_id="fuid",
+            file_id="fid",
+            file_unique_id="fuid",
             type=enums.StickerType.REGULAR,
-            width=100, height=100, is_animated=False, is_video=False,
+            width=100,
+            height=100,
+            is_animated=False,
+            is_video=False,
         )
         st.extra = 1
         assert st.extra == 1
@@ -667,6 +693,7 @@ class TestObjectSubclass:
 # 14.  Test that Poll.get_vote_percentage works as a static method
 # ---------------------------------------------------------------------------
 
+
 class TestPollVotePercentage:
     def test_all_zero(self):
         result = types.Poll.get_vote_percentage([0, 0, 0], 0)
@@ -694,6 +721,7 @@ class TestPollVotePercentage:
 # ---------------------------------------------------------------------------
 # 15.  Test that the Link class __new__/__str__ work
 # ---------------------------------------------------------------------------
+
 
 class TestLinkStr:
     def test_link_str_html(self):
@@ -724,6 +752,7 @@ class TestLinkStr:
 # 16.  Test Message properties (content, md_text, html_text)
 # ---------------------------------------------------------------------------
 
+
 class TestMessageProperties:
     def test_md_text_no_text(self):
         msg = types.Message(id=1)
@@ -750,6 +779,7 @@ class TestMessageProperties:
 # 17.  Test Object.__repr__ roundtrip property
 # ---------------------------------------------------------------------------
 
+
 class TestObjectRepr:
     def test_repr_includes_class_name(self):
         msg = types.Message(id=1)
@@ -766,6 +796,7 @@ class TestObjectRepr:
 # ---------------------------------------------------------------------------
 # 18.  Test Object.default for various types
 # ---------------------------------------------------------------------------
+
 
 class TestObjectDefault:
     def test_default_bytes(self):
@@ -784,6 +815,7 @@ class TestObjectDefault:
 # ---------------------------------------------------------------------------
 # 19.  Test Object.__eq__
 # ---------------------------------------------------------------------------
+
 
 class TestObjectEq:
     def test_eq_same_attrs(self):
@@ -852,8 +884,8 @@ class TestKeyboardButtonRequests:
                 user_is_premium=True,
                 max_quantity=3,
                 request_name=True,
-                request_username=True
-            )
+                request_username=True,
+            ),
         )
 
         raw_button = button.write()
@@ -876,10 +908,8 @@ class TestKeyboardButtonRequests:
                 button_id=9,
                 chat_is_channel=True,
                 chat_is_created=True,
-                user_administrator_rights=types.ChatAdministratorRights(
-                    can_post_messages=True
-                )
-            )
+                user_administrator_rights=types.ChatAdministratorRights(can_post_messages=True),
+            ),
         )
 
         raw_button = button.write()
@@ -896,10 +926,8 @@ class TestKeyboardButtonRequests:
         button = types.KeyboardButton(
             text="Pick a group",
             request_chat=types.KeyboardButtonRequestChat(
-                button_id=1,
-                chat_is_channel=False,
-                bot_is_member=True
-            )
+                button_id=1, chat_is_channel=False, bot_is_member=True
+            ),
         )
 
         raw_button = button.write()
@@ -909,8 +937,7 @@ class TestKeyboardButtonRequests:
 
     def test_request_poll_round_trips(self):
         button = types.KeyboardButton(
-            text="Make a quiz",
-            request_poll=types.KeyboardButtonPollType(is_quiz=True)
+            text="Make a quiz", request_poll=types.KeyboardButtonPollType(is_quiz=True)
         )
 
         raw_button = button.write()
@@ -922,10 +949,8 @@ class TestKeyboardButtonRequests:
         button = types.KeyboardButton(
             text="New bot",
             request_managed_bot=types.KeyboardButtonRequestManagedBot(
-                button_id=1,
-                suggested_name="Name",
-                suggested_username="username"
-            )
+                button_id=1, suggested_name="Name", suggested_username="username"
+            ),
         )
 
         raw_button = button.write()
@@ -938,9 +963,7 @@ class TestKeyboardButtonRequests:
 
     def test_style_and_icon_round_trip(self):
         button = types.KeyboardButton(
-            text="Danger",
-            style=enums.ButtonStyle.DANGER,
-            icon_custom_emoji_id="5555"
+            text="Danger", style=enums.ButtonStyle.DANGER, icon_custom_emoji_id="5555"
         )
 
         raw_button = button.write()
@@ -953,9 +976,7 @@ class TestKeyboardButtonRequests:
         assert parsed.icon_custom_emoji_id == "5555"
 
     def test_a_plain_button_still_reads_back_as_text(self):
-        plain = raw.types.KeyboardButton(
-            text="hi", type=raw.types.ButtonTypeDefault()
-        )
+        plain = raw.types.KeyboardButton(text="hi", type=raw.types.ButtonTypeDefault())
 
         assert types.KeyboardButton.read(plain) == "hi", (
             "ReplyKeyboardMarkup relies on plain buttons collapsing to a string"
@@ -984,11 +1005,7 @@ class TestChatCoverageFields:
         kwargs.setdefault("restriction_reason", [])
 
         return raw.types.Channel(
-            id=777,
-            title="Test",
-            photo=raw.types.ChatPhotoEmpty(),
-            date=0,
-            **kwargs
+            id=777, title="Test", photo=raw.types.ChatPhotoEmpty(), date=0, **kwargs
         )
 
     def test_join_to_send_messages_is_parsed(self):
@@ -999,7 +1016,7 @@ class TestChatCoverageFields:
     def test_emoji_status_is_parsed_for_a_channel(self):
         chat = types.Chat._parse_channel_chat(
             None,
-            self.channel(emoji_status=raw.types.EmojiStatus(document_id=555, until=1893456000))
+            self.channel(emoji_status=raw.types.EmojiStatus(document_id=555, until=1893456000)),
         )
 
         assert chat.emoji_status.custom_emoji_id == "555"
@@ -1011,7 +1028,7 @@ class TestChatCoverageFields:
             first_name="A",
             usernames=[],
             restriction_reason=[],
-            emoji_status=raw.types.EmojiStatus(document_id=999)
+            emoji_status=raw.types.EmojiStatus(document_id=999),
         )
         chat = types.Chat._parse_user_chat(None, user)
 
@@ -1033,8 +1050,8 @@ class TestChatLocation:
                 geo_point=raw.types.GeoPoint(
                     long=12.5, lat=41.9, access_hash=0, accuracy_radius=50
                 ),
-                address="Rome, Italy"
-            )
+                address="Rome, Italy",
+            ),
         )
 
         assert location.address == "Rome, Italy"
@@ -1064,9 +1081,7 @@ class TestInlineResultCaptionPlacement:
     @pytest.mark.parametrize("flag,expected", [(True, True), (None, None)])
     async def test_a_url_result_forwards_the_flag(self, flag, expected):
         result = types.InlineQueryResultPhoto(
-            photo_url="https://example.com/p.jpg",
-            caption="cap",
-            show_caption_above_media=flag
+            photo_url="https://example.com/p.jpg", caption="cap", show_caption_above_media=flag
         )
         written = await result.write(self.client())
 
@@ -1074,9 +1089,7 @@ class TestInlineResultCaptionPlacement:
 
     async def test_a_cached_result_forwards_the_flag(self):
         result = types.InlineQueryResultCachedPhoto(
-            photo_file_id=self.PHOTO_FILE_ID,
-            caption="cap",
-            show_caption_above_media=True
+            photo_file_id=self.PHOTO_FILE_ID, caption="cap", show_caption_above_media=True
         )
         written = await result.write(self.client())
 
@@ -1089,14 +1102,15 @@ class TestInlineResultCaptionPlacement:
             "InlineQueryResultVideo",
             "InlineQueryResultCachedPhoto",
             "InlineQueryResultCachedVideo",
-        ]
+        ],
     )
     def test_every_captioned_inline_result_accepts_it(self, name):
         import inspect
 
-        assert "show_caption_above_media" in inspect.signature(
-            getattr(types, name).__init__
-        ).parameters
+        assert (
+            "show_caption_above_media"
+            in inspect.signature(getattr(types, name).__init__).parameters
+        )
 
 
 class TestInlineKeyboardButtonAdditions:
@@ -1111,13 +1125,41 @@ class TestInlineKeyboardButtonAdditions:
         return await types.InlineKeyboardButton(**kwargs).write(AsyncMock())
 
     async def test_copy_text_round_trips(self):
-        written = await self.written(
-            text="Copy", copy_text=types.CopyTextButton(text="hello")
-        )
+        written = await self.written(text="Copy", copy_text=types.CopyTextButton(text="hello"))
 
         assert isinstance(written.type, raw.types.InlineButtonTypeCopy)
         assert written.type.copy_text == "hello"
         assert types.InlineKeyboardButton.read(written).copy_text.text == "hello"
+
+    async def test_copy_text_accepts_str_directly(self):
+        button = types.InlineKeyboardButton("Copy Phone", copy_text="+18005550199")
+
+        assert isinstance(button.copy_text, types.CopyTextButton)
+        assert button.copy_text.text == "+18005550199"
+
+        client = AsyncMock()
+        written = await button.write(client)
+
+        assert written.type == raw.types.InlineButtonTypeCopy(copy_text="+18005550199")
+
+    async def test_login_url_carries_its_fields(self):
+        button = types.InlineKeyboardButton(
+            "Login",
+            login_url=types.LoginUrl(
+                url="https://example.com", forward_text="Sign in", request_write_access=True
+            ),
+        )
+
+        client = AsyncMock()
+        client.resolve_peer = AsyncMock(return_value=raw.types.InputUserSelf())
+        written = await button.write(client)
+
+        assert written.type == raw.types.InputInlineButtonTypeUrlAuth(
+            url="https://example.com",
+            request_write_access=True,
+            fwd_text="Sign in",
+            bot=raw.types.InputUserSelf(),
+        )
 
     async def test_pay_round_trips(self):
         written = await self.written(text="Pay", pay=True)
@@ -1133,8 +1175,8 @@ class TestInlineKeyboardButtonAdditions:
                 allow_user_chats=True,
                 allow_bot_chats=True,
                 allow_group_chats=True,
-                allow_channel_chats=True
-            )
+                allow_channel_chats=True,
+            ),
         )
 
         assert {type(p).__name__ for p in written.type.peer_types} == {
@@ -1158,7 +1200,7 @@ class TestInlineKeyboardButtonAdditions:
             text="Pick",
             switch_inline_query_chosen_chat=types.SwitchInlineQueryChosenChat(
                 allow_channel_chats=True
-            )
+            ),
         )
         parsed = types.InlineKeyboardButton.read(written).switch_inline_query_chosen_chat
 
@@ -1173,21 +1215,14 @@ class TestInlineKeyboardButtonAdditions:
         assert not plain.type.peer_types
 
         same_peer = raw.types.KeyboardInlineButton(
-            text="x",
-            type=raw.types.InlineButtonTypeSwitchInline(
-                query="q", same_peer=True
-            )
+            text="x", type=raw.types.InlineButtonTypeSwitchInline(query="q", same_peer=True)
         )
 
-        assert types.InlineKeyboardButton.read(
-            same_peer
-        ).switch_inline_query_current_chat == "q"
+        assert types.InlineKeyboardButton.read(same_peer).switch_inline_query_current_chat == "q"
 
 
 def _raw_user(user_id, first_name):
-    return raw.types.User(
-        id=user_id, first_name=first_name, usernames=[], restriction_reason=[]
-    )
+    return raw.types.User(id=user_id, first_name=first_name, usernames=[], restriction_reason=[])
 
 
 def _ephemeral_message(*, out, peer_id=None):
@@ -1198,7 +1233,7 @@ def _ephemeral_message(*, out, peer_id=None):
         date=0,
         message="hi",
         out=out,
-        peer_id=peer_id
+        peer_id=peer_id,
     )
 
 
@@ -1213,18 +1248,14 @@ class TestEphemeralMessageWithoutAPeer:
     users = {1: _raw_user(1, "Sender"), 2: _raw_user(2, "Receiver")}
 
     async def test_an_outgoing_message_is_a_chat_with_the_receiver(self):
-        parsed = await types.Message._parse(
-            Mock(), _ephemeral_message(out=True), self.users, {}
-        )
+        parsed = await types.Message._parse(Mock(), _ephemeral_message(out=True), self.users, {})
 
         assert parsed.chat is not None, "a message with no peer still has a counterpart"
         assert parsed.chat.id == 2
         assert parsed.receiver_user.id == 2
 
     async def test_an_incoming_message_is_a_chat_with_the_sender(self):
-        parsed = await types.Message._parse(
-            Mock(), _ephemeral_message(out=False), self.users, {}
-        )
+        parsed = await types.Message._parse(Mock(), _ephemeral_message(out=False), self.users, {})
 
         assert parsed.chat is not None
         assert parsed.chat.id == 1
@@ -1251,11 +1282,7 @@ class TestEphemeralCallbackQuery:
 
     async def test_it_parses_with_no_chat_instance(self):
         update = raw.types.UpdateEphemeralBotCallbackQuery(
-            query_id=5,
-            user_id=2,
-            msg_id=11,
-            data=b"payload",
-            message=_ephemeral_message(out=False)
+            query_id=5, user_id=2, msg_id=11, data=b"payload", message=_ephemeral_message(out=False)
         )
         users = {1: _raw_user(1, "Sender"), 2: _raw_user(2, "Receiver")}
 
@@ -1298,8 +1325,7 @@ class TestButtonTypeUnions:
 
     async def test_login_url_round_trips_through_the_type_union(self):
         written = await self.written(
-            text="Log in",
-            login_url=types.LoginUrl(url="https://example.org", forward_text="go")
+            text="Log in", login_url=types.LoginUrl(url="https://example.org", forward_text="go")
         )
 
         assert isinstance(written.type, raw.types.InputInlineButtonTypeUrlAuth)
@@ -1310,7 +1336,7 @@ class TestButtonTypeUnions:
             text="Log in",
             type=raw.types.InlineButtonTypeUrlAuth(
                 url="https://example.org", fwd_text="go", button_id=3
-            )
+            ),
         )
         parsed = types.InlineKeyboardButton.read(incoming).login_url
 
@@ -1321,7 +1347,7 @@ class TestButtonTypeUnions:
     def test_a_reply_button_keeps_its_text_beside_the_type(self):
         written = types.KeyboardButton(
             text="Pick users",
-            request_users=types.KeyboardButtonRequestUsers(button_id=4, max_quantity=2)
+            request_users=types.KeyboardButtonRequestUsers(button_id=4, max_quantity=2),
         ).write()
 
         assert written.text == "Pick users"
@@ -1367,7 +1393,7 @@ class TestSendGameSendOptions:
             clear_draft=True,
             update_stickersets_order=True,
             send_as=2,
-            quick_reply_shortcut=7
+            quick_reply_shortcut=7,
         )
 
         assert query.schedule_date == 1893456000
@@ -1397,10 +1423,8 @@ class TestEditFamilySendOptions:
 
     METHODS = {
         "stop_poll": "pyrogram.methods.messages.stop_poll:StopPoll",
-        "edit_message_reply_markup":
-            "pyrogram.methods.messages.edit_message_reply_markup:EditMessageReplyMarkup",
-        "edit_message_checklist":
-            "pyrogram.methods.messages.edit_message_checklist:EditMessageChecklist",
+        "edit_message_reply_markup": "pyrogram.methods.messages.edit_message_reply_markup:EditMessageReplyMarkup",
+        "edit_message_checklist": "pyrogram.methods.messages.edit_message_checklist:EditMessageChecklist",
     }
 
     @staticmethod
@@ -1433,11 +1457,11 @@ class TestEditFamilySendOptions:
         return captured
 
     REQUIRED = {
-        "edit_message_checklist": dict(
-            checklist=types.InputChecklist(
+        "edit_message_checklist": {
+            "checklist": types.InputChecklist(
                 title="t", tasks=[types.InputChecklistTask(id=1, text="a")]
             )
-        )
+        }
     }
 
     @pytest.mark.parametrize("name", sorted(METHODS))
@@ -1448,7 +1472,7 @@ class TestEditFamilySendOptions:
             schedule_date=datetime(2030, 1, 1, tzinfo=timezone.utc),
             repeat_period=60,
             quick_reply_shortcut=9,
-            **self.REQUIRED.get(name, {})
+            **self.REQUIRED.get(name, {}),
         )
         query = captured["query"]
 
@@ -1470,7 +1494,7 @@ class TestPinBusinessConnection:
         [
             ("pyrogram.methods.chats.pin_chat_message:PinChatMessage", "pin_chat_message"),
             ("pyrogram.methods.chats.unpin_chat_message:UnpinChatMessage", "unpin_chat_message"),
-        ]
+        ],
     )
     async def test_it_reaches_invoke(self, dotted, name):
         import importlib
@@ -1529,7 +1553,7 @@ class TestQuizPollSerialises:
             options=["a", "b"],
             type=enums.PollType.QUIZ,
             correct_option_id=1,
-            explanation="because"
+            explanation="because",
         )
 
         assert query.media.correct_answers == [1]
@@ -1537,10 +1561,7 @@ class TestQuizPollSerialises:
 
     async def test_several_correct_answers_serialise(self):
         query = await self.sent(
-            question="Q?",
-            options=["a", "b"],
-            type=enums.PollType.QUIZ,
-            correct_option_ids=[0, 1]
+            question="Q?", options=["a", "b"], type=enums.PollType.QUIZ, correct_option_ids=[0, 1]
         )
 
         assert query.media.correct_answers == [0, 1]
@@ -1551,9 +1572,9 @@ class TestQuizPollSerialises:
 
         answers = query.media.poll.answers
 
-        assert all(
-            isinstance(answer, raw.types.InputPollAnswer) for answer in answers
-        ), "a poll being created sends inputPollAnswer, not the read-back pollAnswer"
+        assert all(isinstance(answer, raw.types.InputPollAnswer) for answer in answers), (
+            "a poll being created sends inputPollAnswer, not the read-back pollAnswer"
+        )
         assert [answer.text.text for answer in answers] == ["a", "b"]
         query.write()
 
@@ -1599,6 +1620,7 @@ class TestQuizPollSerialises:
 #  GiftAttribute._parse against every StarGiftAttribute constructor
 # ---------------------------------------------------------------------------
 
+
 async def test_gift_attribute_parses_an_attribute_without_a_rarity():
     """starGiftAttributeOriginalDetails is the one member carrying no rarity.
 
@@ -1618,3 +1640,189 @@ async def test_gift_attribute_parses_an_attribute_without_a_rarity():
     assert parsed.rarity is None
     assert parsed.type is enums.GiftAttributeType.ORIGINAL_DETAILS
     assert parsed.caption == "hi"
+
+
+class TestBackgroundTypes:
+    def test_background_fill_solid_minimal(self):
+        fill = types.BackgroundFillSolid(color=0xFFFFFF)
+        assert fill.color == 0xFFFFFF
+
+    def test_background_fill_gradient_minimal(self):
+        fill = types.BackgroundFillGradient(
+            top_color=0xFF0000, bottom_color=0x00FF00, rotation_angle=90
+        )
+        assert fill.top_color == 0xFF0000
+        assert fill.rotation_angle == 90
+
+    def test_background_type_fill_minimal(self):
+        fill = types.BackgroundFillSolid(color=0x000000)
+        bg = types.BackgroundTypeFill(fill=fill, dark_theme_dimming=50)
+        assert bg.fill.color == 0x000000
+        assert bg.dark_theme_dimming == 50
+
+    def test_background_type_chat_theme_minimal(self):
+        bg = types.BackgroundTypeChatTheme(theme_name="classic")
+        assert bg.theme_name == "classic"
+
+
+# ---------------------------------------------------------------------------
+#  List.__repr__ representation
+# ---------------------------------------------------------------------------
+
+
+def test_a_list_of_plain_values_is_representable():
+    assert repr(types.List([1, "two"])) == "pyrogram.types.List([1,'two'])"
+
+
+def test_a_nested_list_is_representable():
+    assert repr(types.List([types.List([1])])) == "pyrogram.types.List([pyrogram.types.List([1])])"
+
+
+def test_an_object_still_reports_its_own_shape():
+    username = types.Username(username="someone", active=True)
+
+    assert repr(types.List([username])) == f"pyrogram.types.List([{username!r}])"
+    assert "pyrogram.types.Username(" in repr(username)
+
+
+# ---------------------------------------------------------------------------
+#  Object.__eq__ equality and hashing
+# ---------------------------------------------------------------------------
+
+
+def test_two_objects_of_one_class_holding_the_same_values_are_equal() -> None:
+    someone = types.Username(
+        username="someone",
+        active=True,
+    )
+    the_same_someone = types.Username(
+        username="someone",
+        active=True,
+    )
+
+    assert someone == the_same_someone
+    assert the_same_someone == someone
+
+
+def test_two_objects_of_one_class_holding_different_values_are_not_equal() -> None:
+    someone = types.Username(
+        username="someone",
+        active=True,
+    )
+    somebody = types.Username(
+        username="somebody",
+        active=True,
+    )
+
+    assert someone != somebody
+    assert somebody != someone
+
+
+def test_two_classes_carrying_the_same_attributes_are_not_equal_either_way() -> None:
+    thinking = types.RichBlockThinking(text="x")
+    paragraph = types.RichBlockParagraph(text="x")
+
+    assert thinking != paragraph
+    assert paragraph != thinking
+
+
+def test_an_object_with_no_attributes_of_its_own_equals_only_its_own_class() -> None:
+    unsupported = types.RichBlockUnsupported()
+
+    assert unsupported == types.RichBlockUnsupported()
+    assert unsupported != types.RichBlockThinking(text="x")
+    assert types.RichBlockThinking(text="x") != unsupported
+
+
+@pytest.mark.parametrize(
+    "other",
+    [
+        pytest.param(None, id="none"),
+        pytest.param(42, id="int"),
+        pytest.param("", id="str"),
+    ],
+)
+def test_an_object_never_equals_a_value_that_is_not_an_object(other: str | int | None) -> None:
+    unsupported = types.RichBlockUnsupported()
+
+    assert unsupported != other
+    assert other != unsupported
+
+
+def test_the_bound_client_is_not_part_of_the_comparison() -> None:
+    client = pyrogram.Client(
+        "test",
+        api_id=1,
+        api_hash="0" * 32,
+        in_memory=True,
+    )
+
+    bound = types.Chat(
+        client=client,
+        id=42,
+        type=enums.ChatType.PRIVATE,
+    )
+    unbound = types.Chat(
+        id=42,
+        type=enums.ChatType.PRIVATE,
+    )
+
+    assert bound == unbound
+    assert unbound == bound
+
+
+def test_an_object_stays_unhashable() -> None:
+    with pytest.raises(TypeError):
+        hash(types.RichBlockUnsupported())
+
+
+# ---------------------------------------------------------------------------
+#  Str surrogate pair indexing and slicing
+# ---------------------------------------------------------------------------
+
+_EMOJI_TEXT = "😀 250"
+
+
+@pytest.mark.parametrize(
+    ("item", "expected"),
+    [
+        pytest.param(0, "😀", id="leading-half"),
+        pytest.param(1, "😀", id="trailing-half"),
+        pytest.param(2, " ", id="after-the-pair"),
+        pytest.param(-1, "0", id="from-the-end"),
+    ],
+)
+def test_an_index_inside_a_surrogate_pair_gives_the_whole_code_point(
+    item: int,
+    expected: str,
+) -> None:
+    assert MessageStr(_EMOJI_TEXT)[item] == expected
+
+
+@pytest.mark.parametrize(
+    ("item", "expected"),
+    [
+        pytest.param(slice(0, 1), "😀", id="leading-half-only"),
+        pytest.param(slice(1, 2), "😀", id="trailing-half-only"),
+        pytest.param(slice(0, 2), "😀", id="the-whole-pair"),
+        pytest.param(slice(1, 3), "😀 ", id="opening-inside-the-pair"),
+        pytest.param(slice(2, None), " 250", id="past-the-pair"),
+        pytest.param(slice(None, None, -1), "052 😀", id="reversed"),
+    ],
+)
+def test_a_slice_cutting_a_surrogate_pair_widens_to_the_whole_code_point(
+    item: slice,
+    expected: str,
+) -> None:
+    assert MessageStr(_EMOJI_TEXT)[item] == expected
+
+
+def test_an_entity_offset_still_indexes_the_text_that_entity_marks() -> None:
+    entity = types.MessageEntity(
+        type=enums.MessageEntityType.BOLD,
+        offset=3,
+        length=4,
+    )
+    text = MessageStr("😀 bold").init([entity])
+
+    assert text[entity.offset : entity.offset + entity.length] == "bold"

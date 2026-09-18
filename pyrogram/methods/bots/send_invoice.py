@@ -16,74 +16,71 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime
-from typing import List, Optional, Union
 
 import pyrogram
-from pyrogram import enums, raw, utils, types
+from pyrogram import enums, raw, types, utils
 
 log = logging.getLogger(__name__)
 
 
 class SendInvoice:
     async def send_invoice(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         title: str,
         description: str,
-        payload: Union[str, bytes],
+        payload: str | bytes,
         currency: str,
-        prices: List["types.LabeledPrice"],
-        message_thread_id: Optional[int] = None,
-        provider_token: Optional[str] = None,
-        max_tip_amount: Optional[int] = None,
-        suggested_tip_amounts: Optional[List[int]] = None,
-        start_parameter: Optional[str] = None,
-        provider_data: Optional[str] = None,
-        photo_url: Optional[str] = None,
-        photo_size: Optional[int] = None,
-        photo_width: Optional[int] = None,
-        photo_height: Optional[int] = None,
-        need_name: Optional[bool] = None,
-        need_phone_number: Optional[bool] = None,
-        need_email: Optional[bool] = None,
-        need_shipping_address: Optional[bool] = None,
-        send_phone_number_to_provider: Optional[bool] = None,
-        send_email_to_provider: Optional[bool] = None,
-        is_flexible: Optional[bool] = None,
-        disable_notification: Optional[bool] = None,
-        protect_content: Optional[bool] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        subscription_period: Optional[int] = None,
-        terms_url: Optional[str] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
+        prices: list[types.LabeledPrice],
+        message_thread_id: int | None = None,
+        provider_token: str | None = None,
+        max_tip_amount: int | None = None,
+        suggested_tip_amounts: list[int] | None = None,
+        start_parameter: str | None = None,
+        provider_data: str | None = None,
+        photo_url: str | None = None,
+        photo_size: int | None = None,
+        photo_width: int | None = None,
+        photo_height: int | None = None,
+        need_name: bool | None = None,
+        need_phone_number: bool | None = None,
+        need_email: bool | None = None,
+        need_shipping_address: bool | None = None,
+        send_phone_number_to_provider: bool | None = None,
+        send_email_to_provider: bool | None = None,
+        is_flexible: bool | None = None,
+        disable_notification: bool | None = None,
+        protect_content: bool | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        subscription_period: int | None = None,
+        terms_url: str | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        business_connection_id: Optional[str] = None,
-
-        background: Optional[bool] = None,
-        clear_draft: Optional[bool] = None,
-        update_stickersets_order: Optional[bool] = None,
-        send_as: Optional[Union[int, str]] = None,
-        quick_reply_shortcut: Optional[int] = None,
-        repeat_period: Optional[int] = None,
-        schedule_date: Optional[datetime] = None,
-        reply_to_message_id: Optional[int] = None,
-    ) -> "types.Message":
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        business_connection_id: str | None = None,
+        background: bool | None = None,
+        clear_draft: bool | None = None,
+        update_stickersets_order: bool | None = None,
+        send_as: int | str | None = None,
+        quick_reply_shortcut: int | None = None,
+        repeat_period: int | None = None,
+        schedule_date: datetime | None = None,
+        reply_to_message_id: int | None = None,
+    ) -> types.Message:
         """Use this method to send invoices.
 
         .. include:: /_includes/usable-by/bots.rst
@@ -247,9 +244,7 @@ class SendInvoice:
                     "`reply_to_message_id` is deprecated and will be removed in future updates. Use `reply_parameters` instead."
                 )
 
-                reply_parameters = types.ReplyParameters(
-                    message_id=reply_to_message_id
-                )
+                reply_parameters = types.ReplyParameters(message_id=reply_to_message_id)
 
         media = raw.types.InputMediaInvoice(
             title=title,
@@ -257,14 +252,13 @@ class SendInvoice:
             photo=raw.types.InputWebDocument(
                 url=photo_url,
                 mime_type="image/jpg",
-                size=photo_size,
+                size=photo_size or 0,
                 attributes=[
-                    raw.types.DocumentAttributeImageSize(
-                        w=photo_width,
-                        h=photo_height
-                    )
-                ]
-            ) if photo_url else None,
+                    raw.types.DocumentAttributeImageSize(w=photo_width or 0, h=photo_height or 0)
+                ],
+            )
+            if photo_url
+            else None,
             invoice=raw.types.Invoice(
                 currency=currency,
                 prices=[i.write() for i in prices],
@@ -280,14 +274,14 @@ class SendInvoice:
                 suggested_tip_amounts=suggested_tip_amounts,
                 recurring=True if subscription_period is not None else None,
                 subscription_period=subscription_period,
-                terms_url=terms_url
+                terms_url=terms_url,
             ),
             payload=payload.encode() if isinstance(payload, str) else payload,
             provider=provider_token,
             provider_data=raw.types.DataJSON(
                 data=provider_data if provider_data is not None else "{}"
             ),
-            start_param=start_parameter
+            start_param=start_parameter,
         )
 
         rpc = raw.functions.messages.SendMedia(
@@ -298,12 +292,14 @@ class SendInvoice:
                 self,
                 reply_parameters,
                 message_thread_id,
-                direct_messages_topic_id=direct_messages_topic_id
+                direct_messages_topic_id=direct_messages_topic_id,
             ),
             random_id=self.rnd_id(),
             noforwards=protect_content,
             allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
-            allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
+            allow_paid_stars=paid_message_star_count
+            if paid_message_star_count is not None
+            else None,
             reply_markup=await reply_markup.write(self) if reply_markup else None,
             effect=effect_id,
             suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
@@ -311,15 +307,20 @@ class SendInvoice:
             clear_draft=clear_draft,
             update_stickersets_order=update_stickersets_order,
             send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-            quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+            quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(
+                shortcut_id=quick_reply_shortcut
+            )
+            if quick_reply_shortcut is not None
+            else None,
             schedule_repeat_period=repeat_period,
             schedule_date=utils.datetime_to_timestamp(schedule_date),
-            **await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
+            **await utils.parse_text_entities(self, caption, parse_mode, caption_entities),
         )
 
-        r = await self.invoke(rpc, sleep_threshold=60, business_connection_id=business_connection_id)
+        r = await self.invoke(
+            rpc, sleep_threshold=60, business_connection_id=business_connection_id
+        )
 
         messages = await utils.parse_messages(client=self, messages=r)
 
         return messages[0] if messages else None
-

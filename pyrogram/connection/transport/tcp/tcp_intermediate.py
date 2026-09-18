@@ -16,10 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
+from __future__ import annotations
+
 import asyncio
+import logging
 from struct import pack, unpack
-from typing import Optional
 
 from .tcp import TCP
 
@@ -27,8 +28,15 @@ log = logging.getLogger(__name__)
 
 
 class TCPIntermediate(TCP):
-    def __init__(self, ipv6: bool, proxy: dict, crypto_executor=None, loop: Optional[asyncio.AbstractEventLoop] = None):
-        super().__init__(ipv6, proxy, crypto_executor, loop)
+    def __init__(
+        self,
+        ipv6: bool = False,
+        proxy=None,
+        crypto_executor=None,
+        loop: asyncio.AbstractEventLoop | None = None,
+        dc_id: int | None = None,
+    ):
+        super().__init__(ipv6, proxy, crypto_executor, loop, dc_id=dc_id)
 
     async def connect(self, address: tuple):
         await super().connect(address)
@@ -37,7 +45,7 @@ class TCPIntermediate(TCP):
     async def send(self, data: bytes, *args):
         await super().send(pack("<i", len(data)) + data)
 
-    async def recv(self, length: int = 0) -> Optional[bytes]:
+    async def recv(self, length: int = 0) -> bytes | None:
         length = await super().recv(4)
 
         if length is None:

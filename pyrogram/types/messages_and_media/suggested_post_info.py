@@ -16,10 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime
-from typing import Optional
+from __future__ import annotations
 
-from pyrogram import raw, types, utils, enums
+from datetime import datetime
+
+from pyrogram import enums, raw, types, utils
 
 from ..object import Object
 
@@ -40,11 +41,13 @@ class SuggestedPostInfo(Object):
         state (:obj:`~pyrogram.enums.SuggestedPostState`, *optional*):
             State of the suggested post.
     """
+
     def __init__(
-        self, *,
-        price: Optional["types.SuggestedPostPrice"] = None,
-        send_date: Optional[datetime] = None,
-        state: Optional["enums.SuggestedPostState"] = None
+        self,
+        *,
+        price: types.SuggestedPostPrice | None = None,
+        send_date: datetime | None = None,
+        state: enums.SuggestedPostState | None = None,
     ):
         super().__init__()
 
@@ -53,7 +56,7 @@ class SuggestedPostInfo(Object):
         self.state = state
 
     @staticmethod
-    def _parse(suggested_post: "raw.types.SuggestedPost") -> Optional["SuggestedPostInfo"]:
+    def _parse(suggested_post: raw.types.SuggestedPost) -> SuggestedPostInfo | None:
         if not suggested_post:
             return None
 
@@ -71,4 +74,3 @@ class SuggestedPostInfo(Object):
             send_date=utils.timestamp_to_datetime(suggested_post.schedule_date),
             state=state,
         )
-

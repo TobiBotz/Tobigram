@@ -7,14 +7,14 @@ you can tell which parts you will need to change for your own project.
 
 -----
 
-1. Install wzgram
------------------
+1. Install tobigram
+-------------------
 
 .. code-block:: bash
 
     $ python3 -m venv venv
     $ source venv/bin/activate        # Windows: venv\Scripts\activate
-    $ pip install wzgram
+    $ pip install tobigram
 
 The virtual environment keeps this project's packages out of your system Python. See
 :doc:`install` if anything here fails.
@@ -38,7 +38,7 @@ Save this as ``hello.py``:
 
     import asyncio
 
-    from wzgram import Client
+    from pyrogram import Client
 
     api_id = 12345
     api_hash = "0123456789abcdef0123456789abcdef"
@@ -46,17 +46,17 @@ Save this as ``hello.py``:
 
     async def main():
         async with Client("my_account", api_id, api_hash) as app:
-            await app.send_message("me", "Greetings from **wzgram**!")
+            await app.send_message("me", "Greetings from **pyrogram**!")
 
 
     asyncio.run(main())
 
-Note that you import ``pyrogram``, not ``wzgram``. That is deliberate: wzgram is a drop-in
+Note that you import ``pyrogram``, not ``pyrogram``. That is deliberate: pyrogram is a drop-in
 replacement, so code written for Pyrogram runs unchanged.
 
 Three things worth naming:
 
-- ``"my_account"`` is the **session name**. wzgram writes ``my_account.session`` next to your
+- ``"my_account"`` is the **session name**. pyrogram writes ``my_account.session`` next to your
   script and reuses it, so you log in once rather than on every run.
 - ``async with`` starts the client, runs your code and stops it cleanly. Without it you would
   call ``await app.start()`` and ``await app.stop()`` yourself.
@@ -73,7 +73,7 @@ The first run asks for your phone number, then the code Telegram sends you, then
 two-step password if you have one. That is the login, and it happens once: the session file
 holds the result.
 
-Look in Saved Messages. The text arrives in bold, because wzgram parses Markdown by default.
+Look in Saved Messages. The text arrives in bold, because pyrogram parses Markdown by default.
 
 5. React to messages
 --------------------
@@ -82,7 +82,7 @@ Sending is half of it. To *respond* to things, register a handler and let the cl
 
 .. code-block:: python
 
-    from wzgram import Client, filters
+    from pyrogram import Client, filters
 
     app = Client("my_account", api_id, api_hash)
 
@@ -107,5 +107,5 @@ reach this function — here, text messages in private chats.
 - :doc:`../start/examples/index` — short, complete programs
 - :doc:`../features/index` — what Telegram can do, release by release
 
-If something goes wrong, :doc:`../start/errors` explains what wzgram raises and when, and
+If something goes wrong, :doc:`../start/errors` explains what pyrogram raises and when, and
 :doc:`../topics/debugging` covers how to see the traffic.

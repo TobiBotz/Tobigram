@@ -87,9 +87,7 @@ class TestReadsStayLocal:
 
             assert await storage.dc_id() == 5
             assert await storage.auth_key() == b"k" * 256
-            assert [tuple(s) for s in await storage.update_state()] == [
-                (7, 100, 0, 1600000000, 3)
-            ]
+            assert [tuple(s) for s in await storage.update_state()] == [(7, 100, 0, 1600000000, 3)]
             assert (await storage.get_peer_by_id(123)).access_hash == 456
         finally:
             await storage.close()

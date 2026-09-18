@@ -1,5 +1,5 @@
 import asyncio
-import os
+import time
 
 import pyrogram
 from pyrogram.client import write_at
@@ -7,6 +7,7 @@ from pyrogram.session.session import Session
 
 from .e2e import (
     CHUNK,
+    UPLOAD_PART,
     FakeDC,
     TrackingDC,
     document,
@@ -29,10 +30,9 @@ async def run_streams(dc, count, client_count=1, verify=False):
     cs = clients(dc, client_count)
 
     async def go():
-        await asyncio.gather(*(
-            stream_all(cs[i % client_count], dc.file_size, verify=verify)
-            for i in range(count)
-        ))
+        await asyncio.gather(
+            *(stream_all(cs[i % client_count], dc.file_size, verify=verify) for i in range(count))
+        )
 
     return await measure(go, dc), cs
 
@@ -41,10 +41,12 @@ async def run_downloads(dc, count, tmp_path, client_count=1):
     cs = clients(dc, client_count)
 
     async def go():
-        await asyncio.gather(*(
-            download_to(cs[i % client_count], dc.file_size, tmp_path / f"f{i}.bin")
-            for i in range(count)
-        ))
+        await asyncio.gather(
+            *(
+                download_to(cs[i % client_count], dc.file_size, tmp_path / f"f{i}.bin")
+                for i in range(count)
+            )
+        )
 
     return await measure(go, dc), cs
 
@@ -114,10 +116,44 @@ async def test_a_download_writes_the_right_bytes_at_high_concurrency(tmp_path):
         assert len(data) == FILE
 
         for part in range(FILE // CHUNK):
-            window = data[part * CHUNK: part * CHUNK + 16]
+            window = data[part * CHUNK : part * CHUNK + 16]
             assert set(window) == {expected_byte(part)}, (
                 f"file {i} part {part} landed at the wrong offset"
             )
+
+
+class FixedLatencyDC(FakeDC):
+    def _send_for(self, session):
+        inner = super()._send_for(session)
+
+        async def send(query, wait_response=True, timeout=None, retry=0):
+            self.inflight += 1
+            self.peak_inflight = max(self.peak_inflight, self.inflight)
+            try:
+                await asyncio.sleep(self.step)
+                return self._answer(query)
+            finally:
+                self.inflight -= 1
+
+        return send
+
+
+async def test_a_small_download_costs_one_round_trip():
+    rtt = 0.2
+    size = 8 * CHUNK
+    dc = FixedLatencyDC(size, step=rtt)
+    client = make_client(dc, sessions=6)
+
+    started = time.monotonic()
+    got = await asyncio.wait_for(stream_all(client, size), timeout=30)
+    elapsed = time.monotonic() - started
+
+    assert got == size
+    assert dc.served == size // CHUNK
+    assert elapsed < rtt * 1.8, (
+        f"{elapsed / rtt:.1f} round trips for an {size // CHUNK} MiB file that "
+        f"fits in one window of {dc.peak_inflight} requests"
+    )
 
 
 async def test_nothing_times_out_at_thirty_parallel_downloads():
@@ -258,6 +294,40 @@ async def test_transfers_leave_no_tasks_behind():
     await asyncio.sleep(0.1)
 
     assert len(asyncio.all_tasks()) <= before + 1
+
+
+async def test_a_file_just_under_the_big_threshold_still_uploads_in_parallel(tmp_path):
+    """The connection pool was chosen by the 10 MiB "big file" flag rather than by
+    how many parts there are, so a 9 MiB upload ran on one session with two
+    workers while a 11 MiB one ran on twelve. The smaller file was the slower one.
+    """
+
+    rtt = 0.1
+    size = 9 * CHUNK
+    path = tmp_path / "just-under.bin"
+
+    with open(path, "wb") as handle:
+        handle.truncate(size)
+
+    dc = FixedLatencyDC(size, step=rtt)
+    sessions = dc.pool(14)
+    client = make_client(dc, pool=sessions)
+    await client.storage.open()
+
+    async def sized_pool(dc_id, n):
+        return sessions[:n]
+
+    client._get_media_session_pool = sized_pool
+
+    started = time.monotonic()
+    await asyncio.wait_for(client.save_file(str(path)), timeout=30)
+    elapsed = time.monotonic() - started
+
+    assert dc.served == size // UPLOAD_PART
+    assert elapsed < rtt * 4, (
+        f"{elapsed / rtt:.1f} round trips for {size // CHUNK} MiB in "
+        f"{size // UPLOAD_PART} parts; peak {dc.peak_inflight} in flight"
+    )
 
 
 async def test_uploads_do_not_buffer_the_whole_file(tmp_path):

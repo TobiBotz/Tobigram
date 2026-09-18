@@ -21,19 +21,19 @@
 # Source: tl:channels.toggleSlowMode
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class ToggleSlowMode:
     async def toggle_slow_mode(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         seconds: int = 0,
-    ) -> "types.Message":
+    ) -> types.Message:
         """Toggle slow mode in a supergroup.
 
         .. include:: /_includes/usable-by/users.rst
@@ -58,19 +58,24 @@ class ToggleSlowMode:
 
         r = await self.invoke(
             raw.functions.channels.ToggleSlowMode(
-                
                 channel=await self.resolve_peer(chat_id),
                 seconds=seconds,
             )
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
+                    self,
+                    i.message,
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                 )

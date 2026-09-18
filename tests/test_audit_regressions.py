@@ -75,7 +75,7 @@ async def test_a_handler_added_across_a_dispatcher_cycle_releases_what_it_took()
 
 
 async def test_the_token_bucket_lets_only_one_waiter_wait(monkeypatch):
-    import pyrogram.methods.rate_limiter as rate_limiter
+    from pyrogram.methods import rate_limiter
 
     waiters = 8
     bucket = TokenBucket(rate=20, burst=1)
@@ -115,9 +115,7 @@ async def test_the_token_bucket_lets_only_one_waiter_wait(monkeypatch):
         f"asleep; {peak} of {waiters} were, which is every waiter waking for a "
         "token all but one of them will not get"
     )
-    assert order == list(range(waiters)), (
-        f"admission must be first-come-first-served, got {order}"
-    )
+    assert order == list(range(waiters)), f"admission must be first-come-first-served, got {order}"
 
 
 class _PoolSession:
@@ -237,8 +235,14 @@ async def test_editing_a_local_video_names_the_uploaded_file():
 
             return raw.types.MessageMediaDocument(
                 document=raw.types.Document(
-                    id=1, access_hash=2, file_reference=b"", date=0,
-                    mime_type="video/mp4", size=1, dc_id=1, attributes=[]
+                    id=1,
+                    access_hash=2,
+                    file_reference=b"",
+                    date=0,
+                    mime_type="video/mp4",
+                    size=1,
+                    dc_id=1,
+                    attributes=[],
                 )
             )
 
@@ -259,19 +263,18 @@ async def test_editing_a_local_video_names_the_uploaded_file():
         "with no name given anywhere the upload falls back to the media itself"
     )
 
-    assert await uploaded_name(
-        types.InputMediaVideo(buffer, file_name="on_the_media.mp4")
-    ) == "on_the_media.mp4", (
-        "InputMediaVideo.file_name is documented, so it must reach the wire"
-    )
+    assert (
+        await uploaded_name(types.InputMediaVideo(buffer, file_name="on_the_media.mp4"))
+        == "on_the_media.mp4"
+    ), "InputMediaVideo.file_name is documented, so it must reach the wire"
 
-    assert await uploaded_name(
-        types.InputMediaVideo(buffer, file_name="on_the_media.mp4"),
-        file_name="on_the_call.mp4",
-    ) == "on_the_call.mp4", (
-        "edit_message_media's own file_name parameter is the more specific of "
-        "the two, so it wins"
-    )
+    assert (
+        await uploaded_name(
+            types.InputMediaVideo(buffer, file_name="on_the_media.mp4"),
+            file_name="on_the_call.mp4",
+        )
+        == "on_the_call.mp4"
+    ), "edit_message_media's own file_name parameter is the more specific of the two, so it wins"
 
 
 async def test_reacting_to_a_message_sends_the_emoji():
@@ -304,22 +307,16 @@ async def test_reacting_to_a_message_sends_the_emoji():
         "retract, so dropping it turns every reaction into a retraction"
     )
 
-    assert await reaction_of() is None, (
-        "react() with no emoji still retracts"
-    )
+    assert await reaction_of() is None, "react() with no emoji still retracts"
 
     assert await reaction_of(5875309033427620643) == [
         raw.types.ReactionCustomEmoji(document_id=5875309033427620643)
-    ], (
-        "an int is a custom emoji document id, not an emoticon string"
-    )
+    ], "an int is a custom emoji document id, not an emoticon string"
 
     assert await reaction_of(["🔥", 5875309033427620643]) == [
         raw.types.ReactionEmoji(emoticon="🔥"),
         raw.types.ReactionCustomEmoji(document_id=5875309033427620643),
-    ], (
-        "react documents a list for reacting with several emojis at once"
-    )
+    ], "react documents a list for reacting with several emojis at once"
 
 
 async def test_clicking_a_url_button_returns_its_url():
@@ -327,14 +324,20 @@ async def test_clicking_a_url_button_returns_its_url():
 
     from pyrogram import raw
     from pyrogram.types import (
-        InlineKeyboardButton, InlineKeyboardMarkup, Message,
+        InlineKeyboardButton,
+        InlineKeyboardMarkup,
+        Message,
     )
 
     message = Message(
         id=7,
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("open", url="https://example.org"),
-        ]]),
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton("open", url="https://example.org"),
+                ]
+            ]
+        ),
     )
 
     assert await message.click() == "https://example.org", (
@@ -348,10 +351,7 @@ async def test_clicking_a_url_button_returns_its_url():
     )
     button = InlineKeyboardButton.read(raw_button)
 
-    positional = [
-        name
-        for name in inspect.signature(InlineKeyboardButton.__init__).parameters
-    ][1:]
+    positional = list(inspect.signature(InlineKeyboardButton.__init__).parameters)[1:]
 
     assert positional[:3] == ["text", "callback_data", "url"], (
         "InlineKeyboardButton is built positionally in Pyrogram code this "
@@ -370,7 +370,9 @@ async def test_clicking_a_url_button_returns_its_url():
 
 async def test_clicking_a_password_button_forwards_the_password():
     from pyrogram.types import (
-        InlineKeyboardButton, InlineKeyboardMarkup, Message,
+        InlineKeyboardButton,
+        InlineKeyboardMarkup,
+        Message,
     )
 
     class _Client:
@@ -384,9 +386,13 @@ async def test_clicking_a_password_button_forwards_the_password():
     message = Message(
         id=7,
         chat=object.__new__(type("C", (), {"id": -100})),
-        reply_markup=InlineKeyboardMarkup([[
-            InlineKeyboardButton("confirm", callback_data="go", requires_password=True),
-        ]]),
+        reply_markup=InlineKeyboardMarkup(
+            [
+                [
+                    InlineKeyboardButton("confirm", callback_data="go", requires_password=True),
+                ]
+            ]
+        ),
     )
     message._client = _Client()
 
@@ -418,9 +424,7 @@ async def test_restricting_a_member_sends_the_granular_permissions():
         async def invoke(self, query):
             self.sent = query
 
-            return raw.types.messages.ChatFull(
-                full_chat=None, chats=[None], users=[]
-            )
+            return raw.types.messages.ChatFull(full_chat=None, chats=[None], users=[])
 
     async def rights_of(call, permissions):
         client = _Client()
@@ -432,9 +436,7 @@ async def test_restricting_a_member_sends_the_granular_permissions():
 
         return client.sent.banned_rights
 
-    allowed = ChatPermissions(
-        can_send_messages=True, can_send_photos=True, can_send_videos=True
-    )
+    allowed = ChatPermissions(can_send_messages=True, can_send_photos=True, can_send_videos=True)
 
     for call, label in [
         (lambda c, p: c.restrict_chat_member(-100, 1, p), "restrict_chat_member"),
@@ -476,7 +478,10 @@ async def test_restricting_a_member_sends_the_granular_permissions():
 async def test_lifecycle_decorators_reach_the_client():
     import pyrogram
     from pyrogram.handlers import (
-        ConnectHandler, DisconnectHandler, MessageHandler, StartHandler,
+        ConnectHandler,
+        DisconnectHandler,
+        MessageHandler,
+        StartHandler,
         StopHandler,
     )
 
@@ -529,9 +534,7 @@ async def test_lifecycle_decorators_reach_the_client():
             "it can never match an update and never runs"
         )
 
-    assert not client.dispatcher.groups, (
-        "no lifecycle handler belongs in a dispatcher group"
-    )
+    assert not client.dispatcher.groups, "no lifecycle handler belongs in a dispatcher group"
 
     await client.dispatcher.start()
     await asyncio.sleep(0.05)
@@ -609,7 +612,7 @@ async def test_editing_a_folder_keeps_what_was_not_passed():
             exclude_peers=[raw.types.InputPeerUser(user_id=3, access_hash=3)],
             contacts=True,
             exclude_muted=True,
-            emoticon="\U0001f4bc"
+            emoticon="\U0001f4bc",
         )
 
     class _Parser:
@@ -640,9 +643,7 @@ async def test_editing_a_folder_keeps_what_was_not_passed():
 
     sent = client.sent.filter
 
-    assert sent.title.text == "Work", (
-        "editing a folder without a name must not blank its title"
-    )
+    assert sent.title.text == "Work", "editing a folder without a name must not blank its title"
     assert len(sent.pinned_peers) == 1, (
         "editing a folder without pinned_chats must not drop its pinned chats"
     )
@@ -652,9 +653,7 @@ async def test_editing_a_folder_keeps_what_was_not_passed():
     assert sent.contacts is True and sent.exclude_muted is True, (
         "editing a folder must not reset the flags that were not passed"
     )
-    assert sent.emoticon == "\U0001f4bc", (
-        "editing a folder without an icon must not drop its icon"
-    )
+    assert sent.emoticon == "\U0001f4bc", "editing a folder without an icon must not drop its icon"
     assert [p.user_id for p in sent.exclude_peers] == [9], (
         "excluded_chats must replace the excluded peers it was given"
     )
@@ -682,7 +681,7 @@ async def test_editing_a_shared_folder_rejects_a_field_it_cannot_carry():
         id=3,
         title=raw.types.TextWithEntities(text="Shared", entities=[]),
         pinned_peers=[],
-        include_peers=[]
+        include_peers=[],
     )
 
     class _Client(EditFolder):
@@ -722,7 +721,7 @@ async def test_editing_a_folder_can_still_clear_its_color():
                 pinned_peers=[],
                 include_peers=[],
                 exclude_peers=[],
-                color=3
+                color=3,
             )
             self.sent = None
 
@@ -782,28 +781,22 @@ async def test_the_folder_edit_shortcut_keeps_its_own_pinned_chats():
         name="Work",
         pinned_chats=[chat(1)],
         included_chats=[chat(1), chat(2)],
-        excluded_chats=[chat(3)]
+        excluded_chats=[chat(3)],
     )
 
     await folder.edit(exclude_muted=True)
 
     assert _Client.sent["pinned_chats"] == [1], (
-        "editing a folder must fall back to its own pinned chats, "
-        "not to its included chats"
+        "editing a folder must fall back to its own pinned chats, not to its included chats"
     )
 
     await folder.edit(name="Work")
 
     assert _Client.sent["pinned_chats"] == [1], (
-        "editing a folder must fall back to its own pinned chats, "
-        "not to its included chats"
+        "editing a folder must fall back to its own pinned chats, not to its included chats"
     )
-    assert _Client.sent["included_chats"] == [1, 2], (
-        "editing a folder must keep its included chats"
-    )
-    assert _Client.sent["excluded_chats"] == [3], (
-        "editing a folder must keep its excluded chats"
-    )
+    assert _Client.sent["included_chats"] == [1, 2], "editing a folder must keep its included chats"
+    assert _Client.sent["excluded_chats"] == [3], "editing a folder must keep its excluded chats"
 
 
 async def test_inviting_to_an_empty_folder_does_not_crash():
@@ -829,17 +822,14 @@ async def test_inviting_to_an_empty_folder_does_not_crash():
 async def test_a_peer_that_never_changes_is_still_written_back(tmp_path, monkeypatch):
     import time
 
-    from pyrogram.storage import caching
-
-    from pyrogram.storage import SQLiteStorage
+    from pyrogram.storage import SQLiteStorage, caching
 
     async def age(storage, peer_id, seconds):
         stale = int(time.time()) - seconds
 
         await storage.conn.execute("DROP TRIGGER trg_peers_last_update_on")
         await storage.conn.execute(
-            "UPDATE peers SET last_update_on = ? WHERE id = ?",
-            (stale, peer_id)
+            "UPDATE peers SET last_update_on = ? WHERE id = ?", (stale, peer_id)
         )
         await storage.conn.execute(
             "CREATE TRIGGER trg_peers_last_update_on AFTER UPDATE ON peers BEGIN "
@@ -965,7 +955,6 @@ async def test_the_clients_transport_choice_reaches_the_connection(monkeypatch):
     from pyrogram.connection.transport import TCPAbridgedO
     from pyrogram.session.auth import Auth
     from pyrogram.session.session import Session
-
     from tests.test_session import DummyClient
 
     seen = {}
@@ -1009,7 +998,6 @@ async def test_the_clients_transport_choice_reaches_the_connection(monkeypatch):
 async def test_init_connection_params_reach_the_server(monkeypatch):
     from pyrogram import raw
     from pyrogram.session.session import Session
-
     from tests.test_session import DummyClient
 
     class _Connection:
@@ -1027,8 +1015,6 @@ async def test_init_connection_params_reach_the_server(monkeypatch):
     async def send(self, query, *args, **kwargs):
         sent.append(query)
 
-        return None
-
     monkeypatch.setattr(DummyClient, "connection_factory", _Connection)
     monkeypatch.setattr(Session, "send", send)
     monkeypatch.setattr(Session, "recv_worker", lambda self: asyncio.sleep(0))
@@ -1041,10 +1027,7 @@ async def test_init_connection_params_reach_the_server(monkeypatch):
     await session.start(max_attempts=1)
     await session.stop()
 
-    init = next(
-        q.query for q in sent
-        if isinstance(q, raw.functions.InvokeWithLayer)
-    )
+    init = next(q.query for q in sent if isinstance(q, raw.functions.InvokeWithLayer))
 
     assert isinstance(init.params, raw.types.JsonObject), (
         f"init_connection_params must be sent as a JsonObject, got {init.params!r}"
@@ -1059,7 +1042,6 @@ async def test_the_clients_connection_factory_is_the_one_that_gets_used(monkeypa
     import pyrogram.session.session as session_mod
     from pyrogram.session.auth import Auth
     from pyrogram.session.session import Session
-
     from tests.test_session import DummyClient
 
     class _FactoryUsed(Exception):
@@ -1091,7 +1073,6 @@ async def test_the_clients_connection_factory_is_the_one_that_gets_used(monkeypa
 
 async def test_a_registered_on_connect_callback_actually_runs(monkeypatch):
     from pyrogram.session.session import Session
-
     from tests.test_session import DummyClient
 
     class _Connection:
@@ -1142,7 +1123,6 @@ async def test_a_registered_on_connect_callback_actually_runs(monkeypatch):
 
 async def test_on_connect_stays_quiet_when_the_connection_never_came_up(monkeypatch):
     from pyrogram.session.session import Session
-
     from tests.test_session import DummyClient
 
     class _Refused:
@@ -1170,9 +1150,7 @@ async def test_on_connect_stays_quiet_when_the_connection_never_came_up(monkeypa
     with pytest.raises(OSError):
         await session.start(max_attempts=1)
 
-    assert not fired, (
-        "on_connect must not run for a connection that never came up"
-    )
+    assert not fired, "on_connect must not run for a connection that never came up"
 
 
 async def test_the_client_counts_as_connected_while_on_connect_runs(monkeypatch):
@@ -1241,8 +1219,7 @@ async def test_the_client_counts_as_connected_while_on_connect_runs(monkeypatch)
         await client.connect()
 
     assert client.is_connected is False, (
-        "a connect that never got a session must not leave the client claiming to "
-        "be connected"
+        "a connect that never got a session must not leave the client claiming to be connected"
     )
 
 
@@ -1365,9 +1342,11 @@ async def test_a_saved_message_does_not_ask_for_a_direct_messages_topic():
         message="saved",
     )
 
-    users = {7: raw.types.User(
-        id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1, is_self=True
-    )}
+    users = {
+        7: raw.types.User(
+            id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1, is_self=True
+        )
+    }
 
     parsed = await types.Message._parse(client, message, users, {})
 
@@ -1399,8 +1378,7 @@ async def test_get_users_survives_an_answer_the_server_left_short():
             # the server answers for the user peers only and drops the rest
             return [
                 raw.types.User(
-                    id=p.user_id, first_name="U", usernames=[], restriction_reason=[],
-                    access_hash=1
+                    id=p.user_id, first_name="U", usernames=[], restriction_reason=[], access_hash=1
                 )
                 for p in query.id
                 if isinstance(p, raw.types.InputPeerUser)
@@ -1438,13 +1416,20 @@ async def test_a_monoforum_message_still_asks_for_its_direct_messages_topic():
 
     async def get_direct_messages_topics_by_id(chat_id, topic_ids):
         asked.append((chat_id, topic_ids))
-        return None
 
     client.get_direct_messages_topics_by_id = get_direct_messages_topics_by_id
 
     channel = raw.types.Channel(
-        id=100, title="DM", photo=raw.types.ChatPhotoEmpty(), date=0, access_hash=1,
-        usernames=[], restriction_reason=[], monoforum=True, broadcast=False, megagroup=False
+        id=100,
+        title="DM",
+        photo=raw.types.ChatPhotoEmpty(),
+        date=0,
+        access_hash=1,
+        usernames=[],
+        restriction_reason=[],
+        monoforum=True,
+        broadcast=False,
+        megagroup=False,
     )
 
     message = raw.types.Message(
@@ -1458,9 +1443,9 @@ async def test_a_monoforum_message_still_asks_for_its_direct_messages_topic():
         message="m",
     )
 
-    users = {7: raw.types.User(
-        id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1
-    )}
+    users = {
+        7: raw.types.User(id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1)
+    }
 
     parsed = await types.Message._parse(client, message, users, {100: channel})
 
@@ -1498,9 +1483,11 @@ async def test_a_saved_channel_message_does_not_read_a_user_id_off_a_channel():
         message="saved from a channel",
     )
 
-    users = {7: raw.types.User(
-        id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1, is_self=True
-    )}
+    users = {
+        7: raw.types.User(
+            id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1, is_self=True
+        )
+    }
 
     parsed = await types.Message._parse(client, message, users, {})
 
@@ -1671,8 +1658,15 @@ async def test_a_download_progress_callback_may_be_a_plain_function(tmp_path):
     client = _progress_client([b"x" * 4096])
 
     await client.handle_download(
-        (file_id(), str(tmp_path), "out.bin", False, 4096,
-         lambda current, total: seen.append((current, total)), ())
+        (
+            file_id(),
+            str(tmp_path),
+            "out.bin",
+            False,
+            4096,
+            lambda current, total: seen.append((current, total)),
+            (),
+        )
     )
 
     assert seen[-1] == (4096, 4096), f"a plain function is called too, got {seen}"
@@ -1691,9 +1685,7 @@ async def test_progress_args_reach_the_download_callback(tmp_path):
         seen.append((current, total, tag))
 
     client = _progress_client([b"x" * 4096])
-    await client.handle_download(
-        (file_id(), str(tmp_path), "out.bin", False, 4096, note, ("tag",))
-    )
+    await client.handle_download((file_id(), str(tmp_path), "out.bin", False, 4096, note, ("tag",)))
 
     assert seen[-1] == (4096, 4096, "tag")
 
@@ -1726,12 +1718,8 @@ async def test_a_finished_upload_says_it_finished(tmp_path):
     await client.save_file(str(path), progress=note)
 
     assert seen, "an upload that transferred bytes reported none"
-    assert seen[-1] == (size, size), (
-        f"the last call must report the whole file, got {seen[-1]}"
-    )
-    assert all(c <= size for c, _ in seen), (
-        "no call may claim more bytes than were sent"
-    )
+    assert seen[-1] == (size, size), f"the last call must report the whole file, got {seen[-1]}"
+    assert all(c <= size for c, _ in seen), "no call may claim more bytes than were sent"
     assert seen == sorted(seen), "progress must not go backwards"
 
 
@@ -1792,17 +1780,16 @@ async def test_a_listener_on_saved_messages_hears_its_own_chat():
     """
 
     from pyrogram.enums import ListenerTypes
-    from tests.test_listeners import message, waiting
-
     from pyrogram.methods.listeners.listen import resolve_listener_ids
+    from tests.test_listeners import message, waiting
 
     client = _self_aware_client()
     resolved = await resolve_listener_ids(client, "me")
     _, future = waiting(client, chat_id=resolved)
 
-    assert await client.listeners.feed(
-        client, ListenerTypes.MESSAGE, message(chat_id=OWN_ID)
-    ) is True
+    assert (
+        await client.listeners.feed(client, ListenerTypes.MESSAGE, message(chat_id=OWN_ID)) is True
+    )
     assert future.result().chat.id == OWN_ID
 
 
@@ -1859,18 +1846,24 @@ async def test_clearing_a_channel_reads_the_update_that_answers():
     from pyrogram import raw
 
     deleted = raw.types.Updates(
-        updates=[raw.types.UpdateDeleteChannelMessages(
-            channel_id=1, messages=[2, 3, 4], pts=4, pts_count=3
-        )],
-        users=[], chats=[], date=0, seq=0,
+        updates=[
+            raw.types.UpdateDeleteChannelMessages(
+                channel_id=1, messages=[2, 3, 4], pts=4, pts_count=3
+            )
+        ],
+        users=[],
+        chats=[],
+        date=0,
+        seq=0,
     )
     assert await _history_client(deleted).delete_chat_history(-100) == 3
 
     hidden = raw.types.Updates(
-        updates=[raw.types.UpdateChannelAvailableMessages(
-            channel_id=1, available_min_id=5
-        )],
-        users=[], chats=[], date=0, seq=0,
+        updates=[raw.types.UpdateChannelAvailableMessages(channel_id=1, available_min_id=5)],
+        users=[],
+        chats=[],
+        date=0,
+        seq=0,
     )
     assert await _history_client(hidden).delete_chat_history(-100) == 0, (
         "a hidden history deleted no messages, and saying so beats crashing"
@@ -1888,7 +1881,10 @@ async def test_clearing_a_channel_reads_the_update_that_answers():
                 channel_id=1, messages=[2, 3], pts=4, pts_count=2
             ),
         ],
-        users=[], chats=[], date=0, seq=0,
+        users=[],
+        chats=[],
+        date=0,
+        seq=0,
     )
     assert await _history_client(unordered).delete_chat_history(-100) == 2, (
         "the answer is found by type, not by position"
@@ -2053,9 +2049,7 @@ async def test_sending_a_nameless_buffer_names_it_on_the_wire():
         raise AssertionError("the upload carried no file name at all")
 
     client = _upload_capturing_client(SendDocument)
-    media = await _uploaded_attributes(
-        client, client.send_document(1, _io.BytesIO(b"generated"))
-    )
+    media = await _uploaded_attributes(client, client.send_document(1, _io.BytesIO(b"generated")))
     assert name_of(media) == "file.zip"
     assert media.mime_type == "application/zip"
 
@@ -2070,9 +2064,7 @@ async def test_sending_a_nameless_buffer_names_it_on_the_wire():
     assert name_of(media) == "chosen.csv", "file_name still wins"
 
     sticker = _upload_capturing_client(SendSticker)
-    media = await _uploaded_attributes(
-        sticker, sticker.send_sticker(1, _io.BytesIO(b"webp"))
-    )
+    media = await _uploaded_attributes(sticker, sticker.send_sticker(1, _io.BytesIO(b"webp")))
     assert name_of(media) == "sticker.webp", (
         "send_sticker has no file_name parameter, so the fallback is the only way"
     )
@@ -2159,8 +2151,14 @@ async def test_an_edited_media_is_named_after_its_kind():
 
             return raw.types.MessageMediaDocument(
                 document=raw.types.Document(
-                    id=1, access_hash=2, file_reference=b"", date=0,
-                    mime_type="video/mp4", size=1, dc_id=1, attributes=[]
+                    id=1,
+                    access_hash=2,
+                    file_reference=b"",
+                    date=0,
+                    mime_type="video/mp4",
+                    size=1,
+                    dc_id=1,
+                    attributes=[],
                 )
             )
 
@@ -2232,7 +2230,6 @@ def _flood_session(amounts):
     import collections
     from types import SimpleNamespace
 
-    from pyrogram import raw
     from pyrogram.errors import FloodWait
     from pyrogram.session.session import Session
 
@@ -2271,7 +2268,9 @@ async def _drive(session, sleep_threshold, monkeypatch):
     monkeypatch.setattr(asyncio, "sleep", no_wait)
 
     return await session._invoke(
-        raw.functions.help.GetConfig(), retries=10, timeout=5,
+        raw.functions.help.GetConfig(),
+        retries=10,
+        timeout=5,
         sleep_threshold=sleep_threshold,
     )
 
@@ -2319,8 +2318,7 @@ async def test_a_flood_that_never_lets_up_gives_up(monkeypatch):
         await _drive(session, 10, monkeypatch)
 
     assert sum(session.slept) <= 10 * 10, (
-        "the total time spent sleeping on floods is bounded by the threshold "
-        "the caller allowed"
+        "the total time spent sleeping on floods is bounded by the threshold the caller allowed"
     )
     assert len(session.slept) < 500, "it must stop asking long before the server does"
 
@@ -2355,11 +2353,18 @@ async def test_creating_a_group_unwraps_the_answer_it_gets():
                 updates=raw.types.Updates(
                     updates=[],
                     users=[],
-                    chats=[raw.types.Chat(
-                        id=7, title="made", photo=raw.types.ChatPhotoEmpty(),
-                        participants_count=1, date=0, version=1,
-                    )],
-                    date=0, seq=0,
+                    chats=[
+                        raw.types.Chat(
+                            id=7,
+                            title="made",
+                            photo=raw.types.ChatPhotoEmpty(),
+                            participants_count=1,
+                            date=0,
+                            version=1,
+                        )
+                    ],
+                    date=0,
+                    seq=0,
                 ),
                 missing_invitees=[],
             )
@@ -2388,8 +2393,12 @@ async def test_voting_sends_the_option_the_server_named():
         for t, o in (("a", b"0"), ("b", b"1"), ("c", b"2"))
     ]
     media_poll = raw.types.MessageMediaPoll(
-        poll=raw.types.Poll(id=1, question=raw.types.TextWithEntities(text="q", entities=[]),
-                            answers=answers, hash=0),
+        poll=raw.types.Poll(
+            id=1,
+            question=raw.types.TextWithEntities(text="q", entities=[]),
+            answers=answers,
+            hash=0,
+        ),
         results=raw.types.PollResults(results=[], total_voters=0),
     )
 
@@ -2406,9 +2415,15 @@ async def test_voting_sends_the_option_the_server_named():
             _Client.sent = query
 
             return raw.types.Updates(
-                updates=[raw.types.UpdateMessagePoll(poll_id=1, results=media_poll.results,
-                                                     poll=media_poll.poll)],
-                users=[], chats=[], date=0, seq=0,
+                updates=[
+                    raw.types.UpdateMessagePoll(
+                        poll_id=1, results=media_poll.results, poll=media_poll.poll
+                    )
+                ],
+                users=[],
+                chats=[],
+                date=0,
+                seq=0,
             )
 
     client = _Client()
@@ -2429,7 +2444,7 @@ async def test_every_privacy_setting_reaches_the_field_it_belongs_to():
     passing it raised AttributeError before the write RPC was sent.
     """
 
-    from pyrogram import raw, types
+    from pyrogram import raw
     from pyrogram.methods.account.set_global_privacy_settings import (
         SetGlobalPrivacySettings,
     )
@@ -2469,10 +2484,14 @@ async def test_every_privacy_setting_reaches_the_field_it_belongs_to():
     assert result.show_gift_button is True, "and it reads back the way it was asked"
 
     assert not set(raw.types.GlobalPrivacySettings.__slots__) - {
-        "archive_and_mute_new_noncontact_peers", "keep_archived_unmuted",
-        "keep_archived_folders", "hide_read_marks",
-        "new_noncontact_peers_require_premium", "display_gifts_button",
-        "noncontact_peers_paid_stars", "disallowed_gifts",
+        "archive_and_mute_new_noncontact_peers",
+        "keep_archived_unmuted",
+        "keep_archived_folders",
+        "hide_read_marks",
+        "new_noncontact_peers_require_premium",
+        "display_gifts_button",
+        "noncontact_peers_paid_stars",
+        "disallowed_gifts",
     }, "a new raw field means the setter needs a parameter for it"
 
 
@@ -2493,9 +2512,9 @@ def test_a_vector_of_objects_survives_a_trailing_field():
     read_back = TLObject.read(BytesIO(update.write()))
 
     assert isinstance(read_back.update, raw.types.UpdatePrivacy)
-    assert [type(rule) for rule in read_back.update.rules] == [
-        raw.types.PrivacyValueAllowAll
-    ], "a vector of objects stays a vector of objects"
+    assert [type(rule) for rule in read_back.update.rules] == [raw.types.PrivacyValueAllowAll], (
+        "a vector of objects stays a vector of objects"
+    )
     assert read_back.date == 1735689600, "and the field after it is still there"
 
 
@@ -2508,16 +2527,12 @@ def test_a_bare_vector_of_numbers_still_reads_as_numbers():
 
     assert list(TLObject.read(BytesIO(Vector([7, 8, 9], Int)))) == [7, 8, 9]
     assert list(TLObject.read(BytesIO(Vector([42], Int)))) == [42]
-    assert list(TLObject.read(BytesIO(Vector([2 ** 40 + 1], Long)))) == [2 ** 40 + 1]
+    assert list(TLObject.read(BytesIO(Vector([2**40 + 1], Long)))) == [2**40 + 1]
     assert list(TLObject.read(BytesIO(Vector([], Int)))) == []
 
     counters = [
-        raw.types.messages.SearchCounter(
-            filter=raw.types.InputMessagesFilterPhotos(), count=3
-        ),
-        raw.types.messages.SearchCounter(
-            filter=raw.types.InputMessagesFilterVideo(), count=4
-        ),
+        raw.types.messages.SearchCounter(filter=raw.types.InputMessagesFilterPhotos(), count=3),
+        raw.types.messages.SearchCounter(filter=raw.types.InputMessagesFilterVideo(), count=4),
     ]
     read_back = TLObject.read(BytesIO(Vector(counters)))
 
@@ -2540,9 +2555,7 @@ def _channel_photos_client(pages, chat_photo_id):
 
         async def invoke(self, query, *args, **kwargs):
             if isinstance(query, raw.functions.channels.GetFullChannel):
-                return SimpleNamespace(
-                    full_chat=SimpleNamespace(chat_photo=chat_photo_id)
-                )
+                return SimpleNamespace(full_chat=SimpleNamespace(chat_photo=chat_photo_id))
 
             self.searches.append(query.offset_id)
 
@@ -2590,8 +2603,7 @@ async def test_a_channels_photo_history_is_paged_to_the_end(monkeypatch):
 
     client.searches.clear()
     capped = [
-        photo.file_unique_id
-        async for photo in GetChatPhotos.get_chat_photos(client, 1, limit=2)
+        photo.file_unique_id async for photo in GetChatPhotos.get_chat_photos(client, 1, limit=2)
     ]
 
     assert capped == ["current", "c"], "a limit still caps the run"
@@ -2610,13 +2622,10 @@ async def test_a_channels_current_photo_is_not_yielded_twice(monkeypatch):
         return messages
 
     monkeypatch.setattr(utils, "parse_messages", parse_messages)
-    monkeypatch.setattr(
-        types.Photo, "_parse", staticmethod(lambda _c, photo: _photo(photo))
-    )
+    monkeypatch.setattr(types.Photo, "_parse", staticmethod(lambda _c, photo: _photo(photo)))
 
     got = [
-        photo.file_unique_id
-        async for photo in GetChatPhotos.get_chat_photos(client, 1, limit=5)
+        photo.file_unique_id async for photo in GetChatPhotos.get_chat_photos(client, 1, limit=5)
     ]
 
     assert got == ["c"], (
@@ -2653,9 +2662,7 @@ async def test_a_removed_channel_photo_does_not_end_the_walk(monkeypatch):
 
     got = [photo.file_unique_id async for photo in GetChatPhotos.get_chat_photos(client, 1)]
 
-    assert got == ["b", "a"], (
-        "a page carrying only a removed photo is not the end of the history"
-    )
+    assert got == ["b", "a"], "a page carrying only a removed photo is not the end of the history"
 
 
 async def test_all_stories_follows_the_servers_has_more():
@@ -2664,8 +2671,13 @@ async def test_all_stories_follows_the_servers_has_more():
 
     def page(has_more, state):
         return raw.types.stories.AllStories(
-            has_more=has_more, count=0, state=state, peer_stories=[],
-            chats=[], users=[], stealth_mode=raw.types.StoriesStealthMode()
+            has_more=has_more,
+            count=0,
+            state=state,
+            peer_stories=[],
+            chats=[],
+            users=[],
+            stealth_mode=raw.types.StoriesStealthMode(),
         )
 
     pages = [page(True, "s1"), page(False, "s2"), page(True, "s3")]
@@ -2681,8 +2693,7 @@ async def test_all_stories_follows_the_servers_has_more():
         pass
 
     assert asked == [(None, None), (True, "s1")], (
-        "has_more means another page, and the state of the page just read is "
-        "what asks for it"
+        "has_more means another page, and the state of the page just read is what asks for it"
     )
 
 
@@ -2717,8 +2728,13 @@ async def test_all_stories_stops_when_the_state_stops_moving():
                 raise AssertionError("the generator never stopped asking")
 
             return raw.types.stories.AllStories(
-                has_more=True, count=0, state="stuck", peer_stories=[],
-                chats=[], users=[], stealth_mode=raw.types.StoriesStealthMode()
+                has_more=True,
+                count=0,
+                state="stuck",
+                peer_stories=[],
+                chats=[],
+                users=[],
+                stealth_mode=raw.types.StoriesStealthMode(),
             )
 
     client = _Client()
@@ -2747,6 +2763,7 @@ async def test_a_method_whose_peer_is_required_names_the_missing_peer():
 
         async def resolve_peer(self, peer_id):
             from pyrogram import utils
+
             return utils.get_peer_type(peer_id)
 
         async def invoke(self, query, *args, **kwargs):
@@ -2822,6 +2839,7 @@ async def test_get_bot_info_still_refuses_a_peer_id_that_is_not_a_peer():
 
         async def resolve_peer(self, peer_id):
             from pyrogram import utils
+
             return utils.get_peer_type(peer_id)
 
         async def invoke(self, query, *args, **kwargs):
@@ -2838,15 +2856,26 @@ async def test_get_bot_info_still_refuses_a_peer_id_that_is_not_a_peer():
     "module, klass, method, extra",
     [
         ("get_bot_name", "GetBotName", "get_bot_name", {}),
-        ("get_bot_info_description", "GetBotInfoDescription",
-         "get_bot_info_description", {}),
-        ("get_bot_info_short_description", "GetBotInfoShortDescription",
-         "get_bot_info_short_description", {}),
+        ("get_bot_info_description", "GetBotInfoDescription", "get_bot_info_description", {}),
+        (
+            "get_bot_info_short_description",
+            "GetBotInfoShortDescription",
+            "get_bot_info_short_description",
+            {},
+        ),
         ("set_bot_name", "SetBotName", "set_bot_name", {"name": "x"}),
-        ("set_bot_info_description", "SetBotInfoDescription",
-         "set_bot_info_description", {"description": "x"}),
-        ("set_bot_info_short_description", "SetBotInfoShortDescription",
-         "set_bot_info_short_description", {"short_description": "x"}),
+        (
+            "set_bot_info_description",
+            "SetBotInfoDescription",
+            "set_bot_info_description",
+            {"description": "x"},
+        ),
+        (
+            "set_bot_info_short_description",
+            "SetBotInfoShortDescription",
+            "set_bot_info_short_description",
+            {"short_description": "x"},
+        ),
     ],
 )
 async def test_a_bot_this_account_does_not_own_is_refused_not_taken_for_itself(
@@ -2861,6 +2890,7 @@ async def test_a_bot_this_account_does_not_own_is_refused_not_taken_for_itself(
 
         async def resolve_peer(self, peer_id):
             from pyrogram import utils
+
             return utils.get_peer_type(peer_id)
 
         async def invoke(self, query, *args, **kwargs):
@@ -2935,7 +2965,9 @@ def test_every_get_messages_call_in_the_types_uses_a_real_parameter():
     bad = []
 
     for path in root.rglob("*.py"):
-        for call in re.finditer(r"client\.get_messages\(([^)]*)\)", path.read_text(encoding="utf-8")):
+        for call in re.finditer(
+            r"client\.get_messages\(([^)]*)\)", path.read_text(encoding="utf-8")
+        ):
             for kw in re.findall(r"(\w+)\s*=", call.group(1)):
                 if kw not in accepted:
                     bad.append(f"{path.relative_to(root)}: {kw}")
@@ -2953,7 +2985,15 @@ async def test_joining_a_chat_unwraps_the_layer_229_result():
     from pyrogram import raw
     from pyrogram.methods.chats.join_chat import JoinChat
 
-    channel = raw.types.Channel(id=7, title="t", photo=raw.types.ChatPhotoEmpty(), date=0, megagroup=True, usernames=[], restriction_reason=[])
+    channel = raw.types.Channel(
+        id=7,
+        title="t",
+        photo=raw.types.ChatPhotoEmpty(),
+        date=0,
+        megagroup=True,
+        usernames=[],
+        restriction_reason=[],
+    )
 
     class _Client(JoinChat):
         INVITE_LINK_RE = pyrogram.Client.INVITE_LINK_RE
@@ -2987,9 +3027,11 @@ async def test_the_contacts_member_filter_carries_its_query():
             return raw.types.InputPeerChannel(channel_id=1, access_hash=0)
 
         async def invoke(self, query, *args, **kwargs):
-            sent["filter"] = query.filter  # noqa
+            sent["filter"] = query.filter
 
-            return raw.types.channels.ChannelParticipants(count=0, participants=[], chats=[], users=[])
+            return raw.types.channels.ChannelParticipants(
+                count=0, participants=[], chats=[], users=[]
+            )
 
     await get_chunk(_Client(), 1, 0, enums.ChatMembersFilter.CONTACTS, 10, "")
 
@@ -3047,7 +3089,9 @@ def _input_photo_from_file_id(*args, **kwargs):
 
     _input_photo_from_file_id.calls.append((args, kwargs))
 
-    return raw.types.InputMediaPhoto(id=raw.types.InputPhoto(id=1, access_hash=1, file_reference=b""))
+    return raw.types.InputMediaPhoto(
+        id=raw.types.InputPhoto(id=1, access_hash=1, file_reference=b"")
+    )
 
 
 _input_photo_from_file_id.calls = []
@@ -3112,8 +3156,12 @@ async def test_copying_a_media_group_keeps_the_source_formatting(monkeypatch):
     client = _sending_client(captured)
     bold = [types.MessageEntity(type=enums.MessageEntityType.BOLD, offset=0, length=3)]
     source = SimpleNamespace(
-        photo=SimpleNamespace(file_id="AgACAgfake"), audio=None, document=None, video=None,
-        caption="one_two", caption_entities=bold,
+        photo=SimpleNamespace(file_id="AgACAgfake"),
+        audio=None,
+        document=None,
+        video=None,
+        caption="one_two",
+        caption_entities=bold,
     )
     client.get_media_group = AsyncMock(return_value=[source])
 
@@ -3142,7 +3190,9 @@ async def test_a_spoiler_survives_a_send_by_file_id(monkeypatch):
 
     await SendPhoto.send_photo(client, 1, "AgACAgfake", has_spoiler=True)
     await SendAnimation.send_animation(client, 1, "CgACAgfake", has_spoiler=True, ttl_seconds=5)
-    await SendMediaGroup.send_media_group(client, 1, [types.InputMediaPhoto("AgACAgfake", has_spoiler=True)])
+    await SendMediaGroup.send_media_group(
+        client, 1, [types.InputMediaPhoto("AgACAgfake", has_spoiler=True)]
+    )
 
     kwargs = [call[1] for call in _input_photo_from_file_id.calls]
 
@@ -3220,7 +3270,9 @@ def test_a_chosen_inline_result_keeps_a_64_bit_inline_message_id():
     msg_id = raw.types.InputBotInlineMessageID64(dc_id=2, owner_id=3, id=4, access_hash=5)
     update = raw.types.UpdateBotInlineSend(user_id=1, query="q", id="r", msg_id=msg_id)
 
-    result = types.ChosenInlineResult._parse(None, update, {1: raw.types.User(id=1, usernames=[], restriction_reason=[])})
+    result = types.ChosenInlineResult._parse(
+        None, update, {1: raw.types.User(id=1, usernames=[], restriction_reason=[])}
+    )
 
     assert result.inline_message_id == utils.pack_inline_message_id(msg_id)
     assert utils.unpack_inline_message_id(result.inline_message_id) == msg_id

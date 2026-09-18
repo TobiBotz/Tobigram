@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Dict, Optional
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
@@ -118,34 +119,34 @@ class ExternalReplyInfo(Object):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
-        origin: Optional["types.MessageOrigin"] = None,
-        chat: Optional["types.Chat"] = None,
+        client: pyrogram.Client | None = None,
+        origin: types.MessageOrigin | None = None,
+        chat: types.Chat | None = None,
         message_id: int,
-        link_preview_options: Optional["types.LinkPreviewOptions"] = None,
-        media: Optional["enums.MessageMediaType"] = None,
-        animation: Optional["types.Animation"] = None,
-        audio: Optional["types.Audio"] = None,
-        document: Optional["types.Document"] = None,
-        paid_media: Optional["types.PaidMediaInfo"] = None,
-        photo: Optional["types.Photo"] = None,
-        sticker: Optional["types.Sticker"] = None,
-        story: Optional["types.Story"] = None,
-        video: Optional["types.Video"] = None,
-        live_photo: Optional["types.LivePhoto"] = None,
-        video_note: Optional["types.VideoNote"] = None,
-        voice: Optional["types.Voice"] = None,
-        has_media_spoiler: Optional[bool] = None,
-        checklist: Optional["types.Checklist"] = None,
-        contact: Optional["types.Contact"] = None,
-        dice: Optional["types.Dice"] = None,
-        game: Optional["types.Game"] = None,
-        giveaway: Optional["types.Giveaway"] = None,
-        giveaway_winners: Optional["types.GiveawayWinners"] = None,
-        invoice: Optional["types.Invoice"] = None,
-        location: Optional["types.Location"] = None,
-        poll: Optional["types.Poll"] = None,
-        venue: Optional["types.Venue"] = None,
+        link_preview_options: types.LinkPreviewOptions | None = None,
+        media: enums.MessageMediaType | None = None,
+        animation: types.Animation | None = None,
+        audio: types.Audio | None = None,
+        document: types.Document | None = None,
+        paid_media: types.PaidMediaInfo | None = None,
+        photo: types.Photo | None = None,
+        sticker: types.Sticker | None = None,
+        story: types.Story | None = None,
+        video: types.Video | None = None,
+        live_photo: types.LivePhoto | None = None,
+        video_note: types.VideoNote | None = None,
+        voice: types.Voice | None = None,
+        has_media_spoiler: bool | None = None,
+        checklist: types.Checklist | None = None,
+        contact: types.Contact | None = None,
+        dice: types.Dice | None = None,
+        game: types.Game | None = None,
+        giveaway: types.Giveaway | None = None,
+        giveaway_winners: types.GiveawayWinners | None = None,
+        invoice: types.Invoice | None = None,
+        location: types.Location | None = None,
+        poll: types.Poll | None = None,
+        venue: types.Venue | None = None,
     ):
         super().__init__(client)
 
@@ -180,10 +181,10 @@ class ExternalReplyInfo(Object):
     @staticmethod
     async def _parse(
         client,
-        reply: "raw.types.MessageReplyHeader",
-        users: Dict[int, "raw.types.User"],
-        chats: Dict[int, "raw.types.Chat"],
-    ) -> Optional["ExternalReplyInfo"]:
+        reply: raw.types.MessageReplyHeader,
+        users: dict[int, raw.types.User],
+        chats: dict[int, raw.types.Chat],
+    ) -> ExternalReplyInfo | None:
         if not isinstance(reply, raw.types.MessageReplyHeader):
             return None
 
@@ -269,9 +270,7 @@ class ExternalReplyInfo(Object):
                     attributes = {type(i): i for i in doc.attributes}
 
                     file_name = getattr(
-                        attributes.get(
-                            raw.types.DocumentAttributeFilename, None
-                        ), "file_name", None
+                        attributes.get(raw.types.DocumentAttributeFilename, None), "file_name", None
                     )
 
                     if raw.types.DocumentAttributeAnimated in attributes:
@@ -286,17 +285,30 @@ class ExternalReplyInfo(Object):
                         video_attributes = attributes[raw.types.DocumentAttributeVideo]
 
                         if video_attributes.round_message:
-                            video_note = types.VideoNote._parse(client, doc, video_attributes, media.ttl_seconds)
+                            video_note = types.VideoNote._parse(
+                                client, doc, video_attributes, media.ttl_seconds
+                            )
                             media_type = enums.MessageMediaType.VIDEO_NOTE
                         else:
-                            video = types.Video._parse(client, doc, video_attributes, file_name, media.ttl_seconds, media.video_cover, media.video_timestamp, media.alt_documents or [])
+                            video = types.Video._parse(
+                                client,
+                                doc,
+                                video_attributes,
+                                file_name,
+                                media.ttl_seconds,
+                                media.video_cover,
+                                media.video_timestamp,
+                                media.alt_documents or [],
+                            )
                             media_type = enums.MessageMediaType.VIDEO
                             has_media_spoiler = media.spoiler
                     elif raw.types.DocumentAttributeAudio in attributes:
                         audio_attributes = attributes[raw.types.DocumentAttributeAudio]
 
                         if audio_attributes.voice:
-                            voice = types.Voice._parse(client, doc, audio_attributes, media.ttl_seconds)
+                            voice = types.Voice._parse(
+                                client, doc, audio_attributes, media.ttl_seconds
+                            )
                             media_type = enums.MessageMediaType.VOICE
                         else:
                             audio = types.Audio._parse(client, doc, audio_attributes, file_name)
@@ -354,6 +366,5 @@ class ExternalReplyInfo(Object):
             location=location,
             poll=poll,
             venue=venue,
-            checklist=checklist
+            checklist=checklist,
         )
-

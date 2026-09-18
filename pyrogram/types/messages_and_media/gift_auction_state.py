@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types
@@ -41,9 +42,9 @@ class GiftAuctionState(Object):
     def __init__(
         self,
         *,
-        gift: "types.Gift",
-        state: "types.AuctionState",
-        raw: Optional["raw.base.StarGiftAuctionState"] = None,
+        gift: types.Gift,
+        state: types.AuctionState,
+        raw: raw.base.StarGiftAuctionState | None = None,
     ):
         super().__init__()
 
@@ -53,8 +54,8 @@ class GiftAuctionState(Object):
 
     @staticmethod
     async def _parse(
-        client: "pyrogram.Client", gift_auction_state: "raw.base.StarGiftAuctionState"
-    ) -> "GiftAuctionState":
+        client: pyrogram.Client, gift_auction_state: raw.base.StarGiftAuctionState
+    ) -> GiftAuctionState:
         state = None
 
         if isinstance(gift_auction_state.state, raw.types.StarGiftAuctionState):
@@ -67,4 +68,3 @@ class GiftAuctionState(Object):
             state=state,
             raw=gift_auction_state,
         )
-

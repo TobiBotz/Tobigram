@@ -16,8 +16,10 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
-from typing import AsyncIterator, Union
+from collections.abc import AsyncIterator
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -27,12 +29,12 @@ log = logging.getLogger(__name__)
 
 class GetUserPersonalChatMessages:
     async def get_user_personal_chat_messages(
-        self: "pyrogram.Client",
-        user_id: Union[int, str],
+        self: pyrogram.Client,
+        user_id: int | str,
         limit: int = 0,
         min_id: int = 0,
         max_id: int = 0,
-    ) -> AsyncIterator["types.Message"]:
+    ) -> AsyncIterator[types.Message]:
         """Use this method to get the last messages from the personal chat (i.e., the chat currently added to their profile) of a given user.
 
         The messages are returned in reverse chronological order.
@@ -92,4 +94,3 @@ class GetUserPersonalChatMessages:
 
             if current >= total:
                 return
-

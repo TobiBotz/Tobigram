@@ -17,10 +17,10 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from typing import Any, List, Optional, Union
+from __future__ import annotations
 
-Scalar = Union[int, str]
-Field = Optional[Union[Scalar, List[Scalar]]]
+Scalar = int | str
+Field = Scalar | list[Scalar] | None
 
 _FIELDS = ("chat_id", "user_id", "message_id", "inline_message_id")
 
@@ -51,15 +51,15 @@ class Identifier:
         self,
         chat_id: Field = None,
         user_id: Field = None,
-        message_id: Optional[Union[int, List[int]]] = None,
-        inline_message_id: Optional[Union[str, List[str]]] = None,
+        message_id: int | list[int] | None = None,
+        inline_message_id: str | list[str] | None = None,
     ):
         self.chat_id = chat_id
         self.user_id = user_id
         self.message_id = message_id
         self.inline_message_id = inline_message_id
 
-    def matches(self, data: "Identifier") -> bool:
+    def matches(self, data: Identifier) -> bool:
         for field in _FIELDS:
             pattern = getattr(self, field)
 
@@ -94,10 +94,8 @@ class Identifier:
             )
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, Identifier):
             return NotImplemented
 
-        return all(
-            getattr(self, field) == getattr(other, field) for field in _FIELDS
-        )
+        return all(getattr(self, field) == getattr(other, field) for field in _FIELDS)

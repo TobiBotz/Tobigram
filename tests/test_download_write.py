@@ -48,9 +48,12 @@ class FakeClient:
     handle_download = pyrogram.Client.handle_download
     read_ahead_slots = pyrogram.Client.read_ahead_slots
     MAX_READ_AHEAD_CHUNKS = pyrogram.Client.MAX_READ_AHEAD_CHUNKS
+    MEDIA_POOL_CAP = pyrogram.Client.MEDIA_POOL_CAP
+    _media_pool = pyrogram.Client._media_pool
 
     def __init__(self, chunks):
         self.get_file_semaphore = asyncio.Semaphore(1)
+        self._media_pool_demand = {}
         self.me = SimpleNamespace(is_bot=True, is_premium=False)
         self.session = FakeSession(chunks)
 
@@ -84,8 +87,8 @@ async def download(tmp_path, chunks, file_size):
 @pytest.mark.parametrize(
     "chunks",
     [
-        [b"x" * 2048],                        # single short chunk
-        [b"a" * CHUNK, b"b" * 4096],          # spills into the sequential loop
+        [b"x" * 2048],  # single short chunk
+        [b"a" * CHUNK, b"b" * 4096],  # spills into the sequential loop
     ],
 )
 async def test_unknown_size_download_is_written(tmp_path, chunks):
@@ -120,9 +123,7 @@ async def test_a_download_ends_when_its_workers_do(tmp_path):
     client.session = ShortAfterFirstSession()
 
     path = await asyncio.wait_for(
-        client.handle_download(
-            (file_id(), str(tmp_path), "out.bin", False, 20 * CHUNK, None, ())
-        ),
+        client.handle_download((file_id(), str(tmp_path), "out.bin", False, 20 * CHUNK, None, ())),
         timeout=10,
     )
 

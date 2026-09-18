@@ -18,7 +18,6 @@
 
 import re
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import yaml
 from jinja2 import Environment, FileSystemLoader
@@ -34,7 +33,7 @@ FLAGS_RE = re.compile(r"flags(\d?)\.(\d+)\?")
 PARAM_RE = re.compile(r"([a-z_]+):([\w<>.]+\?)?([\w<>.]+)")
 
 
-def parse_tl_functions(tl_path: Path) -> Dict[str, Dict]:
+def parse_tl_functions(tl_path: Path) -> dict[str, dict]:
     text = tl_path.read_text(encoding="utf-8")
     functions = {}
     for match in COMBINATOR_RE.finditer(text):
@@ -114,7 +113,7 @@ DEFAULT_CATEGORY = {
 }
 
 
-def guess_category(raw_name: str, tl_info: Optional[Dict] = None) -> str:
+def guess_category(raw_name: str, tl_info: dict | None = None) -> str:
     if tl_info and tl_info.get("namespace"):
         return DEFAULT_CATEGORY.get(tl_info["namespace"], "messages")
     return "messages"
@@ -123,7 +122,7 @@ def guess_category(raw_name: str, tl_info: Optional[Dict] = None) -> str:
 INDENT = "                "
 
 
-def map_raw_params(method_name: str, tl_params: List[Dict], override: Dict) -> str:
+def map_raw_params(method_name: str, tl_params: list[dict], override: dict) -> str:
     lines = []
     extra_names = {p["name"] for p in override.get("extra_params", [])}
     param_mapping = override.get("param_mapping", {})
@@ -137,9 +136,12 @@ def map_raw_params(method_name: str, tl_params: List[Dict], override: Dict) -> s
 
         mapped_name = param_mapping.get(name, name)
 
-        if name in ("peer", "channel", "broadcast"):
-            lines.append(f"{name}=await self.resolve_peer({mapped_name}),")
-        elif name in ("bot", "user_id", "participant", "admin_id"):
+        if name in ("peer", "channel", "broadcast") or name in (
+            "bot",
+            "user_id",
+            "participant",
+            "admin_id",
+        ):
             lines.append(f"{name}=await self.resolve_peer({mapped_name}),")
         elif name == "random_id":
             lines.append("random_id=self.rnd_id(),")
@@ -214,8 +216,7 @@ def map_raw_params(method_name: str, tl_params: List[Dict], override: Dict) -> s
 
     if override.get("supports_caption"):
         text_params_comment = (
-            "# TODO: [MANUAL] replace with rich_text conditional: "
-            "see send_message.py for pattern"
+            "# TODO: [MANUAL] replace with rich_text conditional: see send_message.py for pattern"
         )
         lines.append(text_params_comment)
         lines.append(
@@ -225,7 +226,7 @@ def map_raw_params(method_name: str, tl_params: List[Dict], override: Dict) -> s
     return "\n".join(lines)
 
 
-def build_signature_params(override: Dict) -> str:
+def build_signature_params(override: dict) -> str:
     extra = override.get("extra_params", [])
     if not extra:
         return ""
@@ -241,15 +242,14 @@ def build_signature_params(override: Dict) -> str:
     return "\n" + "\n".join(lines)
 
 
-def build_doc_params(override: Dict) -> List[Dict]:
+def build_doc_params(override: dict) -> list[dict]:
     extra = override.get("extra_params", [])
     return [
-        {"name": p["name"], "type": p.get("type", "str"), "doc": p.get("doc", "N/A")}
-        for p in extra
+        {"name": p["name"], "type": p.get("type", "str"), "doc": p.get("doc", "N/A")} for p in extra
     ]
 
 
-def compute_import_flags(override: Dict) -> Dict[str, bool]:
+def compute_import_flags(override: dict) -> dict[str, bool]:
     extra = override.get("extra_params", [])
     types_str = " ".join(p.get("type", "") for p in extra)
     return {
@@ -258,8 +258,7 @@ def compute_import_flags(override: Dict) -> Dict[str, bool]:
         or override.get("response_pattern") != "none",
         "needs_datetime": "datetime" in types_str,
         "needs_enums": "enums." in types_str,
-        "needs_utils": bool(override.get("supports_caption"))
-        or "schedule_date" in types_str,
+        "needs_utils": bool(override.get("supports_caption")) or "schedule_date" in types_str,
     }
 
 
@@ -269,8 +268,8 @@ class MethodGenerator:
             loader=FileSystemLoader(str(TEMPLATES)),
             lstrip_blocks=True,
         )
-        self.tl_functions: Dict[str, Dict] = {}
-        self.overrides: Dict[str, Dict] = {}
+        self.tl_functions: dict[str, dict] = {}
+        self.overrides: dict[str, dict] = {}
 
     def load(self):
         tl_path = Path(str(TL_SOURCE))
@@ -302,9 +301,7 @@ class MethodGenerator:
                 continue
 
             if tl_info:
-                raw_params_str = map_raw_params(
-                    method_name, tl_info.get("params", []), override
-                )
+                raw_params_str = map_raw_params(method_name, tl_info.get("params", []), override)
             else:
                 raw_params_str = override.get("raw_params", "")
                 if not raw_params_str:

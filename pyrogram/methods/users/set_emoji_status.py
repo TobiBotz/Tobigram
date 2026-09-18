@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types
@@ -24,8 +25,7 @@ from pyrogram import raw, types
 
 class SetEmojiStatus:
     async def set_emoji_status(
-        self: "pyrogram.Client",
-        emoji_status: Optional["types.EmojiStatus"] = None
+        self: pyrogram.Client, emoji_status: types.EmojiStatus | None = None
     ) -> bool:
         """Set the emoji status.
 
@@ -41,16 +41,14 @@ class SetEmojiStatus:
         Example:
             .. code-block:: python
 
-                from wzgram import types
+                from pyrogram import types
 
                 await app.set_emoji_status(types.EmojiStatus(custom_emoji_id=1234567890987654321))
         """
         await self.invoke(
             raw.functions.account.UpdateEmojiStatus(
                 emoji_status=(
-                    emoji_status.write()
-                    if emoji_status
-                    else raw.types.EmojiStatusEmpty()
+                    emoji_status.write() if emoji_status else raw.types.EmojiStatusEmpty()
                 )
             )
         )

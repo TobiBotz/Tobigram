@@ -16,15 +16,17 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from .object import Object
 
 
 class List(list):
-    __slots__ = []
+    __slots__ = ()
 
-    def __str__(self):
+    def __str__(self) -> str:
         # noinspection PyCallByClass
         return Object.__str__(self)
 
-    def __repr__(self):
-        return f"pyrogram.types.List([{','.join(Object.__repr__(i) for i in self)}])"
+    def __repr__(self) -> str:
+        return f"pyrogram.types.List([{','.join(repr(item) for item in self)}])"

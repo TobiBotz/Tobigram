@@ -7,12 +7,12 @@ This example uses ``filters`` to make it only work for specific messages in a sp
 
 .. code-block:: python
 
-    from wzgram import Client, filters
+    from pyrogram import Client, filters
 
     # Target chat. Can also be a list of multiple chat ids/usernames
     TARGET = -100123456789
     # Welcome message template
-    MESSAGE = "{} Welcome to [wzgram](https://wzgram.com/)'s group chat {}!"
+    MESSAGE = "{} Welcome to [Tobigram](https://docs.tobigram.com/)'s group chat {}!"
 
     app = Client("my_account")
 

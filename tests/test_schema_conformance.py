@@ -57,8 +57,7 @@ def parse_schema():
                 continue
 
             qualname, constructor_id, _ = match.groups()
-            args = [(RENAME.get(name, name), kind)
-                    for name, kind in ARGS_RE.findall(line)]
+            args = [(RENAME.get(name, name), kind) for name, kind in ARGS_RE.findall(line)]
 
             out.append((section, qualname, int(constructor_id, 16), args))
 
@@ -71,9 +70,9 @@ SCHEMA = parse_schema()
 def python_qualname(section, qualname):
     if "." in qualname:
         namespace, name = qualname.rsplit(".", 1)
-        return "{}.{}.{}".format(section, namespace, camel(name))
+        return f"{section}.{namespace}.{camel(name)}"
 
-    return "{}.{}".format(section, camel(qualname))
+    return f"{section}.{camel(qualname)}"
 
 
 def lookup(section, qualname):
@@ -124,7 +123,7 @@ def r_big(b, size):
     data = b.read(size)
 
     if len(data) != size:
-        raise Desync("ran out reading int{}".format(size * 8))
+        raise Desync(f"ran out reading int{size * 8}")
 
     return int.from_bytes(data, "little")
 
@@ -161,7 +160,7 @@ def r_bool(b):
     if value == 0xBC799737:
         return False
 
-    raise Desync("expected Bool, got {:08x}".format(value))
+    raise Desync(f"expected Bool, got {value:08x}")
 
 
 PRIMITIVES = {
@@ -184,16 +183,16 @@ def read_typed(b, kind):
         return TLObject.read(b)
 
     if kind.lower().startswith("vector<"):
-        inner = kind[kind.index("<") + 1:-1]
+        inner = kind[kind.index("<") + 1 : -1]
         constructor_id = r_int(b) & 0xFFFFFFFF
 
         if constructor_id != 0x1CB5C415:
-            raise Desync("expected a vector, got {:08x}".format(constructor_id))
+            raise Desync(f"expected a vector, got {constructor_id:08x}")
 
         count = r_int(b)
 
         if not 0 <= count <= 10000:
-            raise Desync("implausible vector count {}".format(count))
+            raise Desync(f"implausible vector count {count}")
 
         return [read_typed(b, inner) for _ in range(count)]
 
@@ -204,15 +203,14 @@ def decode(b, args, constructor_id):
     got = r_int(b) & 0xFFFFFFFF
 
     if got != constructor_id:
-        raise Desync("constructor id {:08x}, schema says {:08x}".format(
-            got, constructor_id))
+        raise Desync(f"constructor id {got:08x}, schema says {constructor_id:08x}")
 
     flags = {}
     values = {}
 
     for name, kind in args:
         if kind == "#" and name.startswith("flags"):
-            flags[name[len("flags"):]] = r_int(b)
+            flags[name[len("flags") :]] = r_int(b)
             continue
 
         match = FLAG_RE.match(kind)
@@ -221,12 +219,12 @@ def decode(b, args, constructor_id):
             group, bit, inner = match.group(1), int(match.group(2)), match.group(3)
 
             if group not in flags:
-                raise Desync("{} reads flags{} before it was declared".format(
-                    name, group))
+                raise Desync(f"{name} reads flags{group} before it was declared")
 
             present = bool(flags[group] & (1 << bit))
-            values[name] = present if inner == "true" else (
-                read_typed(b, inner) if present else None)
+            values[name] = (
+                present if inner == "true" else (read_typed(b, inner) if present else None)
+            )
             continue
 
         if kind.startswith("!"):
@@ -255,8 +253,8 @@ BUILTINS = {"bytes": bytes, "int": int, "str": str, "bool": bool, "float": float
 
 VALUES = {
     int: fresh,
-    str: lambda: "s{}".format(fresh()),
-    bytes: lambda: "b{}".format(fresh()).encode(),
+    str: lambda: f"s{fresh()}",
+    bytes: lambda: f"b{fresh()}".encode(),
     bool: lambda: True,
     float: lambda: 1.5,
 }
@@ -289,22 +287,21 @@ def unwrap(annotation):
     if annotation is typing.Any or annotation is TLObject:
         return "any", None
 
-    raise Unbuildable("annotation {!r}".format(annotation))
+    raise Unbuildable(f"annotation {annotation!r}")
 
 
 def params_of(cls):
-    return [p for name, p in inspect.signature(cls.__init__).parameters.items()
-            if name != "self"]
+    return [p for name, p in inspect.signature(cls.__init__).parameters.items() if name != "self"]
 
 
 def base_key(name):
-    return name[len("raw.base."):] if name.startswith("raw.base.") else name
+    return name.removeprefix("raw.base.")
 
 
 def concretes_by_base():
     """base name -> its constructors, read off the generated Union lines."""
-    union_re = re.compile(r"^(\w+) = Union\[(.+)\]$", re.M)
-    alias_re = re.compile(r"^(\w+) = raw\.types\.([\w.]+)$", re.M)
+    union_re = re.compile(r"^(\w+) = Union\[(.+)\]$", re.MULTILINE)
+    alias_re = re.compile(r"^(\w+) = raw\.types\.([\w.]+)$", re.MULTILINE)
     out = {}
 
     import pkgutil
@@ -312,12 +309,11 @@ def concretes_by_base():
     for module in pkgutil.walk_packages(raw.base.__path__, raw.base.__name__ + "."):
         __import__(module.name)
         source = inspect.getsource(__import__("sys").modules[module.name])
-        short = module.name[len("pyrogram.raw.base."):]
+        short = module.name[len("pyrogram.raw.base.") :]
         namespace = short.rsplit(".", 1)[0] + "." if "." in short else ""
 
         for name, body in union_re.findall(source):
-            out[namespace + name] = [
-                part.strip()[len("raw.types."):] for part in body.split(",")]
+            out[namespace + name] = [part.strip()[len("raw.types.") :] for part in body.split(",")]
 
         for name, target in alias_re.findall(source):
             out.setdefault(namespace + name, [target])
@@ -419,7 +415,7 @@ def synth(annotation, depth):
         cls = SIMPLEST.get(base_key(payload))
 
         if cls is None:
-            raise Unbuildable("no constructor for {}".format(payload))
+            raise Unbuildable(f"no constructor for {payload}")
 
         return build(cls, full=False, depth=depth + 1)
 
@@ -434,7 +430,7 @@ def synth(annotation, depth):
     cls = SIMPLEST.get(base_key(inner))
 
     if cls is None:
-        raise Unbuildable("no constructor for {}".format(inner))
+        raise Unbuildable(f"no constructor for {inner}")
 
     return [build(cls, full=False, depth=depth + 1)]
 
@@ -453,8 +449,11 @@ def build(cls, full, depth=0):
 
 def matches(sent, got):
     if isinstance(sent, list):
-        return (isinstance(got, list) and len(sent) == len(got)
-                and all(matches(a, b) for a, b in zip(sent, got)))
+        return (
+            isinstance(got, list)
+            and len(sent) == len(got)
+            and all(matches(a, b) for a, b in zip(sent, got))
+        )
 
     if isinstance(sent, TLObject):
         return isinstance(got, TLObject) and type(sent) is type(got)
@@ -475,27 +474,26 @@ def test_the_schema_was_read():
     SCHEMA,
     ids=[python_qualname(s, q) for s, q, _, _ in SCHEMA],
 )
-def test_a_class_writes_what_the_schema_declares(
-        section, qualname, constructor_id, args, full):
+def test_a_class_writes_what_the_schema_declares(section, qualname, constructor_id, args, full):
     cls = lookup(section, qualname)
 
-    assert cls is not None, "{} has no generated class".format(qualname)
+    assert cls is not None, f"{qualname} has no generated class"
     assert cls.ID & 0xFFFFFFFF == constructor_id, (
-        "{} carries id {:08x}, the schema says {:08x}".format(
-            qualname, cls.ID & 0xFFFFFFFF, constructor_id))
+        f"{qualname} carries id {cls.ID & 0xFFFFFFFF:08x}, the schema says {constructor_id:08x}"
+    )
 
     try:
         specimen = build(cls, full=full)
     except Unbuildable as reason:
-        pytest.fail("could not build a {}: {}".format(qualname, reason))
+        pytest.fail(f"could not build a {qualname}: {reason}")
 
     payload = specimen.write()
     stream = BytesIO(payload)
     values = decode(stream, args, constructor_id)
 
     assert stream.tell() == len(payload), (
-        "{} wrote {} bytes the schema does not account for".format(
-            qualname, len(payload) - stream.tell()))
+        f"{qualname} wrote {len(payload) - stream.tell()} bytes the schema does not account for"
+    )
 
     for name, _ in args:
         if name not in values:
@@ -508,8 +506,8 @@ def test_a_class_writes_what_the_schema_declares(
             continue
 
         assert matches(sent, got), (
-            "{}.{} was set to {!r} but the wire holds {!r}".format(
-                qualname, name, sent, got))
+            f"{qualname}.{name} was set to {sent!r} but the wire holds {got!r}"
+        )
 
 
 BY_NAME = {q: (c, a) for _, q, c, a in SCHEMA}
@@ -527,8 +525,9 @@ def test_the_decoder_notices_a_field_of_the_wrong_width():
     from pyrogram.raw.core.primitives import Int, Long
 
     constructor_id, args = BY_NAME["updateDeleteMessages"]
-    payload = (Int(constructor_id, False) + b"\x15\xc4\xb5\x1c" + Int(1) + Int(9)
-               + Long(77) + Int(88))
+    payload = (
+        Int(constructor_id, False) + b"\x15\xc4\xb5\x1c" + Int(1) + Int(9) + Long(77) + Int(88)
+    )
     stream = BytesIO(payload)
     decode(stream, args, constructor_id)
 
@@ -576,20 +575,23 @@ def test_every_generated_class_has_a_schema_entry_and_the_reverse():
             __import__(module.name)
 
             for value in vars(_sys.modules[module.name]).values():
-                if (inspect.isclass(value) and issubclass(value, TLObject)
-                        and value is not TLObject and hasattr(value, "ID")
-                        and value.__module__ == module.name):
+                if (
+                    inspect.isclass(value)
+                    and issubclass(value, TLObject)
+                    and value is not TLObject
+                    and hasattr(value, "ID")
+                    and value.__module__ == module.name
+                ):
                     generated.add(value.QUALNAME)
 
-    declared = {python_qualname(section, qualname)
-                for section, qualname, _, _ in SCHEMA}
+    declared = {python_qualname(section, qualname) for section, qualname, _, _ in SCHEMA}
 
     assert not generated - declared, (
-        "generated classes with no schema line: {}".format(
-            sorted(generated - declared)[:10]))
+        f"generated classes with no schema line: {sorted(generated - declared)[:10]}"
+    )
     assert not declared - generated, (
-        "schema lines with no generated class: {}".format(
-            sorted(declared - generated)[:10]))
+        f"schema lines with no generated class: {sorted(declared - generated)[:10]}"
+    )
 
 
 def test_a_vector_of_primitives_always_carries_its_element_type():
@@ -600,8 +602,7 @@ def test_a_vector_of_primitives_always_carries_its_element_type():
     of numbers or strings. A layer that broke that would decode silently wrong,
     so check it rather than trust it.
     """
-    primitives = {"int", "long", "double", "int128", "int256",
-                  "string", "bytes", "Bool"}
+    primitives = {"int", "long", "double", "int128", "int256", "string", "bytes", "Bool"}
     untyped = []
 
     for section, qualname, _, args in SCHEMA:
@@ -617,15 +618,16 @@ def test_a_vector_of_primitives_always_carries_its_element_type():
             if not inner_of.lower().startswith("vector<"):
                 continue
 
-            if inner_of[inner_of.index("<") + 1:-1] not in primitives:
+            if inner_of[inner_of.index("<") + 1 : -1] not in primitives:
                 continue
 
             body = inspect.getsource(cls).split("def read(", 1)[1].split("def write(", 1)[0]
-            line = re.search(r"^\s*{} = (.+?)$".format(re.escape(name)), body, re.M)
+            line = re.search(rf"^\s*{re.escape(name)} = (.+?)$", body, re.MULTILINE)
 
             if line and not re.search(r"TLObject\.read\(b,\s*\w+\)", line.group(1)):
-                untyped.append("{}.{} reads {}".format(qualname, name, line.group(1)))
+                untyped.append(f"{qualname}.{name} reads {line.group(1)}")
 
     assert not untyped, (
         "these vectors of primitives are read with no element type, so "
-        "Vector.read would take them for objects: {}".format(untyped[:10]))
+        f"Vector.read would take them for objects: {untyped[:10]}"
+    )

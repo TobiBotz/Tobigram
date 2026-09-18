@@ -9,8 +9,8 @@ import pytest
 import pyrogram
 import pyrogram.session.session as session_mod
 from pyrogram import raw
-from pyrogram.connection.transport.tcp.tcp import TCP
 from pyrogram.connection import Connection
+from pyrogram.connection.transport.tcp.tcp import TCP
 from pyrogram.connection.transport.tcp.tcp_abridged import TCPAbridged
 from pyrogram.dispatcher import Dispatcher
 from pyrogram.file_id import FileId, FileType
@@ -44,7 +44,6 @@ class DummyClient:
 
 
 class RecordingConnection:
-
     def __init__(self):
         self.protocol = SimpleNamespace(crypto_executor=None)
         self.closed = False
@@ -105,9 +104,7 @@ async def test_a_replayed_msg_id_is_dropped_without_closing_the_connection(monke
     await session.handle_packet(b"ignored")
 
     assert session.stored_msg_ids == [msg_id], "a replayed msg_id must not be stored twice"
-    assert not session.connection.closed, (
-        "a duplicate msg_id must not cost a reconnect"
-    )
+    assert not session.connection.closed, "a duplicate msg_id must not cost a reconnect"
 
 
 async def test_a_msg_id_below_the_replay_window_is_dropped_not_fatal(monkeypatch):
@@ -160,8 +157,7 @@ async def test_pruning_the_window_is_what_arms_the_floor(monkeypatch):
 
     base = MsgId() >> 32
     session.stored_msg_ids = [
-        (base << 32) | (i << 2) | 1
-        for i in range(Session.STORED_MSG_IDS_MAX_SIZE + 1)
+        (base << 32) | (i << 2) | 1 for i in range(Session.STORED_MSG_IDS_MAX_SIZE + 1)
     ]
     pruned = session.stored_msg_ids[Session.STORED_MSG_IDS_MAX_SIZE // 2 - 1]
 
@@ -217,10 +213,9 @@ async def test_a_broken_packet_tears_the_connection_down_exactly_once(monkeypatc
     monkeypatch.setattr(session_mod.warpcrypto, "unpack_message", unpack)
 
     with caplog.at_level(logging.WARNING, logger="pyrogram.session.session"):
-        await asyncio.gather(*(
-            session.handle_packet(b"ignored")
-            for _ in range(Session.MAX_INFLIGHT_PACKETS)
-        ))
+        await asyncio.gather(
+            *(session.handle_packet(b"ignored") for _ in range(Session.MAX_INFLIGHT_PACKETS))
+        )
 
     await asyncio.sleep(0)
 
@@ -228,9 +223,7 @@ async def test_a_broken_packet_tears_the_connection_down_exactly_once(monkeypatc
         "every packet already decrypted when the connection went bad must not "
         "queue a restart of its own"
     )
-    assert len([
-        r for r in caplog.records if "closing connection" in r.getMessage()
-    ]) == 1
+    assert len([r for r in caplog.records if "closing connection" in r.getMessage()]) == 1
 
 
 class ClosingWriter:
@@ -279,9 +272,7 @@ async def test_in_flight_requests_report_a_lost_connection_not_a_timeout(monkeyp
     session.connection = RecordingConnection()
     monkeypatch.setattr(session.loop, "run_in_executor", _packed)
 
-    pending = asyncio.ensure_future(
-        session.send(raw.functions.Ping(ping_id=0), timeout=30)
-    )
+    pending = asyncio.ensure_future(session.send(raw.functions.Ping(ping_id=0), timeout=30))
     await asyncio.sleep(0)
     await asyncio.sleep(0)
     assert session.results, "the request should be waiting for a reply"
@@ -344,8 +335,7 @@ async def test_a_transport_error_during_the_handshake_names_itself(monkeypatch):
     error, elapsed = await _failed_handshake(monkeypatch, (-404).to_bytes(4, "little", signed=True))
 
     assert isinstance(error, ConnectionResetError), (
-        "a server that refuses the handshake must not be reported as a timeout, "
-        f"got {error!r}"
+        f"a server that refuses the handshake must not be reported as a timeout, got {error!r}"
     )
     assert "404" in str(error) and "auth key not found" in str(error), (
         f"the transport error the server sent must reach the caller, got {error!r}"
@@ -492,13 +482,10 @@ async def test_a_failing_packet_also_returns_its_slot():
 
     reads = await _reads_under_cap(make_session(), explodes)
 
-    assert reads > 2, (
-        f"a packet that raised must not leak its slot; the loop stopped at {reads}"
-    )
+    assert reads > 2, f"a packet that raised must not leak its slot; the loop stopped at {reads}"
 
 
 class FragmentedReader:
-
     def __init__(self, payload: bytes, piece: int = 7):
         self.buf = payload
         self.piece = piece
@@ -532,9 +519,7 @@ async def test_recv_of_nothing_is_empty_not_none():
 
 
 async def test_recv_reports_a_closed_socket_as_none():
-    assert await make_transport(b"ab").recv(8) is None, (
-        "a short read means the peer went away"
-    )
+    assert await make_transport(b"ab").recv(8) is None, "a short read means the peer went away"
 
 
 async def test_an_abridged_frame_still_round_trips():
@@ -609,7 +594,7 @@ def make_dispatcher(**kwargs):
         rate_limiter=None,
         start_handler=None,
         stop_handler=None,
-        **kwargs
+        **kwargs,
     )
     return Dispatcher(client)
 
@@ -765,7 +750,6 @@ CHUNK = 1024 * 1024
 
 
 class ChunkSession:
-
     def __init__(self, file_size: int):
         self.file_size = file_size
         self.served = 0
@@ -830,7 +814,6 @@ def test_the_transfer_budget_fits_a_small_host():
 
 
 class SharedLink:
-
     def __init__(self, file_size: int, step: float = 0.01):
         self.file_size = file_size
         self.step = step
@@ -841,8 +824,7 @@ class SharedLink:
 
     def session(self, dc_id: int = 2) -> Session:
         session = Session(
-            DummyClient(), dc_id, b"\x00" * 256, False,
-            is_media=True, crypto_executor=None
+            DummyClient(), dc_id, b"\x00" * 256, False, is_media=True, crypto_executor=None
         )
         session.is_started.set()
         session.send = self._send_for(session)
@@ -910,7 +892,6 @@ async def test_concurrent_downloads_cannot_pile_up_on_one_connection(monkeypatch
 
 
 class SlowLink(SharedLink):
-
     def _send_for(self, session):
         async def send(query, wait_response=True, timeout=None, retry=0):
             self.inflight[id(session)] = self.inflight.get(id(session), 0) + 1
@@ -976,9 +957,7 @@ async def test_a_capped_connection_meets_its_deadline_at_the_same_load():
 
 
 async def test_media_connections_ship_with_a_cap():
-    session = Session(
-        DummyClient(), 2, b"\x00" * 256, False, is_media=True, crypto_executor=None
-    )
+    session = Session(DummyClient(), 2, b"\x00" * 256, False, is_media=True, crypto_executor=None)
 
     assert session._invoke_semaphore is not None
     assert 1 <= Session.MAX_INFLIGHT_MEDIA <= 8, (
@@ -1029,11 +1008,13 @@ async def test_every_chunk_still_arrives_in_order(monkeypatch):
 
 def bare_vector(prim, values):
     from pyrogram.raw.core import Int, Vector
+
     return Int(Vector.ID, False) + Int(len(values)) + b"".join(prim(v) for v in values)
 
 
 def test_a_bare_vector_of_ints_still_reads():
     from io import BytesIO
+
     from pyrogram.raw.core import Int, TLObject
 
     assert list(TLObject.read(BytesIO(bare_vector(Int, [1, 2, 3, 4])))) == [1, 2, 3, 4]
@@ -1041,6 +1022,7 @@ def test_a_bare_vector_of_ints_still_reads():
 
 def test_a_bare_vector_of_longs_still_reads():
     from io import BytesIO
+
     from pyrogram.raw.core import Long, TLObject
 
     values = [1 << 40, 2 << 40, 3]
@@ -1049,6 +1031,7 @@ def test_a_bare_vector_of_longs_still_reads():
 
 def test_reading_a_vector_does_not_consume_what_follows():
     from io import BytesIO
+
     from pyrogram.raw.core import Int, Vector
 
     stream = BytesIO(Int(2) + Int(7) + Int(9) + Int(0x5EEDBEEF, False))
@@ -1297,9 +1280,7 @@ async def test_terminating_one_client_leaves_the_shared_pool_alive():
     from pyrogram.methods.auth.terminate import Terminate
 
     source = Terminate.terminate.__code__.co_consts
-    assert not any(
-        isinstance(c, str) and "shutdown" in c for c in source if isinstance(c, str)
-    )
+    assert not any(isinstance(c, str) and "shutdown" in c for c in source if isinstance(c, str))
 
     a = pyrogram.Client("pool_c", api_id=1, api_hash="x", in_memory=True)
     assert not a.executor._shutdown
@@ -1307,6 +1288,7 @@ async def test_terminating_one_client_leaves_the_shared_pool_alive():
 
 async def test_uploads_draw_on_the_shared_budget(tmp_path):
     from types import SimpleNamespace as NS
+
     from .e2e import CHUNK, FakeDC, make_client
 
     size = 8 * CHUNK
@@ -1385,12 +1367,29 @@ def test_a_mention_entity_still_resolves_its_user():
     from pyrogram import enums, types
 
     user = raw.types.User(
-        id=7, is_self=False, contact=False, mutual_contact=False, deleted=False,
-        bot=False, bot_chat_history=False, bot_nochats=False, verified=False,
-        restricted=False, min=False, bot_inline_geo=False, support=False,
-        scam=False, apply_min_photo=False, fake=False, bot_attach_menu=False,
-        premium=False, attach_menu_enabled=False, first_name="m", access_hash=1,
-        usernames=[], restriction_reason=[],
+        id=7,
+        is_self=False,
+        contact=False,
+        mutual_contact=False,
+        deleted=False,
+        bot=False,
+        bot_chat_history=False,
+        bot_nochats=False,
+        verified=False,
+        restricted=False,
+        min=False,
+        bot_inline_geo=False,
+        support=False,
+        scam=False,
+        apply_min_photo=False,
+        fake=False,
+        bot_attach_menu=False,
+        premium=False,
+        attach_menu_enabled=False,
+        first_name="m",
+        access_hash=1,
+        usernames=[],
+        restriction_reason=[],
     )
     entity = raw.types.MessageEntityMentionName(offset=0, length=2, user_id=7)
     parsed = types.MessageEntity._parse(None, entity, {7: user})
@@ -1415,8 +1414,15 @@ def test_a_formatted_date_entity_keeps_its_format_string():
     from pyrogram import enums, types
 
     entity = raw.types.MessageEntityFormattedDate(
-        offset=0, length=1, date=1700000000, relative=False, day_of_week=True,
-        short_date=True, long_date=False, short_time=True, long_time=False,
+        offset=0,
+        length=1,
+        date=1700000000,
+        relative=False,
+        day_of_week=True,
+        short_date=True,
+        long_date=False,
+        short_time=True,
+        long_time=False,
     )
     parsed = types.MessageEntity._parse(None, entity, {})
 
@@ -1429,8 +1435,15 @@ def test_a_relative_formatted_date_entity_is_marked_relative():
     from pyrogram import types
 
     entity = raw.types.MessageEntityFormattedDate(
-        offset=0, length=1, date=1, relative=True, day_of_week=False,
-        short_date=False, long_date=False, short_time=False, long_time=False,
+        offset=0,
+        length=1,
+        date=1,
+        relative=True,
+        day_of_week=False,
+        short_date=False,
+        long_date=False,
+        short_time=False,
+        long_time=False,
     )
     assert types.MessageEntity._parse(None, entity, {}).date_time_format == "r"
 
@@ -1470,13 +1483,14 @@ def test_len_of_a_raw_object_still_measures_its_wire_size():
 
 def test_int_primitives_read_the_same_values_as_before():
     from io import BytesIO
+
     from pyrogram.raw.core import Int, Int128, Int256, Long
 
     cases = [
-        (Int, 4, [0, 1, -1, 2 ** 31 - 1, -(2 ** 31)]),
-        (Long, 8, [0, 1, -1, 2 ** 63 - 1, -(2 ** 63)]),
-        (Int128, 16, [0, 1, 2 ** 127 - 1, -(2 ** 127)]),
-        (Int256, 32, [0, 1, 2 ** 255 - 1, -(2 ** 255)]),
+        (Int, 4, [0, 1, -1, 2**31 - 1, -(2**31)]),
+        (Long, 8, [0, 1, -1, 2**63 - 1, -(2**63)]),
+        (Int128, 16, [0, 1, 2**127 - 1, -(2**127)]),
+        (Int256, 32, [0, 1, 2**255 - 1, -(2**255)]),
     ]
 
     for cls, size, values in cases:
@@ -1488,9 +1502,10 @@ def test_int_primitives_read_the_same_values_as_before():
 
 def test_unsigned_int_primitives_still_work():
     from io import BytesIO
+
     from pyrogram.raw.core import Int, Long
 
-    for cls, size, value in ((Int, 4, 2 ** 32 - 1), (Long, 8, 2 ** 64 - 1)):
+    for cls, size, value in ((Int, 4, 2**32 - 1), (Long, 8, 2**64 - 1)):
         raw_bytes = value.to_bytes(size, "little")
         assert cls.read(BytesIO(raw_bytes), False) == value
         assert cls.read(BytesIO(raw_bytes)) == -1
@@ -1498,6 +1513,7 @@ def test_unsigned_int_primitives_still_work():
 
 def test_bytes_and_string_primitives_round_trip():
     from io import BytesIO
+
     from pyrogram.raw.core import Bytes, String
 
     for payload in (b"", b"a", b"x" * 253, b"y" * 254, b"z" * 1000):
@@ -1509,6 +1525,7 @@ def test_bytes_and_string_primitives_round_trip():
 
 def test_a_string_with_invalid_utf8_is_still_replaced():
     from io import BytesIO
+
     from pyrogram.raw.core import Bytes, String
 
     assert String.read(BytesIO(bytes(Bytes(b"\xff\xfe")))) == "��"
@@ -1516,6 +1533,7 @@ def test_a_string_with_invalid_utf8_is_still_replaced():
 
 def test_bool_primitive_reads_both_values():
     from io import BytesIO
+
     from pyrogram.raw.core import Bool
 
     assert Bool.read(BytesIO(bytes(Bool(True)))) is True
@@ -1526,6 +1544,7 @@ def test_bool_primitive_reads_both_values():
 def test_double_primitive_round_trips():
     import struct
     from io import BytesIO
+
     from pyrogram.raw.core import Double
 
     for value in (0.0, 1.5, -3.25, 1e300, -1e-300):
@@ -1535,6 +1554,7 @@ def test_double_primitive_round_trips():
 
 def test_a_typed_vector_reads_every_element():
     from io import BytesIO
+
     from pyrogram.raw.core import Int, Vector
 
     values = [1, -2, 3, -4]
@@ -1548,6 +1568,7 @@ def test_a_typed_vector_reads_every_element():
 
 def test_a_bare_vector_of_objects_reads_every_element():
     from io import BytesIO
+
     from pyrogram.raw.core import Int, TLObject, Vector
 
     items = [raw.types.MessageEntityBold(offset=i, length=1) for i in range(3)]
@@ -1560,6 +1581,7 @@ def test_a_bare_vector_of_objects_reads_every_element():
 
 def test_tlobject_read_still_forwards_extra_arguments():
     from io import BytesIO
+
     from pyrogram.raw.core import TLObject
 
     seen = []
@@ -1585,6 +1607,7 @@ def test_tlobject_read_still_forwards_extra_arguments():
 
 def test_an_unknown_constructor_still_raises_key_error():
     from io import BytesIO
+
     from pyrogram.raw.core import TLObject
 
     with pytest.raises(KeyError):

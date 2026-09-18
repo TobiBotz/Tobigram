@@ -16,20 +16,21 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, types
 
 
 class GetBotName:
     async def get_bot_name(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         language_code: str = "",
-        for_my_bot: Optional[Union[int, str]] = None,
-    ) -> str:
+        for_my_bot: int | str | None = None,
+    ) -> types.BotName:
         """Use this method to get the current / owned bot name for the given user language.
-        
+
         .. note::
 
             If the current account is an User, can be called only if the ``for_my_bot`` has ``can_be_edited`` property set to True.
@@ -45,19 +46,19 @@ class GetBotName:
                 The bot should have ``can_be_edited`` property set to True.
 
         Returns:
-            ``str``: On success, returns the name of a bot in the given language.
+            :obj:`~pyrogram.types.BotName`: On success, returns the name of a bot in the given language.
 
         Example:
             .. code-block:: python
 
                 bot_name = await app.get_bot_name()
+                print(bot_name.name)
         """
 
         bot_info = await self.invoke(
             raw.functions.bots.GetBotInfo(
                 bot=await self.resolve_peer(for_my_bot) if for_my_bot is not None else None,
-                lang_code=language_code
+                lang_code=language_code,
             )
         )
-        return bot_info.name
-
+        return types.BotName.read(bot_info)

@@ -16,9 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
+
 import pyrogram
 from pyrogram import raw, types
+
 from .inline_query_result import InlineQueryResult
 
 
@@ -77,18 +80,18 @@ class InlineQueryResultLocation(InlineQueryResult):
         title: str,
         latitude: float,
         longitude: float,
-        horizontal_accuracy: Optional[float] = None,
-        live_period: Optional[int] = None,
-        heading: Optional[int] = None,
-        proximity_alert_radius: Optional[int] = None,
-        id: Optional[str] = None,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        input_message_content: Optional["types.InputMessageContent"] = None,
-        thumb_url: Optional[str] = None,
+        horizontal_accuracy: float | None = None,
+        live_period: int | None = None,
+        heading: int | None = None,
+        proximity_alert_radius: int | None = None,
+        id: str | None = None,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        input_message_content: types.InputMessageContent | None = None,
+        thumb_url: str | None = None,
         thumb_width: int = 0,
-        thumb_height: int = 0
+        thumb_height: int = 0,
     ):
-        super().__init__("location", id, input_message_content, reply_markup)
+        super().__init__("geo", id, input_message_content, reply_markup)
 
         self.title = title
         self.latitude = latitude
@@ -101,7 +104,7 @@ class InlineQueryResultLocation(InlineQueryResult):
         self.thumb_width = thumb_width
         self.thumb_height = thumb_height
 
-    async def write(self, client: "pyrogram.Client"):
+    async def write(self, client: pyrogram.Client):
         return raw.types.InputBotInlineResult(
             id=self.id,
             type=self.type,
@@ -110,14 +113,13 @@ class InlineQueryResultLocation(InlineQueryResult):
                 await self.input_message_content.write(client, self.reply_markup)
                 if self.input_message_content
                 else raw.types.InputBotInlineMessageMediaGeo(
-                    geo_point=raw.types.InputGeoPoint(
-                        lat=self.latitude,
-                        long=self.longitude
-                    ),
+                    geo_point=raw.types.InputGeoPoint(lat=self.latitude, long=self.longitude),
                     heading=self.heading,
                     period=self.live_period,
                     proximity_notification_radius=self.proximity_alert_radius,
-                    reply_markup=await self.reply_markup.write(client) if self.reply_markup else None
+                    reply_markup=await self.reply_markup.write(client)
+                    if self.reply_markup
+                    else None,
                 )
-            )
+            ),
         )

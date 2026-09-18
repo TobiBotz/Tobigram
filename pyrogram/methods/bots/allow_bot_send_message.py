@@ -21,18 +21,18 @@
 # Source: tl:bots.allowSendMessage
 # ***************************
 
-from typing import Union
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class AllowBotSendMessage:
     async def allow_bot_send_message(
-        self: "pyrogram.Client",
-        bot: Union[int, str],
-    ) -> "types.Message":
+        self: pyrogram.Client,
+        bot: int | str,
+    ) -> types.Message:
         """Allow a bot to send messages to the user.
 
         .. include:: /_includes/usable-by/users.rst
@@ -56,12 +56,18 @@ class AllowBotSendMessage:
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
+                    self,
+                    i.message,
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                 )

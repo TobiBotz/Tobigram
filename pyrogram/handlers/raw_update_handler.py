@@ -16,7 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Callable, Optional
+from __future__ import annotations
+
+from collections.abc import Callable
 
 from pyrogram.filters import Filter
 
@@ -65,5 +67,5 @@ class RawUpdateHandler(Handler):
         - :obj:`~pyrogram.raw.types.ChannelForbidden`
     """
 
-    def __init__(self, callback: Callable, filters: Optional[Filter] = None):
+    def __init__(self, callback: Callable, filters: Filter | None = None):
         super().__init__(callback, filters)

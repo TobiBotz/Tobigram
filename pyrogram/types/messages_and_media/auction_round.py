@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+
+from __future__ import annotations
 
 from pyrogram import raw
 
@@ -44,8 +45,8 @@ class AuctionRound(Object):
         self,
         number: int,
         duration: int,
-        extend_time: Optional[int] = None,
-        top_winner_count: Optional[int] = None,
+        extend_time: int | None = None,
+        top_winner_count: int | None = None,
     ):
         super().__init__()
 
@@ -55,7 +56,7 @@ class AuctionRound(Object):
         self.top_winner_count = top_winner_count
 
     @staticmethod
-    def _parse(auction_round: "raw.base.StarGiftAuctionRound"):
+    def _parse(auction_round: raw.base.StarGiftAuctionRound):
         if isinstance(auction_round, raw.types.StarGiftAuctionRound):
             return AuctionRound(
                 number=auction_round.num,
@@ -68,4 +69,3 @@ class AuctionRound(Object):
                 extend_time=auction_round.extend_window,
                 top_winner_count=auction_round.extend_top,
             )
-

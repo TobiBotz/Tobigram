@@ -16,12 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import raw, types
 
 
 class GetGlobalPrivacySettings:
-    async def get_global_privacy_settings(self: "pyrogram.Client") -> "types.GlobalPrivacySettings":
+    async def get_global_privacy_settings(self: pyrogram.Client) -> types.GlobalPrivacySettings:
         """Get account global privacy settings.
 
         .. include:: /_includes/usable-by/users.rst
@@ -37,4 +39,3 @@ class GetGlobalPrivacySettings:
         r = await self.invoke(raw.functions.account.GetGlobalPrivacySettings())
 
         return types.GlobalPrivacySettings._parse(r)
-

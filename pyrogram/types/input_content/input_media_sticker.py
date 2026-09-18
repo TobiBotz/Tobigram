@@ -16,10 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import io
 import pathlib
 import re
-from typing import BinaryIO, Callable, Optional, Union
+from collections.abc import Callable
+from typing import BinaryIO
 
 import pyrogram
 from pyrogram import raw, utils
@@ -46,7 +49,7 @@ class InputMediaSticker(InputMedia):
 
     def __init__(
         self,
-        media: Union[str, BinaryIO],
+        media: str | BinaryIO,
         emoji: str = "",
     ) -> None:
         super().__init__(media)
@@ -56,12 +59,12 @@ class InputMediaSticker(InputMedia):
     async def write(
         self,
         *,
-        client: "pyrogram.Client",
-        chat_id: Optional[Union[int, str]] = None,
-        progress: Optional[Callable] = None,
+        client: pyrogram.Client,
+        chat_id: int | str | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-        **kwargs
-    ) -> "raw.base.InputMedia":
+        **kwargs,
+    ) -> raw.base.InputMedia:
         if chat_id is None:
             peer = raw.types.InputPeerSelf()
         else:
@@ -102,4 +105,3 @@ class InputMediaSticker(InputMedia):
             )
 
         return utils.get_input_media_from_file_id(self.media, FileType.STICKER)
-

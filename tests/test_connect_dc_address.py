@@ -67,8 +67,12 @@ class FakeClient(Connect, SendCode, SignInBot):
 
     async def get_session(self, dc_id=None, server_address=None, port=None, **kwargs):
         return FakeSession(
-            self, dc_id, b"migrated-key", False,
-            server_address=server_address, port=port,
+            self,
+            dc_id,
+            b"migrated-key",
+            False,
+            server_address=server_address,
+            port=port,
         )
 
     async def invoke(self, query, *args, **kwargs):

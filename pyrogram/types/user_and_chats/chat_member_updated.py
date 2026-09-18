@@ -16,12 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Dict, Optional, Union
 
 import pyrogram
-from pyrogram import raw, utils
-from pyrogram import types
+from pyrogram import enums, raw, types, utils
+
 from ..object import Object
 from ..update import Update
 
@@ -58,15 +59,15 @@ class ChatMemberUpdated(Object, Update):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
-        chat: "types.Chat",
-        from_user: "types.User",
+        client: pyrogram.Client | None = None,
+        chat: types.Chat,
+        from_user: types.User,
         date: datetime,
-        old_chat_member: Optional["types.ChatMember"] = None,
-        new_chat_member: Optional["types.ChatMember"] = None,
-        invite_link: Optional["types.ChatInviteLink"] = None,
-        via_join_request: Optional[bool] = None,
-        via_chat_folder_invite_link: Optional[bool] = None
+        old_chat_member: types.ChatMember | None = None,
+        new_chat_member: types.ChatMember | None = None,
+        invite_link: types.ChatInviteLink | None = None,
+        via_join_request: bool | None = None,
+        via_chat_folder_invite_link: bool | None = None,
     ):
         super().__init__(client)
 
@@ -79,14 +80,71 @@ class ChatMemberUpdated(Object, Update):
         self.via_join_request = via_join_request
         self.via_chat_folder_invite_link = via_chat_folder_invite_link
 
+    @property
+    def user(self) -> types.User | None:
+        """The user whose membership status has changed."""
+        if self.new_chat_member and self.new_chat_member.user:
+            return self.new_chat_member.user
+        if self.old_chat_member and self.old_chat_member.user:
+            return self.old_chat_member.user
+        return None
+
+    @property
+    def left_chat_member(self) -> types.User | None:
+        """Alias for :attr:`user` when a member has left or was removed from the chat."""
+        return self.user if self.is_left else None
+
+    @property
+    def is_left(self) -> bool:
+        """True if the member left voluntarily, was kicked, or was banned from the chat."""
+        if not self.old_chat_member:
+            return False
+
+        old_status = self.old_chat_member.status
+        if old_status not in {
+            enums.ChatMemberStatus.MEMBER,
+            enums.ChatMemberStatus.ADMINISTRATOR,
+            enums.ChatMemberStatus.OWNER,
+            enums.ChatMemberStatus.RESTRICTED,
+        }:
+            return False
+
+        if self.new_chat_member is None:
+            return True
+
+        new_status = self.new_chat_member.status
+        if new_status in {enums.ChatMemberStatus.LEFT, enums.ChatMemberStatus.BANNED}:
+            return True
+
+        if new_status == enums.ChatMemberStatus.RESTRICTED and not self.new_chat_member.is_member:
+            return True
+
+        return False
+
+    @property
+    def is_self_left(self) -> bool:
+        """True if the user left the chat voluntarily (not removed by an administrator)."""
+        if not self.is_left:
+            return False
+        user = self.user
+        return bool(user and self.from_user and user.id == self.from_user.id)
+
+    @property
+    def is_kicked(self) -> bool:
+        """True if the user was kicked or banned by an administrator."""
+        if not self.is_left:
+            return False
+        user = self.user
+        return bool(user and self.from_user and user.id != self.from_user.id)
+
     @staticmethod
     def _parse(
-        client: "pyrogram.Client",
-        update: Union["raw.types.UpdateChatParticipant", "raw.types.UpdateChannelParticipant"],
-        users: Dict[int, "raw.types.User"],
-        chats: Dict[int, "raw.types.Chat"]
-    ) -> "ChatMemberUpdated":
-        chat_id = getattr(update, "chat_id", None) or getattr(update, "channel_id")
+        client: pyrogram.Client,
+        update: raw.types.UpdateChatParticipant | raw.types.UpdateChannelParticipant,
+        users: dict[int, raw.types.User],
+        chats: dict[int, raw.types.Chat],
+    ) -> ChatMemberUpdated:
+        chat_id = getattr(update, "chat_id", None) or update.channel_id
 
         old_chat_member = None
         new_chat_member = None
@@ -114,6 +172,5 @@ class ChatMemberUpdated(Object, Update):
             new_chat_member=new_chat_member,
             invite_link=invite_link,
             via_join_request=via_join_request,
-            client=client
+            client=client,
         )
-

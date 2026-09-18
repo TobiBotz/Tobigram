@@ -16,12 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import html
 import re
-from typing import Optional
-
+import urllib.parse
 import pyrogram
 from pyrogram.enums import MessageEntityType
+
 from . import utils
 from .html import HTML
 
@@ -33,21 +35,27 @@ SPOILER_DELIM = "||"
 CODE_DELIM = "`"
 PRE_DELIM = "```"
 
-MARKDOWN_RE = re.compile(r"({d})|\[(.+?)\]\((.+?)\)".format(
-    d="|".join(
-        ["".join(i) for i in [
-            [rf"\{j}" for j in i]
-            for i in [
-                PRE_DELIM,
-                CODE_DELIM,
-                STRIKE_DELIM,
-                UNDERLINE_DELIM,
-                ITALIC_DELIM,
-                BOLD_DELIM,
-                SPOILER_DELIM
+MARKDOWN_RE = re.compile(
+    r"({d})|(!?)\[(.+?)\]\((.+?)\)".format(
+        d="|".join(
+            [
+                "".join(i)
+                for i in [
+                    [rf"\{j}" for j in i]
+                    for i in [
+                        PRE_DELIM,
+                        CODE_DELIM,
+                        STRIKE_DELIM,
+                        UNDERLINE_DELIM,
+                        ITALIC_DELIM,
+                        BOLD_DELIM,
+                        SPOILER_DELIM,
+                    ]
+                ]
             ]
-        ]]
-    )))
+        )
+    )
+)
 
 QUOTE_DELIM = ">"
 EXPANDABLE_QUOTE_DELIM = "**>"
@@ -61,18 +69,20 @@ QUOTE_MARKERS = (
 OPENING_TAG = "<{}>"
 CLOSING_TAG = "</{}>"
 URL_MARKUP = '<a href="{}">{}</a>'
+EMOJI_MARKUP = '<tg-emoji emoji-id="{}">{}</tg-emoji>'
+DATE_TIME_MARKUP = '<tg-time unix="{}" format="{}">{}</tg-time>'
 FIXED_WIDTH_DELIMS = [CODE_DELIM, PRE_DELIM]
 
 
 class Markdown:
-    def __init__(self, client: Optional["pyrogram.Client"]):
+    def __init__(self, client: pyrogram.Client | None):
         self.html = HTML(client)
 
     @staticmethod
     def _split_quote_marker(line: str):
         for marker, expandable in QUOTE_MARKERS:
             if line.startswith(marker):
-                return line[len(marker):], expandable
+                return line[len(marker) :], expandable
 
         return None, False
 
@@ -129,7 +139,7 @@ class Markdown:
 
         for i, match in enumerate(re.finditer(MARKDOWN_RE, text)):
             start, _ = match.span()
-            delim, text_url, url = match.groups()
+            delim, bang, text_url, url = match.groups()
             full = match.group(0)
 
             if delim in FIXED_WIDTH_DELIMS:
@@ -139,7 +149,29 @@ class Markdown:
                 continue
 
             if text_url:
-                text = utils.replace_once(text, full, URL_MARKUP.format(url, text_url), start)
+                markup = None
+
+                if bang:
+                    parsed = urllib.parse.urlparse(url)
+                    params = urllib.parse.parse_qs(parsed.query)
+
+                    if parsed.scheme == "tg" and parsed.netloc == "emoji":
+                        emoji_id = params.get("id", [""])[0]
+
+                        if emoji_id.isdigit():
+                            markup = EMOJI_MARKUP.format(emoji_id, text_url)
+                    elif parsed.scheme == "tg" and parsed.netloc == "time":
+                        unix_time = params.get("unix", [""])[0]
+
+                        if unix_time.isdigit():
+                            markup = DATE_TIME_MARKUP.format(
+                                unix_time, params.get("format", [""])[0], text_url
+                            )
+
+                if markup is None:
+                    markup = bang + URL_MARKUP.format(url, text_url)
+
+                text = utils.replace_once(text, full, markup, start)
                 continue
 
             if delim == BOLD_DELIM:
@@ -169,9 +201,9 @@ class Markdown:
             if delim == PRE_DELIM and delim in delims:
                 pos = text.find(PRE_DELIM, start)
                 delim_and_language = text[pos:].split("\n")[0]
-                language = delim_and_language[len(PRE_DELIM):]
+                language = delim_and_language[len(PRE_DELIM) :]
                 end = pos + len(delim_and_language)
-                if text[end:end + 1] == "\n":
+                if text[end : end + 1] == "\n":
                     end += 1
                 text = text[:pos] + f'<pre language="{language}">' + text[end:]
                 continue
@@ -179,7 +211,7 @@ class Markdown:
             if delim == PRE_DELIM:
                 pos = text.find(PRE_DELIM, start)
                 if pos > 0 and text[pos - 1] == "\n":
-                    text = text[:pos - 1] + tag + text[pos + len(PRE_DELIM):]
+                    text = text[: pos - 1] + tag + text[pos + len(PRE_DELIM) :]
                     continue
 
             text = utils.replace_once(text, delim, tag, start)
@@ -219,14 +251,22 @@ class Markdown:
                 for index in range(start, end - 1):
                     if text[index] == "\n":
                         entities_offsets.append((QUOTE_DELIM, index + 1))
+
+                if expandable:
+                    line_end = text.find("\n", end)
+                    end = len(text) if line_end < 0 else line_end
             elif entity_type == MessageEntityType.DATE_TIME:
                 unix_time = getattr(entity, "unix_time", 0) or 0
                 dt_format = getattr(entity, "date_time_format", "") or ""
-                if dt_format:
-                    start_tag = f'<tg-time unix="{unix_time}" format="{dt_format}">'
-                    end_tag = "</tg-time>"
-                else:
-                    continue
+                start_tag = "!["
+                end_tag = (
+                    f"](tg://time?unix={unix_time}&format={dt_format})"
+                    if dt_format
+                    else f"](tg://time?unix={unix_time})"
+                )
+            elif entity_type == MessageEntityType.CUSTOM_EMOJI:
+                start_tag = "!["
+                end_tag = f"](tg://emoji?id={entity.custom_emoji_id})"
             elif entity_type == MessageEntityType.SPOILER:
                 start_tag = end_tag = SPOILER_DELIM
             elif entity_type == MessageEntityType.TEXT_LINK:
@@ -240,15 +280,23 @@ class Markdown:
             else:
                 continue
 
-            entities_offsets.append((start_tag, start,))
-            entities_offsets.append((end_tag, end,))
+            entities_offsets.append(
+                (
+                    start_tag,
+                    start,
+                )
+            )
+            entities_offsets.append(
+                (
+                    end_tag,
+                    end,
+                )
+            )
 
-        entities_offsets = map(
-            lambda x: x[1],
-            sorted(
-                enumerate(entities_offsets),
-                key=lambda x: (x[1][1], x[0]),
-                reverse=True
+        entities_offsets = (
+            x[1]
+            for x in sorted(
+                enumerate(entities_offsets), key=lambda x: (x[1][1], x[0]), reverse=True
             )
         )
 

@@ -1,4 +1,5 @@
-from typing import List, Union, Optional
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
@@ -6,15 +7,15 @@ from pyrogram import enums, raw, types, utils
 
 class SendMessageDraft:
     async def send_message_draft(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         draft_id: int,
         text: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        message_thread_id: Optional[int] = None,
-        can_stop: Optional[bool] = None,
-        keep_on_stop: Optional[bool] = None,
+        parse_mode: enums.ParseMode | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        message_thread_id: int | None = None,
+        can_stop: bool | None = None,
+        keep_on_stop: bool | None = None,
     ) -> bool:
         """Send a text draft action, allowing bots to stream a partial message.
 

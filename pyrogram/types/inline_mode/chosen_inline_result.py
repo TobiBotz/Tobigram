@@ -16,11 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 
 import pyrogram
-from pyrogram import raw, utils
-from pyrogram import types
+from pyrogram import raw, types, utils
+
 from ..object import Object
 from ..update import Update
 
@@ -55,12 +56,12 @@ class ChosenInlineResult(Object, Update):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
+        client: pyrogram.Client | None = None,
         result_id: str,
-        from_user: "types.User",
+        from_user: types.User,
         query: str,
-        location: Optional["types.Location"] = None,
-        inline_message_id: Optional[str] = None
+        location: types.Location | None = None,
+        inline_message_id: str | None = None,
     ):
         super().__init__(client)
 
@@ -71,7 +72,9 @@ class ChosenInlineResult(Object, Update):
         self.inline_message_id = inline_message_id
 
     @staticmethod
-    def _parse(client, chosen_inline_result: raw.types.UpdateBotInlineSend, users) -> "ChosenInlineResult":
+    def _parse(
+        client, chosen_inline_result: raw.types.UpdateBotInlineSend, users
+    ) -> ChosenInlineResult:
         inline_message_id = None
 
         if chosen_inline_result.msg_id:
@@ -81,6 +84,8 @@ class ChosenInlineResult(Object, Update):
             result_id=str(chosen_inline_result.id),
             from_user=types.User._parse(client, users[chosen_inline_result.user_id]),
             query=chosen_inline_result.query,
-            location=types.Location._parse(chosen_inline_result.geo) if chosen_inline_result.geo else None,
-            inline_message_id=inline_message_id
+            location=types.Location._parse(chosen_inline_result.geo)
+            if chosen_inline_result.geo
+            else None,
+            inline_message_id=inline_message_id,
         )

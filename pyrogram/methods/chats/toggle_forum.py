@@ -21,20 +21,20 @@
 # Source: tl:channels.toggleForum
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class ToggleForum:
     async def toggle_forum(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        enabled: Optional[bool] = None,
-        tabs: Optional[bool] = None,
-    ) -> "types.Message":
+        self: pyrogram.Client,
+        chat_id: int | str,
+        enabled: bool | None = None,
+        tabs: bool | None = None,
+    ) -> types.Message:
         """Toggle forum mode in a supergroup.
 
         .. include:: /_includes/usable-by/users.rst
@@ -62,7 +62,6 @@ class ToggleForum:
 
         r = await self.invoke(
             raw.functions.channels.ToggleForum(
-                
                 channel=await self.resolve_peer(chat_id),
                 enabled=enabled,
                 tabs=tabs,
@@ -70,12 +69,18 @@ class ToggleForum:
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
+                    self,
+                    i.message,
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                 )

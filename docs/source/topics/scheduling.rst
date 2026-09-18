@@ -4,7 +4,7 @@ Scheduling Tasks
 Scheduling tasks means executing one or more functions periodically at pre-defined intervals or after a delay. This is
 useful, for example, to send recurring messages to specific chats or users.
 
-This page shows how to integrate wzgram with ``apscheduler``. For more detail, see the
+This page shows how to integrate pyrogram with ``apscheduler``. For more detail, see the
 library's own documentation.
 
 
@@ -23,7 +23,7 @@ Asynchronously
 
     from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
-    from wzgram import Client
+    from pyrogram import Client
 
     app = Client("my_account")
 
@@ -41,7 +41,7 @@ Asynchronously
 From a background thread
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-``BackgroundScheduler`` runs jobs in threads, and a wzgram method called from a thread has
+``BackgroundScheduler`` runs jobs in threads, and a pyrogram method called from a thread has
 no running loop to await on. Hand the coroutine to the client's loop instead:
 
 .. code-block:: python
@@ -50,7 +50,7 @@ no running loop to await on. Hand the coroutine to the client's loop instead:
 
     from apscheduler.schedulers.background import BackgroundScheduler
 
-    from wzgram import Client
+    from pyrogram import Client
 
     app = Client("my_account")
 

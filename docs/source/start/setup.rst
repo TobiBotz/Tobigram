@@ -1,7 +1,7 @@
 Project Setup
 =============
 
-We have just :doc:`installed wzgram <../intro/install>`. In this page we'll discuss what you need to do in order to set up a
+We have just :doc:`installed pyrogram <../intro/install>`. In this page we'll discuss what you need to do in order to set up a
 project with the framework.
 
 -----
@@ -23,11 +23,11 @@ The first step requires you to obtain a valid Telegram API key (api_id and api_h
 Configuration
 -------------
 
-Having the API key from the previous step in handy, we can now begin to configure a wzgram project: pass your API key to wzgram by using the *api_id* and *api_hash* parameters of the Client class:
+Having the API key from the previous step in handy, we can now begin to configure a pyrogram project: pass your API key to pyrogram by using the *api_id* and *api_hash* parameters of the Client class:
 
 .. code-block:: python
 
-    from wzgram import Client
+    from pyrogram import Client
 
     api_id = 12345
     api_hash = "0123456789abcdef0123456789abcdef"

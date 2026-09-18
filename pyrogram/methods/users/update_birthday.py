@@ -16,17 +16,19 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import raw
 
 
 class UpdateBirthday:
     async def update_birthday(
-        self: "pyrogram.Client",
-        day: Optional[int] = None,
-        month: Optional[int] = None,
-        year: Optional[int] = None
+        self: pyrogram.Client,
+        day: int | None = None,
+        month: int | None = None,
+        year: int | None = None,
     ) -> bool:
         """Update birthday in your profile.
 
@@ -64,13 +66,8 @@ class UpdateBirthday:
         if day is not None and month is not None:
             birthday = raw.types.Birthday(day=day, month=month, year=year)
         elif (day, month, year) != (None, None, None):
-            raise ValueError("Both day and month are required to set a birthday; pass no arguments to remove it")
-
-        return bool(
-            await self.invoke(
-                raw.functions.account.UpdateBirthday(
-                    birthday=birthday
-                )
+            raise ValueError(
+                "Both day and month are required to set a birthday; pass no arguments to remove it"
             )
-        )
 
+        return bool(await self.invoke(raw.functions.account.UpdateBirthday(birthday=birthday)))

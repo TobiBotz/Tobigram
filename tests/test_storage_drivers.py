@@ -1,8 +1,8 @@
 """MongoStorage and RedisStorage against fake drivers.
 
-The mapping between wzgram's storage contract and a document or a key layout is
+The mapping between pyrogram's storage contract and a document or a key layout is
 where these engines break, and it needs no server to check. Integration against
-a real server runs only when WZGRAM_TEST_MONGO_URI / WZGRAM_TEST_REDIS_URI are
+a real server runs only when PYROGRAM_TEST_MONGO_URI / PYROGRAM_TEST_REDIS_URI are
 set.
 """
 
@@ -230,7 +230,7 @@ class TestRedisMapping:
         await redis.auth_key(b"k" * 256)
         await redis.is_bot(True)
 
-        stored = redis._redis.hashes["wzgram:driver:session"]
+        stored = redis._redis.hashes["pyrogram:driver:session"]
 
         assert stored["dc_id"] == 4
         assert stored["auth_key"] == b"k" * 256
@@ -247,8 +247,8 @@ class TestRedisMapping:
     async def test_peer_keys_and_indexes(self, redis):
         await redis.update_peers([(123, 456, "user", "15551234567")])
 
-        assert "wzgram:driver:peer:123" in redis._redis.hashes
-        assert 123 in redis._redis.sets["wzgram:driver:peers"]
+        assert "pyrogram:driver:peer:123" in redis._redis.hashes
+        assert 123 in redis._redis.sets["pyrogram:driver:peers"]
         assert (await redis.get_peer_by_phone_number("15551234567")).user_id == 123
 
     async def test_username_reassignment_clears_the_old_key(self, redis):
@@ -274,8 +274,8 @@ class TestRedisMapping:
 
         await redis.delete()
 
-        assert redis._redis.hashes.get("wzgram:driver:session") in (None, {})
-        assert not redis._redis.sets.get("wzgram:driver:peers")
+        assert redis._redis.hashes.get("pyrogram:driver:session") in (None, {})
+        assert not redis._redis.sets.get("pyrogram:driver:peers")
 
     async def test_delete_works_after_close(self):
         server = FakeRedis()
@@ -287,7 +287,7 @@ class TestRedisMapping:
 
         await storage.delete()
 
-        assert not server.hashes.get("wzgram:logout:session"), "the login survived log_out"
+        assert not server.hashes.get("pyrogram:logout:session"), "the login survived log_out"
         assert storage._redis is None, "delete must not leave the connection open"
 
     async def test_eviction_policy_warning(self, caplog):
@@ -306,11 +306,11 @@ class TestRedisMapping:
 
 
 @pytest.mark.skipif(
-    not os.environ.get("WZGRAM_TEST_MONGO_URI"), reason="WZGRAM_TEST_MONGO_URI not set"
+    not os.environ.get("PYROGRAM_TEST_MONGO_URI"), reason="PYROGRAM_TEST_MONGO_URI not set"
 )
 class TestMongoIntegration:
     async def test_round_trip_against_a_real_server(self):
-        storage = MongoStorage("wzgram_test", os.environ["WZGRAM_TEST_MONGO_URI"])
+        storage = MongoStorage("tobigram_test", os.environ["PYROGRAM_TEST_MONGO_URI"])
 
         await storage.open()
 
@@ -325,11 +325,11 @@ class TestMongoIntegration:
 
 
 @pytest.mark.skipif(
-    not os.environ.get("WZGRAM_TEST_REDIS_URI"), reason="WZGRAM_TEST_REDIS_URI not set"
+    not os.environ.get("PYROGRAM_TEST_REDIS_URI"), reason="PYROGRAM_TEST_REDIS_URI not set"
 )
 class TestRedisIntegration:
     async def test_round_trip_against_a_real_server(self):
-        storage = RedisStorage("wzgram_test", os.environ["WZGRAM_TEST_REDIS_URI"])
+        storage = RedisStorage("tobigram_test", os.environ["PYROGRAM_TEST_REDIS_URI"])
 
         await storage.open()
 

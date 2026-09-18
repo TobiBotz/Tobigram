@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types
@@ -24,10 +25,8 @@ from pyrogram import raw, types
 
 class DeleteGiftCollection:
     async def delete_gift_collection(
-        self: "pyrogram.Client",
-        owner_id: Union[int, str],
-        collection_id: int
-    ) -> "types.GiftCollection":
+        self: pyrogram.Client, owner_id: int | str, collection_id: int
+    ) -> types.GiftCollection:
         """Deletes a gift collection.
 
         .. include:: /_includes/usable-by/users.rst
@@ -50,10 +49,8 @@ class DeleteGiftCollection:
         """
         r = await self.invoke(
             raw.functions.payments.DeleteStarGiftCollection(
-                peer=await self.resolve_peer(owner_id),
-                collection_id=collection_id
+                peer=await self.resolve_peer(owner_id), collection_id=collection_id
             )
         )
 
         return r
-

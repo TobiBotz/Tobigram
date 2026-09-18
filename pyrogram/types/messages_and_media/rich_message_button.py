@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+from __future__ import annotations
+
 
 from pyrogram import raw, types
 from pyrogram.enums import RichButtonStyle
@@ -95,17 +96,17 @@ class RichMessageButton(Object):
 
     def __init__(
         self,
-        text: Union[str, "raw.base.RichText", "types.RichText"],
+        text: str | raw.base.RichText | types.RichText,
         style: RichButtonStyle = RichButtonStyle.DEFAULT,
-        url: Optional[str] = None,
-        callback_data: Optional[Union[str, bytes]] = None,
-        web_app: Optional["types.WebAppInfo"] = None,
-        login_url: Optional["types.LoginUrl"] = None,
-        switch_inline_query: Optional[str] = None,
-        switch_inline_query_current_chat: Optional[str] = None,
-        switch_inline_query_chosen_chat: Optional["types.SwitchInlineQueryChosenChat"] = None,
-        copy_text: Optional["types.CopyTextButton"] = None,
-        disabled: Optional["types.DisabledButton"] = None,
+        url: str | None = None,
+        callback_data: str | bytes | None = None,
+        web_app: types.WebAppInfo | None = None,
+        login_url: types.LoginUrl | None = None,
+        switch_inline_query: str | None = None,
+        switch_inline_query_current_chat: str | None = None,
+        switch_inline_query_chosen_chat: types.SwitchInlineQueryChosenChat | None = None,
+        copy_text: types.CopyTextButton | None = None,
+        disabled: types.DisabledButton | None = None,
     ):
         super().__init__()
 
@@ -122,7 +123,7 @@ class RichMessageButton(Object):
         self.disabled = disabled
 
     @staticmethod
-    def _parse_style(style: "raw.base.RichButtonStyle") -> RichButtonStyle:
+    def _parse_style(style: raw.base.RichButtonStyle) -> RichButtonStyle:
         if style is None:
             return RichButtonStyle.DEFAULT
         if style.link:
@@ -135,7 +136,7 @@ class RichMessageButton(Object):
             return RichButtonStyle.SUCCESS
         return RichButtonStyle.DEFAULT
 
-    def _write_style(self) -> Optional["raw.base.RichButtonStyle"]:
+    def _write_style(self) -> raw.base.RichButtonStyle | None:
         if self.style == RichButtonStyle.LINK:
             return raw.types.RichButtonStyle(link=True)
         if self.style == RichButtonStyle.PRIMARY:
@@ -148,8 +149,8 @@ class RichMessageButton(Object):
 
     @staticmethod
     async def _parse(
-        client, button: Union["raw.types.PageButton", "raw.types.TextButton"]
-    ) -> "RichMessageButton":
+        client, button: raw.types.PageButton | raw.types.TextButton
+    ) -> RichMessageButton:
         fields = read_button_type(button.type)
 
         return RichMessageButton(
@@ -158,7 +159,7 @@ class RichMessageButton(Object):
             **{k: v for k, v in fields.items() if k in RichMessageButton._FIELDS},
         )
 
-    def _write_type(self) -> "raw.base.InlineButtonType":
+    def _write_type(self) -> raw.base.InlineButtonType:
         return write_button_type(
             url=self.url,
             callback_data=self.callback_data,
@@ -171,14 +172,14 @@ class RichMessageButton(Object):
             disabled=self.disabled,
         )
 
-    def write(self) -> "raw.types.PageButton":
+    def write(self) -> raw.types.PageButton:
         return raw.types.PageButton(
             text=_to_rich_text(self.text),
             type=self._write_type(),
             style=self._write_style(),
         )
 
-    def write_text(self) -> "raw.types.TextButton":
+    def write_text(self) -> raw.types.TextButton:
         return raw.types.TextButton(
             text=_to_rich_text(self.text),
             type=self._write_type(),

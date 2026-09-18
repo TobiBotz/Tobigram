@@ -1,19 +1,19 @@
-Welcome to wzgram's documentation!
-===================================
+Welcome to Tobigram's Documentation!
+====================================
 
-`wzgram`_ is an elegant, modern and asynchronous Telegram MTProto API framework for Python.
-It is a fork of Pyrogram and a **drop-in replacement** — the distribution is ``wzgram``, the
+**Tobigram** is an elegant, modern and asynchronous Telegram MTProto API framework for Python.
+It is a fork of Pyrogram and a **drop-in replacement** — the distribution is ``pyrogram``, the
 import stays ``pyrogram``, and existing code runs unchanged.
 
 .. code-block:: python
 
-    from wzgram import Client, filters
+    from pyrogram import Client, filters
 
     app = Client("my_account")
 
     @app.on_message(filters.private)
     async def hello(client, message):
-        await message.reply("Hello from wzgram!")
+        await message.reply("Hello from Tobigram!")
 
     app.run()
 
@@ -72,6 +72,7 @@ New here? :doc:`intro/install` then :doc:`intro/quickstart`.
     api/filters
     api/storage
     api/errors
+    api/enums
 
 .. toctree::
     :maxdepth: 2
@@ -80,7 +81,9 @@ New here? :doc:`intro/install` then :doc:`intro/quickstart`.
     topics/mtproto-vs-botapi
     topics/message-identifiers
     topics/text-formatting
+    topics/rich-text
     topics/serializing
+    topics/reporting
 
 .. toctree::
     :maxdepth: 2
@@ -98,6 +101,8 @@ New here? :doc:`intro/install` then :doc:`intro/quickstart`.
     topics/client-settings
     topics/storage-engines
     topics/proxy
+    topics/mtproxy
+    topics/web-proxy
     topics/scheduling
     topics/test-servers
     topics/synchronous
@@ -117,4 +122,12 @@ New here? :doc:`intro/install` then :doc:`intro/quickstart`.
 
     topics/faq
 
-.. _wzgram: https://github.com/rjriajul/wzgram
+.. toctree::
+    :maxdepth: 2
+    :caption: Telegram Raw API
+
+    telegram/functions/index
+    telegram/types/index
+    telegram/base/index
+
+.. _Tobigram: https://github.com/TobiBotz/Tobigram

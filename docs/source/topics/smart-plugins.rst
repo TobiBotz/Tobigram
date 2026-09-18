@@ -1,9 +1,9 @@
 Smart Plugins
 =============
 
-wzgram embeds a smart, lightweight yet powerful plugin system that is meant to further simplify the organization
+pyrogram embeds a smart, lightweight yet powerful plugin system that is meant to further simplify the organization
 of large projects and to provide a way for creating pluggable (modular) components that can be easily shared across
-different wzgram applications with minimal boilerplate code.
+different pyrogram applications with minimal boilerplate code.
 
 .. tip::
 
@@ -24,7 +24,7 @@ after importing your modules, like this:
     This is an example application that replies in private chats with two messages: one containing the same
     text message you sent and the other containing the reversed text message.
 
-    Example: *"wzgram"* replies with *"wzgram"* and *"margoryP"*
+    Example: *"pyrogram"* replies with *"pyrogram"* and *"margoryP"*
 
 .. code-block:: text
 
@@ -47,8 +47,8 @@ after importing your modules, like this:
 
     .. code-block:: python
 
-        from wzgram import Client, filters
-        from wzgram.handlers import MessageHandler
+        from pyrogram import Client, filters
+        from pyrogram.handlers import MessageHandler
 
         from handlers import echo, echo_reversed
 
@@ -75,7 +75,7 @@ So, what if you could? Smart Plugins solve this issue by taking care of handlers
 Using Smart Plugins
 -------------------
 
-Setting up your wzgram project to accommodate Smart Plugins is pretty straightforward:
+Setting up your pyrogram project to accommodate Smart Plugins is pretty straightforward:
 
 #. Create a new folder to store all the plugins (e.g.: "plugins", "handlers", ...).
 #. Put your python files full of plugins inside. Organize them as you wish.
@@ -96,7 +96,7 @@ Setting up your wzgram project to accommodate Smart Plugins is pretty straightfo
 
     .. code-block:: python
 
-        from wzgram import Client, filters
+        from pyrogram import Client, filters
 
 
         @Client.on_message(filters.text & filters.private)
@@ -112,7 +112,7 @@ Setting up your wzgram project to accommodate Smart Plugins is pretty straightfo
 
     .. code-block:: python
 
-        from wzgram import Client
+        from pyrogram import Client
 
         plugins = dict(root="plugins")
 
@@ -123,8 +123,8 @@ The first important thing to note is the new ``plugins`` folder. You can put *an
 each file can contain *any decorated function* (handlers) with one limitation: within a single module (file) you must
 use different names for each decorated function.
 
-The second thing is telling wzgram where to look for your plugins: you can use the Client parameter "plugins";
-the *root* value must match the name of your plugins root folder. Your wzgram Client instance will **automatically**
+The second thing is telling pyrogram where to look for your plugins: you can use the Client parameter "plugins";
+the *root* value must match the name of your plugins root folder. Your pyrogram Client instance will **automatically**
 scan the folder upon starting to search for valid handlers and register them for you.
 
 Then you'll notice you can now use decorators. That's right, you can apply the usual decorators to your callback

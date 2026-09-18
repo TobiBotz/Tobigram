@@ -16,17 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import utils
+from pyrogram import raw, utils
 
 
 class GetTonBalance:
-    async def get_ton_balance(
-        self: "pyrogram.Client"
-    ) -> float:
+    async def get_ton_balance(self: pyrogram.Client) -> float:
         """Get the current TON balance of the current account.
 
         .. include:: /_includes/usable-by/users.rst
@@ -42,12 +40,8 @@ class GetTonBalance:
         """
         r = await self.invoke(
             raw.functions.payments.GetStarsTransactions(
-                peer=raw.types.InputPeerSelf(),
-                offset="",
-                limit=0,
-                ton=True
+                peer=raw.types.InputPeerSelf(), offset="", limit=0, ton=True
             )
         )
 
         return utils.from_nano(r.balance.amount)
-

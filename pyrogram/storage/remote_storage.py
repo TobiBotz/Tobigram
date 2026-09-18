@@ -16,10 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 import time
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from pyrogram import raw
 
@@ -52,8 +54,8 @@ DEFAULT_SESSION = {
     "is_bot": None,
 }
 
-PeerRow = Tuple[int, int, str, Optional[str]]
-StoredPeer = Tuple[int, int, str, int]
+PeerRow = tuple[int, int, str, str | None]
+StoredPeer = tuple[int, int, str, int]
 
 
 class RemoteStorage(Storage):
@@ -78,7 +80,7 @@ class RemoteStorage(Storage):
     VERSION = 1
     USERNAME_TTL = 8 * 60 * 60
 
-    def __init__(self, name: str, session_string: Optional[str] = None):
+    def __init__(self, name: str, session_string: str | None = None):
         super().__init__(name)
 
         self.session_string = session_string
@@ -96,39 +98,39 @@ class RemoteStorage(Storage):
         raise NotImplementedError
 
     @abstractmethod
-    async def _load_session(self) -> Optional[Dict[str, Any]]:
+    async def _load_session(self) -> dict[str, Any] | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def _save_session(self, fields: Dict[str, Any]) -> None:
+    async def _save_session(self, fields: dict[str, Any]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def _upsert_peers(self, rows: List[PeerRow]) -> None:
+    async def _upsert_peers(self, rows: list[PeerRow]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def _fetch_peer(self, peer_id: int) -> Optional[StoredPeer]:
+    async def _fetch_peer(self, peer_id: int) -> StoredPeer | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def _fetch_peer_by_username(self, username: str) -> Optional[StoredPeer]:
+    async def _fetch_peer_by_username(self, username: str) -> StoredPeer | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def _fetch_peer_by_phone(self, phone_number: str) -> Optional[StoredPeer]:
+    async def _fetch_peer_by_phone(self, phone_number: str) -> StoredPeer | None:
         raise NotImplementedError
 
     @abstractmethod
-    async def _replace_usernames(self, usernames: List[Tuple[int, List[str]]]) -> None:
+    async def _replace_usernames(self, usernames: list[tuple[int, list[str]]]) -> None:
         raise NotImplementedError
 
     @abstractmethod
-    async def _load_states(self) -> List[Tuple[int, int, int, int, int]]:
+    async def _load_states(self) -> list[tuple[int, int, int, int, int]]:
         raise NotImplementedError
 
     @abstractmethod
-    async def _save_state(self, state: Tuple[int, int, int, int, int]) -> None:
+    async def _save_state(self, state: tuple[int, int, int, int, int]) -> None:
         raise NotImplementedError
 
     @abstractmethod
@@ -139,7 +141,7 @@ class RemoteStorage(Storage):
     async def _purge(self, remove_peers: bool) -> None:
         raise NotImplementedError
 
-    async def _iter_peers(self, limit: Optional[int] = None) -> List[PeerRow]:
+    async def _iter_peers(self, limit: int | None = None) -> list[PeerRow]:
         """Peers held by this backend, newest first.
 
         Optional: it exists so :obj:`~pyrogram.storage.HybridStorage` can fill its
@@ -149,7 +151,7 @@ class RemoteStorage(Storage):
         """
         return []
 
-    async def _load_version(self) -> Optional[int]:
+    async def _load_version(self) -> int | None:
         return None
 
     async def _save_version(self, version: int) -> None:
@@ -213,7 +215,7 @@ class RemoteStorage(Storage):
         self._cache.clear()
         self._peer_cache.clear()
 
-    async def update_peers(self, peers: List[PeerRow]) -> None:
+    async def update_peers(self, peers: list[PeerRow]) -> None:
         if not peers:
             return
 
@@ -225,19 +227,17 @@ class RemoteStorage(Storage):
         await self._upsert_peers(fresh)
 
         for peer_id, access_hash, peer_type, phone_number in fresh:
-            self._peer_cache.remember(
-                (peer_id, access_hash, peer_type), phone_number, written=True
-            )
+            self._peer_cache.remember((peer_id, access_hash, peer_type), phone_number, written=True)
 
-    async def update_usernames(self, usernames: List[Tuple[int, List[str]]]) -> None:
+    async def update_usernames(self, usernames: list[tuple[int, list[str]]]) -> None:
         if not usernames:
             return
 
         await self._replace_usernames(usernames)
 
     async def update_state(
-        self, value: Tuple[int, int, int, int, int] = object
-    ) -> Optional[List[Tuple[int, int, int, int, int]]]:
+        self, value: tuple[int, int, int, int, int] = object
+    ) -> list[tuple[int, int, int, int, int]] | None:
         if value is object:
             return await self._load_states()
 
@@ -248,7 +248,7 @@ class RemoteStorage(Storage):
         await self._save_state(tuple(value))
         return None
 
-    async def get_peer_by_id(self, peer_id: int) -> "raw.base.InputPeer":
+    async def get_peer_by_id(self, peer_id: int) -> raw.base.InputPeer:
         row = self._peer_cache.get(peer_id)
 
         if row is not None:
@@ -264,7 +264,7 @@ class RemoteStorage(Storage):
 
         return get_input_peer(*row)
 
-    async def get_peer_by_username(self, username: str) -> "raw.base.InputPeer":
+    async def get_peer_by_username(self, username: str) -> raw.base.InputPeer:
         stored = await self._fetch_peer_by_username(username)
 
         if stored is None:
@@ -275,7 +275,7 @@ class RemoteStorage(Storage):
 
         return get_input_peer(*stored[:3])
 
-    async def get_peer_by_phone_number(self, phone_number: str) -> "raw.base.InputPeer":
+    async def get_peer_by_phone_number(self, phone_number: str) -> raw.base.InputPeer:
         stored = await self._fetch_peer_by_phone(phone_number)
 
         if stored is None:
@@ -283,7 +283,7 @@ class RemoteStorage(Storage):
 
         return get_input_peer(*stored[:3])
 
-    async def export_peers(self, limit: Optional[int] = None) -> List[PeerRow]:
+    async def export_peers(self, limit: int | None = None) -> list[PeerRow]:
         """Peers this backend holds, for warming a cache in front of it."""
         return await self._iter_peers(limit)
 

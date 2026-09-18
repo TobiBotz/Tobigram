@@ -69,7 +69,7 @@ Private chat topics
 -------------------
 
 Bot API 9.3 also brought topics to private chats, which Telegram models as a "monoforum": a
-channel whose direct messages tab is organised per user. wzgram surfaces those as
+channel whose direct messages tab is organised per user. pyrogram surfaces those as
 :obj:`~pyrogram.types.DirectMessagesTopic` with their own parameter,
 ``direct_messages_topic_id``, rather than as forum topics — see :doc:`direct-messages`.
 

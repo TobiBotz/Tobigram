@@ -9,9 +9,9 @@ with open(os.path.join(os.path.dirname(__file__), "../../pyrogram/__init__.py"))
             version = line.split("=")[1].strip().strip('"')
             break
 
-project = "wzgram"
-copyright = "2017-present Dan, rjriajul"
-author = "Dan, rjriajul"
+project = "Tobigram"
+copyright = "2017-present Dan, TobiBotz "
+author = "Dan, TobiBotz "
 release = version
 
 extensions = [
@@ -27,7 +27,7 @@ autodoc_mock_imports = [
     "warpcrypto",
     "tgcrypto",
     "cryptg",
-    "pysocks",
+    "python_socks",
     "uvloop",
 ]
 
@@ -37,13 +37,20 @@ napoleon_use_rtype = False
 napoleon_use_param = False
 
 templates_path = ["_templates"]
-exclude_patterns = ["_build", "_includes", "Thumbs.db", ".DS_Store", "telegram/base", "telegram/functions", "telegram/types"]
+exclude_patterns = [
+    "_build",
+    "_includes",
+    "Thumbs.db",
+    ".DS_Store",
+]
 
 html_theme = "furo"
-html_title = "wzgram"
-html_baseurl = "https://wzgram.com/"
-html_logo = "../../assets/svg/wzgram-icon.svg"
+html_title = "Tobigram"
+html_baseurl = "https://docs.tobigram.com/"
+html_logo = "../../assets/svg/tobigram-icon.svg"
 html_favicon = "../../assets/favicon.svg"
+html_show_sourcelink = False
+html_copy_source = False
 html_static_path = ["_static"]
 html_css_files = [
     "css/custom.css",

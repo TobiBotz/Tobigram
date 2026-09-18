@@ -16,8 +16,8 @@ Telegram shows every logged-in client in **Settings → Devices → Active Sessi
 yours reads:
 
 -   Device Model: ``CPython x.y.z``
--   Application: ``Pyrogram x.y.z``, where x.y.z is the wzgram version
--   System Version: the platform wzgram detects
+-   Application: ``Pyrogram x.y.z``, where x.y.z is the pyrogram version
+-   System Version: the platform pyrogram detects
 
 Change any of it:
 
@@ -113,7 +113,7 @@ Rate limiting and floods
     :header: Argument, Default, What it does
     :widths: 30 20 50
 
-    ``sleep_threshold``, ``10``, "seconds of ``FloodWait`` wzgram waits out for you"
+    ``sleep_threshold``, ``10``, "seconds of ``FloodWait`` pyrogram waits out for you"
     ``rate_limits``, ``None``, "turn on the client-side token buckets (off while ``None``)"
 
 .. code-block:: python

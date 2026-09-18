@@ -16,14 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import re
-from typing import Optional
 
 import pyrogram
-from pyrogram import raw, enums
-from pyrogram import types
-from ..object import Object
+from pyrogram import enums, raw, types
 
+from ..object import Object
 
 _ENTITY_META = {}
 
@@ -34,20 +34,40 @@ _FORMATTED_DATE = 2
 
 def _build_entity_meta(cls):
     if cls is raw.types.InputMessageEntityMentionName:
-        meta = (_MENTION_NAME, enums.MessageEntityType.TEXT_MENTION,
-                False, False, False, False, False)
+        meta = (
+            _MENTION_NAME,
+            enums.MessageEntityType.TEXT_MENTION,
+            False,
+            False,
+            False,
+            False,
+            False,
+        )
     elif cls is raw.types.MessageEntityFormattedDate:
-        meta = (_FORMATTED_DATE, enums.MessageEntityType.DATE_TIME,
-                False, False, False, False, False)
+        meta = (
+            _FORMATTED_DATE,
+            enums.MessageEntityType.DATE_TIME,
+            False,
+            False,
+            False,
+            False,
+            False,
+        )
     else:
         slots = set()
 
         for base in cls.__mro__:
             slots.update(getattr(base, "__slots__", None) or ())
 
-        meta = (_PLAIN, enums.MessageEntityType(cls),
-                "user_id" in slots, "document_id" in slots, "url" in slots,
-                "language" in slots, "collapsed" in slots)
+        meta = (
+            _PLAIN,
+            enums.MessageEntityType(cls),
+            "user_id" in slots,
+            "document_id" in slots,
+            "url" in slots,
+            "language" in slots,
+            "collapsed" in slots,
+        )
 
     _ENTITY_META[cls] = meta
     return meta
@@ -94,17 +114,17 @@ class MessageEntity(Object):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
-        type: "enums.MessageEntityType",
+        client: pyrogram.Client | None = None,
+        type: enums.MessageEntityType,
         offset: int,
         length: int,
-        url: Optional[str] = None,
-        user: Optional["types.User"] = None,
-        language: Optional[str] = None,
-        custom_emoji_id: Optional[str] = None,
-        expandable: Optional[bool] = None,
-        unix_time: Optional[int] = None,
-        date_time_format: Optional[str] = None
+        url: str | None = None,
+        user: types.User | None = None,
+        language: str | None = None,
+        custom_emoji_id: str | None = None,
+        expandable: bool | None = None,
+        unix_time: int | None = None,
+        date_time_format: str | None = None,
     ):
         super().__init__(client)
 
@@ -120,7 +140,7 @@ class MessageEntity(Object):
         self.date_time_format = date_time_format
 
     @staticmethod
-    def _parse(client, entity: "raw.base.MessageEntity", users: dict) -> Optional["MessageEntity"]:
+    def _parse(client, entity: raw.base.MessageEntity, users: dict) -> MessageEntity | None:
         cls = entity.__class__
         meta = _ENTITY_META.get(cls)
 
@@ -177,7 +197,7 @@ class MessageEntity(Object):
             expandable=expandable,
             unix_time=unix_time,
             date_time_format=date_time_format or None,
-            client=client
+            client=client,
         )
 
     async def write(self):
@@ -240,4 +260,3 @@ class MessageEntity(Object):
                         args["long_time"] = True
 
         return entity(**args)
-

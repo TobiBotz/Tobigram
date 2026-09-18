@@ -21,20 +21,20 @@
 # Source: tl:messages.editFactCheck
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class EditFactCheck:
     async def edit_fact_check(
-        self: "pyrogram.Client",
-        peer: Optional[Union[int, str]] = None,
-        msg_id: Optional[int] = None,
-        text_with_entities: Optional[raw.types.TextWithEntities] = None,
-    ) -> "types.Message":
+        self: pyrogram.Client,
+        peer: int | str | None = None,
+        msg_id: int | None = None,
+        text_with_entities: raw.types.TextWithEntities | None = None,
+    ) -> types.Message:
         """Edit the fact-check on a message (channel admins only).
 
         .. include:: /_includes/usable-by/users.rst
@@ -55,16 +55,19 @@ class EditFactCheck:
 
         r = await self.invoke(
             raw.functions.messages.EditFactCheck(
-                peer=await self.resolve_peer(peer),
-                msg_id=msg_id,
-                text=text_with_entities
+                peer=await self.resolve_peer(peer), msg_id=msg_id, text=text_with_entities
             )
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateEditMessage, raw.types.UpdateEditChannelMessage, raw.types.UpdateEditEphemeralMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateEditMessage,
+                    raw.types.UpdateEditChannelMessage,
+                    raw.types.UpdateEditEphemeralMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
-                    {i.id: i for i in r.users},
-                    {i.id: i for i in r.chats}
+                    self, i.message, {i.id: i for i in r.users}, {i.id: i for i in r.chats}
                 )

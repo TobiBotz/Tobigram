@@ -16,18 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Callable
+from __future__ import annotations
+
+from collections.abc import Callable
 
 import pyrogram
 from pyrogram.filters import Filter
 
 
 class OnPoll:
-    def on_poll(
-        self=None,
-        filters=None,
-        group: int = 0
-    ) -> Callable:
+    def on_poll(self=None, filters=None, group: int = 0) -> Callable:
         """Decorator for handling poll updates.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -55,7 +53,7 @@ class OnPoll:
                 func.handlers.append(
                     (
                         pyrogram.handlers.PollHandler(func, self),
-                        group if filters is None else filters
+                        group if filters is None else filters,
                     )
                 )
 

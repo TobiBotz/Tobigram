@@ -3,10 +3,10 @@ import time
 
 import pytest
 
-from pyrogram import raw
 import pyrogram.session.session as session_mod
-from pyrogram.session.internals import msg_id as msg_id_mod
+from pyrogram import raw
 from pyrogram.session.internals import MsgId
+from pyrogram.session.internals import msg_id as msg_id_mod
 from pyrogram.session.session import Session
 
 
@@ -136,9 +136,7 @@ async def test_bad_msg_notification_frees_the_msg_id_floor(clock):
     )
 
     resent = s.msg_factory(raw.functions.Ping(ping_id=0)).msg_id
-    assert resent < too_high, (
-        "the resend must drop back below the msg_ids the server rejected"
-    )
+    assert resent < too_high, "the resend must drop back below the msg_ids the server rejected"
     assert abs((resent >> 32) - int(clock["real"])) <= 1
 
 

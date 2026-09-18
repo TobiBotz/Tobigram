@@ -16,11 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional, Dict, List
 
 import pyrogram
 from pyrogram import raw, types, utils
+
 from ..object import Object
 from ..update import Update
 
@@ -58,14 +60,14 @@ class MessageReactionUpdated(Object, Update):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
-        chat: "types.Chat",
+        client: pyrogram.Client | None = None,
+        chat: types.Chat,
         message_id: int,
-        user: "types.User",
-        actor_chat: "types.Chat",
+        user: types.User,
+        actor_chat: types.Chat,
         date: datetime,
-        old_reaction: List["types.Reaction"],
-        new_reaction: List["types.Reaction"]
+        old_reaction: list[types.Reaction],
+        new_reaction: list[types.Reaction],
     ):
         super().__init__(client)
 
@@ -79,11 +81,11 @@ class MessageReactionUpdated(Object, Update):
 
     @staticmethod
     def _parse(
-        client: "pyrogram.Client",
-        update: "raw.types.UpdateBotMessageReaction",
-        users: Dict[int, "raw.types.User"],
-        chats: Dict[int, "raw.types.Chat"]
-    ) -> "MessageReactionUpdated":
+        client: pyrogram.Client,
+        update: raw.types.UpdateBotMessageReaction,
+        users: dict[int, raw.types.User],
+        chats: dict[int, raw.types.Chat],
+    ) -> MessageReactionUpdated:
         peer_id = utils.get_peer_id(update.peer)
         raw_peer_id = utils.get_raw_peer_id(update.peer)
 
@@ -111,16 +113,9 @@ class MessageReactionUpdated(Object, Update):
             actor_chat=actor_chat,
             date=utils.timestamp_to_datetime(update.date),
             old_reaction=[
-                types.Reaction._parse(
-                    client,
-                    reaction
-                ) for reaction in update.old_reactions
+                types.Reaction._parse(client, reaction) for reaction in update.old_reactions
             ],
             new_reaction=[
-                types.Reaction._parse(
-                    client,
-                    reaction
-                ) for reaction in update.new_reactions
-            ]
+                types.Reaction._parse(client, reaction) for reaction in update.new_reactions
+            ],
         )
-

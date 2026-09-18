@@ -56,7 +56,7 @@ def raw_references():
 @pytest.mark.parametrize(
     "path,lineno,parts",
     list(raw_references()),
-    ids=lambda v: str(v) if not isinstance(v, list) else ".".join(v)
+    ids=lambda v: str(v) if not isinstance(v, list) else ".".join(v),
 )
 def test_raw_reference_resolves(path, lineno, parts):
     obj = raw
@@ -64,4 +64,6 @@ def test_raw_reference_resolves(path, lineno, parts):
     for part in parts:
         obj = getattr(obj, part, None)
 
-        assert obj is not None, f"{path}:{lineno} references raw.{'.'.join(parts)}, which does not exist"
+        assert obj is not None, (
+            f"{path}:{lineno} references raw.{'.'.join(parts)}, which does not exist"
+        )

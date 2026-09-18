@@ -9,7 +9,6 @@ from pyrogram import raw
 from pyrogram.errors import PeerIdInvalid
 from pyrogram.methods.advanced.recover_gaps import RecoverGaps
 from pyrogram.session.session import Session
-
 from tests.test_session import DummyClient
 
 
@@ -175,6 +174,57 @@ async def test_a_start_that_fails_late_still_disconnects():
     )
 
 
+class _QrStartClient:
+    start = pyrogram.Client.start
+
+    def __init__(self, is_authorized: bool = False):
+        self._is_authorized = is_authorized
+        self.takeout = False
+        self.takeout_id = None
+        self.me = None
+        self.authorized_called = False
+        self.authorize_qr_args = None
+
+        class _Storage:
+            async def is_bot(self):
+                return False
+
+        self.storage = _Storage()
+
+    async def connect(self):
+        return self._is_authorized
+
+    async def authorize(self):
+        self.authorized_called = True
+
+    async def authorize_qr(self, except_ids=None):
+        self.authorize_qr_args = except_ids
+
+    async def invoke(self, query, **kwargs):
+        return None
+
+    async def get_me(self):
+        return object()
+
+    async def initialize(self):
+        pass
+
+    async def disconnect(self):
+        pass
+
+
+async def test_start_use_qr_flow():
+    client_qr = _QrStartClient(is_authorized=False)
+    await client_qr.start(use_qr=True, except_ids=[123, 456])
+    assert client_qr.authorize_qr_args == [123, 456]
+    assert not client_qr.authorized_called
+
+    client_normal = _QrStartClient(is_authorized=False)
+    await client_normal.start(use_qr=False)
+    assert client_normal.authorized_called
+    assert client_normal.authorize_qr_args is None
+
+
 class _NeverConnects:
     attempts = 0
 
@@ -192,9 +242,7 @@ async def test_an_unbounded_start_says_something_before_the_second_minute(monkey
     _NeverConnects.attempts = 0
     monkeypatch.setattr(DummyClient, "connection_factory", _NeverConnects)
 
-    session = Session(
-        DummyClient(), 1, b"\x00" * 256, False, is_media=False, crypto_executor=None
-    )
+    session = Session(DummyClient(), 1, b"\x00" * 256, False, is_media=False, crypto_executor=None)
 
     real_sleep = asyncio.sleep
     monkeypatch.setattr(session_mod.asyncio, "sleep", lambda *_: real_sleep(0))
@@ -206,8 +254,9 @@ async def test_an_unbounded_start_says_something_before_the_second_minute(monkey
         task.cancel()
         await asyncio.gather(task, return_exceptions=True)
 
-    assert any("retry" in r.message.lower() or "attempt" in r.message.lower()
-               for r in caplog.records), (
+    assert any(
+        "retry" in r.message.lower() or "attempt" in r.message.lower() for r in caplog.records
+    ), (
         "an unbounded connect retries forever and logs only at debug, so a client "
         f"that cannot reach Telegram looks hung with no output at all "
         f"({_NeverConnects.attempts} attempts made silently)"

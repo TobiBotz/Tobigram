@@ -16,13 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
 
 
-async def get_session(client: "pyrogram.Client", dc_id: int):
+async def get_session(client: pyrogram.Client, dc_id: int):
     if dc_id == await client.storage.dc_id():
         return client
 
@@ -30,10 +31,10 @@ async def get_session(client: "pyrogram.Client", dc_id: int):
 
 
 async def invoke_inline(
-    client: "pyrogram.Client",
+    client: pyrogram.Client,
     dc_id: int,
-    query: "raw.core.TLObject",
-    business_connection_id: Optional[str] = None
+    query: raw.core.TLObject,
+    business_connection_id: str | None = None,
 ):
     session = await get_session(client, dc_id)
 
@@ -41,13 +42,12 @@ async def invoke_inline(
         return await client.invoke(
             query,
             sleep_threshold=client.sleep_threshold,
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
     if business_connection_id:
         query = raw.functions.InvokeWithBusinessConnection(
-            connection_id=business_connection_id,
-            query=query
+            connection_id=business_connection_id, query=query
         )
 
     return await session.invoke(query, sleep_threshold=client.sleep_threshold)

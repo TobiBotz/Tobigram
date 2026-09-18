@@ -58,7 +58,7 @@ Update propagation
 
 Registering multiple handlers, each in a different group, becomes useful when you want to handle the same update more
 than once. Any incoming update will be sequentially processed by all of your registered functions by respecting the
-groups priority policy described above. Even in case any handler raises an unhandled exception, wzgram will still
+groups priority policy described above. Even in case any handler raises an unhandled exception, pyrogram will still
 continue to propagate the same update to the next groups until all the handlers are done. Example:
 
 .. code-block:: python
@@ -124,7 +124,7 @@ Example with ``raise StopPropagation``:
 
 .. code-block:: python
 
-    from wzgram import StopPropagation
+    from pyrogram import StopPropagation
 
     @app.on_message(filters.private)
     async def _(client, message):
@@ -193,7 +193,7 @@ Example with ``raise ContinuePropagation``:
 
 .. code-block:: python
 
-    from wzgram import ContinuePropagation
+    from pyrogram import ContinuePropagation
 
     @app.on_message(filters.private)
     async def _(client, message):
@@ -230,7 +230,7 @@ register an error handler:
 
 .. code-block:: python
 
-    from wzgram.errors import FloodWait
+    from pyrogram.errors import FloodWait
 
 
     @app.on_error(exceptions=FloodWait)
@@ -262,7 +262,7 @@ Updates consumed by listeners
 match: it is delivered to the waiter and **not** to your handlers, so the answer to a
 question cannot re-trigger the command that asked it. Raw update handlers still see it.
 
-A handler that awaits a conversation parks its worker for the duration; wzgram covers each
+A handler that awaits a conversation parks its worker for the duration; pyrogram covers each
 parked worker with a relief worker so the pool cannot be starved. See
 :doc:`/features/listeners`.
 
