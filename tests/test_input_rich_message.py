@@ -18,16 +18,21 @@ def document(n: int = 1) -> "raw.types.InputDocument":
 
 def test_block_message_has_no_trailing_vectors():
     for media in (None, types.InputRichMessageMedia(photos=[])):
-        b = types.InputRichMessage(
-            blocks=[types.InputRichBlockDivider()], media=media
-        ).write().write()
+        b = (
+            types.InputRichMessage(blocks=[types.InputRichBlockDivider()], media=media)
+            .write()
+            .write()
+        )
         assert len(b) == 20, b.hex()
 
 
-@pytest.mark.parametrize("kwargs,expected", [
-    ({"html": '<img src="tg://photo?id=pic">'}, raw.types.InputRichMessageHTML),
-    ({"markdown": "![](tg://photo?id=pic)"}, raw.types.InputRichMessageMarkdown),
-])
+@pytest.mark.parametrize(
+    "kwargs,expected",
+    [
+        ({"html": '<img src="tg://photo?id=pic">'}, raw.types.InputRichMessageHTML),
+        ({"markdown": "![](tg://photo?id=pic)"}, raw.types.InputRichMessageMarkdown),
+    ],
+)
 def test_media_reaches_html_and_markdown(kwargs, expected):
     written = types.InputRichMessage(
         media=[types.InputRichMessageMedia(id="pic", media=photo())],
@@ -115,9 +120,7 @@ def test_an_ordered_list_uses_the_ordered_item_constructors():
         items=[
             types.InputRichBlockListItem(text="first"),
             types.InputRichBlockListItem(text="done", has_checkbox=True, is_checked=True),
-            types.InputRichBlockListItem(
-                blocks=[types.InputRichBlockParagraph(text="nested")]
-            ),
+            types.InputRichBlockListItem(blocks=[types.InputRichBlockParagraph(text="nested")]),
         ],
         ordered=True,
     ).write()
@@ -136,9 +139,7 @@ def test_an_unordered_list_keeps_the_plain_item_constructors():
     block = types.InputRichBlockList(
         items=[
             types.InputRichBlockListItem(text="first"),
-            types.InputRichBlockListItem(
-                blocks=[types.InputRichBlockParagraph(text="nested")]
-            ),
+            types.InputRichBlockListItem(blocks=[types.InputRichBlockParagraph(text="nested")]),
         ]
     ).write()
 
@@ -162,12 +163,21 @@ def test_a_thinking_block_writes_the_page_block_the_tag_maps_to():
     ]
 
 
-@pytest.mark.parametrize("kwargs,expected,field", [
-    ({"html": "<tg-thinking>Thinking...</tg-thinking>"},
-     raw.types.InputRichMessageHTML, "html"),
-    ({"markdown": "<tg-thinking>Thinking...</tg-thinking>"},
-     raw.types.InputRichMessageMarkdown, "markdown"),
-])
+@pytest.mark.parametrize(
+    "kwargs,expected,field",
+    [
+        (
+            {"html": "<tg-thinking>Thinking...</tg-thinking>"},
+            raw.types.InputRichMessageHTML,
+            "html",
+        ),
+        (
+            {"markdown": "<tg-thinking>Thinking...</tg-thinking>"},
+            raw.types.InputRichMessageMarkdown,
+            "markdown",
+        ),
+    ],
+)
 def test_the_thinking_tag_reaches_the_wire_untouched(kwargs, expected, field):
     written = types.InputRichMessage(**kwargs).write()
 

@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -43,12 +44,14 @@ class SuggestedPostPaid(Object):
             The amount of Telegram Stars that was received by the channel.
             For payments in Telegram Stars only.
     """
+
     def __init__(
-        self, *,
-        suggested_post_message_id: Optional[int] = None,
-        suggested_post_message: Optional["types.Message"] = None,
-        amount: Optional[int] = None,
-        star_amount: Optional["types.StarAmount"] = None,
+        self,
+        *,
+        suggested_post_message_id: int | None = None,
+        suggested_post_message: types.Message | None = None,
+        amount: int | None = None,
+        star_amount: types.StarAmount | None = None,
     ):
         super().__init__()
 
@@ -59,10 +62,9 @@ class SuggestedPostPaid(Object):
 
     @staticmethod
     async def _parse(
-        client: "pyrogram.Client",
-        message: "raw.types.MessageService"
-    ) -> "SuggestedPostPaid":
-        action: "raw.types.MessageActionSuggestedPostSuccess" = message.action
+        client: pyrogram.Client, message: raw.types.MessageService
+    ) -> SuggestedPostPaid:
+        action: raw.types.MessageActionSuggestedPostSuccess = message.action
 
         if not isinstance(action, raw.types.MessageActionSuggestedPostSuccess):
             return None
@@ -82,8 +84,7 @@ class SuggestedPostPaid(Object):
             if client.fetch_replies:
                 try:
                     suggested_post_message = await client.get_messages(
-                        chat_id=chat_id,
-                        message_ids=suggested_post_message_id
+                        chat_id=chat_id, message_ids=suggested_post_message_id
                     )
                 except MessageIdsEmpty:
                     pass
@@ -97,6 +98,5 @@ class SuggestedPostPaid(Object):
             suggested_post_message_id=suggested_post_message_id,
             suggested_post_message=suggested_post_message,
             amount=amount,
-            star_amount=star_amount
+            star_amount=star_amount,
         )
-

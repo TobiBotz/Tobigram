@@ -16,25 +16,24 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+from __future__ import annotations
+
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
 
 
 class SetGameScore:
     async def set_game_score(
-        self: "pyrogram.Client",
-        user_id: Union[int, str],
+        self: pyrogram.Client,
+        user_id: int | str,
         score: int,
-        force: Optional[bool] = None,
-        disable_edit_message: Optional[bool] = None,
-        chat_id: Optional[Union[int, str]] = None,
-        message_id: Optional[int] = None,
-        inline_message_id: Optional[str] = None,
-    ) -> Union["types.Message", bool]:
+        force: bool | None = None,
+        disable_edit_message: bool | None = None,
+        chat_id: int | str | None = None,
+        message_id: int | None = None,
+        inline_message_id: str | None = None,
+    ) -> types.Message | bool:
         """Set the score of the specified user in a game.
 
         .. include:: /_includes/usable-by/bots.rst
@@ -89,7 +88,9 @@ class SetGameScore:
                     user_id=await self.resolve_peer(user_id),
                     score=score,
                     force=force if force is not None else None,
-                    edit_message=not disable_edit_message if disable_edit_message is not None else None
+                    edit_message=not disable_edit_message
+                    if disable_edit_message is not None
+                    else None,
                 )
             )
         else:
@@ -100,17 +101,23 @@ class SetGameScore:
                     id=message_id,
                     user_id=await self.resolve_peer(user_id),
                     force=force if force is not None else None,
-                    edit_message=not disable_edit_message if disable_edit_message is not None else None
+                    edit_message=not disable_edit_message
+                    if disable_edit_message is not None
+                    else None,
                 )
             )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateEditMessage, raw.types.UpdateEditEphemeralMessage,
-                              raw.types.UpdateEditChannelMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateEditMessage,
+                    raw.types.UpdateEditEphemeralMessage,
+                    raw.types.UpdateEditChannelMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
-                    {i.id: i for i in r.users},
-                    {i.id: i for i in r.chats}
+                    self, i.message, {i.id: i for i in r.users}, {i.id: i for i in r.chats}
                 )
 
         return True

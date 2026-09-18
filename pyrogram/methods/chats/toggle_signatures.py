@@ -21,20 +21,20 @@
 # Source: tl:channels.toggleSignatures
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class ToggleSignatures:
     async def toggle_signatures(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        signatures_enabled: Optional[bool] = None,
-        profiles_enabled: Optional[bool] = None,
-    ) -> "types.Message":
+        self: pyrogram.Client,
+        chat_id: int | str,
+        signatures_enabled: bool | None = None,
+        profiles_enabled: bool | None = None,
+    ) -> types.Message:
         """Toggle channel signatures.
 
         .. include:: /_includes/usable-by/users.rst
@@ -62,7 +62,6 @@ class ToggleSignatures:
 
         r = await self.invoke(
             raw.functions.channels.ToggleSignatures(
-                
                 signatures_enabled=signatures_enabled,
                 profiles_enabled=profiles_enabled,
                 channel=await self.resolve_peer(chat_id),
@@ -70,12 +69,18 @@ class ToggleSignatures:
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
+                    self,
+                    i.message,
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                 )

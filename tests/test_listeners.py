@@ -3,13 +3,14 @@ from types import SimpleNamespace
 
 import pytest
 
-import pyrogram
 from pyrogram import enums, filters
 from pyrogram.dispatcher import Dispatcher
 from pyrogram.errors import ListenerLimitReached, ListenerStopped, ListenerTimeout
 from pyrogram.handlers import MessageHandler, RawUpdateHandler
 from pyrogram.methods.listeners.listen import Listen
-from pyrogram.methods.listeners.register_next_step_handler import RegisterNextStepHandler
+from pyrogram.methods.listeners.register_next_step_handler import (
+    RegisterNextStepHandler,
+)
 from pyrogram.methods.listeners.stop_listening import StopListening
 from pyrogram.types import Identifier, Listener, ListenerRegistry
 from pyrogram.types.listeners import registry as registry_module
@@ -43,7 +44,7 @@ def message(chat_id=1, user_id=10, message_id=100, outgoing=False, scheduled=Fal
         sender_chat=None,
         id=message_id,
         outgoing=outgoing,
-        scheduled=scheduled
+        scheduled=scheduled,
     )
 
 
@@ -55,7 +56,7 @@ def callback_query(chat_id=1, user_id=10, message_id=100, answers=None):
         message=SimpleNamespace(chat=SimpleNamespace(id=chat_id), id=message_id),
         from_user=SimpleNamespace(id=user_id),
         inline_message_id=None,
-        answer=answer
+        answer=answer,
     )
 
 
@@ -64,7 +65,7 @@ def waiting(client, listener_type=MESSAGE, timeout=None, filters=None, **criteri
         listener_type=listener_type,
         identifier=Identifier(**criteria),
         filters=filters,
-        future=client.loop.create_future()
+        future=client.loop.create_future(),
     )
     client.listeners.add(listener, timeout)
 
@@ -98,9 +99,7 @@ async def test_a_user_scoped_listener_is_found_without_a_chat():
     client = FakeClient()
     _, future = waiting(client, user_id=10)
 
-    assert await client.listeners.feed(
-        client, MESSAGE, message(chat_id=999, user_id=10)
-    ) is True
+    assert await client.listeners.feed(client, MESSAGE, message(chat_id=999, user_id=10)) is True
     assert future.done()
 
 
@@ -112,9 +111,7 @@ async def test_only_the_relevant_buckets_are_probed():
 
     probed = client.listeners._candidates(MESSAGE, 7, 10)
 
-    assert len(probed) == 1, (
-        "an update must probe its own bucket, not every outstanding listener"
-    )
+    assert len(probed) == 1, "an update must probe its own bucket, not every outstanding listener"
 
 
 async def test_the_loser_of_a_race_still_reaches_the_handlers():
@@ -127,12 +124,8 @@ async def test_the_loser_of_a_race_still_reaches_the_handlers():
 
     _, future = waiting(client, chat_id=1, filters=filters.create(slow))
 
-    first = asyncio.ensure_future(
-        client.listeners.feed(client, MESSAGE, message(message_id=1))
-    )
-    second = asyncio.ensure_future(
-        client.listeners.feed(client, MESSAGE, message(message_id=2))
-    )
+    first = asyncio.ensure_future(client.listeners.feed(client, MESSAGE, message(message_id=1)))
+    second = asyncio.ensure_future(client.listeners.feed(client, MESSAGE, message(message_id=2)))
 
     await asyncio.sleep(0)
     gate.set()
@@ -175,26 +168,18 @@ async def test_a_listener_ignores_outgoing_and_scheduled_messages():
     client = FakeClient()
     waiting(client, chat_id=1)
 
-    assert await client.listeners.feed(
-        client, MESSAGE, message(chat_id=1, outgoing=True)
-    ) is False
-    assert await client.listeners.feed(
-        client, MESSAGE, message(chat_id=1, scheduled=True)
-    ) is False
+    assert await client.listeners.feed(client, MESSAGE, message(chat_id=1, outgoing=True)) is False
+    assert await client.listeners.feed(client, MESSAGE, message(chat_id=1, scheduled=True)) is False
     assert await client.listeners.feed(client, MESSAGE, message(chat_id=1)) is True
 
 
 async def test_an_unexpected_click_is_answered_and_the_listener_kept():
     client = FakeClient()
     answers = []
-    _, future = waiting(
-        client, listener_type=CALLBACK_QUERY, chat_id=1, user_id=10, message_id=100
-    )
+    _, future = waiting(client, listener_type=CALLBACK_QUERY, chat_id=1, user_id=10, message_id=100)
 
     consumed = await client.listeners.feed(
-        client,
-        CALLBACK_QUERY,
-        callback_query(chat_id=1, user_id=11, answers=answers)
+        client, CALLBACK_QUERY, callback_query(chat_id=1, user_id=11, answers=answers)
     )
 
     assert consumed is True
@@ -273,8 +258,9 @@ async def test_an_earlier_deadline_interrupts_the_reaper_sleep():
     _, urgent = waiting(client, chat_id=2, timeout=0.05)
 
     with pytest.raises(ListenerTimeout):
-        await asyncio.wait_for(urgent, timeout=2), (
-            "a nearer deadline has to wake the reaper out of its current sleep"
+        (
+            await asyncio.wait_for(urgent, timeout=2),
+            ("a nearer deadline has to wake the reaper out of its current sleep"),
         )
 
 
@@ -285,9 +271,8 @@ async def test_the_reaper_steps_over_a_cancelled_waiter(caplog):
 
     _, later = waiting(client, chat_id=2, timeout=0.15)
 
-    with caplog.at_level("ERROR"):
-        with pytest.raises(ListenerTimeout):
-            await asyncio.wait_for(later, timeout=2)
+    with caplog.at_level("ERROR"), pytest.raises(ListenerTimeout):
+        await asyncio.wait_for(later, timeout=2)
 
     assert not client.listeners._reaper.done(), "the reaper has to stay alive"
     assert "Listener reaper error" not in caplog.text, (

@@ -15,9 +15,9 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
-from typing import Optional
+from __future__ import annotations
 
-import pyrogram
+
 from pyrogram import raw
 
 from ..object import Object
@@ -36,12 +36,8 @@ class RestrictionReason(Object):
         text (``str``):
             Error message to be shown to the user.
     """
-    def __init__(
-        self, *,
-        platform: str,
-        reason: str,
-        text: str
-    ):
+
+    def __init__(self, *, platform: str, reason: str, text: str):
         super().__init__()
 
         self.platform = platform
@@ -49,15 +45,12 @@ class RestrictionReason(Object):
         self.text = text
 
     @staticmethod
-    def _parse(
-        restriction_reason: "raw.types.RestrictionReason"
-    ) -> Optional["RestrictionReason"]:
+    def _parse(restriction_reason: raw.types.RestrictionReason) -> RestrictionReason | None:
         if not restriction_reason:
             return None
 
         return RestrictionReason(
             platform=restriction_reason.platform,
             reason=restriction_reason.reason,
-            text=restriction_reason.text
+            text=restriction_reason.text,
         )
-

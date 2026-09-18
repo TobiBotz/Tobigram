@@ -16,18 +16,17 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-import asyncio
+from __future__ import annotations
+
 import inspect
 
 import pyrogram
+from pyrogram import utils
 from pyrogram.methods.utilities.idle import idle
 
 
 class Run:
-    def run(
-        self: "pyrogram.Client",
-        coroutine=None
-    ):
+    def run(self: pyrogram.Client, coroutine=None):
         """Start the client, idle the main script and finally stop the client.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -56,7 +55,7 @@ class Run:
         Example:
             .. code-block:: python
 
-                from wzgram import Client
+                from pyrogram import Client
 
                 app = Client("my_account")
                 ...  # Set handlers up
@@ -64,7 +63,7 @@ class Run:
 
             .. code-block:: python
 
-                from wzgram import Client
+                from pyrogram import Client
 
                 app = Client("my_account")
 
@@ -76,10 +75,7 @@ class Run:
 
                 app.run(main())
         """
-        try:
-            loop = asyncio.get_running_loop()
-        except RuntimeError:
-            loop = asyncio.get_event_loop_policy().get_event_loop()
+        loop = utils.get_event_loop()
         run = loop.run_until_complete
 
         if coroutine is not None:

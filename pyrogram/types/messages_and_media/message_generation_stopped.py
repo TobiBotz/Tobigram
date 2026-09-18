@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Dict, Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types
@@ -45,10 +46,10 @@ class MessageGenerationStopped(Object, Update):
     def __init__(
         self,
         *,
-        client: "pyrogram.Client" = None,
-        chat: "types.Chat",
+        client: pyrogram.Client = None,
+        chat: types.Chat,
         draft_id: int,
-        message_thread_id: Optional[int] = None,
+        message_thread_id: int | None = None,
     ):
         super().__init__(client)
 
@@ -58,15 +59,13 @@ class MessageGenerationStopped(Object, Update):
 
     @staticmethod
     def _parse(
-        client: "pyrogram.Client",
-        update: Union[
-            "raw.types.UpdateUserTyping",
-            "raw.types.UpdateChatUserTyping",
-            "raw.types.UpdateChannelUserTyping",
-        ],
-        users: Dict[int, "raw.base.User"],
-        chats: Dict[int, "raw.base.Chat"],
-    ) -> Optional["MessageGenerationStopped"]:
+        client: pyrogram.Client,
+        update: raw.types.UpdateUserTyping
+        | raw.types.UpdateChatUserTyping
+        | raw.types.UpdateChannelUserTyping,
+        users: dict[int, raw.base.User],
+        chats: dict[int, raw.base.Chat],
+    ) -> MessageGenerationStopped | None:
         if not isinstance(update.action, raw.types.SendMessageStopDraftAction):
             return None
 

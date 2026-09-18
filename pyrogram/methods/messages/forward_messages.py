@@ -16,41 +16,42 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
+from collections.abc import Iterable
 from datetime import datetime
-from typing import Union, List, Iterable, Optional
 
 import pyrogram
-from pyrogram import raw, utils
-from pyrogram import types
+from pyrogram import raw, types, utils
 
 
 class ForwardMessages:
     async def forward_messages(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        from_chat_id: Union[int, str],
-        message_ids: Union[int, Iterable[int]],
-        disable_notification: Optional[bool] = None,
-        schedule_date: Optional[datetime] = None,
-        protect_content: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        hide_sender_name: Optional[bool] = None,
-        hide_captions: Optional[bool] = None,
-        background: Optional[bool] = None,
-        effect: Optional[int] = None,
-        send_as: Optional[Union[int, str]] = None,
-        schedule_repeat_period: Optional[int] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        video_start_timestamp: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        quick_reply_shortcut: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        business_connection_id: Optional[str] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        with_my_score: Optional[bool] = None,
-        from_ephemeral: Optional[bool] = None,
-    ) -> Union["types.Message", List["types.Message"]]:
+        self: pyrogram.Client,
+        chat_id: int | str,
+        from_chat_id: int | str,
+        message_ids: int | Iterable[int],
+        disable_notification: bool | None = None,
+        schedule_date: datetime | None = None,
+        protect_content: bool | None = None,
+        message_thread_id: int | None = None,
+        hide_sender_name: bool | None = None,
+        hide_captions: bool | None = None,
+        background: bool | None = None,
+        effect: int | None = None,
+        send_as: int | str | None = None,
+        schedule_repeat_period: int | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        video_start_timestamp: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        quick_reply_shortcut: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        business_connection_id: str | None = None,
+        direct_messages_topic_id: int | None = None,
+        with_my_score: bool | None = None,
+        from_ephemeral: bool | None = None,
+    ) -> types.Message | list[types.Message]:
         """Forward messages of any kind.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -169,21 +170,31 @@ class ForwardMessages:
                 effect=effect,
                 send_as=await self.resolve_peer(send_as) if send_as is not None else None,
                 schedule_repeat_period=schedule_repeat_period,
-                allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
-                allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
+                allow_paid_floodskip=allow_paid_broadcast
+                if allow_paid_broadcast is not None
+                else None,
+                allow_paid_stars=paid_message_star_count
+                if paid_message_star_count is not None
+                else None,
                 reply_to=await utils.get_reply_to(
                     self,
                     reply_parameters,
                     message_thread_id,
-                    direct_messages_topic_id=direct_messages_topic_id
+                    direct_messages_topic_id=direct_messages_topic_id,
                 ),
-                suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+                suggested_post=suggested_post_parameters.write()
+                if suggested_post_parameters
+                else None,
                 with_my_score=with_my_score,
                 from_ephemeral=from_ephemeral,
-                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(
+                    shortcut_id=quick_reply_shortcut
+                )
+                if quick_reply_shortcut is not None
+                else None,
             ),
             sleep_threshold=60,
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
         forwarded_messages = []
@@ -192,14 +203,14 @@ class ForwardMessages:
         chats = {i.id: i for i in r.chats}
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
-                forwarded_messages.append(
-                    await types.Message._parse(
-                        self, i.message,
-                        users, chats
-                    )
-                )
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                ),
+            ):
+                forwarded_messages.append(await types.Message._parse(self, i.message, users, chats))
 
         return types.List(forwarded_messages) if is_iterable else forwarded_messages[0]

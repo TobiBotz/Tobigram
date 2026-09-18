@@ -16,10 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import io
 import pathlib
 import re
-from typing import BinaryIO, Callable, List, Optional, Union
+from collections.abc import Callable
+from typing import BinaryIO
 
 import pyrogram
 from pyrogram import raw, utils
@@ -70,7 +73,7 @@ class InputMediaVoiceNote(InputMedia):
     Example:
         .. code-block:: python
 
-            from wzgram.types import InputMediaVoiceNote
+            from pyrogram.types import InputMediaVoiceNote
 
             # Send a voice note by file path
             voice = InputMediaVoiceNote(media="voice.ogg", duration=30)
@@ -81,13 +84,13 @@ class InputMediaVoiceNote(InputMedia):
 
     def __init__(
         self,
-        media: Union[str, BinaryIO],
+        media: str | BinaryIO,
         duration: int = 0,
-        waveform: Optional[bytes] = None,
+        waveform: bytes | None = None,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List[MessageEntity]] = None,
-        file_name: Optional[str] = None
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[MessageEntity] | None = None,
+        file_name: str | None = None,
     ):
         super().__init__(media, caption, parse_mode, caption_entities)
 
@@ -98,13 +101,13 @@ class InputMediaVoiceNote(InputMedia):
     async def write(
         self,
         *,
-        client: "pyrogram.Client",
-        chat_id: Optional[Union[int, str]] = None,
-        progress: Optional[Callable] = None,
+        client: pyrogram.Client,
+        chat_id: int | str | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-        ttl_seconds: Optional[int] = None,
-        **kwargs
-    ) -> "raw.base.InputMedia":
+        ttl_seconds: int | None = None,
+        **kwargs,
+    ) -> raw.base.InputMedia:
         if chat_id is None:
             peer = raw.types.InputPeerSelf()
         else:
@@ -155,4 +158,6 @@ class InputMediaVoiceNote(InputMedia):
                 ttl_seconds=ttl_seconds,
             )
 
-        return utils.get_input_media_from_file_id(self.media, FileType.AUDIO, ttl_seconds=ttl_seconds)
+        return utils.get_input_media_from_file_id(
+            self.media, FileType.AUDIO, ttl_seconds=ttl_seconds
+        )

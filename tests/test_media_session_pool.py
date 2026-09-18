@@ -78,8 +78,12 @@ class FakeClient:
         self.exports += 1
         await asyncio.sleep(0)
         return FakeSession(
-            self, dc_id, b"authorized-key", False,
-            server_address="media.dc", port=443,
+            self,
+            dc_id,
+            b"authorized-key",
+            False,
+            server_address="media.dc",
+            port=443,
         )
 
 

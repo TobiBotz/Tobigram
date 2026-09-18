@@ -21,7 +21,8 @@
 # Source: tl:account.getConnectedBots
 # ***************************
 
-from typing import List
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -29,8 +30,8 @@ from pyrogram import raw
 
 class GetConnectedBots:
     async def get_connected_bots(
-        self: "pyrogram.Client",
-    ) -> List["raw.types.ConnectedBot"]:
+        self: pyrogram.Client,
+    ) -> list[raw.types.ConnectedBot]:
         """Get bots connected to your business account.
 
         .. include:: /_includes/usable-by/users.rst
@@ -44,10 +45,6 @@ class GetConnectedBots:
                 await app.get_connected_bots(...)
         """
 
-        r = await self.invoke(
-            raw.functions.account.GetConnectedBots(
-
-            )
-        )
+        r = await self.invoke(raw.functions.account.GetConnectedBots())
 
         return r.connected_bots

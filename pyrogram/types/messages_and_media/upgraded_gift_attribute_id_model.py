@@ -15,6 +15,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import annotations
+
 from pyrogram import raw
 
 from .upgraded_gift_attribute_id import UpgradedGiftAttributeId
@@ -27,6 +29,7 @@ class UpgradedGiftAttributeIdModel(UpgradedGiftAttributeId):
         sticker_id (``int``):
             Identifier of the sticker representing the model.
     """
+
     def __init__(
         self,
         sticker_id: int,
@@ -35,8 +38,5 @@ class UpgradedGiftAttributeIdModel(UpgradedGiftAttributeId):
 
         self.sticker_id = sticker_id
 
-    def write(self) -> "raw.types.StarGiftAttributeIdModel":
-        return raw.types.StarGiftAttributeIdModel(
-            document_id=self.sticker_id
-        )
-
+    def write(self) -> raw.types.StarGiftAttributeIdModel:
+        return raw.types.StarGiftAttributeIdModel(document_id=self.sticker_id)

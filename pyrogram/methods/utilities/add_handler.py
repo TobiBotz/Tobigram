@@ -16,9 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import pyrogram
 from pyrogram.handlers import (
-    ConnectHandler, DisconnectHandler, StartHandler, StopHandler,
+    ConnectHandler,
+    DisconnectHandler,
+    StartHandler,
+    StopHandler,
 )
 from pyrogram.handlers.handler import Handler
 
@@ -31,11 +36,7 @@ LIFECYCLE_HANDLERS = {
 
 
 class AddHandler:
-    def add_handler(
-        self: "pyrogram.Client",
-        handler: "Handler",
-        group: int = 0
-    ):
+    def add_handler(self: pyrogram.Client, handler: Handler, group: int = 0):
         """Register an update handler.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -64,8 +65,8 @@ class AddHandler:
         Example:
             .. code-block:: python
 
-                from wzgram import Client
-                from wzgram.handlers import MessageHandler
+                from pyrogram import Client
+                from pyrogram.handlers import MessageHandler
 
                 async def hello(client, message):
                     print(message)

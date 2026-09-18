@@ -16,9 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+
+from __future__ import annotations
 
 from pyrogram import raw, utils
+
 from ..object import Object
 
 
@@ -32,13 +34,16 @@ class SentWebAppMessage(Object):
     """
 
     def __init__(
-        self, *,
-        inline_message_id: Optional[str] = None,
+        self,
+        *,
+        inline_message_id: str | None = None,
     ):
         super().__init__()
 
         self.inline_message_id = inline_message_id
 
     @staticmethod
-    def _parse(obj: "raw.types.WebViewMessageSent"):
-        return SentWebAppMessage(inline_message_id=utils.pack_inline_message_id(obj.msg_id) if obj.msg_id else None)
+    def _parse(obj: raw.types.WebViewMessageSent):
+        return SentWebAppMessage(
+            inline_message_id=utils.pack_inline_message_id(obj.msg_id) if obj.msg_id else None
+        )

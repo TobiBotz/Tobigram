@@ -16,15 +16,17 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Dict
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types
 
 from ..object import Object
+from ..update import Update
 
 
-class ManagedBotUpdated(Object):
+class ManagedBotUpdated(Object, Update):
     """This object contains information about the creation or token update of a bot that is managed by the current bot.
 
     Parameters:
@@ -39,8 +41,8 @@ class ManagedBotUpdated(Object):
     def __init__(
         self,
         *,
-        user: "types.User",
-        bot: "types.User",
+        user: types.User,
+        bot: types.User,
     ):
         super().__init__()
 
@@ -49,15 +51,14 @@ class ManagedBotUpdated(Object):
 
     @staticmethod
     async def _parse(
-        client: "pyrogram.Client",
-        managed_bot_updated: "raw.types.UpdateManagedBot",
-        users: Dict[int, "raw.types.User"],
-    ) -> "ManagedBotUpdated":
+        client: pyrogram.Client,
+        managed_bot_updated: raw.types.UpdateManagedBot,
+        users: dict[int, raw.types.User],
+    ) -> ManagedBotUpdated:
         if not isinstance(managed_bot_updated, raw.types.UpdateManagedBot):
             return
 
         return ManagedBotUpdated(
             user=types.User._parse(client, users.get(managed_bot_updated.user_id)),
-            bot=types.User._parse(client, users.get(managed_bot_updated.bot_id))
+            bot=types.User._parse(client, users.get(managed_bot_updated.bot_id)),
         )
-

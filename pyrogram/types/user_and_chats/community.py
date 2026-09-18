@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
 
 from pyrogram import raw, utils
 
@@ -61,12 +62,12 @@ class Community(Object):
         *,
         id: int,
         title: str,
-        date: Optional[datetime] = None,
-        is_creator: Optional[bool] = None,
-        is_left: Optional[bool] = None,
-        is_min: Optional[bool] = None,
-        is_collapsed: Optional[bool] = None,
-        dc_id: Optional[int] = None,
+        date: datetime | None = None,
+        is_creator: bool | None = None,
+        is_left: bool | None = None,
+        is_min: bool | None = None,
+        is_collapsed: bool | None = None,
+        dc_id: int | None = None,
     ):
         super().__init__()
 
@@ -80,7 +81,7 @@ class Community(Object):
         self.dc_id = dc_id
 
     @staticmethod
-    def _parse(client, community: "raw.types.Community") -> Optional["Community"]:
+    def _parse(client, community: raw.types.Community) -> Community | None:
         # the chats map of an update is keyed by id across every peer kind, so a
         # lookup by community id can hand back a Channel
         if not isinstance(community, raw.types.Community):

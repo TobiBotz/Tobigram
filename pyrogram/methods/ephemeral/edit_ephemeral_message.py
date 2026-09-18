@@ -16,26 +16,27 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types
 
 
 async def edit_ephemeral(
-    client: "pyrogram.Client",
-    chat_id: Union[int, str],
-    receiver_id: Union[int, str],
+    client: pyrogram.Client,
+    chat_id: int | str,
+    receiver_id: int | str,
     message_id: int,
     *,
-    message: Optional[str] = None,
-    entities: Optional[List["raw.base.MessageEntity"]] = None,
-    media: Optional["raw.base.InputMedia"] = None,
-    rich_message: Optional["raw.base.InputRichMessage"] = None,
-    reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-    show_caption_above_media: Optional[bool] = None,
-    welcome: Optional[bool] = None,
-) -> Optional["types.Message"]:
+    message: str | None = None,
+    entities: list[raw.base.MessageEntity] | None = None,
+    media: raw.base.InputMedia | None = None,
+    rich_message: raw.base.InputRichMessage | None = None,
+    reply_markup: types.InlineKeyboardMarkup | None = None,
+    show_caption_above_media: bool | None = None,
+    welcome: bool | None = None,
+) -> types.Message | None:
     """One ephemeral.editMessage for the four methods that edit one.
 
     They differ only in which of its optional fields they fill, and the update the

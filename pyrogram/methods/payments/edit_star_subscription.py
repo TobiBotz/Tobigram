@@ -16,13 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import raw
 
 
 class EditStarSubscription:
     async def edit_star_subscription(
-        self: "pyrogram.Client", subscription_id: str, is_canceled: bool
+        self: pyrogram.Client, subscription_id: str, is_canceled: bool
     ) -> bool:
         """Cancels or re-enables Telegram Star subscription.
 
@@ -45,4 +47,3 @@ class EditStarSubscription:
                 canceled=is_canceled,
             )
         )
-

@@ -17,13 +17,9 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from .apply_boost import ApplyBoost
-from .get_boosts_status import GetBoostsStatus
 from .get_boosts import GetBoosts
+from .get_boosts_status import GetBoostsStatus
 
-class Premium(
-    ApplyBoost,
-    GetBoostsStatus,
-    GetBoosts
-):
+
+class Premium(ApplyBoost, GetBoostsStatus, GetBoosts):
     pass
-

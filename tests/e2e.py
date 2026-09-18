@@ -62,8 +62,12 @@ class FakeDC:
 
     def session(self, client=None, is_media=True, dc_id=2):
         session = Session(
-            client or SessionOwner(), dc_id, b"\x00" * 256, False,
-            is_media=is_media, crypto_executor=None
+            client or SessionOwner(),
+            dc_id,
+            b"\x00" * 256,
+            False,
+            is_media=is_media,
+            crypto_executor=None,
         )
         session.is_started.set()
         session.send = self._send_for(session)
@@ -163,7 +167,6 @@ def make_client(dc, name="e2e", pool=None, sessions=3, premium=False, bot=False)
 
     client.get_session = get_session
     client._get_media_session_pool = get_pool
-    client.media_pool = pool
     return client
 
 
@@ -172,7 +175,7 @@ def document(dc_id=2):
 
 
 class Measured:
-    __slots__ = ("peak_bytes", "wall", "dc")
+    __slots__ = ("dc", "peak_bytes", "wall")
 
     def __init__(self, peak_bytes, wall, dc):
         self.peak_bytes = peak_bytes

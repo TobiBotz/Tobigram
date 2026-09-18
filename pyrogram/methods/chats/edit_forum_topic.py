@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -24,13 +25,13 @@ from pyrogram import raw
 
 class EditForumTopic:
     async def edit_forum_topic(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         topic_id: int,
-        title: Optional[str] = None,
-        icon_emoji_id: Optional[int] = None,
-        closed: Optional[bool] = None,
-        hidden: Optional[bool] = None
+        title: str | None = None,
+        icon_emoji_id: int | None = None,
+        closed: bool | None = None,
+        hidden: bool | None = None,
     ) -> bool:
         """Edit a forum topic.
 
@@ -70,9 +71,8 @@ class EditForumTopic:
                 title=title,
                 icon_emoji_id=icon_emoji_id,
                 closed=closed,
-                hidden=hidden
+                hidden=hidden,
             )
         )
 
         return True
-

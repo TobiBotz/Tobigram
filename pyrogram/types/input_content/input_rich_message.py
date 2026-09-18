@@ -16,7 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional, Union, TYPE_CHECKING
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from pyrogram import raw
 
@@ -63,12 +65,12 @@ class InputRichMessage(Object):
 
     def __init__(
         self,
-        html: Optional[str] = None,
-        markdown: Optional[str] = None,
-        is_rtl: Optional[bool] = None,
-        skip_entity_detection: Optional[bool] = None,
-        blocks: Optional[List["InputRichBlock"]] = None,
-        media: Optional[Union["InputRichMessageMedia", List["InputRichMessageMedia"]]] = None,
+        html: str | None = None,
+        markdown: str | None = None,
+        is_rtl: bool | None = None,
+        skip_entity_detection: bool | None = None,
+        blocks: list[InputRichBlock] | None = None,
+        media: InputRichMessageMedia | list[InputRichMessageMedia] | None = None,
     ):
         super().__init__()
 
@@ -80,32 +82,32 @@ class InputRichMessage(Object):
         self.media = media
 
     @property
-    def _media_list(self) -> List["InputRichMessageMedia"]:
+    def _media_list(self) -> list[InputRichMessageMedia]:
         if self.media is None:
             return []
 
         return list(self.media) if isinstance(self.media, (list, tuple)) else [self.media]
 
-    def write_files(self) -> Optional[List["raw.base.InputRichFile"]]:
+    def write_files(self) -> list[raw.base.InputRichFile] | None:
         """Return the ``files`` vector html and markdown rich messages carry."""
         files = [media.write_file() for media in self._media_list if media.id is not None]
 
         return files or None
 
-    def write(self) -> "raw.base.InputRichMessage":
+    def write(self) -> raw.base.InputRichMessage:
         if self.html:
             input_rich_message = raw.types.InputRichMessageHTML(
                 html=self.html,
                 rtl=self.is_rtl,
                 noautolink=self.skip_entity_detection,
-                files=self.write_files()
+                files=self.write_files(),
             )
         elif self.markdown:
             input_rich_message = raw.types.InputRichMessageMarkdown(
                 markdown=self.markdown,
                 rtl=self.is_rtl,
                 noautolink=self.skip_entity_detection,
-                files=self.write_files()
+                files=self.write_files(),
             )
         elif self.blocks:
             photos, documents, users = [], [], []
@@ -126,9 +128,6 @@ class InputRichMessage(Object):
                 users=users or None,
             )
         else:
-            raise ValueError(
-                "You must provide html, markdown or blocks in the rich message"
-            )
+            raise ValueError("You must provide html, markdown or blocks in the rich message")
 
         return input_rich_message
-

@@ -16,18 +16,20 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, AsyncGenerator, Optional
+from __future__ import annotations
+
+from collections.abc import AsyncGenerator
 
 import pyrogram
-from pyrogram import types, raw, utils
+from pyrogram import raw, types, utils
 
 
 class GetChatPhotos:
     async def get_chat_photos(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         limit: int = 0,
-    ) -> Optional[AsyncGenerator["types.Photo", None]]:
+    ) -> AsyncGenerator[types.Photo, None] | None:
         """Get a chat or a user profile photos sequentially.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -53,11 +55,9 @@ class GetChatPhotos:
         """
         peer_id = await self.resolve_peer(chat_id)
 
-        if isinstance(peer_id, raw.types.InputPeerChannel):
+        if isinstance(peer_id, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)):
             r = await self.invoke(
-                raw.functions.channels.GetFullChannel(
-                    channel=peer_id
-                )
+                raw.functions.channels.GetFullChannel(channel=utils.get_input_channel(peer_id))
             )
 
             chat_photo = types.Photo._parse(self, r.full_chat.chat_photo)
@@ -89,9 +89,9 @@ class GetChatPhotos:
                             limit=limit,
                             max_id=0,
                             min_id=0,
-                            hash=0
+                            hash=0,
                         )
-                    )
+                    ),
                 )
 
                 photos = [message.new_chat_photo for message in messages if message.new_chat_photo]
@@ -99,7 +99,9 @@ class GetChatPhotos:
                 if first:
                     first = False
 
-                    if chat_photo and (not photos or chat_photo.file_unique_id != photos[0].file_unique_id):
+                    if chat_photo and (
+                        not photos or chat_photo.file_unique_id != photos[0].file_unique_id
+                    ):
                         photos.insert(0, chat_photo)
 
                 for photo in photos:
@@ -123,10 +125,7 @@ class GetChatPhotos:
             while True:
                 r = await self.invoke(
                     raw.functions.photos.GetUserPhotos(
-                        user_id=peer_id,
-                        offset=offset,
-                        max_id=0,
-                        limit=limit
+                        user_id=peer_id, offset=offset, max_id=0, limit=limit
                     )
                 )
 

@@ -1,11 +1,8 @@
-import pytest
-
 from pyrogram.raw.core import Message, TLObject
 from pyrogram.raw.functions import Ping
-from pyrogram.raw.types import MsgsAck, HttpWait
+from pyrogram.raw.types import HttpWait, MsgsAck
 from pyrogram.session.internals import MsgFactory, _MsgIdGenerator
 from pyrogram.session.internals.msg_factory import not_content_related
-from pyrogram.session.internals.seq_no import SeqNo
 
 
 class DummyBody(TLObject):
@@ -54,19 +51,19 @@ class TestMsgFactory:
 
     def test_seq_no_pattern_content_then_non_content(self):
         factory = MsgFactory()
-        m1 = factory(DummyBody())         # content-related -> seq_no=1
-        m2 = factory(Ping(ping_id=0))      # not content-related -> seq_no=2
-        m3 = factory(DummyBody())          # content-related -> seq_no=3
+        m1 = factory(DummyBody())  # content-related -> seq_no=1
+        m2 = factory(Ping(ping_id=0))  # not content-related -> seq_no=2
+        m3 = factory(DummyBody())  # content-related -> seq_no=3
         assert m1.seq_no == 1
         assert m2.seq_no == 2
         assert m3.seq_no == 3
 
     def test_seq_no_only_content_related_increments_counter(self):
         factory = MsgFactory()
-        factory(DummyBody())           # content_related_messages_sent = 1
-        factory(DummyBody())           # content_related_messages_sent = 2
-        factory(Ping(ping_id=0))       # not content-related
-        m = factory(DummyBody())       # content-related -> seq_no = (2 * 2) + 1 = 5
+        factory(DummyBody())  # content_related_messages_sent = 1
+        factory(DummyBody())  # content_related_messages_sent = 2
+        factory(Ping(ping_id=0))  # not content-related
+        m = factory(DummyBody())  # content-related -> seq_no = (2 * 2) + 1 = 5
         assert m.seq_no == 5
 
     def test_custom_msg_id_generator(self):
@@ -80,6 +77,7 @@ class TestMsgFactory:
         class FixedBody(TLObject):
             def write(self):
                 return b"\x01\x02\x03\x04\x05"
+
         factory = MsgFactory()
         body = FixedBody()
         msg = factory(body)

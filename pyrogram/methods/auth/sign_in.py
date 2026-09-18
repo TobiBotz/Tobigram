@@ -16,24 +16,21 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 import re
-from typing import Union
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 log = logging.getLogger(__name__)
 
 
 class SignIn:
     async def sign_in(
-        self: "pyrogram.Client",
-        phone_number: str,
-        phone_code_hash: str,
-        phone_code: str
-    ) -> Union["types.User", "types.TermsOfService", bool]:
+        self: pyrogram.Client, phone_number: str, phone_code_hash: str, phone_code: str
+    ) -> types.User | types.TermsOfService | bool:
         """Authorize a user in Telegram with a valid confirmation code.
 
         .. include:: /_includes/usable-by/users.rst
@@ -63,9 +60,7 @@ class SignIn:
 
         r = await self.invoke(
             raw.functions.auth.SignIn(
-                phone_number=phone_number,
-                phone_code_hash=phone_code_hash,
-                phone_code=phone_code
+                phone_number=phone_number, phone_code_hash=phone_code_hash, phone_code=phone_code
             )
         )
 

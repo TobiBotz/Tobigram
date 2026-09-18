@@ -16,15 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import raw
 
 
 class SetInactiveSessionTTL:
-    async def set_inactive_session_ttl(
-        self: "pyrogram.Client",
-        inactive_session_ttl_days: int
-    ):
+    async def set_inactive_session_ttl(self: pyrogram.Client, inactive_session_ttl_days: int):
         """Changes the period of inactivity after which sessions will automatically be terminated.
 
         .. include:: /_includes/usable-by/users.rst
@@ -49,4 +48,3 @@ class SetInactiveSessionTTL:
         )
 
         return r
-

@@ -21,19 +21,19 @@
 # Source: tl:messages.sendScheduledMessages
 # ***************************
 
-from typing import Union, List, Optional
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class SendScheduledMessages:
     async def send_scheduled_messages(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        id: Optional[List[int]] = None,
-    ) -> "types.Message":
+        self: pyrogram.Client,
+        chat_id: int | str,
+        id: list[int] | None = None,
+    ) -> types.Message:
         """Send scheduled messages immediately.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -58,19 +58,24 @@ class SendScheduledMessages:
 
         r = await self.invoke(
             raw.functions.messages.SendScheduledMessages(
-                
                 peer=await self.resolve_peer(chat_id),
                 id=id,
             )
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
+                    self,
+                    i.message,
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                 )

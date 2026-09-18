@@ -8,7 +8,7 @@ What began as a static sticker attached to a profile has turned into the largest
 surface Telegram has added: gifts upgrade into unique collectibles, get transferred, resold,
 crafted and auctioned.
 
-wzgram exposes the whole chain. This page walks it in the order a gift moves through it.
+pyrogram exposes the whole chain. This page walks it in the order a gift moves through it.
 
 
 -----

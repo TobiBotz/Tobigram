@@ -16,20 +16,23 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 
 import pyrogram
-from pyrogram import types, enums
+from pyrogram import enums, types
 
 
 class EditInlineCaption:
     async def edit_inline_caption(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         inline_message_id: str,
         caption: str,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        business_connection_id: Optional[str] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        show_caption_above_media: bool | None = None,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        business_connection_id: str | None = None,
     ) -> bool:
         """Edit the caption of inline media messages.
 
@@ -45,6 +48,13 @@ class EditInlineCaption:
             parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
                 You can combine both syntaxes together.
+
+            caption_entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
+                List of special entities that appear in the new caption, which can be specified instead of
+                *parse_mode*.
+
+            show_caption_above_media (``bool``, *optional*):
+                Pass True, if the caption must be shown above the message media.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
@@ -65,6 +75,8 @@ class EditInlineCaption:
             inline_message_id=inline_message_id,
             text=caption,
             parse_mode=parse_mode,
+            entities=caption_entities,
+            show_caption_above_media=show_caption_above_media,
             reply_markup=reply_markup,
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )

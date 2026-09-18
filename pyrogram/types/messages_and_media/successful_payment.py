@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional, Union
 
 from pyrogram import raw, types, utils
 
@@ -63,18 +64,19 @@ class SuccessfulPayment(Object):
     """
 
     def __init__(
-        self, *,
+        self,
+        *,
         currency: str,
         total_amount: str,
         invoice_payload: str,
         telegram_payment_charge_id: str,
         provider_payment_charge_id: str,
-        shipping_option_id: Optional[str] = None,
-        order_info: Optional["types.OrderInfo"] = None,
-        is_recurring: Optional[bool] = None,
-        is_first_recurring: Optional[bool] = None,
-        invoice_slug: Optional[str] = None,
-        subscription_expiration_date: Optional[datetime] = None,
+        shipping_option_id: str | None = None,
+        order_info: types.OrderInfo | None = None,
+        is_recurring: bool | None = None,
+        is_first_recurring: bool | None = None,
+        invoice_slug: str | None = None,
+        subscription_expiration_date: datetime | None = None,
     ):
         super().__init__()
 
@@ -92,10 +94,8 @@ class SuccessfulPayment(Object):
 
     @staticmethod
     def _parse(
-        payment: Union[
-            "raw.types.MessageActionPaymentSent",
-            "raw.types.MessageActionPaymentSentMe"
-        ]) -> "SuccessfulPayment":
+        payment: raw.types.MessageActionPaymentSent | raw.types.MessageActionPaymentSentMe,
+    ) -> SuccessfulPayment:
         invoice_payload = None
         telegram_payment_charge_id = None
         provider_payment_charge_id = None
@@ -121,9 +121,7 @@ class SuccessfulPayment(Object):
                     name=getattr(payment_info, "name", None),
                     phone_number=getattr(payment_info, "phone", None),
                     email=getattr(payment_info, "email", None),
-                    shipping_address=types.ShippingAddress._parse(
-                        payment_info.shipping_address
-                    )
+                    shipping_address=types.ShippingAddress._parse(payment_info.shipping_address),
                 )
 
         return SuccessfulPayment(
@@ -137,6 +135,7 @@ class SuccessfulPayment(Object):
             is_recurring=getattr(payment, "recurring_used", None),
             is_first_recurring=getattr(payment, "recurring_init", None),
             invoice_slug=getattr(payment, "invoice_slug", None),
-            subscription_expiration_date=utils.timestamp_to_datetime(payment.subscription_until_date),
+            subscription_expiration_date=utils.timestamp_to_datetime(
+                payment.subscription_until_date
+            ),
         )
-

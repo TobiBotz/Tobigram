@@ -16,16 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import raw
 
-class DeclineSuggestedPost():
+
+class DeclineSuggestedPost:
     async def decline_suggested_post(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        message_id: int,
-        comment: Optional[str] = None
+        self: pyrogram.Client, chat_id: int | str, message_id: int, comment: str | None = None
     ) -> bool:
         """Use this method to decline a suggested post in a direct messages chat.
 
@@ -55,9 +55,8 @@ class DeclineSuggestedPost():
                 peer=await self.resolve_peer(chat_id),
                 msg_id=message_id,
                 reject=True,
-                reject_comment=comment
+                reject_comment=comment,
             )
         )
 
         return True
-

@@ -12,7 +12,7 @@ import pyrogram
 COMPILER = ROOT / "compiler" / "docs" / "compiler.py"
 
 # Entries in the categories dicts sit at exactly twelve spaces
-LISTED = set(re.findall(r"^\s{12}(\w+)$", COMPILER.read_text(encoding="utf-8"), re.M))
+LISTED = set(re.findall(r"^\s{12}(\w+)$", COMPILER.read_text(encoding="utf-8"), re.MULTILINE))
 
 # Client attributes that are internal machinery rather than public API
 INTERNAL_METHODS = {
@@ -29,6 +29,8 @@ INTERNAL_METHODS = {
     "media_pool_reaper",
     "get_file",
     "reap_media_sessions",
+    "register_min_peer",
+    "register_min_peers_from_message",
     "updates_watchdog",
 }
 
@@ -42,16 +44,15 @@ def documented_alias_of(name):
     target = getattr(pyrogram.Client, name, None)
 
     return any(
-        other != name
-        and other in LISTED
-        and getattr(pyrogram.Client, other, None) is target
+        other != name and other in LISTED and getattr(pyrogram.Client, other, None) is target
         for other in dir(pyrogram.Client)
     )
 
 
 def public_types():
     return sorted(
-        name for name in dir(pyrogram.types)
+        name
+        for name in dir(pyrogram.types)
         if isinstance(getattr(pyrogram.types, name), type)
         and issubclass(getattr(pyrogram.types, name), pyrogram.types.Object)
         and getattr(pyrogram.types, name) is not pyrogram.types.Object
@@ -78,14 +79,14 @@ def test_every_exported_type_is_documented(name):
 @pytest.mark.parametrize("name", public_enums())
 def test_every_exported_enum_is_documented(name):
     assert name in LISTED, (
-        f"{name} is in pyrogram.enums.__all__ but has no entry in "
-        f"compiler/docs/compiler.py"
+        f"{name} is in pyrogram.enums.__all__ but has no entry in compiler/docs/compiler.py"
     )
 
 
 def test_every_public_client_method_is_documented():
     undocumented = sorted(
-        name for name in dir(pyrogram.Client)
+        name
+        for name in dir(pyrogram.Client)
         if not name.startswith("_")
         and callable(getattr(pyrogram.Client, name, None))
         and name not in INTERNAL_METHODS

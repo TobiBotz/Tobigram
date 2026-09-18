@@ -15,7 +15,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
-from typing import Optional
+from __future__ import annotations
+
 
 from ..object import Object
 
@@ -30,24 +31,16 @@ class GiftPurchaseLimit(Object):
         remaining_count (``int``, *optional*):
             Number of remaining times the gift can be purchased.
     """
-    def __init__(
-        self,
-        *,
-        total_count: Optional[int] = None,
-        remaining_count: Optional[int] = None
-    ):
+
+    def __init__(self, *, total_count: int | None = None, remaining_count: int | None = None):
         super().__init__()
 
         self.total_count = total_count
         self.remaining_count = remaining_count
 
     @staticmethod
-    def _parse(total: int, remains: int) -> Optional["GiftPurchaseLimit"]:
+    def _parse(total: int, remains: int) -> GiftPurchaseLimit | None:
         if total is None or total <= 0:
             return None
 
-        return GiftPurchaseLimit(
-            total_count=total,
-            remaining_count=remains
-        )
-
+        return GiftPurchaseLimit(total_count=total, remaining_count=remains)

@@ -17,7 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from typing import Union
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types
@@ -25,9 +25,7 @@ from pyrogram import raw, types
 
 class SuggestBirthday:
     async def suggest_birthday(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        birthday: "types.Birthday"
+        self: pyrogram.Client, chat_id: int | str, birthday: types.Birthday
     ) -> bool:
         """Suggests a birthdate to another regular user with common messages and allowing non-paid messages.
 
@@ -51,10 +49,8 @@ class SuggestBirthday:
         """
         await self.invoke(
             raw.functions.users.SuggestBirthday(
-                id=await self.resolve_peer(chat_id),
-                birthday=birthday.write()
+                id=await self.resolve_peer(chat_id), birthday=birthday.write()
             )
         )
 
         return True
-

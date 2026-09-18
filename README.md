@@ -1,113 +1,120 @@
-<div align="center">
+<p align="center">
+    <a href="https://github.com/TobiBotz/Tobigram">
+        <img
+            src="https://raw.githubusercontent.com/TobiBotz/Tobigram/dev/assets/png/tobigram-icon-128.png"
+            alt="Tobigram"
+            height="128"
+        />
+    </a>
+    <br />
+    <b>Telegram MTProto API Framework for Python</b>
+    <br />
+    <a href="https://tobigram.com"> Homepage </a>
+    •
+    <a href="https://docs.tobigram.com"> Documentation </a>
+    •
+    <a href="https://t.me/TobigramNews"> News </a>
+    •
+    <a href="https://t.me/TobigramChat"> Chat </a>
+    <br />
+    <br />
+    <a href="https://pypi.org/project/tobigram/">
+        <img
+            src="https://img.shields.io/pypi/v/Tobigram"
+            alt="PyPI package version"
+        />
+    </a>
+    <a href="https://pypi.org/project/tobigram/">
+        <img
+            src="https://img.shields.io/pypi/dm/Tobigram"
+            alt="Downloads"
+        />
+    </a>
+    <a href="https://pypi.org/project/tobigram/">
+        <img
+            src="https://img.shields.io/pypi/pyversions/Tobigram"
+            alt="Python versions"
+        />
+    </a>
+    <a href="https://github.com/TobiBotz/Tobigram/blob/dev/COPYING.lesser">
+        <img
+            src="https://img.shields.io/github/license/TobiBotz/Tobigram"
+            alt="License"
+        />
+    </a>
+</p>
 
-<img src="https://raw.githubusercontent.com/rjriajul/wzgram/dev/assets/png/wzgram-icon-256.png" alt="wzgram" width="160">
 
-# wzgram
+## Tobigram
 
-[![PyPI](https://img.shields.io/pypi/v/wzgram)](https://pypi.org/project/wzgram/)
-[![Python](https://img.shields.io/pypi/pyversions/wzgram)](https://pypi.org/project/wzgram/)
-[![Downloads](https://img.shields.io/pypi/dm/wzgram)](https://pypi.org/project/wzgram/)
-[![License](https://img.shields.io/github/license/rjriajul/wzgram)](https://github.com/rjriajul/wzgram/blob/dev/COPYING.lesser)
-[![Documentation](https://img.shields.io/badge/docs-wzgram.com/blue)](https://wzgram.com)
+> Elegant, modern and asynchronous Telegram MTProto API framework in Python for users and bots
 
-**Elegant, modern and asynchronous Telegram MTProto API framework in Python for users and bots**
-
-</div>
-
-wzgram is a **drop-in replacement** for Pyrogram, with access to the latest Telegram features including **Gifts, Stories, Topics, Business Accounts**, and more. Import `wzgram`; `from pyrogram import ...` still resolves to the same module rather than a second copy of it, so an existing Pyrogram codebase runs unchanged.
+Tobigram is an actively maintained Pyrogram fork for Python designed as a drop-in replacement for Pyrogram. Tobigram provides support for the latest Telegram features including Gifts, Stories, Topics, Business Accounts, and more.
 
 ```python
-from wzgram import Client, filters
+from pyrogram import Client, filters
 
 app = Client("my_account")
 
 
 @app.on_message(filters.private)
 async def hello(client, message):
-    await message.reply("Hello from wzgram!")
+    await message.reply("Hello from Tobigram!")
 
 
 app.run()
 ```
 
-**wzgram** is a modern, elegant and asynchronous [MTProto API](https://wzgram.com/topics/mtproto-vs-botapi/) framework. It enables you to easily interact with the main Telegram API through a user account (custom client) or a bot identity (bot API alternative) using Python.
+**Tobigram** is a modern, elegant and asynchronous [MTProto API](https://docs.tobigram.com/topics/mtproto-vs-botapi) framework. It enables you to easily interact with the main Telegram API through a user account (custom client) or a bot identity (bot API alternative) using Python.
 
 ### Key Features
 
-- **Drop-in Replacement** — New code says `from wzgram import ...`; existing `from pyrogram import ...` codebases migrate with zero changes, since both names are one module.
-- **Up-to-Date** — Supports Gifts, Stories, Topics, Business Accounts, Giveaways, and the latest Telegram layer.
-- **Async Natively** — Fully `async`/`await` throughout. Also usable synchronously via `app.run()` for convenience.
-- **Type-hinted** — Every type and method is annotated for excellent editor support.
-- **Fast** — Boosted by [WarpCrypto](https://github.com/rjriajul/WarpCrypto), a high-performance cryptography library written in Rust.
-- **Powerful** — Full access to Telegram's API for any official client action and more.
-
-### Example with Inline Keyboard
-
-```python
-from wzgram import Client, filters
-from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
-app = Client("my_bot")
-
-
-@app.on_message(filters.command("start"))
-async def start(client, message):
-    await message.reply(
-        "Choose an option:",
-        reply_markup=InlineKeyboardMarkup([
-            [
-                InlineKeyboardButton("Website", url="https://example.com"),
-                InlineKeyboardButton("Help", callback_data="help"),
-            ],
-            [InlineKeyboardButton("About", callback_data="about")],
-        ])
-    )
-
-
-app.run()
-```
+- **Ready**: Install Tobigram with `pip` or `uv` and start building your applications right away.
+- **Drop-in Replacement**: 100% compatible with Pyrogram codebases — keep your existing imports with zero migration hassle.
+- **Fast**: Boosted up by [WarpCrypto](https://github.com/TobiBotz/WarpCrypto), a high-performance cryptography library written in Rust.
+- **Up-to-Date**: First-class support for Star Gifts, Stories, Forum Topics, Business Connections, and Reaction effects.
+- **High-Speed Transfers**: Parallel DC chunk streaming with adaptive rate limiting and session pooling.
+- **Advanced Proxy Support**: Built-in support for MTProxy (EE Fake-TLS with SNI), MTProto Web Proxy (WebSocket/TLS 1.3), and SOCKS5/HTTP.
+- **Modern Python**: Fully compatible with Python 3.10 through Python 3.14+.
+- **Type-hinted**: Comprehensive type hints across all methods and types for excellent editor autocomplete.
+- **Async**: Fully asynchronous with native async/await for peak concurrency and responsiveness.
+- **Powerful**: Full access to Telegram's MTProto API to execute any official client action and more.
 
 ### Installing
 
-```bash
-pip install wzgram
-```
-
-Requires Python 3.10+. On Linux and macOS, `wzgram[fast]` also pulls in
-[uvloop](https://github.com/MagicStack/uvloop); call `uvloop.install()` yourself to use it
-(see the Speedups guide):
+Stable version
 
 ```bash
-pip install wzgram[fast]
+pip install tobigram
 ```
 
-### Development
+Using uv (Recommended)
 
 ```bash
-# Clone the repo
-git clone https://github.com/rjriajul/wzgram.git
-cd wzgram
-
-# Install uv (if not already)
-pip install uv
-
-# Create virtual environment with dev dependencies
-uv sync --frozen --extra dev
-
-# Generate TL API types
-uv run poe api
-
-# Run tests
-uv run poe test
+uv add tobigram
 ```
 
-### Documentation
+Dev version
 
-Full documentation at **[https://wzgram.com](https://wzgram.com)**
+```bash
+pip install https://github.com/TobiBotz/Tobigram/archive/dev.zip --force-reinstall
+```
+
+Optional dependencies
+
+```bash
+pip install tobigram[fast]     # uvloop for better performance
+```
 
 ### Resources
 
-- [Source code](https://github.com/rjriajul/wzgram)
-- [Documentation](https://wzgram.com)
-- [Issue tracker](https://github.com/rjriajul/wzgram/issues)
-- [Contributing guide](https://github.com/rjriajul/wzgram/blob/dev/CONTRIBUTING.md)
+- Check out the [docs](https://docs.tobigram.com) to learn more about Tobigram, get started right away and discover more in-depth material for building your client applications.
+- Join the [official channel](https://t.me/TobigramNews) and stay tuned for news, updates and announcements.
+- Join the [official chat](https://t.me/TobigramChat) to communicate with people.
+
+### Special Thanks
+
+- **[Dan](https://github.com/delivrance)** The original creator of [Pyrogram](https://github.com/pyrogram/pyrogram).
+- **[Kurimuzon Akuma](https://github.com/KurimuzonAkuma)** Creator and maintainer of [Kurigram](https://github.com/kurigram-org/kurigram).
+- **[Riajul](https://github.com/rjriajul)** Creator of [Wzgram](https://github.com/rjriajul/wzgram) and author of [WarpCrypto](https://github.com/TobiBotz/WarpCrypto).
+

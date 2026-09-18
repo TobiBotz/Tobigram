@@ -6,7 +6,7 @@ session: it owns the connection, the storage, the update dispatcher and every AP
 
 .. code-block:: python
 
-    from wzgram import Client
+    from pyrogram import Client
 
     async with Client("my_account", api_id, api_hash) as app:
         await app.send_message("me", "Hi!")

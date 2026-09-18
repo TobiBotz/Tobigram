@@ -16,20 +16,19 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
 
 
 class GetRichMessage:
     async def get_rich_message(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         message_id: int,
-    ) -> "types.Message":
+    ) -> types.Message:
         """Get the full rich message of a message that arrived truncated.
 
         A rich message larger than the inline byte limit is delivered with only its first

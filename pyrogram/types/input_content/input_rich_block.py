@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional, Union
+from __future__ import annotations
+
 
 from pyrogram import raw, types
 from pyrogram.enums import BlockAlignment
@@ -24,7 +25,7 @@ from pyrogram.enums import BlockAlignment
 from ..object import Object
 
 
-def _to_rich_text(text: Union[str, "raw.base.RichText"]) -> "raw.base.RichText":
+def _to_rich_text(text: str | raw.base.RichText) -> raw.base.RichText:
     if isinstance(text, str):
         return raw.types.TextConcat(texts=[raw.types.TextPlain(text=text)])
 
@@ -33,17 +34,16 @@ def _to_rich_text(text: Union[str, "raw.base.RichText"]) -> "raw.base.RichText":
         # no write(), so passing one here used to fail with AttributeError from
         # inside the request being serialised, several frames from the call site
         raise TypeError(
-            f"a rich block takes plain text or a raw.types.Text* object, "
-            f"not {type(text).__name__}"
+            f"a rich block takes plain text or a raw.types.Text* object, not {type(text).__name__}"
         )
 
     return text
 
 
 def _to_page_caption(
-    text: Optional[Union[str, "raw.base.RichText"]] = None,
-    credit: Optional[Union[str, "raw.base.RichText"]] = None,
-) -> "raw.types.PageCaption":
+    text: str | raw.base.RichText | None = None,
+    credit: str | raw.base.RichText | None = None,
+) -> raw.types.PageCaption:
     return raw.types.PageCaption(
         text=_to_rich_text(text or ""),
         credit=_to_rich_text(credit or ""),
@@ -61,7 +61,7 @@ class InputRichBlock(Object):
     def __init__(self):
         super().__init__()
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         raise NotImplementedError
 
 
@@ -75,16 +75,14 @@ class InputRichBlockParagraph(InputRichBlock):
 
     def __init__(
         self,
-        text: Union[str, "raw.base.RichText"],
+        text: str | raw.base.RichText,
     ):
         super().__init__()
 
         self.text = text
 
-    def write(self) -> "raw.base.PageBlock":
-        return raw.types.PageBlockParagraph(
-            text=_to_rich_text(self.text)
-        )
+    def write(self) -> raw.base.PageBlock:
+        return raw.types.PageBlockParagraph(text=_to_rich_text(self.text))
 
 
 class InputRichBlockSectionHeading(InputRichBlock):
@@ -101,7 +99,7 @@ class InputRichBlockSectionHeading(InputRichBlock):
 
     def __init__(
         self,
-        text: Union[str, "raw.base.RichText"],
+        text: str | raw.base.RichText,
         size: int,
     ):
         super().__init__()
@@ -109,7 +107,7 @@ class InputRichBlockSectionHeading(InputRichBlock):
         self.text = text
         self.size = size
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         mapping = {
             1: raw.types.PageBlockHeading1,
             2: raw.types.PageBlockHeading2,
@@ -137,7 +135,7 @@ class InputRichBlockPreformatted(InputRichBlock):
 
     def __init__(
         self,
-        text: Union[str, "raw.base.RichText"],
+        text: str | raw.base.RichText,
         language: str,
     ):
         super().__init__()
@@ -145,7 +143,7 @@ class InputRichBlockPreformatted(InputRichBlock):
         self.text = text
         self.language = language
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockPreformatted(
             text=_to_rich_text(self.text),
             language=self.language,
@@ -162,16 +160,14 @@ class InputRichBlockFooter(InputRichBlock):
 
     def __init__(
         self,
-        text: Union[str, "raw.base.RichText"],
+        text: str | raw.base.RichText,
     ):
         super().__init__()
 
         self.text = text
 
-    def write(self) -> "raw.base.PageBlock":
-        return raw.types.PageBlockFooter(
-            text=_to_rich_text(self.text)
-        )
+    def write(self) -> raw.base.PageBlock:
+        return raw.types.PageBlockFooter(text=_to_rich_text(self.text))
 
 
 class InputRichBlockDivider(InputRichBlock):
@@ -183,7 +179,7 @@ class InputRichBlockDivider(InputRichBlock):
     def __init__(self):
         super().__init__()
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockDivider()
 
 
@@ -203,7 +199,7 @@ class InputRichBlockMathematicalExpression(InputRichBlock):
 
         self.expression = expression
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockMath(source=self.expression)
 
 
@@ -226,7 +222,7 @@ class InputRichBlockAnchor(InputRichBlock):
 
         self.name = name
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockAnchor(name=self.name)
 
 
@@ -253,10 +249,10 @@ class InputRichBlockListItem(Object):
 
     def __init__(
         self,
-        blocks: Optional[List[InputRichBlock]] = None,
-        text: Optional[Union[str, "raw.base.RichText"]] = None,
-        has_checkbox: Optional[bool] = None,
-        is_checked: Optional[bool] = None,
+        blocks: list[InputRichBlock] | None = None,
+        text: str | raw.base.RichText | None = None,
+        has_checkbox: bool | None = None,
+        is_checked: bool | None = None,
     ):
         super().__init__()
 
@@ -265,38 +261,28 @@ class InputRichBlockListItem(Object):
         self.has_checkbox = has_checkbox
         self.is_checked = is_checked
 
-    def write(
-        self, ordered: bool = False
-    ) -> Union["raw.base.PageListItem", "raw.base.PageListOrderedItem"]:
+    def write(self, ordered: bool = False) -> raw.base.PageListItem | raw.base.PageListOrderedItem:
         if self.blocks:
             blocks = [b.write() for b in self.blocks]
 
             if ordered:
                 return raw.types.PageListOrderedItemBlocks(
-                    blocks=blocks,
-                    checkbox=self.has_checkbox,
-                    checked=self.is_checked
+                    blocks=blocks, checkbox=self.has_checkbox, checked=self.is_checked
                 )
 
             return raw.types.PageListItemBlocks(
-                blocks=blocks,
-                checkbox=self.has_checkbox,
-                checked=self.is_checked
+                blocks=blocks, checkbox=self.has_checkbox, checked=self.is_checked
             )
 
         text = _to_rich_text(self.text or "")
 
         if ordered:
             return raw.types.PageListOrderedItemText(
-                text=text,
-                checkbox=self.has_checkbox,
-                checked=self.is_checked
+                text=text, checkbox=self.has_checkbox, checked=self.is_checked
             )
 
         return raw.types.PageListItemText(
-            text=text,
-            checkbox=self.has_checkbox,
-            checked=self.is_checked
+            text=text, checkbox=self.has_checkbox, checked=self.is_checked
         )
 
 
@@ -313,22 +299,20 @@ class InputRichBlockList(InputRichBlock):
 
     def __init__(
         self,
-        items: List[InputRichBlockListItem],
-        ordered: Optional[bool] = None,
+        items: list[InputRichBlockListItem],
+        ordered: bool | None = None,
     ):
         super().__init__()
 
         self.items = items
         self.ordered = ordered
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         if self.ordered:
             return raw.types.PageBlockOrderedList(
                 items=[item.write(ordered=True) for item in self.items]
             )
-        return raw.types.PageBlockList(
-            items=[item.write() for item in self.items]
-        )
+        return raw.types.PageBlockList(items=[item.write() for item in self.items])
 
 
 class InputRichBlockBlockQuotation(InputRichBlock):
@@ -345,15 +329,15 @@ class InputRichBlockBlockQuotation(InputRichBlock):
 
     def __init__(
         self,
-        blocks: List[InputRichBlock],
-        credit: Optional[Union[str, "raw.base.RichText"]] = None,
+        blocks: list[InputRichBlock],
+        credit: str | raw.base.RichText | None = None,
     ):
         super().__init__()
 
         self.blocks = blocks
         self.credit = credit
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockBlockquoteBlocks(
             blocks=[b.write() for b in self.blocks],
             caption=_to_rich_text(self.credit or ""),
@@ -375,15 +359,15 @@ class InputRichBlockExpandableBlockQuotation(InputRichBlock):
 
     def __init__(
         self,
-        text: Union[str, "raw.base.RichText"],
-        credit: Optional[Union[str, "raw.base.RichText"]] = None,
+        text: str | raw.base.RichText,
+        credit: str | raw.base.RichText | None = None,
     ):
         super().__init__()
 
         self.text = text
         self.credit = credit
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockBlockquote(
             text=_to_rich_text(self.text),
             caption=_to_rich_text(self.credit or ""),
@@ -405,15 +389,15 @@ class InputRichBlockButtons(InputRichBlock):
 
     def __init__(
         self,
-        buttons: List["types.RichMessageButton"],
-        align: Optional["BlockAlignment"] = None,
+        buttons: list[types.RichMessageButton],
+        align: BlockAlignment | None = None,
     ):
         super().__init__()
 
         self.buttons = buttons
         self.align = align
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockButtonRow(
             buttons=[button.write() for button in self.buttons],
             align_left=self.align == BlockAlignment.LEFT or None,
@@ -437,14 +421,14 @@ class InputRichBlockDocument(InputRichBlock):
     def __init__(
         self,
         document_id: int,
-        caption: Optional[Union[str, "raw.base.RichText"]] = None,
+        caption: str | raw.base.RichText | None = None,
     ):
         super().__init__()
 
         self.document_id = document_id
         self.caption = caption
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockDocument(
             document_id=self.document_id,
             caption=_to_page_caption(text=self.caption),
@@ -465,15 +449,15 @@ class InputRichBlockPullQuotation(InputRichBlock):
 
     def __init__(
         self,
-        text: Union[str, "raw.base.RichText"],
-        credit: Optional[Union[str, "raw.base.RichText"]] = None,
+        text: str | raw.base.RichText,
+        credit: str | raw.base.RichText | None = None,
     ):
         super().__init__()
 
         self.text = text
         self.credit = credit
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockPullquote(
             text=_to_rich_text(self.text),
             caption=_to_rich_text(self.credit or ""),
@@ -496,15 +480,15 @@ class InputRichBlockCollage(InputRichBlock):
 
     def __init__(
         self,
-        items: List[InputRichBlock],
-        caption: Optional[Union[str, "raw.base.RichText"]] = None,
+        items: list[InputRichBlock],
+        caption: str | raw.base.RichText | None = None,
     ):
         super().__init__()
 
         self.items = items
         self.caption = caption
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockCollage(
             items=[item.write() for item in self.items],
             caption=_to_page_caption(text=self.caption),
@@ -527,15 +511,15 @@ class InputRichBlockSlideshow(InputRichBlock):
 
     def __init__(
         self,
-        items: List[InputRichBlock],
-        caption: Optional[Union[str, "raw.base.RichText"]] = None,
+        items: list[InputRichBlock],
+        caption: str | raw.base.RichText | None = None,
     ):
         super().__init__()
 
         self.items = items
         self.caption = caption
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockSlideshow(
             items=[item.write() for item in self.items],
             caption=_to_page_caption(text=self.caption),
@@ -564,11 +548,11 @@ class InputRichBlockTable(InputRichBlock):
 
     def __init__(
         self,
-        title: Union[str, "raw.base.RichText"],
-        rows: List[List["InputRichBlockTableCell"]],
-        bordered: Optional[bool] = None,
-        striped: Optional[bool] = None,
-        compact: Optional[bool] = None,
+        title: str | raw.base.RichText,
+        rows: list[list[InputRichBlockTableCell]],
+        bordered: bool | None = None,
+        striped: bool | None = None,
+        compact: bool | None = None,
     ):
         super().__init__()
 
@@ -578,14 +562,11 @@ class InputRichBlockTable(InputRichBlock):
         self.striped = striped
         self.compact = compact
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockTable(
             title=_to_rich_text(self.title),
             rows=[
-                raw.types.PageTableRow(
-                    cells=[cell.write() for cell in row]
-                )
-                for row in self.rows
+                raw.types.PageTableRow(cells=[cell.write() for cell in row]) for row in self.rows
             ],
             bordered=self.bordered,
             striped=self.striped,
@@ -624,14 +605,14 @@ class InputRichBlockTableCell(Object):
 
     def __init__(
         self,
-        text: Union[str, "raw.base.RichText"],
-        header: Optional[bool] = None,
-        align_center: Optional[bool] = None,
-        align_right: Optional[bool] = None,
-        valign_middle: Optional[bool] = None,
-        valign_bottom: Optional[bool] = None,
-        colspan: Optional[int] = None,
-        rowspan: Optional[int] = None,
+        text: str | raw.base.RichText,
+        header: bool | None = None,
+        align_center: bool | None = None,
+        align_right: bool | None = None,
+        valign_middle: bool | None = None,
+        valign_bottom: bool | None = None,
+        colspan: int | None = None,
+        rowspan: int | None = None,
     ):
         super().__init__()
 
@@ -644,7 +625,7 @@ class InputRichBlockTableCell(Object):
         self.colspan = colspan
         self.rowspan = rowspan
 
-    def write(self) -> "raw.types.PageTableCell":
+    def write(self) -> raw.types.PageTableCell:
         return raw.types.PageTableCell(
             text=_to_rich_text(self.text),
             header=self.header,
@@ -676,9 +657,9 @@ class InputRichBlockDetails(InputRichBlock):
 
     def __init__(
         self,
-        summary: Union[str, "raw.base.RichText"],
-        blocks: List[InputRichBlock],
-        is_open: Optional[bool] = None,
+        summary: str | raw.base.RichText,
+        blocks: list[InputRichBlock],
+        is_open: bool | None = None,
     ):
         super().__init__()
 
@@ -686,7 +667,7 @@ class InputRichBlockDetails(InputRichBlock):
         self.blocks = blocks
         self.is_open = is_open
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockDetails(
             title=_to_rich_text(self.summary),
             blocks=[b.write() for b in self.blocks],
@@ -718,11 +699,11 @@ class InputRichBlockMap(InputRichBlock):
 
     def __init__(
         self,
-        geo: "raw.base.InputGeoPoint",
+        geo: raw.base.InputGeoPoint,
         zoom: int,
         w: int,
         h: int,
-        caption: Optional[Union[str, "raw.base.RichText"]] = None,
+        caption: str | raw.base.RichText | None = None,
     ):
         super().__init__()
 
@@ -732,7 +713,7 @@ class InputRichBlockMap(InputRichBlock):
         self.h = h
         self.caption = caption
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.InputPageBlockMap(
             geo=self.geo,
             zoom=self.zoom,
@@ -762,8 +743,8 @@ class InputRichBlockAnimation(InputRichBlock):
     def __init__(
         self,
         video_id: int,
-        has_spoiler: Optional[bool] = None,
-        caption: Optional[Union[str, "raw.base.RichText"]] = None,
+        has_spoiler: bool | None = None,
+        caption: str | raw.base.RichText | None = None,
     ):
         super().__init__()
 
@@ -771,7 +752,7 @@ class InputRichBlockAnimation(InputRichBlock):
         self.has_spoiler = has_spoiler
         self.caption = caption
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockVideo(
             video_id=self.video_id,
             caption=_to_page_caption(text=self.caption),
@@ -796,14 +777,14 @@ class InputRichBlockAudio(InputRichBlock):
     def __init__(
         self,
         audio_id: int,
-        caption: Optional[Union[str, "raw.base.RichText"]] = None,
+        caption: str | raw.base.RichText | None = None,
     ):
         super().__init__()
 
         self.audio_id = audio_id
         self.caption = caption
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockAudio(
             audio_id=self.audio_id,
             caption=_to_page_caption(text=self.caption),
@@ -837,10 +818,10 @@ class InputRichBlockPhoto(InputRichBlock):
     def __init__(
         self,
         photo_id: int,
-        has_spoiler: Optional[bool] = None,
-        url: Optional[str] = None,
-        webpage_id: Optional[int] = None,
-        caption: Optional[Union[str, "raw.base.RichText"]] = None,
+        has_spoiler: bool | None = None,
+        url: str | None = None,
+        webpage_id: int | None = None,
+        caption: str | raw.base.RichText | None = None,
     ):
         super().__init__()
 
@@ -850,7 +831,7 @@ class InputRichBlockPhoto(InputRichBlock):
         self.webpage_id = webpage_id
         self.caption = caption
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockPhoto(
             photo_id=self.photo_id,
             caption=_to_page_caption(text=self.caption),
@@ -886,10 +867,10 @@ class InputRichBlockVideo(InputRichBlock):
     def __init__(
         self,
         video_id: int,
-        has_spoiler: Optional[bool] = None,
-        autoplay: Optional[bool] = None,
-        loop: Optional[bool] = None,
-        caption: Optional[Union[str, "raw.base.RichText"]] = None,
+        has_spoiler: bool | None = None,
+        autoplay: bool | None = None,
+        loop: bool | None = None,
+        caption: str | raw.base.RichText | None = None,
     ):
         super().__init__()
 
@@ -899,7 +880,7 @@ class InputRichBlockVideo(InputRichBlock):
         self.loop = loop
         self.caption = caption
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockVideo(
             video_id=self.video_id,
             caption=_to_page_caption(text=self.caption),
@@ -926,14 +907,14 @@ class InputRichBlockVoiceNote(InputRichBlock):
     def __init__(
         self,
         audio_id: int,
-        caption: Optional[Union[str, "raw.base.RichText"]] = None,
+        caption: str | raw.base.RichText | None = None,
     ):
         super().__init__()
 
         self.audio_id = audio_id
         self.caption = caption
 
-    def write(self) -> "raw.base.PageBlock":
+    def write(self) -> raw.base.PageBlock:
         return raw.types.PageBlockAudio(
             audio_id=self.audio_id,
             caption=_to_page_caption(text=self.caption),
@@ -955,13 +936,11 @@ class InputRichBlockThinking(InputRichBlock):
 
     def __init__(
         self,
-        text: Union[str, "raw.base.RichText"],
+        text: str | raw.base.RichText,
     ):
         super().__init__()
 
         self.text = text
 
-    def write(self) -> "raw.base.PageBlock":
-        return raw.types.PageBlockThinking(
-            text=_to_rich_text(self.text)
-        )
+    def write(self) -> raw.base.PageBlock:
+        return raw.types.PageBlockThinking(text=_to_rich_text(self.text))

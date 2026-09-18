@@ -16,20 +16,39 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
-import typing
+from __future__ import annotations
+
+import re
 from datetime import datetime
 from enum import Enum
-from json import dumps
+from typing import Any
+
+import orjson
+
+
+def dumps(obj: Any, default: Any = None) -> str:
+    return orjson.dumps(obj, default=default, option=orjson.OPT_INDENT_2).decode()
+
 
 import pyrogram
 
 
+def _public_attributes(instance: Object) -> dict[str, Any]:
+    attrs = getattr(instance, "__dict__", None)
+    if attrs is None:
+        return {
+            s: getattr(instance, s, None)
+            for s in getattr(instance, "__slots__", ())
+            if not s.startswith("_")
+        }
+    return {attribute: value for attribute, value in attrs.items() if not attribute.startswith("_")}
+
+
 class Object:
-    def __init__(self, client: Optional["pyrogram.Client"] = None):
+    def __init__(self, client: pyrogram.Client | None = None):
         self._client = client
 
-    def bind(self, client: "pyrogram.Client"):
+    def bind(self, client: pyrogram.Client):
         """Bind a Client instance to this and to all nested Pyrogram objects.
 
         Parameters:
@@ -46,13 +65,11 @@ class Object:
                 o.bind(client)
 
     @staticmethod
-    def default(obj: "Object"):
+    def default(obj: Object):
         if isinstance(obj, bytes):
             return repr(obj)
 
-        # https://t.me/pyrogramchat/167281
-        # Instead of re.Match, which breaks for python <=3.6
-        if isinstance(obj, typing.Match):
+        if isinstance(obj, re.Match):
             return repr(obj)
 
         if isinstance(obj, Enum):
@@ -62,23 +79,21 @@ class Object:
             return str(obj)
 
         attrs = getattr(obj, "__dict__", None)
-        if attrs is None:
-            attrs = {s: getattr(obj, s, None) for s in getattr(obj, "__slots__", ())}
+        d: dict[str, Any] = {"_": obj.__class__.__name__}
+        if attrs is not None:
+            for k, v in attrs.items():
+                if not k.startswith("_") and v is not None:
+                    d[k] = "*********" if k == "phone_number" else v
+        else:
+            for s in getattr(obj, "__slots__", ()):
+                v = getattr(obj, s, None)
+                if v is not None:
+                    d[s] = "*********" if s == "phone_number" else v
 
-        return {
-            "_": obj.__class__.__name__,
-            **{
-                attr: (
-                    "*" * 9 if attr == "phone_number" else
-                    getattr(obj, attr)
-                )
-                for attr in filter(lambda x: not x.startswith("_"), attrs)
-                if getattr(obj, attr) is not None
-            }
-        }
+        return d
 
     def __str__(self) -> str:
-        return dumps(self, indent=4, default=Object.default, ensure_ascii=False)
+        return dumps(self, default=Object.default)
 
     def __repr__(self) -> str:
         attrs = getattr(self, "__dict__", None)
@@ -88,24 +103,24 @@ class Object:
         return "pyrogram.types.{}({})".format(
             self.__class__.__name__,
             ", ".join(
-                f"{attr}={repr(getattr(self, attr))}"
+                f"{attr}={getattr(self, attr)!r}"
                 for attr in filter(lambda x: not x.startswith("_"), attrs)
                 if getattr(self, attr) is not None
-            )
+            ),
         )
 
-    def __eq__(self, other: "Object") -> bool:
-        for attr in self.__dict__:
-            try:
-                if attr.startswith("_"):
-                    continue
+    def __eq__(self, other: object) -> bool:
+        # Comparing attribute values alone makes an attribute-less type equal to anything,
+        #  `None` and `42` included; `NotImplemented` leaves the verdict to the other operand.
+        if type(other) is not type(self):
+            return NotImplemented
 
-                if getattr(self, attr) != getattr(other, attr):
-                    return False
-            except AttributeError:
-                return False
+        return _public_attributes(self) == _public_attributes(other)
 
-        return True
+    # Equality is by mutable attribute value (see `__eq__` above), so a stable hash across
+    #  the object's lifetime cannot be guaranteed. Declared explicitly rather than relying on
+    #  the implicit `__hash__ = None` Python already applies when `__eq__` is defined alone.
+    __hash__ = None
 
     def __setstate__(self, state):
         for attr in state:

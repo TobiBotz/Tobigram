@@ -16,123 +16,121 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
 import logging
 
 import pyrogram
 from pyrogram import raw
+from pyrogram.methods.rate_limiter import RateLimiter
 from pyrogram.raw.core import TLObject
 from pyrogram.session import Session
-from pyrogram.methods.rate_limiter import RateLimiter
 
 log = logging.getLogger(__name__)
 
-NO_UPDATES_QUERY_NAMES = frozenset({
-    "account.CheckUsername",
-    "account.GetPassword",
-    "account.GetPrivacy",
-    "account.GetWallPapers",
-    "account.RegisterDevice",
-    "account.UnregisterDevice",
-    "channels.CheckUsername",
-    "channels.GetAdminLog",
-    "channels.GetChannels",
-    "channels.GetGroupsForDiscussion",
-    "channels.GetParticipants",
-    "channels.ReadHistory",
-    "channels.ReadMessageContents",
-    "contacts.GetContacts",
-    "contacts.GetTopPeers",
-    "help.GetAppConfig",
-    "help.GetConfig",
-    "help.GetNearestDc",
-    "help.GetTermsOfService",
-    "langpack.GetLangPack",
-    "langpack.GetLanguages",
-    "messages.GetAllChats",
-    "messages.GetAllDrafts",
-    "messages.GetAllStickers",
-    "messages.GetAttachMenuBots",
-    "messages.GetAvailableEffects",
-    "messages.GetBotCallbackAnswer",
-    "messages.GetChatInviteImporters",
-    "messages.GetChats",
-    "messages.GetCommonChats",
-    "messages.GetDefaultTagReactions",
-    "messages.GetDialogs",
-    "messages.GetEmojiKeywords",
-    "messages.GetEmojiStickerGroups",
-    "messages.GetEmojiStatusGroups",
-    "messages.GetExtendedMedia",
-    "messages.GetFavedStickers",
-    "messages.GetFeaturedEmojiStickers",
-    "messages.GetFeaturedStickers",
-    "messages.GetForumTopics",
-    "messages.GetFullChat",
-    "messages.GetGameHighScores",
-    "messages.GetHistory",
-    "messages.GetMaskStickers",
-    "messages.GetMessageReactionsList",
-    "messages.GetMessages",
-    "messages.GetMessagesViews",
-    "messages.GetOldFeaturedStickers",
-    "messages.GetPeerDialogs",
-    "messages.GetPeerSettings",
-    "messages.GetPinnedDialogs",
-    "messages.GetPinnedSavedDialogs",
-    "messages.GetPollResults",
-    "messages.GetPollVotes",
-    "messages.GetRecentReactions",
-    "messages.GetRecentStickers",
-    "messages.GetReplies",
-    "messages.GetSavedDialogs",
-    "messages.GetSavedGifs",
-    "messages.GetSavedHistory",
-    "messages.GetSavedReactionTags",
-    "messages.GetScheduledHistory",
-    "messages.GetScheduledMessages",
-    "messages.GetSearchCounters",
-    "messages.GetSplitRanges",
-    "messages.GetStickerSet",
-    "messages.GetStickers",
-    "messages.GetSuggestedDialogFilters",
-    "messages.GetTopReactions",
-    "messages.GetUnreadMentions",
-    "messages.GetUnreadReactions",
-    "messages.GetWebPage",
-    "messages.GetWebPagePreview",
-    "messages.CheckHistoryImport",
-    "messages.CheckQuickReplyShortcut",
-    "messages.GetQuickReplies",
-    "messages.GetQuickReplyMessages",
-    "messages.GetMessagesFiltered",
-    "messages.GetMessagesFilteredOrMin",
-    "messages.GetMyStickers",
-    "messages.GetCustomEmojiDocuments",
-    "messages.GetDocumentInfo",
-    "messages.Search",
-    "messages.SearchCustomEmoji",
-    "messages.SearchGlobal",
-    "messages.SearchSentMedia",
-    "messages.SearchStickerSets",
-    "messages.SendScreenshotNotification",
-    "messages.SetTyping",
-    "stickers.CheckShortName",
-    "stickers.SuggestShortName",
-    "updates.GetChannelDifference",
-    "updates.GetDifference",
-    "updates.GetState",
-    "upload.GetFile",
-    "upload.GetWebFile",
-    "upload.ReuploadCdnFile",
-    "upload.SaveBigFilePart",
-    "upload.SaveFilePart",
-    "users.GetFullUser",
-    "users.GetUsers",
-    "premium.GetMyBoosts",
-    "premium.GetBoostsList",
-    "premium.GetUserBoosts",
-})
+NO_UPDATES_QUERY_NAMES = frozenset(
+    {
+        "account.CheckUsername",
+        "account.GetPassword",
+        "account.GetPrivacy",
+        "account.GetWallPapers",
+        "account.RegisterDevice",
+        "account.UnregisterDevice",
+        "channels.CheckUsername",
+        "channels.GetAdminLog",
+        "channels.GetChannels",
+        "channels.GetGroupsForDiscussion",
+        "channels.GetParticipants",
+        "channels.ReadHistory",
+        "channels.ReadMessageContents",
+        "contacts.GetContacts",
+        "contacts.GetTopPeers",
+        "help.GetAppConfig",
+        "help.GetConfig",
+        "help.GetNearestDc",
+        "help.GetTermsOfService",
+        "langpack.GetLangPack",
+        "langpack.GetLanguages",
+        "messages.GetAllChats",
+        "messages.GetAllDrafts",
+        "messages.GetAllStickers",
+        "messages.GetAttachMenuBots",
+        "messages.GetAvailableEffects",
+        "messages.GetBotCallbackAnswer",
+        "messages.GetChatInviteImporters",
+        "messages.GetChats",
+        "messages.GetCommonChats",
+        "messages.GetDefaultTagReactions",
+        "messages.GetDialogs",
+        "messages.GetEmojiKeywords",
+        "messages.GetEmojiStickerGroups",
+        "messages.GetEmojiStatusGroups",
+        "messages.GetExtendedMedia",
+        "messages.GetFavedStickers",
+        "messages.GetFeaturedEmojiStickers",
+        "messages.GetFeaturedStickers",
+        "messages.GetForumTopics",
+        "messages.GetFullChat",
+        "messages.GetGameHighScores",
+        "messages.GetHistory",
+        "messages.GetMaskStickers",
+        "messages.GetMessageReactionsList",
+        "messages.GetMessages",
+        "messages.GetMessagesViews",
+        "messages.GetOldFeaturedStickers",
+        "messages.GetPeerDialogs",
+        "messages.GetPeerSettings",
+        "messages.GetPinnedDialogs",
+        "messages.GetPinnedSavedDialogs",
+        "messages.GetPollResults",
+        "messages.GetPollVotes",
+        "messages.GetRecentReactions",
+        "messages.GetRecentStickers",
+        "messages.GetReplies",
+        "messages.GetSavedDialogs",
+        "messages.GetSavedGifs",
+        "messages.GetSavedHistory",
+        "messages.GetSavedReactionTags",
+        "messages.GetScheduledHistory",
+        "messages.GetScheduledMessages",
+        "messages.GetSearchCounters",
+        "messages.GetSplitRanges",
+        "messages.GetStickerSet",
+        "messages.GetStickers",
+        "messages.GetSuggestedDialogFilters",
+        "messages.GetTopReactions",
+        "messages.GetUnreadMentions",
+        "messages.GetUnreadReactions",
+        "messages.GetWebPage",
+        "messages.GetWebPagePreview",
+        "messages.CheckHistoryImport",
+        "messages.CheckQuickReplyShortcut",
+        "messages.GetQuickReplies",
+        "messages.GetQuickReplyMessages",
+        "messages.GetMessagesFiltered",
+        "messages.GetMessagesFilteredOrMin",
+        "messages.GetMyStickers",
+        "messages.GetCustomEmojiDocuments",
+        "messages.GetDocumentInfo",
+        "messages.Search",
+        "messages.SearchCustomEmoji",
+        "messages.SearchGlobal",
+        "messages.SearchSentMedia",
+        "messages.SearchStickerSets",
+        "messages.SendScreenshotNotification",
+        "messages.SetTyping",
+        "stickers.CheckShortName",
+        "stickers.SuggestShortName",
+        "upload.GetFile",
+        "upload.GetWebFile",
+        "upload.ReuploadCdnFile",
+        "upload.SaveBigFilePart",
+        "upload.SaveFilePart",
+        "users.GetFullUser",
+        "users.GetUsers",
+        "premium.GetMyBoosts",
+        "premium.GetBoostsList",
+        "premium.GetUserBoosts",
+    }
+)
 
 
 INNER_QUERY_ATTR = "query"
@@ -158,17 +156,46 @@ class Invoke:
         short = name.split(".")[-1] if "." in name else name
 
         if any(x in name for x in ("Send", "Upload", "Edit", "Forward", "Save")):
-            if any(x in name for x in ("Media", "Photo", "Video", "Audio", "Document", "Animation", "Voice", "Sticker", "Round")):
+            if any(
+                x in name
+                for x in (
+                    "Media",
+                    "Photo",
+                    "Video",
+                    "Audio",
+                    "Document",
+                    "Animation",
+                    "Voice",
+                    "Sticker",
+                    "Round",
+                )
+            ):
                 return RateLimiter.CATEGORY_MEDIA
             return RateLimiter.CATEGORY_MESSAGE
 
-        if any(x in name for x in ("Delete", "Ban", "Kick", "Unban", "Promote", "EditAdmin", "EditBanned", "Toggle", "Set", "Pin", "Report", "Block")):
+        if any(
+            x in name
+            for x in (
+                "Delete",
+                "Ban",
+                "Kick",
+                "Unban",
+                "Promote",
+                "EditAdmin",
+                "EditBanned",
+                "Toggle",
+                "Set",
+                "Pin",
+                "Report",
+                "Block",
+            )
+        ):
             return RateLimiter.CATEGORY_ADMIN
 
         if any(x in name for x in ("GetDifference", "GetState", "Ping", "HttpWait")):
             return RateLimiter.CATEGORY_BULK
 
-        if short.startswith("Get") or short.startswith("Search") or short.startswith("Check"):
+        if short.startswith(("Get", "Search", "Check")):
             return RateLimiter.CATEGORY_QUERY
 
         return RateLimiter.CATEGORY_QUERY
@@ -178,7 +205,10 @@ class Invoke:
 
         fqn = inner.QUALNAME if hasattr(inner, "QUALNAME") else None
         if fqn and fqn.startswith("functions."):
-            fqn = fqn[len("functions."):]
+            fqn = fqn[len("functions.") :]
+        if fqn and fqn.startswith("updates."):
+            return True
+
         if fqn and fqn in NO_UPDATES_QUERY_NAMES:
             return False
 
@@ -205,8 +235,8 @@ class Invoke:
         query: TLObject,
         retries: int = Session.MAX_RETRIES,
         timeout: float = Session.WAIT_TIMEOUT,
-        sleep_threshold: Optional[float] = None,
-        business_connection_id: Optional[str] = None
+        sleep_threshold: float | None = None,
+        business_connection_id: str | None = None,
     ):
         """Invoke raw Telegram functions.
 
@@ -248,16 +278,14 @@ class Invoke:
         Example:
             .. code-block:: python
 
-                from wzgram import raw
+                from pyrogram import raw
 
                 await app.invoke(raw.functions.help.GetConfig())
         """
         if not self.is_connected:
             raise ConnectionError("Client has not been started yet")
 
-        if self.no_updates:
-            query = raw.functions.InvokeWithoutUpdates(query=query)
-        elif self.auto_no_updates and not self._auto_needs_updates(query):
+        if self.no_updates or self.auto_no_updates and not self._auto_needs_updates(query):
             query = raw.functions.InvokeWithoutUpdates(query=query)
 
         if self.takeout_id:
@@ -265,8 +293,7 @@ class Invoke:
 
         if business_connection_id:
             query = raw.functions.InvokeWithBusinessConnection(
-                connection_id=business_connection_id,
-                query=query
+                connection_id=business_connection_id, query=query
             )
 
         if self.rate_limiter is not None and not self.rate_limiter.is_closed:
@@ -274,10 +301,10 @@ class Invoke:
             await self.rate_limiter.acquire(category)
 
         r = await self.session.invoke(
-            query, retries, timeout,
-            (sleep_threshold
-             if sleep_threshold is not None
-             else self.sleep_threshold)
+            query,
+            retries,
+            timeout,
+            (sleep_threshold if sleep_threshold is not None else self.sleep_threshold),
         )
 
         try:

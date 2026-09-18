@@ -16,7 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Callable, List, Optional, Union
+from __future__ import annotations
+
+from collections.abc import Callable
 
 import pyrogram
 from pyrogram import enums, types
@@ -27,17 +29,17 @@ from .listen import UNSET, resolve_listener_ids
 
 class RegisterNextStepHandler:
     async def register_next_step_handler(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         callback: Callable,
-        filters: Optional[Filter] = None,
-        listener_type: "enums.ListenerTypes" = enums.ListenerTypes.MESSAGE,
-        timeout: Optional[float] = UNSET,
-        unallowed_click_alert: Union[bool, str] = True,
-        chat_id: Optional[Union[int, str, List[Union[int, str]]]] = None,
-        user_id: Optional[Union[int, str, List[Union[int, str]]]] = None,
-        message_id: Optional[Union[int, List[int]]] = None,
-        inline_message_id: Optional[Union[str, List[str]]] = None
-    ) -> "types.Listener":
+        filters: Filter | None = None,
+        listener_type: enums.ListenerTypes = enums.ListenerTypes.MESSAGE,
+        timeout: float | None = UNSET,
+        unallowed_click_alert: bool | str = True,
+        chat_id: int | str | list[int | str] | None = None,
+        user_id: int | str | list[int | str] | None = None,
+        message_id: int | list[int] | None = None,
+        inline_message_id: str | list[str] | None = None,
+    ) -> types.Listener:
         """Run a callback once, on the next update matching the given criteria.
 
         The callback form of :meth:`~pyrogram.Client.listen`, for flows that
@@ -102,7 +104,7 @@ class RegisterNextStepHandler:
             chat_id=await resolve_listener_ids(self, chat_id),
             user_id=await resolve_listener_ids(self, user_id),
             message_id=message_id,
-            inline_message_id=inline_message_id
+            inline_message_id=inline_message_id,
         )
 
         listener = types.Listener(
@@ -110,7 +112,7 @@ class RegisterNextStepHandler:
             identifier=identifier,
             filters=filters,
             callback=callback,
-            unallowed_click_alert=unallowed_click_alert
+            unallowed_click_alert=unallowed_click_alert,
         )
 
         self.listeners.add(listener, timeout)

@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 
 from pyrogram import raw
 
@@ -34,7 +35,7 @@ class CommunityChatRemoved(Object):
     def __init__(
         self,
         *,
-        community_id: Optional[int] = None,
+        community_id: int | None = None,
     ):
         super().__init__()
 
@@ -42,8 +43,8 @@ class CommunityChatRemoved(Object):
 
     @staticmethod
     def _parse(
-        action: "raw.types.MessageActionChangeCommunity",
-    ) -> Optional["CommunityChatRemoved"]:
+        action: raw.types.MessageActionChangeCommunity,
+    ) -> CommunityChatRemoved | None:
         if action.community_id is not None:
             return None
 

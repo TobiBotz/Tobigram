@@ -27,28 +27,45 @@ from .business_weekly_open import BusinessWeeklyOpen
 from .business_working_hours import BusinessWorkingHours
 from .chat import Chat
 from .chat_admin_with_invite_links import ChatAdminWithInviteLinks
-from .chat_full_info import ChatFullInfo
-from .community import Community
-from .community_chat_added import CommunityChatAdded
-from .community_chat_joined import CommunityChatJoined
-from .community_chat_removed import CommunityChatRemoved
-from .chat_preview import ChatPreview
 from .chat_administrator_rights import ChatAdministratorRights, ChatPrivileges
+from .chat_background import (
+    BackgroundFill,
+    BackgroundFillFreeformGradient,
+    BackgroundFillGradient,
+    BackgroundFillSolid,
+    BackgroundType,
+    BackgroundTypeChatTheme,
+    BackgroundTypeFill,
+    BackgroundTypePattern,
+    BackgroundTypeWallpaper,
+)
 from .chat_color import ChatColor
 from .chat_event import ChatEvent
 from .chat_event_filter import ChatEventFilter
 from .chat_folder_invite_link_info import ChatFolderInviteLinkInfo
+from .chat_full_info import ChatFullInfo
 from .chat_invite_link import ChatInviteLink
 from .chat_join_request import ChatJoinRequest
-from .chat_join_result import ChatJoinResult, ChatJoinResultSuccess, ChatJoinResultRequestSent, ChatJoinResultGuardBotApprovalRequired, ChatJoinResultDeclined
+from .chat_join_result import (
+    ChatJoinResult,
+    ChatJoinResultDeclined,
+    ChatJoinResultGuardBotApprovalRequired,
+    ChatJoinResultRequestSent,
+    ChatJoinResultSuccess,
+)
 from .chat_joiner import ChatJoiner
 from .chat_location import ChatLocation
 from .chat_member import ChatMember
 from .chat_member_updated import ChatMemberUpdated
 from .chat_permissions import ChatPermissions
 from .chat_photo import ChatPhoto
+from .chat_preview import ChatPreview
 from .chat_reactions import ChatReactions
 from .chat_settings import ChatSettings
+from .community import Community
+from .community_chat_added import CommunityChatAdded
+from .community_chat_joined import CommunityChatJoined
+from .community_chat_removed import CommunityChatRemoved
 from .dialog import Dialog
 from .emoji_status import EmojiStatus
 from .failed_to_add_member import FailedToAddMember
@@ -75,6 +92,15 @@ from .video_chat_started import VideoChatStarted
 
 __all__ = [
     "AcceptedGiftTypes",
+    "BackgroundFill",
+    "BackgroundFillFreeformGradient",
+    "BackgroundFillGradient",
+    "BackgroundFillSolid",
+    "BackgroundType",
+    "BackgroundTypeChatTheme",
+    "BackgroundTypeFill",
+    "BackgroundTypePattern",
+    "BackgroundTypeWallpaper",
     "Birthday",
     "BotVerification",
     "BusinessBotRights",
@@ -86,22 +112,18 @@ __all__ = [
     "Chat",
     "ChatAdminWithInviteLinks",
     "ChatAdministratorRights",
-    "ChatFullInfo",
-    "Community",
-    "CommunityChatAdded",
-    "CommunityChatJoined",
-    "CommunityChatRemoved",
     "ChatColor",
     "ChatEvent",
     "ChatEventFilter",
     "ChatFolderInviteLinkInfo",
+    "ChatFullInfo",
     "ChatInviteLink",
     "ChatJoinRequest",
     "ChatJoinResult",
-    "ChatJoinResultSuccess",
-    "ChatJoinResultRequestSent",
-    "ChatJoinResultGuardBotApprovalRequired",
     "ChatJoinResultDeclined",
+    "ChatJoinResultGuardBotApprovalRequired",
+    "ChatJoinResultRequestSent",
+    "ChatJoinResultSuccess",
     "ChatJoiner",
     "ChatLocation",
     "ChatMember",
@@ -112,6 +134,10 @@ __all__ = [
     "ChatPrivileges",
     "ChatReactions",
     "ChatSettings",
+    "Community",
+    "CommunityChatAdded",
+    "CommunityChatJoined",
+    "CommunityChatRemoved",
     "Dialog",
     "EmojiStatus",
     "FailedToAddMember",
@@ -122,12 +148,12 @@ __all__ = [
     "GroupCallMember",
     "HistoryCleared",
     "InviteLinkImporter",
+    "Link",
     "PhoneCallEnded",
     "PhoneCallStarted",
     "PrivacyRule",
     "Restriction",
     "StoriesStealthMode",
-    "Link",
     "User",
     "UserRating",
     "Username",
@@ -135,6 +161,5 @@ __all__ = [
     "VideoChatEnded",
     "VideoChatMembersInvited",
     "VideoChatScheduled",
-    "VideoChatStarted"
+    "VideoChatStarted",
 ]
-

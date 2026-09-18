@@ -16,18 +16,18 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class SetBotCommands:
     async def set_bot_commands(
-        self: "pyrogram.Client",
-        commands: List["types.BotCommand"],
-        scope: "types.BotCommandScope" = types.BotCommandScopeDefault(),
+        self: pyrogram.Client,
+        commands: list[types.BotCommand],
+        scope: types.BotCommandScope = types.BotCommandScopeDefault(),
         language_code: str = "",
     ) -> bool:
         """Set the list of the bot's commands.
@@ -56,7 +56,7 @@ class SetBotCommands:
         Example:
             .. code-block:: python
 
-                from wzgram.types import BotCommand
+                from pyrogram.types import BotCommand
 
                 # Set new commands
                 await app.set_bot_commands([

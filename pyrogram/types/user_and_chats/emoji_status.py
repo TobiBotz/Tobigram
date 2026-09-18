@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
 
 import pyrogram
 from pyrogram import raw, utils
@@ -63,17 +64,17 @@ class EmojiStatus(Object):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
-        custom_emoji_id: Optional[str] = None,
-        gift_id: Optional[int] = None,
-        until_date: Optional[datetime] = None,
-        title: Optional[str] = None,
-        name: Optional[str] = None,
-        pattern_custom_emoji_id: Optional[str] = None,
-        center_color: Optional[int] = None,
-        edge_color: Optional[int] = None,
-        pattern_color: Optional[int] = None,
-        text_color: Optional[int] = None
+        client: pyrogram.Client | None = None,
+        custom_emoji_id: str | None = None,
+        gift_id: int | None = None,
+        until_date: datetime | None = None,
+        title: str | None = None,
+        name: str | None = None,
+        pattern_custom_emoji_id: str | None = None,
+        center_color: int | None = None,
+        edge_color: int | None = None,
+        pattern_color: int | None = None,
+        text_color: int | None = None,
     ):
         super().__init__(client)
 
@@ -89,12 +90,12 @@ class EmojiStatus(Object):
         self.text_color = text_color
 
     @staticmethod
-    def _parse(client, emoji_status: "raw.base.EmojiStatus") -> Optional["EmojiStatus"]:
+    def _parse(client, emoji_status: raw.base.EmojiStatus) -> EmojiStatus | None:
         if isinstance(emoji_status, raw.types.EmojiStatus):
             return EmojiStatus(
                 client=client,
                 custom_emoji_id=str(emoji_status.document_id),
-                until_date=utils.timestamp_to_datetime(getattr(emoji_status, "until", None))
+                until_date=utils.timestamp_to_datetime(getattr(emoji_status, "until", None)),
             )
 
         if isinstance(emoji_status, raw.types.EmojiStatusCollectible):
@@ -109,7 +110,7 @@ class EmojiStatus(Object):
                 center_color=emoji_status.center_color,
                 edge_color=emoji_status.edge_color,
                 pattern_color=emoji_status.pattern_color,
-                text_color=emoji_status.text_color
+                text_color=emoji_status.text_color,
             )
 
         return None
@@ -117,12 +118,10 @@ class EmojiStatus(Object):
     def write(self):
         if self.gift_id:
             return raw.types.InputEmojiStatusCollectible(
-                collectible_id=self.gift_id,
-                until=utils.datetime_to_timestamp(self.until_date)
+                collectible_id=self.gift_id, until=utils.datetime_to_timestamp(self.until_date)
             )
 
         return raw.types.EmojiStatus(
             document_id=int(self.custom_emoji_id),
-            until=utils.datetime_to_timestamp(self.until_date)
+            until=utils.datetime_to_timestamp(self.until_date),
         )
-

@@ -16,12 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import base64
 import logging
 import struct
 from enum import IntEnum
 from io import BytesIO
-from typing import List, Optional
 
 from pyrogram.raw.core import Bytes, String
 
@@ -64,7 +65,7 @@ def rle_encode(s: bytes) -> bytes:
     Returns:
         ``bytes``: The encoded bytes
     """
-    r: List[int] = []
+    r: list[int] = []
     n: int = 0
 
     for b in s:
@@ -93,7 +94,7 @@ def rle_decode(s: bytes) -> bytes:
     Returns:
         ``bytes``: The decoded bytes
     """
-    r: List[int] = []
+    r: list[int] = []
     z: bool = False
 
     for b in s:
@@ -112,6 +113,7 @@ def rle_decode(s: bytes) -> bytes:
 
 class FileType(IntEnum):
     """Known file types"""
+
     THUMBNAIL = 0
     CHAT_PHOTO = 1  # ProfilePhoto
     PHOTO = 2
@@ -134,16 +136,27 @@ class FileType(IntEnum):
 
 class ThumbnailSource(IntEnum):
     """Known thumbnail sources"""
+
     LEGACY = 0
     THUMBNAIL = 1
-    CHAT_PHOTO_SMALL = 2  # DialogPhotoSmall
-    CHAT_PHOTO_BIG = 3  # DialogPhotoBig
+    CHAT_PHOTO_SMALL = 2
+    CHAT_PHOTO_BIG = 3
     STICKER_SET_THUMBNAIL = 4
+    FULL_LEGACY = 5
+    CHAT_PHOTO_SMALL_LEGACY = 6
+    CHAT_PHOTO_BIG_LEGACY = 7
+    STICKER_SET_THUMBNAIL_LEGACY = 8
+    STICKER_SET_THUMBNAIL_VERSION = 9
 
 
 # Photo-like file ids are longer and contain extra info, the rest are all documents
-PHOTO_TYPES = {FileType.THUMBNAIL, FileType.CHAT_PHOTO, FileType.PHOTO, FileType.WALLPAPER,
-               FileType.ENCRYPTED_THUMBNAIL}
+PHOTO_TYPES = {
+    FileType.THUMBNAIL,
+    FileType.CHAT_PHOTO,
+    FileType.PHOTO,
+    FileType.WALLPAPER,
+    FileType.ENCRYPTED_THUMBNAIL,
+}
 DOCUMENT_TYPES = set(FileType) - PHOTO_TYPES
 
 # Since the file type values are small enough to fit them in few bits, Telegram thought it would be a good idea to
@@ -157,25 +170,27 @@ class FileId:
     MINOR = 30
 
     def __init__(
-        self, *,
+        self,
+        *,
         major: int = MAJOR,
         minor: int = MINOR,
         file_type: FileType,
         dc_id: int,
         file_reference: bytes = b"",
-        url: Optional[str] = None,
-        media_id: Optional[int] = None,
-        access_hash: Optional[int] = None,
-        volume_id: Optional[int] = None,
-        thumbnail_source: Optional[ThumbnailSource] = None,
-        thumbnail_file_type: Optional[FileType] = None,
+        url: str | None = None,
+        media_id: int | None = None,
+        access_hash: int | None = None,
+        volume_id: int | None = None,
+        thumbnail_source: ThumbnailSource | None = None,
+        thumbnail_file_type: FileType | None = None,
         thumbnail_size: str = "",
-        secret: Optional[int] = None,
-        local_id: Optional[int] = None,
-        chat_id: Optional[int] = None,
-        chat_access_hash: Optional[int] = None,
-        sticker_set_id: Optional[int] = None,
-        sticker_set_access_hash: Optional[int] = None
+        secret: int | None = None,
+        local_id: int | None = None,
+        chat_id: int | None = None,
+        chat_access_hash: int | None = None,
+        sticker_set_id: int | None = None,
+        sticker_set_access_hash: int | None = None,
+        sticker_set_version: int | None = None,
     ):
         self.major = major
         self.minor = minor
@@ -195,6 +210,7 @@ class FileId:
         self.chat_access_hash = chat_access_hash
         self.sticker_set_id = sticker_set_id
         self.sticker_set_access_hash = sticker_set_access_hash
+        self.sticker_set_version = sticker_set_version
 
     @staticmethod
     def decode(file_id: str):
@@ -238,7 +254,7 @@ class FileId:
 
         if has_web_location:
             url = String.read(buffer)
-            access_hash, = struct.unpack("<q", buffer.read(8))
+            (access_hash,) = struct.unpack("<q", buffer.read(8))
 
             return FileId(
                 major=major,
@@ -246,92 +262,88 @@ class FileId:
                 file_type=file_type,
                 dc_id=dc_id,
                 url=url,
-                access_hash=access_hash
+                access_hash=access_hash,
             )
 
         file_reference = Bytes.read(buffer) if has_file_reference else b""
         media_id, access_hash = struct.unpack("<qq", buffer.read(16))
 
         if file_type in PHOTO_TYPES:
-            volume_id, = struct.unpack("<q", buffer.read(8))
-            thumbnail_source, = (0,) if major < 4 else struct.unpack("<i", buffer.read(4))
+            has_volume_and_local_id = minor < 32
+            volume_id = struct.unpack("<q", buffer.read(8))[0] if has_volume_and_local_id else None
+
+            (thumbnail_source,) = (0,) if major < 4 else struct.unpack("<i", buffer.read(4))
 
             try:
                 thumbnail_source = ThumbnailSource(thumbnail_source)
             except ValueError:
-                raise ValueError(f"Unknown thumbnail_source {thumbnail_source} of file_id {file_id}")
+                raise ValueError(
+                    f"Unknown thumbnail_source {thumbnail_source} of file_id {file_id}"
+                )
+
+            secret = None
+            thumbnail_file_type = None
+            thumbnail_size = ""
+            chat_id = None
+            chat_access_hash = None
+            sticker_set_id = None
+            sticker_set_access_hash = None
+            sticker_set_version = None
+            local_id = None
 
             if thumbnail_source == ThumbnailSource.LEGACY:
-                secret, local_id = struct.unpack("<qi", buffer.read(12))
-
-                return FileId(
-                    major=major,
-                    minor=minor,
-                    file_type=file_type,
-                    dc_id=dc_id,
-                    file_reference=file_reference,
-                    media_id=media_id,
-                    access_hash=access_hash,
-                    volume_id=volume_id,
-                    thumbnail_source=thumbnail_source,
-                    secret=secret,
-                    local_id=local_id
-                )
-
-            if thumbnail_source == ThumbnailSource.THUMBNAIL:
-                thumbnail_file_type, thumbnail_size, local_id = struct.unpack("<iii", buffer.read(12))
+                (secret,) = struct.unpack("<q", buffer.read(8))
+            elif thumbnail_source == ThumbnailSource.THUMBNAIL:
+                thumbnail_file_type, thumbnail_size = struct.unpack("<ii", buffer.read(8))
                 thumbnail_size = chr(thumbnail_size)
-
-                return FileId(
-                    major=major,
-                    minor=minor,
-                    file_type=file_type,
-                    dc_id=dc_id,
-                    file_reference=file_reference,
-                    media_id=media_id,
-                    access_hash=access_hash,
-                    volume_id=volume_id,
-                    thumbnail_source=thumbnail_source,
-                    thumbnail_file_type=thumbnail_file_type,
-                    thumbnail_size=thumbnail_size,
-                    local_id=local_id
+            elif thumbnail_source in (
+                ThumbnailSource.CHAT_PHOTO_SMALL,
+                ThumbnailSource.CHAT_PHOTO_BIG,
+            ):
+                chat_id, chat_access_hash = struct.unpack("<qq", buffer.read(16))
+            elif thumbnail_source == ThumbnailSource.STICKER_SET_THUMBNAIL:
+                sticker_set_id, sticker_set_access_hash = struct.unpack("<qq", buffer.read(16))
+            elif thumbnail_source == ThumbnailSource.FULL_LEGACY:
+                volume_id, secret, local_id = struct.unpack("<qqi", buffer.read(20))
+            elif thumbnail_source in (
+                ThumbnailSource.CHAT_PHOTO_SMALL_LEGACY,
+                ThumbnailSource.CHAT_PHOTO_BIG_LEGACY,
+            ):
+                chat_id, chat_access_hash, volume_id, local_id = struct.unpack(
+                    "<qqqi", buffer.read(28)
+                )
+            elif thumbnail_source == ThumbnailSource.STICKER_SET_THUMBNAIL_LEGACY:
+                sticker_set_id, sticker_set_access_hash, volume_id, local_id = struct.unpack(
+                    "<qqqi", buffer.read(28)
+                )
+            elif thumbnail_source == ThumbnailSource.STICKER_SET_THUMBNAIL_VERSION:
+                sticker_set_id, sticker_set_access_hash, sticker_set_version = struct.unpack(
+                    "<qqi", buffer.read(20)
                 )
 
-            if thumbnail_source in (ThumbnailSource.CHAT_PHOTO_SMALL, ThumbnailSource.CHAT_PHOTO_BIG):
-                chat_id, chat_access_hash, local_id = struct.unpack("<qqi", buffer.read(20))
+            if has_volume_and_local_id:
+                (local_id,) = struct.unpack("<i", buffer.read(4))
 
-                return FileId(
-                    major=major,
-                    minor=minor,
-                    file_type=file_type,
-                    dc_id=dc_id,
-                    file_reference=file_reference,
-                    media_id=media_id,
-                    access_hash=access_hash,
-                    volume_id=volume_id,
-                    thumbnail_source=thumbnail_source,
-                    chat_id=chat_id,
-                    chat_access_hash=chat_access_hash,
-                    local_id=local_id
-                )
-
-            if thumbnail_source == ThumbnailSource.STICKER_SET_THUMBNAIL:
-                sticker_set_id, sticker_set_access_hash, local_id = struct.unpack("<qqi", buffer.read(20))
-
-                return FileId(
-                    major=major,
-                    minor=minor,
-                    file_type=file_type,
-                    dc_id=dc_id,
-                    file_reference=file_reference,
-                    media_id=media_id,
-                    access_hash=access_hash,
-                    volume_id=volume_id,
-                    thumbnail_source=thumbnail_source,
-                    sticker_set_id=sticker_set_id,
-                    sticker_set_access_hash=sticker_set_access_hash,
-                    local_id=local_id
-                )
+            return FileId(
+                major=major,
+                minor=minor,
+                file_type=file_type,
+                dc_id=dc_id,
+                file_reference=file_reference,
+                media_id=media_id,
+                access_hash=access_hash,
+                volume_id=volume_id,
+                thumbnail_source=thumbnail_source,
+                thumbnail_file_type=thumbnail_file_type,
+                thumbnail_size=thumbnail_size,
+                secret=secret,
+                chat_id=chat_id,
+                chat_access_hash=chat_access_hash,
+                sticker_set_id=sticker_set_id,
+                sticker_set_access_hash=sticker_set_access_hash,
+                sticker_set_version=sticker_set_version,
+                local_id=local_id,
+            )
 
         if file_type in DOCUMENT_TYPES:
             return FileId(
@@ -341,10 +353,10 @@ class FileId:
                 dc_id=dc_id,
                 file_reference=file_reference,
                 media_id=media_id,
-                access_hash=access_hash
+                access_hash=access_hash,
             )
 
-    def encode(self, *, major: Optional[int] = None, minor: Optional[int] = None):
+    def encode(self, *, major: int | None = None, minor: int | None = None):
         major = major if major is not None else self.major
         minor = minor if minor is not None else self.minor
 
@@ -369,34 +381,81 @@ class FileId:
         buffer.write(struct.pack("<qq", self.media_id, self.access_hash))
 
         if self.file_type in PHOTO_TYPES:
-            buffer.write(struct.pack("<q", self.volume_id))
+            has_volume_and_local_id = minor < 32
+
+            if has_volume_and_local_id:
+                buffer.write(struct.pack("<q", self.volume_id))
 
             if major >= 4:
                 buffer.write(struct.pack("<i", self.thumbnail_source))
 
             if self.thumbnail_source == ThumbnailSource.LEGACY:
-                buffer.write(struct.pack("<qi", self.secret, self.local_id))
+                buffer.write(struct.pack("<q", self.secret))
             elif self.thumbnail_source == ThumbnailSource.THUMBNAIL:
-                buffer.write(struct.pack(
-                    "<iii",
-                    self.thumbnail_file_type,
-                    ord(self.thumbnail_size),
-                    self.local_id
-                ))
-            elif self.thumbnail_source in (ThumbnailSource.CHAT_PHOTO_SMALL, ThumbnailSource.CHAT_PHOTO_BIG):
-                buffer.write(struct.pack(
-                    "<qqi",
-                    self.chat_id,
-                    self.chat_access_hash,
-                    self.local_id
-                ))
+                buffer.write(
+                    struct.pack(
+                        "<ii",
+                        self.thumbnail_file_type,
+                        ord(self.thumbnail_size),
+                    )
+                )
+            elif self.thumbnail_source in (
+                ThumbnailSource.CHAT_PHOTO_SMALL,
+                ThumbnailSource.CHAT_PHOTO_BIG,
+            ):
+                buffer.write(struct.pack("<qq", self.chat_id, self.chat_access_hash))
             elif self.thumbnail_source == ThumbnailSource.STICKER_SET_THUMBNAIL:
-                buffer.write(struct.pack(
-                    "<qqi",
-                    self.sticker_set_id,
-                    self.sticker_set_access_hash,
-                    self.local_id
-                ))
+                buffer.write(
+                    struct.pack(
+                        "<qq",
+                        self.sticker_set_id,
+                        self.sticker_set_access_hash,
+                    )
+                )
+            elif self.thumbnail_source == ThumbnailSource.FULL_LEGACY:
+                buffer.write(
+                    struct.pack(
+                        "<qqi",
+                        self.volume_id,
+                        self.secret,
+                        self.local_id,
+                    )
+                )
+            elif self.thumbnail_source in (
+                ThumbnailSource.CHAT_PHOTO_SMALL_LEGACY,
+                ThumbnailSource.CHAT_PHOTO_BIG_LEGACY,
+            ):
+                buffer.write(
+                    struct.pack(
+                        "<qqqi",
+                        self.chat_id,
+                        self.chat_access_hash,
+                        self.volume_id,
+                        self.local_id,
+                    )
+                )
+            elif self.thumbnail_source == ThumbnailSource.STICKER_SET_THUMBNAIL_LEGACY:
+                buffer.write(
+                    struct.pack(
+                        "<qqqi",
+                        self.sticker_set_id,
+                        self.sticker_set_access_hash,
+                        self.volume_id,
+                        self.local_id,
+                    )
+                )
+            elif self.thumbnail_source == ThumbnailSource.STICKER_SET_THUMBNAIL_VERSION:
+                buffer.write(
+                    struct.pack(
+                        "<qqi",
+                        self.sticker_set_id,
+                        self.sticker_set_access_hash,
+                        self.sticker_set_version,
+                    )
+                )
+
+            if has_volume_and_local_id:
+                buffer.write(struct.pack("<i", self.local_id))
         elif file_type in DOCUMENT_TYPES:
             buffer.write(struct.pack("<ii", minor, major))
 
@@ -410,6 +469,7 @@ class FileId:
 
 class FileUniqueType(IntEnum):
     """Known file unique types"""
+
     WEB = 0
     PHOTO = 1
     DOCUMENT = 2
@@ -420,12 +480,13 @@ class FileUniqueType(IntEnum):
 
 class FileUniqueId:
     def __init__(
-        self, *,
+        self,
+        *,
         file_unique_type: FileUniqueType,
-        url: Optional[str] = None,
-        media_id: Optional[int] = None,
-        volume_id: Optional[int] = None,
-        local_id: Optional[int] = None
+        url: str | None = None,
+        media_id: int | None = None,
+        volume_id: int | None = None,
+        local_id: int | None = None,
     ):
         self.file_unique_type = file_unique_type
         self.url = url
@@ -443,54 +504,57 @@ class FileUniqueId:
     @staticmethod
     def _decode(file_unique_id: str):
         buffer = BytesIO(rle_decode(b64_decode(file_unique_id)))
-        file_unique_type, = struct.unpack("<i", buffer.read(4))
+        (file_unique_type,) = struct.unpack("<i", buffer.read(4))
 
         try:
             file_unique_type = FileUniqueType(file_unique_type)
         except ValueError:
-            raise ValueError(f"Unknown file_unique_type {file_unique_type} of file_unique_id {file_unique_id}")
+            raise ValueError(
+                f"Unknown file_unique_type {file_unique_type} of file_unique_id {file_unique_id}"
+            )
 
         if file_unique_type == FileUniqueType.WEB:
             url = String.read(buffer)
 
-            return FileUniqueId(
-                file_unique_type=file_unique_type,
-                url=url
-            )
+            return FileUniqueId(file_unique_type=file_unique_type, url=url)
 
         if file_unique_type == FileUniqueType.PHOTO:
             volume_id, local_id = struct.unpack("<qi", buffer.read())
 
             return FileUniqueId(
-                file_unique_type=file_unique_type,
-                volume_id=volume_id,
-                local_id=local_id
+                file_unique_type=file_unique_type, volume_id=volume_id, local_id=local_id
             )
 
-        if file_unique_type == FileUniqueType.DOCUMENT:
-            media_id, = struct.unpack("<q", buffer.read())
+        if file_unique_type in (
+            FileUniqueType.DOCUMENT,
+            FileUniqueType.SECURE,
+            FileUniqueType.ENCRYPTED,
+            FileUniqueType.TEMP,
+        ):
+            (media_id,) = struct.unpack("<q", buffer.read())
 
-            return FileUniqueId(
-                file_unique_type=file_unique_type,
-                media_id=media_id
-            )
+            return FileUniqueId(file_unique_type=file_unique_type, media_id=media_id)
 
-        # TODO: Add decoder for SECURE, ENCRYPTED and TEMP (FileUniqueType values 4, 5, 6)
-        raise ValueError(f"Unknown decoder for file_unique_type {file_unique_type} of file_unique_id {file_unique_id}")
+        raise ValueError(
+            f"Unknown decoder for file_unique_type {file_unique_type} of file_unique_id {file_unique_id}"
+        )
 
     def encode(self):
         if self.file_unique_type == FileUniqueType.WEB:
             string = struct.pack("<is", self.file_unique_type, String(self.url))
         elif self.file_unique_type == FileUniqueType.PHOTO:
             string = struct.pack("<iqi", self.file_unique_type, self.volume_id, self.local_id)
-        elif self.file_unique_type == FileUniqueType.DOCUMENT:
+        elif self.file_unique_type in (
+            FileUniqueType.DOCUMENT,
+            FileUniqueType.SECURE,
+            FileUniqueType.ENCRYPTED,
+            FileUniqueType.TEMP,
+        ):
             string = struct.pack("<iq", self.file_unique_type, self.media_id)
         else:
-            # TODO: Add encoder for SECURE, ENCRYPTED and TEMP (FileUniqueType values 4, 5, 6)
             raise ValueError(f"Unknown encoder for file_unique_type {self.file_unique_type}")
 
         return b64_encode(rle_encode(string))
 
     def __str__(self):
         return str({k: v for k, v in self.__dict__.items() if v is not None})
-

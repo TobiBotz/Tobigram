@@ -1,11 +1,11 @@
 Features
 ========
 
-wzgram tracks Telegram's Bot API and MTProto layers closely. This section explains the
+pyrogram tracks Telegram's Bot API and MTProto layers closely. This section explains the
 features Telegram has shipped over the past releases, in the order they were released, and
-shows how to use each one from wzgram.
+shows how to use each one from pyrogram.
 
-The pinned Bot API schema wzgram is checked against is **Bot API 10.2 (July 14, 2026)**.
+The pinned Bot API schema pyrogram is checked against is **Bot API 10.2 (July 14, 2026)**.
 Every parameter of every implemented method and type is verified against it at build time,
 so if a feature is documented here, the parameters that carry it are present.
 
@@ -100,10 +100,10 @@ Telegram Features
     ephemeral-messages
     communities
 
-wzgram Extensions
------------------
+pyrogram Extensions
+-------------------
 
-These are not Telegram features. They are things wzgram adds on top of the API, to make
+These are not Telegram features. They are things pyrogram adds on top of the API, to make
 long-running clients behave.
 
 .. list-table::

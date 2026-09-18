@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import enums, types, utils
@@ -26,17 +27,17 @@ from .edit_ephemeral_message import edit_ephemeral
 
 class EditEphemeralMessageCaption:
     async def edit_ephemeral_message_caption(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        receiver_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
+        receiver_id: int | str,
         message_id: int,
         caption: str,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        show_caption_above_media: Optional[bool] = None,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        welcome: Optional[bool] = None,
-    ) -> Optional["types.Message"]:
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        show_caption_above_media: bool | None = None,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        welcome: bool | None = None,
+    ) -> types.Message | None:
         """Edit the caption of an ephemeral media message.
 
         .. include:: /_includes/usable-by/bots.rst
@@ -88,7 +89,10 @@ class EditEphemeralMessageCaption:
         ).values()
 
         return await edit_ephemeral(
-            self, chat_id, receiver_id, message_id,
+            self,
+            chat_id,
+            receiver_id,
+            message_id,
             message=message,
             entities=entities,
             show_caption_above_media=show_caption_above_media,

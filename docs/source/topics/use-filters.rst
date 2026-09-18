@@ -20,7 +20,7 @@ Let's start right away with a simple example:
 
     .. code-block:: python
 
-        from wzgram import filters
+        from pyrogram import filters
 
 
         @app.on_message(filters.sticker)
@@ -32,8 +32,8 @@ Let's start right away with a simple example:
 
     .. code-block:: python
 
-        from wzgram import filters
-        from wzgram.handlers import MessageHandler
+        from pyrogram import filters
+        from pyrogram.handlers import MessageHandler
 
 
         async def my_handler(client, message):

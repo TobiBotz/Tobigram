@@ -37,18 +37,20 @@ def _retry_loops():
 
 
 def _cases():
-    return [pytest.param(p, t, id=f"{p.parent.name}/{p.stem}:{t.lineno}") for p, t in _retry_loops()]
+    return [
+        pytest.param(p, t, id=f"{p.parent.name}/{p.stem}:{t.lineno}") for p, t in _retry_loops()
+    ]
 
 
 def test_the_retry_loops_are_still_there():
     assert len(_cases()) >= 10, (
-        "this file guards the upload-retry loops; if they are gone the guard is "
-        "checking nothing"
+        "this file guards the upload-retry loops; if they are gone the guard is checking nothing"
     )
 
 
-@pytest.mark.parametrize("path,try_node", [(p.values[0], p.values[1]) for p in _cases()],
-                         ids=[p.id for p in _cases()])
+@pytest.mark.parametrize(
+    "path,try_node", [(p.values[0], p.values[1]) for p in _cases()], ids=[p.id for p in _cases()]
+)
 def test_a_successful_send_is_never_retried(path, try_node):
     # `while True` is there to re-send after FilePartMissing and nothing else. If
     # the success branch can fall off the end - the server answered with an

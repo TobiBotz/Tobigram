@@ -84,7 +84,7 @@ def generate(source_path, base):
                             title_markup="=" * len(full_name),
                             full_class_path="pyrogram.raw.{}".format(
                                 ".".join(full_path.split("/")[:-1]) + "." + name
-                            )
+                            ),
                         )
                     )
 
@@ -100,18 +100,18 @@ def generate(source_path, base):
         entities = []
 
         for i in v:
-            entities.append(f'{i} <{snek(i).replace("_", "-")}>')
+            entities.append(f"{i} <{snek(i).replace('_', '-')}>")
 
         if k != base:
             inner_path = base + "/" + k + "/index" + ".rst"
-            module = "pyrogram.raw.{}.{}".format(base, k)
+            module = f"pyrogram.raw.{base}.{k}"
         else:
-            for i in sorted(list(all_entities), reverse=True):
+            for i in sorted(all_entities, reverse=True):
                 if i != base:
-                    entities.insert(0, "{0}/index".format(i))
+                    entities.insert(0, f"{i}/index")
 
             inner_path = base + "/index" + ".rst"
-            module = "pyrogram.raw.{}".format(base)
+            module = f"pyrogram.raw.{base}"
 
         with open(os.path.join(DESTINATION, inner_path), "w", encoding="utf-8") as f:
             if k == base:
@@ -123,7 +123,7 @@ def generate(source_path, base):
                     title=k.title(),
                     title_markup="=" * len(k),
                     module=module,
-                    entities="\n    ".join(entities)
+                    entities="\n    ".join(entities),
                 )
             )
 
@@ -256,6 +256,8 @@ def pyrogram_api():
             archive_chats
             ban_chat_member
             close_forum_topic
+            pin_forum_topic
+            unpin_forum_topic
             create_channel
             create_forum_topic
             create_group
@@ -281,6 +283,7 @@ def pyrogram_api():
             get_direct_messages_topics_by_id
             get_forum_topics
             get_forum_topics_by_id
+            get_inactive_channels
             get_nearby_chats
             get_personal_channels
             get_send_as_chats
@@ -292,16 +295,24 @@ def pyrogram_api():
             mark_chat_unread
             pin_chat_message
             promote_chat_member
+            report_anti_spam_false_positive
+            report_chat
+            report_spam
             restrict_chat_member
             restrict_sponsored_messages
             set_administrator_title
+            set_chat_accent_color
             set_chat_description
+            set_chat_direct_messages_group
+            set_chat_discussion_group
+            set_chat_member_tag
             set_chat_permissions
             set_chat_photo
             set_chat_protected_content
             set_chat_title
             set_chat_ttl
             set_chat_username
+            set_main_profile_tab
             set_send_as_chat
             set_slow_mode
             toggle_anti_spam
@@ -313,6 +324,7 @@ def pyrogram_api():
             toggle_signatures
             toggle_slow_mode
             toggle_view_forum_as_messages
+            transfer_chat_ownership
             unarchive_chats
             unban_chat_member
             unpin_all_chat_messages
@@ -345,6 +357,8 @@ def pyrogram_api():
             get_folders
             join_folder
             leave_folder
+            reorder_folders
+            toggle_folder_tags
         """,
         invite_links="""
         Invite Links
@@ -415,6 +429,8 @@ def pyrogram_api():
             get_discussion_replies_count
             get_main_web_app
             get_media_group
+            get_message_reactions
+            get_message_read_participants
             get_messages
             get_poll_results
             get_poll_stats
@@ -429,11 +445,14 @@ def pyrogram_api():
             read_chat_history
             read_mentions
             read_reactions
+            report_messages
+            report_reaction
             retract_vote
             search_global
             search_global_count
             search_messages
             search_messages_count
+            search_posts
             send_animation
             send_audio
             send_cached_media
@@ -460,9 +479,11 @@ def pyrogram_api():
             send_video
             send_video_note
             send_voice
+            set_direct_messages_chat_topic_is_marked_as_unread
             stop_poll
             stream_media
             summarize_text
+            transcribe_audio
             translate_text
             view_messages
             vote_poll
@@ -495,6 +516,8 @@ def pyrogram_api():
             get_gifts_for_crafting
             get_payment_form
             get_stars_balance
+            get_stars_revenue_stats
+            get_stars_transactions
             get_ton_balance
             get_upgraded_gift
             get_upgraded_gift_value_info
@@ -549,6 +572,7 @@ def pyrogram_api():
             hide_chat_stories
             pin_chat_stories
             read_chat_stories
+            report_story
             send_story
             show_chat_stories
             unpin_chat_stories
@@ -567,6 +591,8 @@ def pyrogram_api():
             get_default_emoji_statuses
             get_me
             get_users
+            report_profile_photo
+            report_user
             set_emoji_status
             set_personal_channel
             set_profile_photo
@@ -589,6 +615,7 @@ def pyrogram_api():
         Utilities
             add_handler
             export_session_string
+            ping
             remove_handler
             restart
             run
@@ -604,6 +631,7 @@ def pyrogram_api():
             on_callback_query
             on_chat_boost
             on_chat_join_request
+            on_chat_left
             on_chat_member_updated
             on_chosen_inline_result
             on_connect
@@ -645,23 +673,23 @@ def pyrogram_api():
 
         for k, v in categories.items():
             name, *methods = get_title_list(v)
-            fmt_keys.update({k: "\n    ".join("{0} <{0}>".format(m) for m in methods)})
+            fmt_keys.update({k: "\n    ".join(f"{m} <{m}>" for m in methods)})
 
             for method in methods:
-                with open(os.path.join(root, "methods/{}.rst".format(method)), "w") as f2:
-                    title = "{}()".format(method)
+                with open(os.path.join(root, f"methods/{method}.rst"), "w") as f2:
+                    title = f"{method}()"
 
                     f2.write(title + "\n" + "=" * len(title) + "\n\n")
-                    f2.write(".. automethod:: pyrogram.Client.{}()".format(method))
+                    f2.write(f".. automethod:: pyrogram.Client.{method}()")
 
             functions = ["idle", "compose"]
 
             for func in functions:
-                with open(os.path.join(root, "methods/{}.rst".format(func)), "w") as f2:
-                    title = "{}()".format(func)
+                with open(os.path.join(root, f"methods/{func}.rst"), "w") as f2:
+                    title = f"{func}()"
 
                     f2.write(title + "\n" + "=" * len(title) + "\n\n")
-                    f2.write(".. autofunction:: pyrogram.{}()".format(func))
+                    f2.write(f".. autofunction:: pyrogram.{func}()")
 
         f.write(template.format(**fmt_keys))
 
@@ -688,6 +716,13 @@ def pyrogram_api():
             Dialog
             Restriction
             EmojiStatus
+            BackgroundFillFreeformGradient
+            BackgroundFillGradient
+            BackgroundFillSolid
+            BackgroundTypeChatTheme
+            BackgroundTypeFill
+            BackgroundTypePattern
+            BackgroundTypeWallpaper
             Birthday
             BusinessConnection
             BusinessIntro
@@ -739,6 +774,7 @@ def pyrogram_api():
             Document
             Animation
             Video
+            VideoQuality
             Voice
             VideoNote
             Contact
@@ -751,12 +787,14 @@ def pyrogram_api():
             PollOption
             Dice
             Reaction
+            ReadParticipantDate
             VideoChatScheduled
             VideoChatStarted
             VideoChatEnded
             VideoChatMembersInvited
             WebAppData
             MessageReactions
+            MessagePeerReaction
             ChatReactions
             AvailableEffect
             BoostsStatus
@@ -830,6 +868,9 @@ def pyrogram_api():
             RichText
             ScreenshotTaken
             StarAmount
+            StarsRevenueStats
+            StarsRevenueStatus
+            StarsTransaction
             Story
             StoryView
             StrippedThumbnail
@@ -842,6 +883,7 @@ def pyrogram_api():
             SuggestedPostPrice
             SuggestedPostRefunded
             TextQuote
+            TranscribedAudio
             UpgradedGiftAttributeId
             UpgradedGiftAttributeIdBackdrop
             UpgradedGiftAttributeIdModel
@@ -974,6 +1016,9 @@ def pyrogram_api():
             BotCommandScopeChatAdministrators
             BotCommandScopeChatMember
             BotAccessSettings
+            BotDescription
+            BotName
+            BotShortDescription
             ChatBoostUpdated
             ChatShared
             KeyboardButtonPollType
@@ -1153,7 +1198,9 @@ def pyrogram_api():
             PrivacyRuleType
             ProfileColor
             ProfileTab
+            ProxyScheme
             ReplyColor
+            ReportReason
             SentCodeType
             StickerType
             StoriesPrivacyRules
@@ -1162,7 +1209,7 @@ def pyrogram_api():
             TopChatCategory
             UpgradedGiftOrigin
             UserStatus
-        """
+        """,
     )
 
     root = PYROGRAM_API_DEST
@@ -1183,17 +1230,17 @@ def pyrogram_api():
 
             # noinspection PyShadowingBuiltins
             for type in types:
-                with open(os.path.join(root, "types/{}.rst".format(type)), "w") as f2:
-                    title = "{}".format(type)
+                with open(os.path.join(root, f"types/{type}.rst"), "w") as f2:
+                    title = f"{type}"
 
                     f2.write(title + "\n" + "=" * len(title) + "\n\n")
 
                     if k == "enums":
-                        f2.write(".. autoclass:: pyrogram.enums.{}()\n".format(type))
+                        f2.write(f".. autoclass:: pyrogram.enums.{type}()\n")
                         f2.write("    :members:\n")
                         f2.write("    :undoc-members:\n")
                     else:
-                        f2.write(".. autoclass:: pyrogram.types.{}()\n".format(type))
+                        f2.write(f".. autoclass:: pyrogram.types.{type}()\n")
 
         f.write(template.format(**fmt_keys))
 
@@ -1266,7 +1313,10 @@ def pyrogram_api():
             Message.answer_video_note
             Message.answer_voice
             Message.get_media_group
+            Message.get_reactions
+            Message.get_read_participants
             Message.react
+            Message.report
             Message.wait_for_click
             Message.read
             Message.view
@@ -1277,6 +1327,7 @@ def pyrogram_api():
             Message.edit_live_location
             Message.stop_live_location
             Message.summarize
+            Message.transcribe
             Message.content
             Message.link
             Message.html_text
@@ -1311,6 +1362,8 @@ def pyrogram_api():
             Chat.mark_unread
             Chat.set_protected_content
             Chat.unpin_all_messages
+            Chat.report
+            Chat.report_spam
             Chat.mute
             Chat.unmute
             Chat.set_ttl
@@ -1331,6 +1384,7 @@ def pyrogram_api():
             User.is_scam
             User.is_verified
             User.mention
+            User.report
             User.get_common_chats
         """,
         callback_query="""
@@ -1362,6 +1416,7 @@ def pyrogram_api():
             Story.link
             Story.react
             Story.read
+            Story.report
             Story.view
             Story.reply_text
             Story.reply_animation
@@ -1411,7 +1466,7 @@ def pyrogram_api():
             Folder.pin_chat
             Folder.remove_chat
             Folder.update_color
-        """
+        """,
     )
 
     root = PYROGRAM_API_DEST
@@ -1428,22 +1483,33 @@ def pyrogram_api():
         for k, v in categories.items():
             name, *bound_methods = get_title_list(v)
 
-            fmt_keys.update({"{}_hlist".format(k): "\n    ".join(
-                "- :{}:`~{}`".format("attr" if is_property(bm) else "meth", bm) for bm in bound_methods)})
+            fmt_keys.update(
+                {
+                    f"{k}_hlist": "\n    ".join(
+                        "- :{}:`~{}`".format("attr" if is_property(bm) else "meth", bm)
+                        for bm in bound_methods
+                    )
+                }
+            )
 
             fmt_keys.update(
-                {"{}_toctree".format(k): "\n    ".join("{} <{}>".format(bm.split(".")[1], bm) for bm in bound_methods)})
+                {
+                    f"{k}_toctree": "\n    ".join(
+                        "{} <{}>".format(bm.split(".")[1], bm) for bm in bound_methods
+                    )
+                }
+            )
 
             # noinspection PyShadowingBuiltins
             for bm in bound_methods:
-                with open(os.path.join(root, "bound-methods/{}.rst".format(bm)), "w") as f2:
+                with open(os.path.join(root, f"bound-methods/{bm}.rst"), "w") as f2:
                     if is_property(bm):
                         title, directive, suffix = bm, "autoattribute", ""
                     else:
-                        title, directive, suffix = "{}()".format(bm), "automethod", "()"
+                        title, directive, suffix = f"{bm}()", "automethod", "()"
 
                     f2.write(title + "\n" + "=" * len(title) + "\n\n")
-                    f2.write(".. {}:: pyrogram.types.{}{}".format(directive, bm, suffix))
+                    f2.write(f".. {directive}:: pyrogram.types.{bm}{suffix}")
 
         f.write(template.format(**fmt_keys))
 

@@ -16,26 +16,26 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from datetime import datetime
+from __future__ import annotations
+
 import logging
-from typing import Union, Optional
+from datetime import datetime
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import utils
+from pyrogram import raw, utils
 
 log = logging.getLogger(__name__)
 
 
 class DeleteChatHistory:
     async def delete_chat_history(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         max_id: int = 0,
-        revoke: Optional[bool] = None,
-        just_clear = None,
-        min_date: Optional[datetime] = None,
-        max_date: Optional[datetime] = None,
+        revoke: bool | None = None,
+        just_clear=None,
+        min_date: datetime | None = None,
+        max_date: datetime | None = None,
     ) -> int:
         """Delete the history of a chat.
 
@@ -77,15 +77,12 @@ class DeleteChatHistory:
         """
         peer = await self.resolve_peer(chat_id)
 
-        if isinstance(peer, raw.types.InputPeerChannel):
+        if isinstance(peer, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)):
             r = await self.invoke(
                 raw.functions.channels.DeleteHistory(
-                    channel=raw.types.InputChannel(
-                        channel_id=peer.channel_id,
-                        access_hash=peer.access_hash
-                    ),
+                    channel=utils.get_input_channel(peer),
                     max_id=max_id,
-                    for_everyone=revoke
+                    for_everyone=revoke,
                 )
             )
         else:
@@ -95,7 +92,7 @@ class DeleteChatHistory:
                 just_clear=just_clear,
                 revoke=revoke,
                 min_date=utils.datetime_to_timestamp(min_date),
-                max_date=utils.datetime_to_timestamp(max_date)
+                max_date=utils.datetime_to_timestamp(max_date),
             )
 
             affected = 0
@@ -114,4 +111,3 @@ class DeleteChatHistory:
             for update in getattr(r, "updates", [])
             if isinstance(update, raw.types.UpdateDeleteChannelMessages)
         )
-

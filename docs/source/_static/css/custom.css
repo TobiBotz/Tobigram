@@ -1,62 +1,112 @@
-@import url('https://fonts.googleapis.com/css2?family=Elms+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Ubuntu+Mono:ital,wght@0,400;0,700;1,400;1,700&display=swap");
 
-* {
-    font-family: "Elms Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+@font-face {
+    font-family: "TaraType";
+    src: url("../fonts/TaraType.ttf") format("truetype");
 }
 
 :root {
-    --border-radius: 0;
-    --color-brand-primary: #1a1a1a;
-    --color-brand-content: #2d2d2d;
-    --color-foreground-primary: #1a1a1a;
-    --color-background-primary: #ffffff;
-    --color-background-secondary: #f8f8f8;
-    --color-admonition-background: #f4f4f4;
-    --color-table-border: #d0d0d0;
-    --color-background-border: #d0d0d0;
-    --color-guilabel-background: #f4f4f4;
-    --color-guilabel-border: #d0d0d0;
-    --color-admonition-title--note: #1a1a1a;
-    --color-admonition-title-background--note: #ebebeb;
-    --color-admonition-title--seealso: #1a1a1a;
-    --color-admonition-title-background--seealso: #ebebeb;
-    --color-admonition-title: #1a1a1a;
-    --color-admonition-title-background: #ebebeb;
-    --color-border: #d0d0d0;
-    --color-button: #f4f4f4;
-    --color-background-highlight: #f4f4f4;
-    --color-title: #000000;
-    --color-link: #1a1a1a;
-    --color-link-hover: #666666;
-    --color-strong: #000000;
+    --border-radius: 0.5em;
+    --color-brand-primary: #404040;
+    --color-brand-content: #93774b;
+    --color-foreground-primary: #404040;
+    --color-background-primary: #f9f8f7;
+    --color-background-secondary: #f3f2f1;
+    --color-admonition-background: #eeeeee;
+    --color-table-border: #e1e4e5;
+    --color-background-border: #dddddd;
+    --color-guilabel-background: #f3f2f1;
+    --color-guilabel-border: #dddddd;
+    --color-admonition-title--note: #93774b;
+    --color-admonition-title-background--note: #e4e0d7;
+    --color-admonition-title--seealso: #93774b;
+    --color-admonition-title-background--seealso: #e4e0d7;
+    --color-admonition-title: #93774b;
+    --color-admonition-title-background: #e4e0d7;
+    --color-border: #dddddd;
+    --color-button: #f3f6f6;
+    --color-background-highlight: #f3f2f1;
+    --color-title: #303030;
+    --color-link: #93774b;
+    --color-link-underline: rgba(147, 119, 75, 0.4);
+    --color-link-hover: #bf431d;
+    --color-strong: #404040;
+    --color-pyrogram-text: #3b3936;
+    --color-green: darkgreen;
+    --color-red: darkred;
+    --color-code-background: #f0f0f0;
+    --color-code-foreground: #000000;
+    --font-size--small: 100%;
+    --font-size--small--2: 97%;
+    --font-size--small--3: 94%;
+    --font-size--small--4: 91%;
     font-size: 16px;
     line-height: 1.7;
 }
 
+body[data-theme="dark"] {
+    --color-brand-primary: #bfbcb9;
+    --color-brand-content: #b7a280;
+    --color-foreground-primary: #bfbcb9;
+    --color-background-primary: #202020;
+    --color-background-secondary: #181818;
+    --color-admonition-background: #282828;
+    --color-table-border: #707070;
+    --color-background-border: #505050;
+    --color-guilabel-background: #323232;
+    --color-guilabel-border: #505050;
+    --color-admonition-title--note: #b7a280;
+    --color-admonition-title-background--note: #303030;
+    --color-admonition-title--seealso: #b7a280;
+    --color-admonition-title-background--seealso: #303030;
+    --color-admonition-title: #b7a280;
+    --color-admonition-title-background: #303030;
+    --color-border: #505050;
+    --color-button: #303030;
+    --color-background-highlight: #323232;
+    --color-title: #b9b9b9;
+    --color-link: #b7a280;
+    --color-link-underline: rgba(183, 162, 128, 0.45);
+    --color-link-hover: #e85823;
+    --color-strong: #cfccc9;
+    --color-pyrogram-text: #b9b9b9;
+    --color-green: green;
+    --color-red: red;
+    --color-code-background: #3f3f3f;
+    --color-code-foreground: #dcdccc;
+}
+
 @media (prefers-color-scheme: dark) {
-    body:not([data-theme=light]) {
-        --color-brand-primary: #cccccc;
-        --color-brand-content: #999999;
-        --color-foreground-primary: #cccccc;
-        --color-background-primary: #0d0d0d;
-        --color-background-secondary: #141414;
-        --color-admonition-background: #181818;
-        --color-table-border: #333333;
-        --color-guilabel-background: #181818;
-        --color-guilabel-border: #333333;
-        --color-admonition-title--note: #cccccc;
-        --color-admonition-title-background--note: #1a1a1a;
-        --color-admonition-title--seealso: #cccccc;
-        --color-admonition-title-background--seealso: #1a1a1a;
-        --color-admonition-title: #cccccc;
-        --color-admonition-title-background: #1a1a1a;
-        --color-border: #333333;
-        --color-button: #1a1a1a;
-        --color-background-highlight: #181818;
-        --color-title: #e0e0e0;
-        --color-link: #cccccc;
-        --color-link-hover: #999999;
-        --color-strong: #e0e0e0;
+    body:not([data-theme="light"]) {
+        --color-brand-primary: #bfbcb9;
+        --color-brand-content: #b7a280;
+        --color-foreground-primary: #bfbcb9;
+        --color-background-primary: #202020;
+        --color-background-secondary: #181818;
+        --color-admonition-background: #282828;
+        --color-table-border: #707070;
+        --color-background-border: #505050;
+        --color-guilabel-background: #323232;
+        --color-guilabel-border: #505050;
+        --color-admonition-title--note: #b7a280;
+        --color-admonition-title-background--note: #303030;
+        --color-admonition-title--seealso: #b7a280;
+        --color-admonition-title-background--seealso: #303030;
+        --color-admonition-title: #b7a280;
+        --color-admonition-title-background: #303030;
+        --color-border: #505050;
+        --color-button: #303030;
+        --color-background-highlight: #323232;
+        --color-title: #b9b9b9;
+        --color-link: #b7a280;
+        --color-link-underline: rgba(183, 162, 128, 0.45);
+        --color-link-hover: #e85823;
+        --color-strong: #cfccc9;
+        --color-pyrogram-text: #b9b9b9;
+        --color-green: green;
+        --color-red: red;
+        --color-code-background: #3f3f3f;
+        --color-code-foreground: #dcdccc;
     }
 }
 
@@ -64,7 +114,7 @@
 
 body {
     margin: 0;
-    font-family: "Elms Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     background-color: var(--color-background-primary);
@@ -124,13 +174,17 @@ body::-webkit-scrollbar {
 .mobile-header {
     background-color: var(--color-background-primary);
     border-bottom: 1px solid var(--color-border);
+    font-family: "TaraType", monospace;
+    font-weight: bold;
+    font-size: 1.45em;
+    letter-spacing: .0425em;
     z-index: 60;
 }
 
 .mobile-header .brand {
-    font-family: "Elms Sans", sans-serif;
+    font-family: "TaraType", sans-serif;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.45em;
 }
 
 /* --- Sidebar --- */
@@ -213,13 +267,14 @@ body::-webkit-scrollbar {
 }
 
 .sidebar-brand-text {
-    font-family: "Elms Sans", sans-serif;
+    font-family: "TaraType", sans-serif;
     font-weight: 700;
-    font-size: 2.8rem;
-    letter-spacing: -0.03em;
+    font-size: calc(var(--font-size--normal) * 2.3);
+    letter-spacing: 0.0425em;
     display: inline-flex;
     gap: 0.04em;
     line-height: 1;
+    color: var(--color-pyrogram-text);
 }
 
 .sidebar-brand-text a {
@@ -255,21 +310,72 @@ body::-webkit-scrollbar {
 .brand-char:nth-child(6) { animation-delay: 0.25s; }
 
 .sidebar-tree {
-    padding: 0 1rem;
+    padding: 0 0.75rem;
 }
 
 .sidebar-tree li {
     margin: 0.15rem 0;
+    position: relative;
+}
+
+/* Left-aligned collapsible chevron arrow */
+.sidebar-tree label {
+    position: absolute !important;
+    left: 2px !important;
+    right: auto !important;
+    top: 0 !important;
+    width: 1.4rem !important;
+    height: 100% !important;
+    max-height: 2.2rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    z-index: 2 !important;
+    background: transparent !important;
+    border-radius: 3px !important;
+    padding: 0 !important;
+}
+
+.sidebar-tree label .icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 14px !important;
+    height: 14px !important;
+}
+
+.sidebar-tree label .icon svg {
+    width: 12px !important;
+    height: 12px !important;
+    color: var(--color-foreground-secondary) !important;
+    transition: transform 0.2s ease, color 0.15s ease !important;
+}
+
+.sidebar-tree label:hover .icon svg,
+.sidebar-tree li:hover > label .icon svg {
+    color: var(--color-brand-content) !important;
+}
+
+/* Collapsed: chevron points right */
+.toctree-checkbox ~ label .icon svg {
+    transform: rotate(0deg) !important;
+}
+
+/* Expanded: chevron points down */
+.toctree-checkbox:checked ~ label .icon svg {
+    transform: rotate(90deg) !important;
 }
 
 .sidebar-tree .reference {
-    font-family: "Elms Sans", sans-serif;
+    font-family: "Open Sans", sans-serif;
     font-size: 0.875rem;
     font-weight: 400;
-    padding: 0.3rem 0.5rem;
+    padding: 0.35rem 0.5rem 0.35rem 1.65rem !important;
     display: block;
     border-left: 2px solid transparent;
-    transition: border-color 0.15s ease, color 0.15s ease;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+    border-radius: 3px;
 }
 
 .sidebar-tree .current > .reference {
@@ -277,13 +383,13 @@ body::-webkit-scrollbar {
     font-weight: 600;
 }
 
-.sidebar-tree .toctree-l1 > .reference:hover {
+.sidebar-tree li > .reference:hover {
     border-left: 2px solid var(--color-border);
 }
 
 .sidebar-tree li.toctree-l1 > .reference,
 .sidebar-tree li.toctree-l2 > .reference {
-    padding: 0.3rem 0.5rem 0.3rem 1rem;
+    padding: 0.35rem 0.5rem 0.35rem 1.65rem !important;
 }
 
 /* --- TOC drawer --- */
@@ -338,7 +444,7 @@ body::-webkit-scrollbar {
 }
 
 .toc-tree .reference {
-    font-family: "Elms Sans", sans-serif;
+    font-family: "Open Sans", sans-serif;
     font-size: 0.8125rem;
     font-weight: 400;
     color: var(--color-foreground-primary);
@@ -360,13 +466,13 @@ body::-webkit-scrollbar {
 /* --- Headings --- */
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: "Elms Sans", sans-serif;
-    font-weight: 650;
+    font-family: "Bitter", serif;
+    font-weight: 600;
     color: var(--color-title);
     letter-spacing: -0.02em;
     line-height: 1.3;
     padding-bottom: 0.3rem;
-    margin-top: 2.5rem;
+    margin-top: 2rem;
     margin-bottom: 1rem;
 }
 
@@ -375,29 +481,27 @@ h1:first-child, h2:first-child, h3:first-child {
 }
 
 h1 {
-    font-size: 2rem;
-    font-weight: 700;
-    border-bottom: 2px solid var(--color-border);
-    padding-bottom: 0.4rem;
-    letter-spacing: -0.03em;
+    font-size: 175%;
 }
 
 h2 {
-    font-size: 1.5rem;
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: 0.3rem;
+    font-size: 150%;
 }
 
 h3 {
-    font-size: 1.2rem;
+    font-size: 125%;
 }
 
 h4 {
-    font-size: 1.05rem;
+    font-size: 115%;
 }
 
-h5, h6 {
-    font-size: 1rem;
+h5 {
+    font-size: 110%;
+}
+
+h6 {
+    font-size: 100%;
 }
 
 /* --- Paragraphs & text --- */
@@ -420,21 +524,21 @@ article[role="main"] img {
 
 article p code.literal,
 li p code.literal {
-    font-family: "Elms Sans", sans-serif;
+    font-family: "Ubuntu Mono", monospace;
     background-color: var(--color-background-highlight);
     border: 1px solid var(--color-border);
-    border-radius: 2px;
+    border-radius: var(--border-radius);
     padding: 0.1em 0.4em;
     font-size: 0.875em;
     font-weight: 500;
 }
 
 article[role=main] .highlight pre {
-    font-family: "Elms Sans", sans-serif;
-    font-size: 0.875rem;
-    line-height: 1.5;
+    font-family: "Ubuntu Mono", monospace;
+    font-size: var(--font-size--normal);
+    line-height: 1.2;
     border: 1px solid var(--color-border);
-    border-radius: 0;
+    border-radius: var(--border-radius);
     background-color: var(--color-background-highlight);
     padding: 1.2rem;
 }
@@ -454,12 +558,19 @@ div[class*="highlight-"] {
 a {
     text-decoration: none;
     color: var(--color-link);
-    transition: color 0.15s ease;
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
 }
 
 a:hover {
     color: var(--color-link-hover);
-    text-decoration: underline;
+}
+
+a:visited {
+    color: var(--color-link);
+}
+
+a:visited:hover {
+    color: var(--color-link-hover);
 }
 
 a.sidebar-brand:hover,
@@ -467,26 +578,57 @@ a.sidebar-brand:focus {
     text-decoration: none;
 }
 
-a.reference {
-    border-bottom: 1px solid transparent;
+/* Documentation article content links */
+article a:not(.headerlink) {
+    color: var(--color-link);
+    text-decoration: underline;
+    text-decoration-color: var(--color-link-underline);
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
 }
 
-a.reference:hover {
-    border-bottom-color: var(--color-link-hover);
+article a:not(.headerlink):hover {
+    color: var(--color-link-hover);
+    text-decoration: underline;
+    text-decoration-color: var(--color-link-hover);
+}
+
+article a:not(.headerlink):visited {
+    color: var(--color-link);
+    text-decoration-color: var(--color-link-underline);
+}
+
+article a:not(.headerlink):visited:hover {
+    color: var(--color-link-hover);
+    text-decoration-color: var(--color-link-hover);
+}
+
+/* Exclude code literal badges and source buttons inside links from underline */
+article a > code.literal,
+article a > code.xref,
+.viewcode-link {
+    text-decoration: none !important;
+    display: inline-block;
+}
+
+article a:hover > code.literal,
+article a:hover > code.xref {
+    border-color: var(--color-link-hover);
+    color: var(--color-link-hover);
 }
 
 /* --- Admonitions --- */
 
 .admonition {
-    border-radius: 0;
+    border-radius: var(--border-radius);
     border: 1px solid var(--color-border);
-    border-left: 3px solid var(--color-title);
+    border-left: 3px solid var(--color-brand-content);
     padding: 1rem 1.5rem;
     margin: 1.5rem 0;
 }
 
 p.admonition-title {
-    font-family: "Elms Sans", sans-serif;
+    font-family: "Open Sans", sans-serif;
     font-weight: 650;
     font-size: 0.95rem;
     margin-bottom: 0.5rem;
@@ -496,8 +638,9 @@ p.admonition-title {
 
 table.docutils {
     border: 1px solid var(--color-table-border);
-    border-radius: 0;
-    border-collapse: collapse;
+    border-radius: var(--border-radius);
+    border-collapse: separate;
+    overflow: hidden;
     margin: 1.5rem 0;
     width: 100%;
     max-width: 100%;
@@ -507,7 +650,7 @@ table.docutils th {
     background-color: var(--color-background-highlight);
     border: 1px solid var(--color-table-border);
     padding: 0.6rem 0.8rem;
-    font-family: "Elms Sans", sans-serif;
+    font-family: "Open Sans", sans-serif;
     font-weight: 600;
     font-size: 0.9rem;
 }
@@ -536,14 +679,15 @@ dl.py {
 
 dl.py dt {
     box-sizing: border-box !important;
-    font-family: "Elms Sans", sans-serif !important;
+    font-family: "Ubuntu Mono", monospace !important;
     background-color: var(--color-background-highlight) !important;
-    border-radius: 0 !important;
-    border-left: 3px solid var(--color-title) !important;
-    padding: 0.5rem 1rem !important;
+    border-radius: var(--border-radius) !important;
+    border-left: 2px solid var(--color-brand-content) !important;
+    padding: 4px 10px !important;
     margin: 0.75rem 0 !important;
     font-size: 0.9rem;
-    width: 100%;
+    width: fit-content !important;
+    max-width: 100%;
     word-break: break-word;
     text-indent: 0 !important;
 }
@@ -568,7 +712,7 @@ em.property {
 
 .sig-prename,
 .sig-name {
-    font-family: "Elms Sans", sans-serif;
+    font-family: "Ubuntu Mono", monospace;
     color: var(--color-foreground-primary);
 }
 
@@ -596,9 +740,9 @@ article[role=main] li {
 .related-pages a {
     background-color: var(--color-button);
     border: 1px solid var(--color-border);
-    border-radius: 0;
+    border-radius: var(--border-radius);
     padding: 0.6rem 1rem;
-    font-family: "Elms Sans", sans-serif;
+    font-family: "Open Sans", sans-serif;
     font-size: 0.9rem;
     transition: background-color 0.15s ease;
 }
@@ -621,7 +765,7 @@ article[role=main] li {
 
 blockquote {
     border-left: 3px solid var(--color-border);
-    border-radius: 0;
+    border-radius: var(--border-radius);
     padding: 0.5rem 1rem;
     margin: 1.5rem 0;
     color: var(--color-foreground-primary);
@@ -634,6 +778,7 @@ blockquote {
     align-items: center;
     gap: 0.5rem;
     border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
     padding: 0.35rem 0.75rem;
     margin: 0.75rem 0;
     font-size: 0.85rem;
@@ -706,17 +851,22 @@ dl.py dd dl:not([class]) > dt,
 dl.py dd .field-list.simple > dt,
 dl.py dd .field-list > dt {
     border: 1px solid var(--color-border) !important;
+    border-left: 2px solid var(--color-border) !important;
     background: var(--color-background-highlight) !important;
-    padding: 0.35rem 0.75rem !important;
+    border-radius: var(--border-radius) !important;
+    padding: 2px 8px !important;
     font-weight: 650;
     font-size: 0.9rem;
     white-space: nowrap;
+    width: fit-content !important;
+    display: table !important;
+    margin-bottom: 0.5rem;
 }
 
 /* --- Buttons and inline elements --- */
 
 kbd, .guilabel {
-    font-family: "Elms Sans", sans-serif;
+    font-family: "Ubuntu Mono", monospace;
     background-color: var(--color-guilabel-background);
     border: 1px solid var(--color-guilabel-border);
     border-radius: 2px;
@@ -731,7 +881,7 @@ kbd, .guilabel {
 }
 
 .toctree-wrapper .caption-text {
-    font-family: "Elms Sans", sans-serif;
+    font-family: "Bitter", serif;
     font-weight: 650;
     font-size: 1rem;
 }
@@ -739,10 +889,14 @@ kbd, .guilabel {
 /* --- Homepage specific --- */
 
 article[role=main] .code-block-caption {
-    font-family: "Elms Sans", sans-serif;
+    font-family: "Open Sans", sans-serif;
     font-size: 0.85rem;
     padding: 0.4rem 1.2rem;
     border: 1px solid var(--color-border);
     border-bottom: none;
     background-color: var(--color-background-highlight);
+}
+
+.view-this-page {
+    display: none !important;
 }

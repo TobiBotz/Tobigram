@@ -34,6 +34,6 @@ class Contacts(
     GetContactsCount,
     ImportContacts,
     SearchContacts,
-    SetContactNote
+    SetContactNote,
 ):
     pass

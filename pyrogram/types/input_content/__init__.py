@@ -87,8 +87,8 @@ from .input_rich_block import (
     InputRichBlockPullQuotation,
     InputRichBlockSectionHeading,
     InputRichBlockSlideshow,
-    InputRichBlockTableCell,
     InputRichBlockTable,
+    InputRichBlockTableCell,
     InputRichBlockThinking,
     InputRichBlockVideo,
     InputRichBlockVoiceNote,
@@ -168,8 +168,8 @@ __all__ = [
     "InputRichBlockPullQuotation",
     "InputRichBlockSectionHeading",
     "InputRichBlockSlideshow",
-    "InputRichBlockTableCell",
     "InputRichBlockTable",
+    "InputRichBlockTableCell",
     "InputRichBlockThinking",
     "InputRichBlockVideo",
     "InputRichBlockVoiceNote",
@@ -177,6 +177,5 @@ __all__ = [
     "InputRichMessageContent",
     "InputRichMessageMedia",
     "InputTextMessageContent",
-    "InputVenueMessageContent"
+    "InputVenueMessageContent",
 ]
-

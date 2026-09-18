@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -24,11 +25,8 @@ from pyrogram import raw, types, utils
 
 class CreateGiftCollection:
     async def create_gift_collection(
-        self: "pyrogram.Client",
-        owner_id: Union[int, str],
-        name: str,
-        gift_ids: List[str]
-    ) -> "types.GiftCollection":
+        self: pyrogram.Client, owner_id: int | str, name: str, gift_ids: list[str]
+    ) -> types.GiftCollection:
         """Creates a collection from gifts on the current user's or a channel's profile page.
 
         .. include:: /_includes/usable-by/users.rst
@@ -56,9 +54,11 @@ class CreateGiftCollection:
             raw.functions.payments.CreateStarGiftCollection(
                 peer=await self.resolve_peer(owner_id),
                 title=name,
-                stargift=[await utils.get_input_stargift(self, owned_gift_id) for owned_gift_id in gift_ids],
+                stargift=[
+                    await utils.get_input_stargift(self, owned_gift_id)
+                    for owned_gift_id in gift_ids
+                ],
             )
         )
 
         return await types.GiftCollection._parse(self, r)
-

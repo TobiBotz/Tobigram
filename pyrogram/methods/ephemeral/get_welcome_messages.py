@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types
@@ -24,9 +25,9 @@ from pyrogram import raw, types
 
 class GetWelcomeMessages:
     async def get_welcome_messages(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-    ) -> List["types.Message"]:
+        self: pyrogram.Client,
+        chat_id: int | str,
+    ) -> list[types.Message]:
         """Get the welcome messages a bot has stored for a chat.
 
         A welcome message is an ephemeral message sent with ``welcome=True``, kept by the
@@ -62,8 +63,5 @@ class GetWelcomeMessages:
         chats = {i.id: i for i in getattr(r, "chats", [])}
 
         return types.List(
-            [
-                await types.Message._parse(self, message, users, chats)
-                for message in r.messages
-            ]
+            [await types.Message._parse(self, message, users, chats) for message in r.messages]
         )

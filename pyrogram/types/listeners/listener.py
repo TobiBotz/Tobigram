@@ -17,8 +17,10 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 
+from __future__ import annotations
+
 import asyncio
-from typing import Callable, Optional, Tuple, Union
+from collections.abc import Callable
 
 import pyrogram
 
@@ -52,23 +54,23 @@ class Listener:
     """
 
     __slots__ = (
-        "listener_type",
-        "identifier",
+        "callback",
         "filters",
         "future",
-        "callback",
-        "unallowed_click_alert",
+        "identifier",
         "keys",
+        "listener_type",
+        "unallowed_click_alert",
     )
 
     def __init__(
         self,
-        listener_type: "pyrogram.enums.ListenerTypes",
+        listener_type: pyrogram.enums.ListenerTypes,
         identifier: Identifier,
-        filters: Optional["pyrogram.filters.Filter"] = None,
-        future: Optional[asyncio.Future] = None,
-        callback: Optional[Callable] = None,
-        unallowed_click_alert: Union[bool, str] = True,
+        filters: pyrogram.filters.Filter | None = None,
+        future: asyncio.Future | None = None,
+        callback: Callable | None = None,
+        unallowed_click_alert: bool | str = True,
     ):
         if (future is None) == (callback is None):
             raise ValueError("A listener needs exactly one of future or callback")
@@ -79,7 +81,7 @@ class Listener:
         self.future = future
         self.callback = callback
         self.unallowed_click_alert = unallowed_click_alert
-        self.keys: Tuple = ()
+        self.keys: tuple = ()
 
     @property
     def pending(self) -> bool:

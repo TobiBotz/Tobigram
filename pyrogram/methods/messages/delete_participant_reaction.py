@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -24,11 +25,11 @@ from pyrogram import raw, types, utils
 
 class DeleteParticipantReaction:
     async def delete_participant_reaction(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         message_id: int,
-        participant_id: Union[int, str],
-    ) -> Union["types.Message", bool]:
+        participant_id: int | str,
+    ) -> types.Message | bool:
         """Remove all reactions of a specific participant from a single message.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -57,7 +58,7 @@ class DeleteParticipantReaction:
             raw.functions.messages.DeleteParticipantReaction(
                 peer=await self.resolve_peer(chat_id),
                 msg_id=message_id,
-                participant=await self.resolve_peer(participant_id)
+                participant=await self.resolve_peer(participant_id),
             )
         )
 

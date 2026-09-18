@@ -16,22 +16,21 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, List, Optional
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
 
 
 class GetGameHighScores:
     async def get_game_high_scores(
-        self: "pyrogram.Client",
-        user_id: Union[int, str],
-        chat_id: Optional[Union[int, str]] = None,
-        message_id: Optional[int] = None,
-        inline_message_id: Optional[str] = None,
-    ) -> List["types.GameHighScore"]:
+        self: pyrogram.Client,
+        user_id: int | str,
+        chat_id: int | str | None = None,
+        message_id: int | None = None,
+        inline_message_id: str | None = None,
+    ) -> list[types.GameHighScore]:
         """Get data for high score tables.
 
         .. include:: /_includes/usable-by/bots.rst
@@ -70,7 +69,7 @@ class GetGameHighScores:
             r = await self.invoke(
                 raw.functions.messages.GetInlineGameHighScores(
                     id=utils.unpack_inline_message_id(inline_message_id),
-                    user_id=await self.resolve_peer(user_id)
+                    user_id=await self.resolve_peer(user_id),
                 )
             )
         else:
@@ -78,7 +77,7 @@ class GetGameHighScores:
                 raw.functions.messages.GetGameHighScores(
                     peer=await self.resolve_peer(chat_id),
                     id=message_id,
-                    user_id=await self.resolve_peer(user_id)
+                    user_id=await self.resolve_peer(user_id),
                 )
             )
 

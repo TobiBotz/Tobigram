@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import List, Optional
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -49,12 +50,12 @@ class StoryView(Object):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
-        from_user: Optional["types.User"] = None,
-        date: Optional[datetime] = None,
-        is_blocked: Optional[bool] = None,
-        is_blocked_my_stories_from: Optional[bool] = None,
-        reaction: Optional["types.Reaction"] = None
+        client: pyrogram.Client | None = None,
+        from_user: types.User | None = None,
+        date: datetime | None = None,
+        is_blocked: bool | None = None,
+        is_blocked_my_stories_from: bool | None = None,
+        reaction: types.Reaction | None = None,
     ):
         super().__init__(client)
 
@@ -65,7 +66,7 @@ class StoryView(Object):
         self.reaction = reaction
 
     @staticmethod
-    def _parse(client, view: "raw.base.StoryView", users: List["raw.types.User"]) -> "StoryView":
+    def _parse(client, view: raw.base.StoryView, users: list[raw.types.User]) -> StoryView:
         if isinstance(view, raw.types.StoryViewPublicForward):
             message = view.message
             viewer_id = utils.get_raw_peer_id(
@@ -85,6 +86,5 @@ class StoryView(Object):
             is_blocked=getattr(view, "blocked", None),
             is_blocked_my_stories_from=getattr(view, "blocked_my_stories_from", None),
             reaction=types.Reaction._parse(client, getattr(view, "reaction", None)),
-            client=client
+            client=client,
         )
-

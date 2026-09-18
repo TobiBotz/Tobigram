@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import types
@@ -27,14 +28,14 @@ from .edit_ephemeral_message import edit_ephemeral
 
 class EditEphemeralMessageMedia:
     async def edit_ephemeral_message_media(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        receiver_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
+        receiver_id: int | str,
         message_id: int,
-        media: "types.InputMedia",
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        welcome: Optional[bool] = None,
-    ) -> Optional["types.Message"]:
+        media: types.InputMedia,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        welcome: bool | None = None,
+    ) -> types.Message | None:
         """Edit the media of an ephemeral message.
 
         .. include:: /_includes/usable-by/bots.rst
@@ -66,7 +67,7 @@ class EditEphemeralMessageMedia:
         Example:
             .. code-block:: python
 
-                from wzgram.types import InputMediaPhoto
+                from pyrogram.types import InputMediaPhoto
 
                 await app.edit_ephemeral_message_media(
                     chat_id, receiver_id, message_id, InputMediaPhoto("new.jpg")
@@ -75,7 +76,10 @@ class EditEphemeralMessageMedia:
         raw_media, message, entities = await resolve_input_media(self, chat_id, media)
 
         return await edit_ephemeral(
-            self, chat_id, receiver_id, message_id,
+            self,
+            chat_id,
+            receiver_id,
+            message_id,
             media=raw_media,
             message=message,
             entities=entities,

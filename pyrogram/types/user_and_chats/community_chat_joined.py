@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Dict, Optional
+from __future__ import annotations
+
 
 from pyrogram import raw, types
 
@@ -37,8 +38,8 @@ class CommunityChatJoined(Object):
     def __init__(
         self,
         *,
-        community_id: Optional[int] = None,
-        community: Optional["types.Community"] = None,
+        community_id: int | None = None,
+        community: types.Community | None = None,
     ):
         super().__init__()
 
@@ -48,9 +49,9 @@ class CommunityChatJoined(Object):
     @staticmethod
     def _parse(
         client,
-        action: "raw.types.MessageActionChatJoinedViaCommunity",
-        chats: Dict[int, "raw.base.Chat"],
-    ) -> "CommunityChatJoined":
+        action: raw.types.MessageActionChatJoinedViaCommunity,
+        chats: dict[int, raw.base.Chat],
+    ) -> CommunityChatJoined:
         return CommunityChatJoined(
             community_id=action.community_id,
             community=types.Community._parse(client, chats.get(action.community_id)),

@@ -16,21 +16,19 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.utils import compute_password_check
 
 log = logging.getLogger(__name__)
 
 
 class CheckPassword:
-    async def check_password(
-        self: "pyrogram.Client",
-        password: str
-    ) -> "types.User":
+    async def check_password(self: pyrogram.Client, password: str) -> types.User:
         """Check your Two-Step Verification password and log in.
 
         .. include:: /_includes/usable-by/users.rst
@@ -48,8 +46,7 @@ class CheckPassword:
         r = await self.invoke(
             raw.functions.auth.CheckPassword(
                 password=compute_password_check(
-                    await self.invoke(raw.functions.account.GetPassword()),
-                    password
+                    await self.invoke(raw.functions.account.GetPassword()), password
                 )
             )
         )

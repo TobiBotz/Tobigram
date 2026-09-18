@@ -2,11 +2,11 @@ Error Handling
 ==============
 
 Errors can be correctly handled with ``try...except`` blocks in order to control the behaviour of your application.
-wzgram errors all live inside the ``errors`` package:
+pyrogram errors all live inside the ``errors`` package:
 
 .. code-block:: python
 
-    from wzgram import errors
+    from pyrogram import errors
 
 
 -----
@@ -19,7 +19,7 @@ This error is raised every time a method call against Telegram's API was unsucce
 
 .. code-block:: python
 
-    from wzgram.errors import RPCError
+    from pyrogram.errors import RPCError
 
 .. warning::
 
@@ -29,12 +29,12 @@ This error is raised every time a method call against Telegram's API was unsucce
 Error Categories
 ----------------
 
-The ``RPCError`` packs together all the possible errors Telegram could raise, but to make things tidier, wzgram
+The ``RPCError`` packs together all the possible errors Telegram could raise, but to make things tidier, pyrogram
 provides categories of errors, which are named after the common HTTP errors and are subclass-ed from the ``RPCError``:
 
 .. code-block:: python
 
-    from wzgram.errors import BadRequest, Forbidden, ...
+    from pyrogram.errors import BadRequest, Forbidden, ...
 
 -   ``303 - SeeOther``
 -   ``400 - BadRequest``
@@ -47,12 +47,12 @@ provides categories of errors, which are named after the common HTTP errors and 
 Single Errors
 -------------
 
-For a fine-grained control over every single error, wzgram does also expose errors that deal each with a specific
+For a fine-grained control over every single error, pyrogram does also expose errors that deal each with a specific
 issue. For example:
 
 .. code-block:: python
 
-    from wzgram.errors import FloodWait
+    from pyrogram.errors import FloodWait
 
 These errors subclass directly from the category of errors they belong to, which in turn subclass from the father
 ``RPCError``, thus building a class of error hierarchy such as this:
@@ -73,7 +73,7 @@ These errors subclass directly from the category of errors they belong to, which
 Unknown Errors
 --------------
 
-In case wzgram does not know anything about a specific error yet, it raises a generic error from its known category,
+In case pyrogram does not know anything about a specific error yet, it raises a generic error from its known category,
 for example, an unknown error with error code ``400``, will be raised as a ``BadRequest``. This way you can catch the
 whole category of errors and be sure to also handle these unknown errors.
 
@@ -106,7 +106,7 @@ The value is stored in the ``value`` attribute of the exception object:
 .. code-block:: python
 
     import asyncio
-    from wzgram.errors import FloodWait
+    from pyrogram.errors import FloodWait
 
     ...
         try:

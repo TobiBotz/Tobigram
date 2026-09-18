@@ -16,11 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
 
 import pyrogram
-from pyrogram import types, raw, utils
+from pyrogram import raw, types, utils
+
 from ..object import Object
 
 
@@ -87,23 +89,23 @@ class ForumTopic(Object):
         self,
         *,
         id: int,
-        title: Optional[str] = None,
-        date: Optional[datetime] = None,
-        icon_color: Optional[str] = None,
-        icon_emoji_id: Optional[int] = None,
-        creator: Optional["types.Chat"] = None,
-        top_message: Optional["types.Message"] = None,
-        unread_count: Optional[int] = None,
-        unread_mentions_count: Optional[int] = None,
-        unread_reactions_count: Optional[int] = None,
-        unread_poll_vote_count: Optional[int] = None,
-        is_my: Optional[bool] = None,
-        is_closed: Optional[bool] = None,
-        is_pinned: Optional[bool] = None,
-        is_short: Optional[bool] = None,
-        is_hidden: Optional[bool] = None,
-        is_deleted: Optional[bool] = None,
-        is_name_implicit: Optional[bool] = None
+        title: str | None = None,
+        date: datetime | None = None,
+        icon_color: str | None = None,
+        icon_emoji_id: int | None = None,
+        creator: types.Chat | None = None,
+        top_message: types.Message | None = None,
+        unread_count: int | None = None,
+        unread_mentions_count: int | None = None,
+        unread_reactions_count: int | None = None,
+        unread_poll_vote_count: int | None = None,
+        is_my: bool | None = None,
+        is_closed: bool | None = None,
+        is_pinned: bool | None = None,
+        is_short: bool | None = None,
+        is_hidden: bool | None = None,
+        is_deleted: bool | None = None,
+        is_name_implicit: bool | None = None,
     ):
         super().__init__()
 
@@ -127,7 +129,13 @@ class ForumTopic(Object):
         self.is_deleted = is_deleted
 
     @staticmethod
-    def _parse(client: "pyrogram.Client", forum_topic: "raw.types.ForumTopic", messages: dict = None,  users: dict = None, chats: dict = None) -> "ForumTopic":
+    def _parse(
+        client: pyrogram.Client,
+        forum_topic: raw.types.ForumTopic,
+        messages: dict | None = None,
+        users: dict | None = None,
+        chats: dict | None = None,
+    ) -> ForumTopic:
         if messages is None:
             messages = {}
         if users is None:
@@ -156,7 +164,9 @@ class ForumTopic(Object):
             id=forum_topic.id,
             title=forum_topic.title,
             date=utils.timestamp_to_datetime(forum_topic.date),
-            icon_color=format(forum_topic.icon_color, "x") if getattr(forum_topic, "icon_color", None) else None,
+            icon_color=format(forum_topic.icon_color, "x")
+            if getattr(forum_topic, "icon_color", None)
+            else None,
             icon_emoji_id=getattr(forum_topic, "icon_emoji_id", None),
             creator=creator,
             top_message=messages.get(getattr(forum_topic, "top_message", None)),
@@ -171,4 +181,3 @@ class ForumTopic(Object):
             is_hidden=getattr(forum_topic, "hidden", None),
             is_name_implicit=getattr(forum_topic, "title_missing", None),
         )
-

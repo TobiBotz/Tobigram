@@ -16,8 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+
+from __future__ import annotations
+
 from pyrogram import raw
+
 from ..object import Object
 
 
@@ -43,12 +46,13 @@ class ForumTopicCreated(Object):
     """
 
     def __init__(
-        self, *,
+        self,
+        *,
         id: int,
         title: str,
         icon_color: int,
-        custom_emoji_id: Optional[str] = None,
-        is_name_implicit: Optional[bool] = None
+        custom_emoji_id: str | None = None,
+        is_name_implicit: bool | None = None,
     ):
         super().__init__()
 
@@ -59,7 +63,7 @@ class ForumTopicCreated(Object):
         self.is_name_implicit = is_name_implicit
 
     @staticmethod
-    def _parse(message: "raw.base.Message") -> "ForumTopicCreated":
+    def _parse(message: raw.base.Message) -> ForumTopicCreated:
         custom_emoji_id = getattr(message.action, "icon_emoji_id", None)
 
         return ForumTopicCreated(
@@ -67,6 +71,5 @@ class ForumTopicCreated(Object):
             title=getattr(message.action, "title", None),
             icon_color=getattr(message.action, "icon_color", None),
             custom_emoji_id=str(custom_emoji_id) if custom_emoji_id else None,
-            is_name_implicit=getattr(message.action, "title_missing", None)
+            is_name_implicit=getattr(message.action, "title_missing", None),
         )
-

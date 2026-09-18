@@ -21,6 +21,7 @@ from .on_business_message import OnBusinessMessage
 from .on_callback_query import OnCallbackQuery
 from .on_chat_boost import OnChatBoost
 from .on_chat_join_request import OnChatJoinRequest
+from .on_chat_left import OnChatLeft
 from .on_chat_member_updated import OnChatMemberUpdated
 from .on_chosen_inline_result import OnChosenInlineResult
 from .on_connect import OnConnect
@@ -54,6 +55,7 @@ class Decorators(
     OnCallbackQuery,
     OnChatBoost,
     OnChatJoinRequest,
+    OnChatLeft,
     OnChatMemberUpdated,
     OnChosenInlineResult,
     OnConnect,
@@ -78,6 +80,6 @@ class Decorators(
     OnStart,
     OnStop,
     OnStory,
-    OnUserStatus
+    OnUserStatus,
 ):
     pass

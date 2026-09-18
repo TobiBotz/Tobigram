@@ -1,55 +1,54 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Union, List, Optional
 
 import pyrogram
-from pyrogram import raw, utils, enums
-from pyrogram import types
+from pyrogram import enums, raw, types, utils
 
 from ..ephemeral.as_ephemeral import as_ephemeral
 
 
 class SendMessage:
     async def send_message(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         text: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        link_preview_options: Optional["types.LinkPreviewOptions"] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        show_caption_above_media: Optional[bool] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        protect_content: Optional[bool] = None,
-        business_connection_id: Optional[str] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[Union[
-            "types.InlineKeyboardMarkup",
-            "types.ReplyKeyboardMarkup",
-            "types.ReplyKeyboardRemove",
-            "types.ForceReply"
-        ]] = None,
-        rich_text: Optional[Union[str, "types.InputRichMessage"]] = None,
-        rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
-        rich_text_media: Optional[List["types.InputRichMessageMedia"]] = None,
-        disable_web_page_preview: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        reply_to_chat_id: Optional[Union[int, str]] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-        background: Optional[bool] = None,
-        clear_draft: Optional[bool] = None,
-        update_stickersets_order: Optional[bool] = None,
-        send_as: Optional[Union[int, str]] = None,
-        quick_reply_shortcut: Optional[int] = None,
-        ephemeral_message_parameters: Optional["types.EphemeralMessageParameters"] = None,
-    ) -> "types.Message":
+        parse_mode: enums.ParseMode | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        link_preview_options: types.LinkPreviewOptions | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        show_caption_above_media: bool | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        protect_content: bool | None = None,
+        business_connection_id: str | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        rich_text: str | types.InputRichMessage | None = None,
+        rich_text_parse_mode: enums.ParseMode = enums.ParseMode.MARKDOWN,
+        rich_text_media: list[types.InputRichMessageMedia] | None = None,
+        disable_web_page_preview: bool | None = None,
+        reply_to_message_id: int | None = None,
+        reply_to_chat_id: int | str | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+        background: bool | None = None,
+        clear_draft: bool | None = None,
+        update_stickersets_order: bool | None = None,
+        send_as: int | str | None = None,
+        quick_reply_shortcut: int | None = None,
+        ephemeral_message_parameters: types.EphemeralMessageParameters | None = None,
+    ) -> types.Message:
         """Send text messages.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -174,7 +173,8 @@ class SendMessage:
             .. code-block:: python
 
                 # Send a simple text message
-                await app.send_message("me", "Hello from wzgram!")
+
+                await app.send_message("me", "Hello from pyrogram!")
 
                 # Send a message with a link preview
                 await app.send_message("me", "Check this out: https://example.com")
@@ -199,9 +199,11 @@ class SendMessage:
             if isinstance(rich_text, types.InputRichMessage):
                 rich_message = rich_text.write()
             else:
-                files = types.InputRichMessage(
-                    html="_", media=rich_text_media
-                ).write_files() if rich_text_media else None
+                files = (
+                    types.InputRichMessage(html="_", media=rich_text_media).write_files()
+                    if rich_text_media
+                    else None
+                )
 
                 if rich_text_parse_mode == enums.ParseMode.HTML:
                     rich_message = raw.types.InputRichMessageHTML(
@@ -214,36 +216,54 @@ class SendMessage:
                         files=files,
                     )
             r = await self.invoke(
-                await as_ephemeral(self, ephemeral_message_parameters, raw.functions.messages.SendMessage(
-                    peer=await self.resolve_peer(chat_id),
-                    silent=disable_notification if disable_notification is not None else None,
-                    no_webpage=disable_web_page_preview if disable_web_page_preview is not None else None,
-                    reply_to=await utils.get_reply_to(
-                        self,
-                        reply_parameters,
-                        message_thread_id,
-                        direct_messages_topic_id=direct_messages_topic_id
+                await as_ephemeral(
+                    self,
+                    ephemeral_message_parameters,
+                    raw.functions.messages.SendMessage(
+                        peer=await self.resolve_peer(chat_id),
+                        silent=disable_notification if disable_notification is not None else None,
+                        no_webpage=disable_web_page_preview
+                        if disable_web_page_preview is not None
+                        else None,
+                        reply_to=await utils.get_reply_to(
+                            self,
+                            reply_parameters,
+                            message_thread_id,
+                            direct_messages_topic_id=direct_messages_topic_id,
+                        ),
+                        random_id=self.rnd_id(),
+                        schedule_date=utils.datetime_to_timestamp(schedule_date),
+                        reply_markup=await reply_markup.write(self) if reply_markup else None,
+                        message="",
+                        rich_message=rich_message,
+                        noforwards=protect_content,
+                        effect=effect_id,
+                        invert_media=show_caption_above_media
+                        if show_caption_above_media is not None
+                        else None,
+                        schedule_repeat_period=repeat_period,
+                        allow_paid_floodskip=allow_paid_broadcast
+                        if allow_paid_broadcast is not None
+                        else None,
+                        allow_paid_stars=paid_message_star_count
+                        if paid_message_star_count is not None
+                        else None,
+                        suggested_post=suggested_post_parameters.write()
+                        if suggested_post_parameters
+                        else None,
+                        background=background,
+                        clear_draft=clear_draft,
+                        update_stickersets_order=update_stickersets_order,
+                        send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                        quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(
+                            shortcut_id=quick_reply_shortcut
+                        )
+                        if quick_reply_shortcut is not None
+                        else None,
                     ),
-                    random_id=self.rnd_id(),
-                    schedule_date=utils.datetime_to_timestamp(schedule_date),
-                    reply_markup=await reply_markup.write(self) if reply_markup else None,
-                    message="",
-                    rich_message=rich_message,
-                    noforwards=protect_content,
-                    effect=effect_id,
-                    invert_media=show_caption_above_media if show_caption_above_media is not None else None,
-                    schedule_repeat_period=repeat_period,
-                    allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
-                    allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
-                    suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
-                    background=background,
-                    clear_draft=clear_draft,
-                    update_stickersets_order=update_stickersets_order,
-                    send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                    quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
-                )),
+                ),
                 sleep_threshold=60,
-                business_connection_id=business_connection_id
+                business_connection_id=business_connection_id,
             )
             plain_text = (
                 rich_text.html or rich_text.markdown or ""
@@ -265,57 +285,76 @@ class SendMessage:
                     invert_media = True
 
             if disable_web_page_preview is not None:
-                no_webpage = disable_web_page_preview if disable_web_page_preview is not None else None
+                no_webpage = (
+                    disable_web_page_preview if disable_web_page_preview is not None else None
+                )
 
-            plain_text, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
-            request = dict(
-                peer=await self.resolve_peer(chat_id),
-                silent=disable_notification if disable_notification is not None else None,
-                reply_to=await utils.get_reply_to(
+            plain_text, entities = (
+                await utils.parse_text_entities(self, text, parse_mode, entities)
+            ).values()
+            request = {
+                "peer": await self.resolve_peer(chat_id),
+                "silent": disable_notification if disable_notification is not None else None,
+                "reply_to": await utils.get_reply_to(
                     self,
                     reply_parameters,
                     message_thread_id,
-                    direct_messages_topic_id=direct_messages_topic_id
+                    direct_messages_topic_id=direct_messages_topic_id,
                 ),
-                random_id=self.rnd_id(),
-                schedule_date=utils.datetime_to_timestamp(schedule_date),
-                reply_markup=await reply_markup.write(self) if reply_markup else None,
-                message=plain_text,
-                entities=entities,
-                noforwards=protect_content,
-                effect=effect_id,
-                invert_media=invert_media if invert_media is not None else (show_caption_above_media if show_caption_above_media is not None else None),
-                schedule_repeat_period=repeat_period,
-                allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
-                allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
-                suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
-                background=background,
-                clear_draft=clear_draft,
-                update_stickersets_order=update_stickersets_order,
-                send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
-            )
+                "random_id": self.rnd_id(),
+                "schedule_date": utils.datetime_to_timestamp(schedule_date),
+                "reply_markup": await reply_markup.write(self) if reply_markup else None,
+                "message": plain_text,
+                "entities": entities,
+                "noforwards": protect_content,
+                "effect": effect_id,
+                "invert_media": invert_media
+                if invert_media is not None
+                else (show_caption_above_media if show_caption_above_media is not None else None),
+                "schedule_repeat_period": repeat_period,
+                "allow_paid_floodskip": allow_paid_broadcast
+                if allow_paid_broadcast is not None
+                else None,
+                "allow_paid_stars": paid_message_star_count
+                if paid_message_star_count is not None
+                else None,
+                "suggested_post": suggested_post_parameters.write()
+                if suggested_post_parameters
+                else None,
+                "background": background,
+                "clear_draft": clear_draft,
+                "update_stickersets_order": update_stickersets_order,
+                "send_as": await self.resolve_peer(send_as) if send_as is not None else None,
+                "quick_reply_shortcut": raw.types.InputQuickReplyShortcutId(
+                    shortcut_id=quick_reply_shortcut
+                )
+                if quick_reply_shortcut is not None
+                else None,
+            }
 
             if link_preview_options is not None and link_preview_options.url:
-                request = await as_ephemeral(self, ephemeral_message_parameters, raw.functions.messages.SendMedia(
-                    media=raw.types.InputMediaWebPage(
-                        url=link_preview_options.url,
-                        force_large_media=link_preview_options.prefer_large_media,
-                        force_small_media=link_preview_options.prefer_small_media,
-                        optional=True
+                request = await as_ephemeral(
+                    self,
+                    ephemeral_message_parameters,
+                    raw.functions.messages.SendMedia(
+                        media=raw.types.InputMediaWebPage(
+                            url=link_preview_options.url,
+                            force_large_media=link_preview_options.prefer_large_media,
+                            force_small_media=link_preview_options.prefer_small_media,
+                            optional=True,
+                        ),
+                        **request,
                     ),
-                    **request
-                ))
+                )
             else:
-                request = await as_ephemeral(self, ephemeral_message_parameters, raw.functions.messages.SendMessage(
-                    no_webpage=no_webpage,
-                    **request
-                ))
+                request = await as_ephemeral(
+                    self,
+                    ephemeral_message_parameters,
+                    raw.functions.messages.SendMessage(no_webpage=no_webpage, **request),
+                )
 
             r = await self.invoke(
-                request,
-                sleep_threshold=60,
-                business_connection_id=business_connection_id
+                request, sleep_threshold=60, business_connection_id=business_connection_id
             )
 
         if isinstance(r, raw.types.UpdateShortSentMessage):
@@ -323,36 +362,38 @@ class SendMessage:
 
             peer_id = (
                 peer.user_id
-                if isinstance(peer, raw.types.InputPeerUser)
+                if isinstance(peer, (raw.types.InputPeerUser, raw.types.InputPeerUserFromMessage))
                 else -peer.chat_id
             )
 
             return types.Message(
                 id=r.id,
-                chat=types.Chat(
-                    id=peer_id,
-                    type=enums.ChatType.PRIVATE,
-                    client=self
-                ),
+                chat=types.Chat(id=peer_id, type=enums.ChatType.PRIVATE, client=self),
                 text=plain_text,
                 date=utils.timestamp_to_datetime(r.date),
                 outgoing=r.out,
                 reply_markup=reply_markup,
-                entities=[
-                    types.MessageEntity._parse(None, entity, {})
-                    for entity in entities
-                ] if not rich_text and entities else None,
-                client=self
+                entities=[types.MessageEntity._parse(None, entity, {}) for entity in entities]
+                if not rich_text and entities
+                else None,
+                client=self,
             )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage,
-                              raw.types.UpdateNewEphemeralMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                    raw.types.UpdateNewEphemeralMessage,
+                    raw.types.UpdateBotNewBusinessMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
+                    self,
+                    i.message,
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                 )

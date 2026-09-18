@@ -27,7 +27,7 @@ addressed to:
 
 .. code-block:: python
 
-    from wzgram.types import InlineQueryResultArticle, InputTextMessageContent
+    from pyrogram.types import InlineQueryResultArticle, InputTextMessageContent
 
     @app.on_guest_message()
     async def guest(client, message):
@@ -42,7 +42,7 @@ addressed to:
 The reply is a single :obj:`~pyrogram.types.InlineQueryResult`, the same shape an inline
 query takes, because the bot is producing one result rather than joining a conversation.
 
-A guest update also carries the messages the user quoted when summoning the bot. wzgram
+A guest update also carries the messages the user quoted when summoning the bot. pyrogram
 parses those first, so the peers and messages they refer to are already known by the time
 your handler runs, even though the bot never saw the chat's history.
 

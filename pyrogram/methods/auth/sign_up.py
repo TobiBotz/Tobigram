@@ -16,24 +16,26 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 import re
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 log = logging.getLogger(__name__)
 
 
 class SignUp:
     async def sign_up(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         phone_number: str,
         phone_code_hash: str,
         first_name: str,
-        last_name: str = ""
-    ) -> "types.User":
+        last_name: str = "",
+        no_joined_notifications: bool | None = None,
+    ) -> types.User:
         """Register a new user in Telegram.
 
         .. include:: /_includes/usable-by/users.rst
@@ -51,6 +53,11 @@ class SignUp:
             last_name (``str``, *optional*):
                 New user last name. Defaults to "" (empty string, no last name).
 
+            no_joined_notifications (``bool``, *optional*):
+                If set to True, users on Telegram that have already added ``phone_number`` to their contacts
+                will not receive signup notifications about this user.
+                Defaults to False (or the value configured in :class:`~pyrogram.Client`).
+
         Returns:
             :obj:`~pyrogram.types.User`: On success, the new registered user is returned.
 
@@ -59,12 +66,16 @@ class SignUp:
         """
         phone_number = re.sub(r"\D", "", phone_number)
 
+        if no_joined_notifications is None:
+            no_joined_notifications = getattr(self, "no_joined_notifications", None)
+
         r = await self.invoke(
             raw.functions.auth.SignUp(
                 phone_number=phone_number,
                 first_name=first_name,
                 last_name=last_name,
-                phone_code_hash=phone_code_hash
+                phone_code_hash=phone_code_hash,
+                no_joined_notifications=no_joined_notifications,
             )
         )
 

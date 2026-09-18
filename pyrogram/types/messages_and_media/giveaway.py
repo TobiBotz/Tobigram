@@ -16,12 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import List, Optional
 
 import pyrogram
-from pyrogram import raw, utils
-from pyrogram import types
+from pyrogram import raw, types, utils
+
 from ..object import Object
 
 
@@ -63,16 +64,16 @@ class Giveaway(Object):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
-        chats: Optional[List["types.Chat"]] = None,
-        quantity: Optional[int] = None,
-        months: Optional[int] = None,
-        until_date: Optional[datetime] = None,
-        description: Optional[str] = None,
-        only_new_subscribers: Optional[bool] = None,
-        only_for_countries: Optional[List[str]] = None,
-        winners_are_visible: Optional[bool] = None,
-        stars: Optional[int] = None
+        client: pyrogram.Client | None = None,
+        chats: list[types.Chat] | None = None,
+        quantity: int | None = None,
+        months: int | None = None,
+        until_date: datetime | None = None,
+        description: str | None = None,
+        only_new_subscribers: bool | None = None,
+        only_for_countries: list[str] | None = None,
+        winners_are_visible: bool | None = None,
+        stars: int | None = None,
     ):
         super().__init__(client)
 
@@ -87,13 +88,11 @@ class Giveaway(Object):
         self.stars = stars
 
     @staticmethod
-    def _parse(
-        client,
-        giveaway: "raw.types.MessageMediaGiveaway",
-        chats: dict
-    ) -> "Giveaway":
+    def _parse(client, giveaway: raw.types.MessageMediaGiveaway, chats: dict) -> Giveaway:
         return Giveaway(
-            chats=types.List(types.Chat._parse_channel_chat(client, chats.get(i)) for i in giveaway.channels),
+            chats=types.List(
+                types.Chat._parse_channel_chat(client, chats.get(i)) for i in giveaway.channels
+            ),
             quantity=giveaway.quantity,
             months=giveaway.months,
             until_date=utils.timestamp_to_datetime(giveaway.until_date),
@@ -102,6 +101,5 @@ class Giveaway(Object):
             only_for_countries=types.List(getattr(giveaway, "countries_iso2", [])) or None,
             winners_are_visible=getattr(giveaway, "winners_are_visible", None),
             stars=getattr(giveaway, "stars", None),
-            client=client
+            client=client,
         )
-

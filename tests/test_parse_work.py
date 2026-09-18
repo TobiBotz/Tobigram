@@ -107,6 +107,7 @@ def counted(monkeypatch):
             key = f"{name}.{attr}"
 
             if inspect.iscoroutinefunction(inner):
+
                 def wrap(inner=inner, key=key):
                     async def wrapper(*args, **kwargs):
                         calls[key] += 1
@@ -119,6 +120,7 @@ def counted(monkeypatch):
 
                     return wrapper
             else:
+
                 def wrap(inner=inner, key=key):
                     def wrapper(*args, **kwargs):
                         calls[key] += 1
@@ -144,8 +146,7 @@ async def test_an_ordinary_message_makes_few_sub_parser_calls(counted):
     total = sum(calls.values())
 
     assert total <= CALL_BUDGET, (
-        f"parsing one message made {total} sub-parser calls: "
-        f"{dict(calls.most_common())}"
+        f"parsing one message made {total} sub-parser calls: {dict(calls.most_common())}"
     )
 
 
@@ -179,9 +180,7 @@ async def test_each_peer_is_parsed_once(counted):
 async def test_the_message_still_parses_correctly(counted):
     """A budget met by parsing nothing would be no use."""
 
-    parsed = await types.Message._parse(
-        _client(), _message(), {1: _user()}, {100: _channel()}
-    )
+    parsed = await types.Message._parse(_client(), _message(), {1: _user()}, {100: _channel()})
 
     assert parsed.id == 1
     assert parsed.from_user.id == 1

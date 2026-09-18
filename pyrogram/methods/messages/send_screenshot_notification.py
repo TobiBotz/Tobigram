@@ -21,19 +21,19 @@
 # Source: tl:messages.sendScreenshotNotification
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class SendScreenshotNotification:
     async def send_screenshot_notification(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         reply_to_message_id: int = 0,
-    ) -> "types.Message":
+    ) -> types.Message:
         """Notify the other user that you took a screenshot.
 
         .. include:: /_includes/usable-by/users.rst
@@ -58,22 +58,27 @@ class SendScreenshotNotification:
 
         r = await self.invoke(
             raw.functions.messages.SendScreenshotNotification(
-                
                 peer=await self.resolve_peer(chat_id),
-                reply_to=raw.types.InputReplyToMessage(
-                    reply_to_msg_id=reply_to_message_id
-                ) if reply_to_message_id else None,
+                reply_to=raw.types.InputReplyToMessage(reply_to_msg_id=reply_to_message_id)
+                if reply_to_message_id
+                else None,
                 random_id=self.rnd_id(),
             )
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
+                    self,
+                    i.message,
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                 )

@@ -16,7 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import AsyncGenerator, Optional, Union
+from __future__ import annotations
+
+from collections.abc import AsyncGenerator
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -24,11 +26,11 @@ from pyrogram import raw, types, utils
 
 class GetDirectMessagesTopics:
     async def get_direct_messages_topics(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         limit: int = 0,
-        exclude_pinned: Optional[bool] = None
-    ) -> AsyncGenerator["types.DirectMessagesTopic", None]:
+        exclude_pinned: bool | None = None,
+    ) -> AsyncGenerator[types.DirectMessagesTopic, None]:
         """Get one or more topic from a direct messages channel chat.
 
         .. include:: /_includes/usable-by/users.rst
@@ -71,7 +73,7 @@ class GetDirectMessagesTopics:
                     limit=limit,
                     hash=0,
                     exclude_pinned=exclude_pinned,
-                    parent_peer=await self.resolve_peer(chat_id)
+                    parent_peer=await self.resolve_peer(chat_id),
                 )
             )
 
@@ -89,7 +91,11 @@ class GetDirectMessagesTopics:
             topics = []
 
             for topic in r.dialogs:
-                topics.append(types.DirectMessagesTopic._parse(client=self, topic=topic, messages=messages, users=users, chats=chats))
+                topics.append(
+                    types.DirectMessagesTopic._parse(
+                        client=self, topic=topic, messages=messages, users=users, chats=chats
+                    )
+                )
 
             if not topics:
                 return
@@ -107,4 +113,3 @@ class GetDirectMessagesTopics:
 
                 if current >= total:
                     return
-

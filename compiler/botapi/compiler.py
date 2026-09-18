@@ -37,31 +37,34 @@ def start():
     print(f"Bot API coverage - {coverage.spec['version']} ({coverage.spec['release_date']})")
     print()
     print("Methods")
-    print(f"  implemented       {methods['implemented']:5} / {methods['total']:<5} "
-          f"{pct(methods['implemented'], methods['total'])}")
+    print(
+        f"  implemented       {methods['implemented']:5} / {methods['total']:<5} "
+        f"{pct(methods['implemented'], methods['total'])}"
+    )
 
     have, total = methods["params"]
-    print(f"  Bot API params    {have:5} / {total:<5} {pct(have, total)}"
-          f"   {total - have} missing across {methods['incomplete']} methods")
+    print(
+        f"  Bot API params    {have:5} / {total:<5} {pct(have, total)}"
+        f"   {total - have} missing across {methods['incomplete']} methods"
+    )
 
     have, total = methods["tl_params"]
-    print(f"  MTProto params    {have:5} / {total:<5} {pct(have, total)}"
-          f"   {total - have} missing")
+    print(f"  MTProto params    {have:5} / {total:<5} {pct(have, total)}   {total - have} missing")
 
     have, total = report["enums"]["values"]
-    print(f"  enum values       {have:5} / {total:<5} {pct(have, total)}"
-          f"   {total - have} missing")
+    print(f"  enum values       {have:5} / {total:<5} {pct(have, total)}   {total - have} missing")
 
     print()
     print("Types reachable from those methods")
     print(f"  required          {types['required']:5}")
-    print(f"  implemented       {types['implemented']:5} / {types['required']:<5} "
-          f"{pct(types['implemented'], types['required'])}"
-          f"   {len(types['absent'])} absent")
+    print(
+        f"  implemented       {types['implemented']:5} / {types['required']:<5} "
+        f"{pct(types['implemented'], types['required'])}"
+        f"   {len(types['absent'])} absent"
+    )
 
     have, total = types["params"]
-    print(f"  Bot API params    {have:5} / {total:<5} {pct(have, total)}"
-          f"   {total - have} missing")
+    print(f"  Bot API params    {have:5} / {total:<5} {pct(have, total)}   {total - have} missing")
 
     if types["absent"]:
         print()
@@ -71,8 +74,10 @@ def start():
             print(f"    {name}")
 
     print()
-    print(f"  {types['unreachable']} further spec types are unreachable from the "
-          f"implemented methods and are not tracked.")
+    print(
+        f"  {types['unreachable']} further spec types are unreachable from the "
+        f"implemented methods and are not tracked."
+    )
 
     print()
     print("Largest gaps (Bot API parameters missing | TL fields not exposed)")
@@ -98,9 +103,7 @@ def start():
     supported = sum(
         len((manifest.get(k) or {}).get("supported") or []) for k in ("types", "methods")
     )
-    pending = sum(
-        len((manifest.get(k) or {}).get("pending") or {}) for k in ("types", "methods")
-    )
+    pending = sum(len((manifest.get(k) or {}).get("pending") or {}) for k in ("types", "methods"))
 
     print()
     print(f"Manifest            {supported} supported, {pending} pending")

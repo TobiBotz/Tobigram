@@ -16,15 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import utils
 
 
 class Restart:
-    async def restart(
-        self: "pyrogram.Client",
-        block: bool = True
-    ):
+    async def restart(self: pyrogram.Client, block: bool = True):
         """Restart the Client.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -45,7 +44,7 @@ class Restart:
         Example:
             .. code-block:: python
 
-                from wzgram import Client
+                from pyrogram import Client
 
                 app = Client("my_account")
 

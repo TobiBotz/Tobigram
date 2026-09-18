@@ -16,10 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, List, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types
+
 from ..object import Object
 
 
@@ -95,27 +97,27 @@ class Invoice(Object):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
+        client: pyrogram.Client | None = None,
         currency: str,
         is_test: bool,
-        title: Optional[str] = None,
-        description: Optional[str] = None,
-        total_amount: Optional[int] = None,
-        start_parameter: Optional[str] = None,
-        prices: Optional[List["types.LabeledPrice"]] = None,
-        is_name_requested: Optional[bool] = None,
-        is_phone_requested: Optional[bool] = None,
-        is_email_requested: Optional[bool] = None,
-        is_shipping_address_requested: Optional[bool] = None,
-        is_flexible: Optional[bool] = None,
-        is_phone_to_provider: Optional[bool] = None,
-        is_email_to_provider: Optional[bool] = None,
-        is_recurring: Optional[bool] = None,
-        max_tip_amount: Optional[int] = None,
-        suggested_tip_amounts: Optional[List[int]] = None,
-        terms_url: Optional[str] = None,
-        photo_url: Optional[str] = None,
-        raw: Optional[Union["raw.types.MessageMediaInvoice", "raw.types.Invoice"]] = None
+        title: str | None = None,
+        description: str | None = None,
+        total_amount: int | None = None,
+        start_parameter: str | None = None,
+        prices: list[types.LabeledPrice] | None = None,
+        is_name_requested: bool | None = None,
+        is_phone_requested: bool | None = None,
+        is_email_requested: bool | None = None,
+        is_shipping_address_requested: bool | None = None,
+        is_flexible: bool | None = None,
+        is_phone_to_provider: bool | None = None,
+        is_email_to_provider: bool | None = None,
+        is_recurring: bool | None = None,
+        max_tip_amount: int | None = None,
+        suggested_tip_amounts: list[int] | None = None,
+        terms_url: str | None = None,
+        photo_url: str | None = None,
+        raw: raw.types.MessageMediaInvoice | raw.types.Invoice | None = None,
     ):
         super().__init__(client)
 
@@ -141,15 +143,21 @@ class Invoice(Object):
         self.raw = raw
 
     @staticmethod
-    def _parse(client, invoice: Union["raw.types.MessageMediaInvoice", "raw.types.Invoice"]) -> "Invoice":
+    def _parse(client, invoice: raw.types.MessageMediaInvoice | raw.types.Invoice) -> Invoice:
+        prices = getattr(invoice, "prices", None)
+        total_amount = getattr(invoice, "total_amount", None)
+
+        if total_amount is None and prices:
+            total_amount = sum(price.amount for price in prices)
+
         return Invoice(
             currency=invoice.currency,
             is_test=invoice.test,
             title=getattr(invoice, "title", None),
             description=getattr(invoice, "description", None),
-            total_amount=getattr(invoice, "total_amount", None),
+            total_amount=total_amount,
             start_parameter=getattr(invoice, "start_param", None) or None,
-            prices=types.List(types.LabeledPrice._parse(lp) for lp in invoice.prices) if getattr(invoice, "prices", None) else None,
+            prices=types.List(types.LabeledPrice._parse(lp) for lp in prices) if prices else None,
             is_name_requested=getattr(invoice, "name_requested", None),
             is_phone_requested=getattr(invoice, "phone_requested", None),
             is_email_requested=getattr(invoice, "email_requested", None),
@@ -163,6 +171,5 @@ class Invoice(Object):
             terms_url=getattr(invoice, "terms_url", None),
             photo_url=getattr(getattr(invoice, "photo", None), "url", None),
             raw=invoice,
-            client=client
+            client=client,
         )
-

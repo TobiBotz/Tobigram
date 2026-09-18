@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional, Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -24,14 +25,14 @@ from pyrogram import raw
 
 class SendReaction:
     async def send_reaction(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        message_id: Optional[int] = None,
-        emoji: Optional[Union[int, str, List[Union[int, str]]]] = None,
+        self: pyrogram.Client,
+        chat_id: int | str,
+        message_id: int | None = None,
+        emoji: int | str | list[int | str] | None = None,
         big: bool = False,
         add_to_recent: bool = False,
-        business_connection_id: Optional[str] = None,
-        story_id: Optional[int] = None
+        business_connection_id: str | None = None,
+        story_id: int | None = None,
     ) -> bool:
         """Send a reaction to a message.
 
@@ -48,7 +49,7 @@ class SendReaction:
                 Reaction emoji. An int is the document id of a custom emoji.
                 Pass None as emoji (default) to retract the reaction.
                 Pass a list to react with several emojis at once.
-            
+
             big (``bool``, *optional*):
                 Pass True to show a bigger and longer reaction.
                 Defaults to False.
@@ -96,7 +97,7 @@ class SendReaction:
                     peer=await self.resolve_peer(chat_id),
                     story_id=story_id,
                     reaction=reaction[0] if reaction else raw.types.ReactionEmpty(),
-                    add_to_recent=add_to_recent
+                    add_to_recent=add_to_recent,
                 )
             )
 
@@ -108,9 +109,9 @@ class SendReaction:
                 msg_id=message_id,
                 reaction=reaction,
                 big=big,
-                add_to_recent=add_to_recent
+                add_to_recent=add_to_recent,
             ),
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
         return True

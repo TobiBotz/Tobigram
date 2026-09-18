@@ -16,10 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types
+
 from ..object import Object
 
 
@@ -38,7 +40,7 @@ class PaidMediaInfo(Object):
         self,
         *,
         stars_amount: int,
-        media: List[Union["types.Photo", "types.Video", "types.PaidMediaPreview"]]
+        media: list[types.Photo | types.Video | types.PaidMediaPreview],
     ):
         super().__init__()
 
@@ -47,9 +49,8 @@ class PaidMediaInfo(Object):
 
     @staticmethod
     def _parse(
-        client: "pyrogram.Client",
-        message_paid_media: "raw.types.MessageMediaPaidMedia"
-    ) -> "PaidMediaInfo":
+        client: pyrogram.Client, message_paid_media: raw.types.MessageMediaPaidMedia
+    ) -> PaidMediaInfo:
         medias = []
 
         for extended_media in message_paid_media.extended_media:
@@ -81,18 +82,16 @@ class PaidMediaInfo(Object):
                     attributes = {type(i): i for i in doc.attributes}
 
                     file_name = getattr(
-                        attributes.get(
-                            raw.types.DocumentAttributeFilename, None
-                        ), "file_name", None
+                        attributes.get(raw.types.DocumentAttributeFilename, None), "file_name", None
                     )
 
                     video_attributes = attributes.get(raw.types.DocumentAttributeVideo, None)
 
                     if video_attributes is not None:
-                        medias.append(types.Video._parse(client, doc, video_attributes, file_name, media.ttl_seconds))
+                        medias.append(
+                            types.Video._parse(
+                                client, doc, video_attributes, file_name, media.ttl_seconds
+                            )
+                        )
 
-        return PaidMediaInfo(
-            stars_amount=message_paid_media.stars_amount,
-            media=types.List(medias)
-        )
-
+        return PaidMediaInfo(stars_amount=message_paid_media.stars_amount, media=types.List(medias))

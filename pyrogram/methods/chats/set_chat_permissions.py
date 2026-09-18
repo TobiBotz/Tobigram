@@ -16,19 +16,19 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class SetChatPermissions:
     async def set_chat_permissions(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        permissions: "types.ChatPermissions",
-    ) -> "types.Chat":
+        self: pyrogram.Client,
+        chat_id: int | str,
+        permissions: types.ChatPermissions,
+    ) -> types.Chat:
         """Set default chat permissions for all members.
 
         You must be an administrator in the group or a supergroup for this to work and must have the
@@ -49,7 +49,7 @@ class SetChatPermissions:
         Example:
             .. code-block:: python
 
-                from wzgram.types import ChatPermissions
+                from pyrogram.types import ChatPermissions
 
                 # Completely restrict chat
                 await app.set_chat_permissions(chat_id, ChatPermissions())
@@ -66,8 +66,7 @@ class SetChatPermissions:
 
         r = await self.invoke(
             raw.functions.messages.EditChatDefaultBannedRights(
-                peer=await self.resolve_peer(chat_id),
-                banned_rights=permissions.write()
+                peer=await self.resolve_peer(chat_id), banned_rights=permissions.write()
             )
         )
 

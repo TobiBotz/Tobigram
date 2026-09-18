@@ -16,10 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import io
 import pathlib
-import re
-from typing import BinaryIO, Callable, List, Optional, Union
+from collections.abc import Callable
+from typing import BinaryIO
 
 import pyrogram
 from pyrogram import raw, utils
@@ -71,15 +73,14 @@ class InputMediaLivePhoto(InputMedia):
 
     def __init__(
         self,
-        media: Union[str, BinaryIO],
-        photo: Union[str, BinaryIO],
-        thumb: Optional[str] = None,
+        media: str | BinaryIO,
+        photo: str | BinaryIO,
+        thumb: str | None = None,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List[MessageEntity]] = None,
-        show_caption_above_media: Optional[bool] = None,
-        has_spoiler: Optional[bool] = None,
-
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[MessageEntity] | None = None,
+        show_caption_above_media: bool | None = None,
+        has_spoiler: bool | None = None,
     ):
         super().__init__(media, caption, parse_mode, caption_entities)
 
@@ -91,14 +92,14 @@ class InputMediaLivePhoto(InputMedia):
     async def write(
         self,
         *,
-        client: "pyrogram.Client",
-        chat_id: Optional[Union[int, str]] = None,
+        client: pyrogram.Client,
+        chat_id: int | str | None = None,
         width: int = 0,
         height: int = 0,
-        progress: Optional[Callable] = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-        **kwargs
-    ) -> "raw.base.InputMedia":
+        **kwargs,
+    ) -> raw.base.InputMedia:
         if chat_id is None:
             peer = raw.types.InputPeerSelf()
         else:
@@ -153,7 +154,7 @@ class InputMediaLivePhoto(InputMedia):
                     id=uploaded_media.document.id,
                     access_hash=uploaded_media.document.access_hash,
                     file_reference=uploaded_media.document.file_reference,
-                )
+                ),
             )
 
         return utils.get_input_media_from_file_id(
@@ -163,4 +164,3 @@ class InputMediaLivePhoto(InputMedia):
             live_photo=True,
             live_photo_video_file_id=self.media,
         )
-

@@ -16,18 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
 
 
 class SetSlowMode:
-    async def set_slow_mode(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        seconds: Optional[int]
-    ) -> bool:
+    async def set_slow_mode(self: pyrogram.Client, chat_id: int | str, seconds: int | None) -> bool:
         """Set the slow mode interval for a chat.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -55,8 +52,7 @@ class SetSlowMode:
 
         await self.invoke(
             raw.functions.channels.ToggleSlowMode(
-                channel=await self.resolve_peer(chat_id),
-                seconds=seconds or 0
+                channel=await self.resolve_peer(chat_id), seconds=seconds or 0
             )
         )
 

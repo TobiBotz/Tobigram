@@ -17,12 +17,10 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 import ast
-import inspect
 import json
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
 
 import yaml
 
@@ -74,9 +72,7 @@ def _no_duplicates(loader, node, deep=False):
     return mapping
 
 
-StrictLoader.add_constructor(
-    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _no_duplicates
-)
+StrictLoader.add_constructor(yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG, _no_duplicates)
 
 
 def load_yaml(path: Path) -> dict:
@@ -100,13 +96,9 @@ TYPES_DIR = ROOT / "pyrogram" / "types"
 class Symbol:
     """A class or method as it is written, read without importing anything."""
 
-    __slots__ = (
-        "name", "params", "bases", "properties", "doc", "path", "raw_calls",
-        "annotations"
-    )
+    __slots__ = ("annotations", "bases", "doc", "name", "params", "path", "properties", "raw_calls")
 
-    def __init__(self, name, params, bases, properties, doc, path, raw_calls=(),
-                 annotations=None):
+    def __init__(self, name, params, bases, properties, doc, path, raw_calls=(), annotations=None):
         self.name = name
         self.params = params
         self.bases = bases
@@ -117,14 +109,14 @@ class Symbol:
         self.annotations = annotations or {}
 
 
-def signature_params(node) -> Set[str]:
+def signature_params(node) -> set[str]:
     args = node.args
     names = [a.arg for a in (*args.posonlyargs, *args.args, *args.kwonlyargs)]
 
     return {name for name in names if name not in IGNORED_PARAMS}
 
 
-def signature_annotations(node) -> Dict[str, str]:
+def signature_annotations(node) -> dict[str, str]:
     args = node.args
 
     return {
@@ -145,7 +137,7 @@ def is_property(node) -> bool:
     return False
 
 
-def base_names(node) -> List[str]:
+def base_names(node) -> list[str]:
     names = []
 
     for base in node.bases:
@@ -157,7 +149,7 @@ def base_names(node) -> List[str]:
     return names
 
 
-def raw_calls_in(node) -> Set[str]:
+def raw_calls_in(node) -> set[str]:
     calls = set()
 
     for call in ast.walk(node):
@@ -175,7 +167,7 @@ def raw_calls_in(node) -> Set[str]:
     return calls
 
 
-def documented_params(doc: Optional[str]) -> Optional[Set[str]]:
+def documented_params(doc: str | None) -> set[str] | None:
     """The parameters the reST ``Parameters:`` block claims exist."""
     if not doc:
         return None
@@ -199,13 +191,13 @@ def documented_params(doc: Optional[str]) -> Optional[Set[str]]:
     return found if inside or found else None
 
 
-def type_names(entries) -> Set[str]:
+def type_names(entries) -> set[str]:
     """Type names referenced by a spec ``types`` list, unwrapping arrays."""
     names = set()
 
     for entry in entries or []:
         while entry.startswith("Array of "):
-            entry = entry[len("Array of "):]
+            entry = entry[len("Array of ") :]
 
         names.add(entry)
 
@@ -219,13 +211,13 @@ ENUM_LITERAL_RE = re.compile(r"[“\"]([a-z0-9_]+)[”\"]")
 ENUM_REFERENCE_RE = re.compile("(?:enums[.])?([A-Z][A-Za-z0-9_]*)")
 
 
-def index_enums() -> Dict[str, Dict[str, str]]:
+def index_enums() -> dict[str, dict[str, str]]:
     """Every enum under pyrogram/enums, as {name: {MEMBER: value}}.
 
     AutoName lowercases the member name, so a member declared with auto() is
     worth exactly the Bot API literal it should match.
     """
-    index: Dict[str, Dict[str, str]] = {}
+    index: dict[str, dict[str, str]] = {}
 
     for path in sorted(ENUMS_DIR.glob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -234,7 +226,7 @@ def index_enums() -> Dict[str, Dict[str, str]]:
             if not isinstance(node, ast.ClassDef):
                 continue
 
-            members: Dict[str, str] = {}
+            members: dict[str, str] = {}
 
             for child in node.body:
                 if not isinstance(child, ast.Assign) or len(child.targets) != 1:
@@ -258,7 +250,7 @@ def index_enums() -> Dict[str, Dict[str, str]]:
     return index
 
 
-def enumerated_values(field: dict) -> List[str]:
+def enumerated_values(field: dict) -> list[str]:
     """The literals a Bot API string field is documented to accept."""
     if "String" not in field["types"]:
         return []
@@ -268,7 +260,7 @@ def enumerated_values(field: dict) -> List[str]:
     return values if len(values) >= 2 else []
 
 
-def dotted(node: ast.Attribute) -> Optional[List[str]]:
+def dotted(node: ast.Attribute) -> list[str] | None:
     parts = []
 
     while isinstance(node, ast.Attribute):
@@ -283,9 +275,9 @@ def dotted(node: ast.Attribute) -> Optional[List[str]]:
     return list(reversed(parts))
 
 
-def index_types() -> Dict[str, Symbol]:
+def index_types() -> dict[str, Symbol]:
     """Every class under pyrogram/types, keyed by name."""
-    index: Dict[str, Symbol] = {}
+    index: dict[str, Symbol] = {}
 
     for path in sorted(TYPES_DIR.rglob("*.py")):
         tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -294,9 +286,9 @@ def index_types() -> Dict[str, Symbol]:
             if not isinstance(node, ast.ClassDef) or node.name in index:
                 continue
 
-            params: Set[str] = set()
-            properties: Set[str] = set()
-            annotations: Dict[str, str] = {}
+            params: set[str] = set()
+            properties: set[str] = set()
+            annotations: dict[str, str] = {}
 
             for child in node.body:
                 if not isinstance(child, (ast.FunctionDef, ast.AsyncFunctionDef)):
@@ -309,20 +301,25 @@ def index_types() -> Dict[str, Symbol]:
                     properties.add(child.name)
 
             index[node.name] = Symbol(
-                node.name, params, base_names(node), properties,
-                ast.get_docstring(node, clean=False), path, annotations=annotations
+                node.name,
+                params,
+                base_names(node),
+                properties,
+                ast.get_docstring(node, clean=False),
+                path,
+                annotations=annotations,
             )
 
     return index
 
 
-def index_methods() -> Dict[str, Symbol]:
+def index_methods() -> dict[str, Symbol]:
     """Every public high-level client method, keyed by name.
 
     A handful of them (``get_file``, ``save_file``) live on Client itself rather
     than in a category package.
     """
-    index: Dict[str, Symbol] = {}
+    index: dict[str, Symbol] = {}
 
     for path in [*sorted(METHODS_DIR.rglob("*.py")), CLIENT_PATH]:
         tree = ast.parse(path.read_text(encoding="utf-8"))
@@ -335,22 +332,27 @@ def index_methods() -> Dict[str, Symbol]:
                 continue
 
             index[node.name] = Symbol(
-                node.name, signature_params(node), [], set(),
-                ast.get_docstring(node, clean=False), path, raw_calls_in(node),
-                annotations=signature_annotations(node)
+                node.name,
+                signature_params(node),
+                [],
+                set(),
+                ast.get_docstring(node, clean=False),
+                path,
+                raw_calls_in(node),
+                annotations=signature_annotations(node),
             )
 
     return index
 
 
-def tl_functions() -> Dict[str, dict]:
+def tl_functions() -> dict[str, dict]:
     from compiler import parse_tl_functions
 
     return parse_tl_functions(TL_SOURCE)
 
 
 class Finding:
-    __slots__ = ("kind", "entity", "detail")
+    __slots__ = ("detail", "entity", "kind")
 
     def __init__(self, kind: str, entity: str, detail: str):
         self.kind = kind
@@ -374,35 +376,35 @@ class Coverage:
     # ------------------------------------------------------------------ data
 
     @property
-    def types(self) -> Dict[str, Symbol]:
+    def types(self) -> dict[str, Symbol]:
         if self._types is None:
             self._types = index_types()
 
         return self._types
 
     @property
-    def methods(self) -> Dict[str, Symbol]:
+    def methods(self) -> dict[str, Symbol]:
         if self._methods is None:
             self._methods = index_methods()
 
         return self._methods
 
     @property
-    def enums(self) -> Dict[str, Dict[str, str]]:
+    def enums(self) -> dict[str, dict[str, str]]:
         if self._enums is None:
             self._enums = index_enums()
 
         return self._enums
 
     @property
-    def tl(self) -> Dict[str, dict]:
+    def tl(self) -> dict[str, dict]:
         if self._tl is None:
             self._tl = tl_functions()
 
         return self._tl
 
     def _alias(self, section: str, key: str, entity: str, field: str, scope=(), have=()) -> str:
-        """What the field is called on the wzgram side.
+        """What the field is called on the pyrogram side.
 
         A name the target already carries verbatim wins over any alias: the
         global TL table renames `effect` to `effect_id` for send_message, but
@@ -429,7 +431,7 @@ class Coverage:
 
     # ----------------------------------------------------------- resolution
 
-    def wzgram_type(self, name: str) -> Optional[Symbol]:
+    def tobigram_type(self, name: str) -> Symbol | None:
         botapi = self.aliases.get("botapi") or {}
 
         if name in (botapi.get("type_unsupported") or {}):
@@ -439,7 +441,7 @@ class Coverage:
 
         return self.types.get(renamed)
 
-    def wzgram_method(self, name: str) -> Optional[Symbol]:
+    def tobigram_method(self, name: str) -> Symbol | None:
         botapi = self.aliases.get("botapi") or {}
 
         if name in (botapi.get("method_unsupported") or {}):
@@ -449,7 +451,7 @@ class Coverage:
 
         return self.methods.get(renamed or to_snake_case(name))
 
-    def inherited_params(self, symbol: Symbol) -> Set[str]:
+    def inherited_params(self, symbol: Symbol) -> set[str]:
         seen, pending, params = set(), list(symbol.bases), set(symbol.params)
 
         while pending:
@@ -490,14 +492,14 @@ class Coverage:
 
     # ---------------------------------------------------------------- gaps
 
-    def type_gaps(self, name: str) -> Optional[List[str]]:
-        """Bot API fields the wzgram type does not expose. None if unresolvable."""
+    def type_gaps(self, name: str) -> list[str] | None:
+        """Bot API fields the pyrogram type does not expose. None if unresolvable."""
         spec_type = self.spec["types"].get(name)
 
         if spec_type is None:
             return None
 
-        symbol = self.wzgram_type(name)
+        symbol = self.tobigram_type(name)
 
         if symbol is None:
             return None
@@ -518,13 +520,13 @@ class Coverage:
 
         return gaps
 
-    def method_botapi_gaps(self, name: str) -> Optional[List[str]]:
+    def method_botapi_gaps(self, name: str) -> list[str] | None:
         spec_method = self.spec["methods"].get(name)
 
         if spec_method is None:
             return None
 
-        symbol = self.wzgram_method(name)
+        symbol = self.tobigram_method(name)
 
         if symbol is None:
             return None
@@ -545,14 +547,14 @@ class Coverage:
 
         return gaps
 
-    def method_mtproto_gaps(self, name: str) -> Optional[List[str]]:
+    def method_mtproto_gaps(self, name: str) -> list[str] | None:
         """TL parameters the high-level method does not expose.
 
-        Resolution goes through wzgram_method so both axes agree on what counts
+        Resolution goes through tobigram_method so both axes agree on what counts
         as implemented; looking the method up directly would still check one a
         method_unsupported entry has excluded.
         """
-        symbol = self.wzgram_method(name)
+        symbol = self.tobigram_method(name)
 
         if symbol is None:
             return None
@@ -597,10 +599,10 @@ class Coverage:
 
         return gaps
 
-    def type_field_stats(self, name: str) -> Optional[Tuple[int, List[str]]]:
+    def type_field_stats(self, name: str) -> tuple[int, list[str]] | None:
         """(fields considered, fields missing) for a Bot API type."""
         gaps = self.type_gaps(name)
-        symbol = self.wzgram_type(name)
+        symbol = self.tobigram_type(name)
 
         if gaps is None or symbol is None:
             return None
@@ -616,7 +618,7 @@ class Coverage:
 
         return considered, gaps
 
-    def method_field_stats(self, name: str) -> Optional[Tuple[int, List[str]]]:
+    def method_field_stats(self, name: str) -> tuple[int, list[str]] | None:
         gaps = self.method_botapi_gaps(name)
 
         if gaps is None:
@@ -630,13 +632,13 @@ class Coverage:
 
         return considered, gaps
 
-    def implemented(self, kind: str) -> List[str]:
+    def implemented(self, kind: str) -> list[str]:
         entry = self.manifest.get(kind) or {}
 
         return sorted(set(entry.get("supported") or []) | set(entry.get("pending") or {}))
 
-    def required_types(self) -> Set[str]:
-        """Types reachable from the methods wzgram implements.
+    def required_types(self) -> set[str]:
+        """Types reachable from the methods pyrogram implements.
 
         A Bot API type only matters if an implemented method returns it or takes
         it, directly or through another required type. Judging coverage against
@@ -651,7 +653,7 @@ class Coverage:
             for field in spec_method.get("fields") or []:
                 pending.extend(type_names(field["types"]))
 
-        seen: Set[str] = set()
+        seen: set[str] = set()
 
         while pending:
             name = pending.pop()
@@ -669,34 +671,33 @@ class Coverage:
         return seen
 
     def absorbed_by_union(self, name: str) -> bool:
-        """Whether a Bot API union member is folded into a flat wzgram class.
+        """Whether a Bot API union member is folded into a flat pyrogram class.
 
         Bot API splits a union into one type per member and tells them apart with
-        a type string; wzgram keeps a single class and an enum, so ChatMember
+        a type string; pyrogram keeps a single class and an enum, so ChatMember
         covers all six ChatMember* members. Deciding this from the parent rather
         than a hand-written list keeps it right as Bot API adds members.
         """
         spec_type = self.spec["types"].get(name) or {}
 
         return any(
-            self.wzgram_type(parent) is not None
-            for parent in spec_type.get("subtype_of") or []
+            self.tobigram_type(parent) is not None for parent in spec_type.get("subtype_of") or []
         )
 
-    def enum_gaps(self, kind: str, name: str) -> Optional[List[str]]:
-        """Documented values a field accepts that the wzgram enum has no member for.
+    def enum_gaps(self, kind: str, name: str) -> list[str] | None:
+        """Documented values a field accepts that the pyrogram enum has no member for.
 
         The enum is found from the parameter's own annotation, so nothing has to
         be mapped by hand and it keeps up as fields are re-typed.
         """
         if kind == "types":
             spec_entry = self.spec["types"].get(name)
-            symbol = self.wzgram_type(name)
+            symbol = self.tobigram_type(name)
             rename_table = "field_rename"
             unsupported_table = "field_unsupported"
         else:
             spec_entry = self.spec["methods"].get(name)
-            symbol = self.wzgram_method(name)
+            symbol = self.tobigram_method(name)
             rename_table = "method_field_rename"
             unsupported_table = "method_field_unsupported"
 
@@ -704,8 +705,7 @@ class Coverage:
             return None
 
         have = (
-            self.inherited_params(symbol) | symbol.properties
-            if kind == "types" else symbol.params
+            self.inherited_params(symbol) | symbol.properties if kind == "types" else symbol.params
         )
         gaps = []
 
@@ -717,7 +717,7 @@ class Coverage:
 
             target = self._alias("botapi", rename_table, name, field["name"], have=have)
 
-            # an exclusion covers a field wzgram lacks; one that is present is
+            # an exclusion covers a field pyrogram lacks; one that is present is
             # still worth checking, and `type` is excluded globally for the union
             # members that have no such field
             if target not in have and self._unsupported(
@@ -735,10 +735,11 @@ class Coverage:
 
             enum = next(
                 (
-                    member for member in ENUM_REFERENCE_RE.findall(annotation)
+                    member
+                    for member in ENUM_REFERENCE_RE.findall(annotation)
                     if member in self.enums
                 ),
-                None
+                None,
             )
 
             if enum is None:
@@ -780,31 +781,30 @@ class Coverage:
             if gaps is None:
                 continue
 
-            symbol = self.wzgram_method(name)
+            symbol = self.tobigram_method(name)
             tl_considered += len(symbol.params) + len(gaps)
             tl_missing += len(gaps)
 
         enum_considered = enum_missing = 0
 
-        for kind, names in (("types", self.implemented("types")),
-                            ("methods", methods)):
+        for kind, names in (("types", self.implemented("types")), ("methods", methods)):
             for name in names:
-                spec_entry = (
-                    self.spec["types"] if kind == "types" else self.spec["methods"]
-                ).get(name) or {}
+                spec_entry = (self.spec["types"] if kind == "types" else self.spec["methods"]).get(
+                    name
+                ) or {}
                 gaps = self.enum_gaps(kind, name)
 
                 if gaps is None:
                     continue
 
                 enum_considered += sum(
-                    len(enumerated_values(field))
-                    for field in spec_entry.get("fields") or []
+                    len(enumerated_values(field)) for field in spec_entry.get("fields") or []
                 )
                 enum_missing += len(gaps)
 
         required = {
-            name for name in self.required_types()
+            name
+            for name in self.required_types()
             if name not in ((self.aliases.get("botapi") or {}).get("type_unsupported") or {})
             and not self.absorbed_by_union(name)
         }
@@ -824,7 +824,11 @@ class Coverage:
                 "total": len(self.spec["methods"]),
                 "params": (considered - missing, considered),
                 "tl_params": (tl_considered - tl_missing, tl_considered),
-                "incomplete": sum(1 for n in methods if self.method_field_stats(n) and self.method_field_stats(n)[1]),
+                "incomplete": sum(
+                    1
+                    for n in methods
+                    if self.method_field_stats(n) and self.method_field_stats(n)[1]
+                ),
             },
             "enums": {
                 "values": (enum_considered - enum_missing, enum_considered),
@@ -840,7 +844,7 @@ class Coverage:
 
     # --------------------------------------------------------------- checks
 
-    def check_docstrings(self) -> List[Finding]:
+    def check_docstrings(self) -> list[Finding]:
         findings = []
 
         for name in sorted(self.types):
@@ -860,24 +864,29 @@ class Coverage:
             undocumented = have - documented
 
             if undocumented:
-                findings.append(Finding(
-                    "docstring", name,
-                    "in __init__ but missing from the Parameters: block: "
-                    + ", ".join(sorted(undocumented))
-                ))
+                findings.append(
+                    Finding(
+                        "docstring",
+                        name,
+                        "in __init__ but missing from the Parameters: block: "
+                        + ", ".join(sorted(undocumented)),
+                    )
+                )
 
             phantom = documented - exposed
 
             if phantom:
-                findings.append(Finding(
-                    "docstring", name,
-                    "documented but not accepted by __init__: "
-                    + ", ".join(sorted(phantom))
-                ))
+                findings.append(
+                    Finding(
+                        "docstring",
+                        name,
+                        "documented but not accepted by __init__: " + ", ".join(sorted(phantom)),
+                    )
+                )
 
         return findings
 
-    def check_manifest(self) -> List[Finding]:
+    def check_manifest(self) -> list[Finding]:
         findings = []
 
         for kind in ("types", "methods"):
@@ -888,10 +897,13 @@ class Coverage:
             both = set(supported) & set(pending)
 
             if both:
-                findings.append(Finding(
-                    "manifest", kind,
-                    "listed as supported and pending at once: " + ", ".join(sorted(both))
-                ))
+                findings.append(
+                    Finding(
+                        "manifest",
+                        kind,
+                        "listed as supported and pending at once: " + ", ".join(sorted(both)),
+                    )
+                )
 
             for name in supported:
                 findings.extend(self._check_entity(kind, name, recorded=None))
@@ -904,11 +916,14 @@ class Coverage:
                     unknown |= set(recorded) & {"mtproto"}
 
                 if unknown:
-                    findings.append(Finding(
-                        "manifest", f"{kind}/{name}",
-                        "records gaps on an axis that is never checked: "
-                        + ", ".join(sorted(unknown))
-                    ))
+                    findings.append(
+                        Finding(
+                            "manifest",
+                            f"{kind}/{name}",
+                            "records gaps on an axis that is never checked: "
+                            + ", ".join(sorted(unknown)),
+                        )
+                    )
 
                 findings.extend(self._check_entity(kind, name, recorded=recorded))
 
@@ -921,17 +936,20 @@ class Coverage:
         return (
             self.method_botapi_gaps(name),
             self.method_mtproto_gaps(name),
-            self.enum_gaps(kind, name)
+            self.enum_gaps(kind, name),
         )
 
-    def _check_entity(self, kind: str, name: str, recorded: Optional[dict]) -> List[Finding]:
+    def _check_entity(self, kind: str, name: str, recorded: dict | None) -> list[Finding]:
         botapi, mtproto, enums_ = self._gaps_for(kind, name)
 
         if botapi is None and mtproto is None and enums_ is None:
-            return [Finding(
-                "manifest", f"{kind}/{name}",
-                "cannot be resolved; remove it from the manifest or add an alias"
-            )]
+            return [
+                Finding(
+                    "manifest",
+                    f"{kind}/{name}",
+                    "cannot be resolved; remove it from the manifest or add an alias",
+                )
+            ]
 
         findings = []
 
@@ -941,10 +959,13 @@ class Coverage:
 
             if recorded is None:
                 if gaps:
-                    findings.append(Finding(
-                        axis, f"{kind}/{name}",
-                        "supported but missing " + ", ".join(sorted(gaps))
-                    ))
+                    findings.append(
+                        Finding(
+                            axis,
+                            f"{kind}/{name}",
+                            "supported but missing " + ", ".join(sorted(gaps)),
+                        )
+                    )
 
                 continue
 
@@ -952,29 +973,36 @@ class Coverage:
             new = set(gaps) - known
 
             if new:
-                findings.append(Finding(
-                    axis, f"{kind}/{name}",
-                    "new gap since the manifest was recorded: " + ", ".join(sorted(new))
-                ))
+                findings.append(
+                    Finding(
+                        axis,
+                        f"{kind}/{name}",
+                        "new gap since the manifest was recorded: " + ", ".join(sorted(new)),
+                    )
+                )
 
             stale = known - set(gaps)
 
             if stale:
-                findings.append(Finding(
-                    axis, f"{kind}/{name}",
-                    "recorded gap no longer missing, update the manifest: "
-                    + ", ".join(sorted(stale))
-                ))
+                findings.append(
+                    Finding(
+                        axis,
+                        f"{kind}/{name}",
+                        "recorded gap no longer missing, update the manifest: "
+                        + ", ".join(sorted(stale)),
+                    )
+                )
 
         if recorded is not None and not any(
             recorded.get(a) for a in ("botapi", "mtproto", "enums")
         ):
-            findings.append(Finding(
-                "manifest", f"{kind}/{name}",
-                "has no remaining gaps; promote it to supported"
-            ))
+            findings.append(
+                Finding(
+                    "manifest", f"{kind}/{name}", "has no remaining gaps; promote it to supported"
+                )
+            )
 
         return findings
 
-    def check(self) -> List[Finding]:
+    def check(self) -> list[Finding]:
         return self.check_manifest() + self.check_docstrings()

@@ -16,16 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Callable
+from __future__ import annotations
+
+from collections.abc import Callable
 
 import pyrogram
 
 
 class OnRawUpdate:
-    def on_raw_update(
-        self=None,
-        group: int = 0
-    ) -> Callable:
+    def on_raw_update(self=None, group: int = 0) -> Callable:
         """Decorator for handling raw updates.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -46,12 +45,7 @@ class OnRawUpdate:
                 if not hasattr(func, "handlers"):
                     func.handlers = []
 
-                func.handlers.append(
-                    (
-                        pyrogram.handlers.RawUpdateHandler(func),
-                        group
-                    )
-                )
+                func.handlers.append((pyrogram.handlers.RawUpdateHandler(func), group))
 
             return func
 

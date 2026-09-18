@@ -21,7 +21,8 @@
 # Source: tl:account.updateBusinessIntro
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -29,8 +30,8 @@ from pyrogram import raw
 
 class UpdateBusinessIntro:
     async def update_business_intro(
-        self: "pyrogram.Client",
-        intro: Optional[raw.types.InputBusinessIntro] = None,
+        self: pyrogram.Client,
+        intro: raw.types.InputBusinessIntro | None = None,
     ) -> bool:
         """Update your business intro (title, description, sticker).
 

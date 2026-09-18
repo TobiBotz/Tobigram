@@ -16,24 +16,23 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import io
 import os
 import re
-from typing import Optional, Tuple, Union
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
 from pyrogram.file_id import FileType
 
 
 async def resolve_input_media(
-    client: "pyrogram.Client",
-    chat_id: Union[int, str],
-    media: "types.InputMedia",
-    file_name: Optional[str] = None
-) -> Tuple["raw.base.InputMedia", Optional[str], Optional[list]]:
+    client: pyrogram.Client,
+    chat_id: int | str,
+    media: types.InputMedia,
+    file_name: str | None = None,
+) -> tuple[raw.base.InputMedia, str | None, list | None]:
     """The InputMedia an edit sends, uploading it first if it is a local file.
 
     edit_message_media and edit_ephemeral_message_media differ only in the RPC they
@@ -54,9 +53,8 @@ async def resolve_input_media(
                 raw.functions.messages.UploadMedia(
                     peer=await client.resolve_peer(chat_id),
                     media=raw.types.InputMediaUploadedPhoto(
-                        file=await client.save_file(media.media),
-                        spoiler=media.has_spoiler
-                    )
+                        file=await client.save_file(media.media), spoiler=media.has_spoiler
+                    ),
                 )
             )
 
@@ -64,15 +62,12 @@ async def resolve_input_media(
                 id=raw.types.InputPhoto(
                     id=uploaded_media.photo.id,
                     access_hash=uploaded_media.photo.access_hash,
-                    file_reference=uploaded_media.photo.file_reference
+                    file_reference=uploaded_media.photo.file_reference,
                 ),
-                spoiler=media.has_spoiler
+                spoiler=media.has_spoiler,
             )
         elif re.match("^https?://", media.media):
-            media = raw.types.InputMediaPhotoExternal(
-                url=media.media,
-                spoiler=media.has_spoiler
-            )
+            media = raw.types.InputMediaPhotoExternal(url=media.media, spoiler=media.has_spoiler)
         else:
             media = utils.get_input_media_from_file_id(media.media, FileType.PHOTO)
     elif isinstance(media, types.InputMediaVideo):
@@ -87,27 +82,27 @@ async def resolve_input_media(
                             peer=await client.resolve_peer(chat_id),
                             media=raw.types.InputMediaUploadedPhoto(
                                 file=await client.save_file(media.video_cover)
-                            )
+                            ),
                         )
                     )
                 elif re.match("^https?://", media.video_cover):
                     vcover_media = await client.invoke(
                         raw.functions.messages.UploadMedia(
                             peer=await client.resolve_peer(chat_id),
-                            media=raw.types.InputMediaPhotoExternal(
-                                url=media.video_cover
-                            )
+                            media=raw.types.InputMediaPhotoExternal(url=media.video_cover),
                         )
                     )
                 else:
-                    vcover_file = utils.get_input_media_from_file_id(media.video_cover, FileType.PHOTO).id
+                    vcover_file = utils.get_input_media_from_file_id(
+                        media.video_cover, FileType.PHOTO
+                    ).id
             else:
                 vcover_media = await client.invoke(
                     raw.functions.messages.UploadMedia(
                         peer=await client.resolve_peer(chat_id),
                         media=raw.types.InputMediaUploadedPhoto(
                             file=await client.save_file(media.video_cover)
-                        )
+                        ),
                     )
                 )
 
@@ -115,7 +110,7 @@ async def resolve_input_media(
                 vcover_file = raw.types.InputPhoto(
                     id=vcover_media.photo.id,
                     access_hash=vcover_media.photo.access_hash,
-                    file_reference=vcover_media.photo.file_reference
+                    file_reference=vcover_media.photo.file_reference,
                 )
 
         if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
@@ -134,7 +129,7 @@ async def resolve_input_media(
                                 supports_streaming=media.supports_streaming or None,
                                 duration=media.duration,
                                 w=media.width,
-                                h=media.height
+                                h=media.height,
                             ),
                             raw.types.DocumentAttributeFilename(
                                 file_name=utils.get_file_name(
@@ -142,9 +137,9 @@ async def resolve_input_media(
                                     file_name=file_name or media.file_name,
                                     fallback="video.mp4",
                                 )
-                            )
-                        ]
-                    )
+                            ),
+                        ],
+                    ),
                 )
             )
 
@@ -152,24 +147,25 @@ async def resolve_input_media(
                 id=raw.types.InputDocument(
                     id=uploaded_media.document.id,
                     access_hash=uploaded_media.document.access_hash,
-                    file_reference=uploaded_media.document.file_reference
+                    file_reference=uploaded_media.document.file_reference,
                 ),
                 spoiler=media.has_spoiler,
                 video_cover=vcover_file,
-                video_timestamp=media.video_start_timestamp
+                video_timestamp=media.video_start_timestamp,
             )
         elif re.match("^https?://", media.media):
             media = raw.types.InputMediaDocumentExternal(
                 url=media.media,
                 spoiler=media.has_spoiler,
                 video_cover=vcover_file,
-                video_timestamp=media.video_start_timestamp
+                video_timestamp=media.video_start_timestamp,
             )
         else:
             media = utils.get_input_media_from_file_id(
-                media.media, FileType.VIDEO,
+                media.media,
+                FileType.VIDEO,
                 video_cover=vcover_file,
-                video_start_timestamp=media.video_start_timestamp
+                video_start_timestamp=media.video_start_timestamp,
             )
     elif isinstance(media, types.InputMediaAudio):
         if isinstance(media.media, io.BytesIO) or os.path.isfile(media.media):
@@ -184,7 +180,7 @@ async def resolve_input_media(
                             raw.types.DocumentAttributeAudio(
                                 duration=media.duration,
                                 performer=media.performer,
-                                title=media.title
+                                title=media.title,
                             ),
                             raw.types.DocumentAttributeFilename(
                                 file_name=utils.get_file_name(
@@ -192,9 +188,9 @@ async def resolve_input_media(
                                     file_name=file_name or media.file_name,
                                     fallback="audio.mp3",
                                 )
-                            )
-                        ]
-                    )
+                            ),
+                        ],
+                    ),
                 )
             )
 
@@ -202,13 +198,11 @@ async def resolve_input_media(
                 id=raw.types.InputDocument(
                     id=media.document.id,
                     access_hash=media.document.access_hash,
-                    file_reference=media.document.file_reference
+                    file_reference=media.document.file_reference,
                 )
             )
         elif re.match("^https?://", media.media):
-            media = raw.types.InputMediaDocumentExternal(
-                url=media.media
-            )
+            media = raw.types.InputMediaDocumentExternal(url=media.media)
         else:
             media = utils.get_input_media_from_file_id(media.media, FileType.AUDIO)
     elif isinstance(media, types.InputMediaAnimation):
@@ -226,7 +220,7 @@ async def resolve_input_media(
                                 supports_streaming=True,
                                 duration=media.duration,
                                 w=media.width,
-                                h=media.height
+                                h=media.height,
                             ),
                             raw.types.DocumentAttributeFilename(
                                 file_name=utils.get_file_name(
@@ -235,9 +229,9 @@ async def resolve_input_media(
                                     fallback="animation.mp4",
                                 )
                             ),
-                            raw.types.DocumentAttributeAnimated()
-                        ]
-                    )
+                            raw.types.DocumentAttributeAnimated(),
+                        ],
+                    ),
                 )
             )
 
@@ -245,15 +239,12 @@ async def resolve_input_media(
                 id=raw.types.InputDocument(
                     id=uploaded_media.document.id,
                     access_hash=uploaded_media.document.access_hash,
-                    file_reference=uploaded_media.document.file_reference
+                    file_reference=uploaded_media.document.file_reference,
                 ),
-                spoiler=media.has_spoiler
+                spoiler=media.has_spoiler,
             )
         elif re.match("^https?://", media.media):
-            media = raw.types.InputMediaDocumentExternal(
-                url=media.media,
-                spoiler=media.has_spoiler
-            )
+            media = raw.types.InputMediaDocumentExternal(url=media.media, spoiler=media.has_spoiler)
         else:
             media = utils.get_input_media_from_file_id(media.media, FileType.ANIMATION)
     elif isinstance(media, types.InputMediaDocument):
@@ -273,8 +264,8 @@ async def resolve_input_media(
                                     fallback="file.zip",
                                 )
                             )
-                        ]
-                    )
+                        ],
+                    ),
                 )
             )
 
@@ -282,30 +273,27 @@ async def resolve_input_media(
                 id=raw.types.InputDocument(
                     id=media.document.id,
                     access_hash=media.document.access_hash,
-                    file_reference=media.document.file_reference
+                    file_reference=media.document.file_reference,
                 )
             )
         elif re.match("^https?://", media.media):
-            media = raw.types.InputMediaDocumentExternal(
-                url=media.media
-            )
+            media = raw.types.InputMediaDocumentExternal(url=media.media)
         else:
             media = utils.get_input_media_from_file_id(media.media, FileType.DOCUMENT)
 
     return media, message, entities
 
 
-
 class EditMessageMedia:
     async def edit_message_media(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         message_id: int,
-        media: "types.InputMedia",
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        file_name: Optional[str] = None,
-        business_connection_id: Optional[str] = None,
-    ) -> "types.Message":
+        media: types.InputMedia,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        file_name: str | None = None,
+        business_connection_id: str | None = None,
+    ) -> types.Message:
         """Edit animation, audio, document, photo or video messages.
 
         If a message is a part of a message album, then it can be edited only to a photo or a video. Otherwise, the
@@ -341,7 +329,7 @@ class EditMessageMedia:
         Example:
             .. code-block:: python
 
-                from wzgram.types import InputMediaPhoto, InputMediaVideo, InputMediaAudio
+                from pyrogram.types import InputMediaPhoto, InputMediaVideo, InputMediaAudio
 
                 # Replace the current media with a local photo
                 await app.edit_message_media(chat_id, message_id,
@@ -364,16 +352,21 @@ class EditMessageMedia:
                 media=media,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 message=message,
-                entities=entities
+                entities=entities,
             ),
             sleep_threshold=60,
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateEditMessage, raw.types.UpdateEditChannelMessage, raw.types.UpdateEditEphemeralMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateEditMessage,
+                    raw.types.UpdateEditChannelMessage,
+                    raw.types.UpdateEditEphemeralMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
-                    {i.id: i for i in r.users},
-                    {i.id: i for i in r.chats}
+                    self, i.message, {i.id: i for i in r.users}, {i.id: i for i in r.chats}
                 )

@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Read the documentation
-    url: https://wzgram.com
+    url: https://pyrogram.com
     about: Guides, the full API reference and the Pyrogram migration notes live here.
-  - name: Ask wzgram related questions
-    url: https://t.me/WzGram_Chat
-    about: This place is only for reporting issues about wzgram. Questions and discussion go to the Telegram group.
+  - name: Ask pyrogram related questions
+    url: https://t.me/TobigramChat
+    about: This place is only for reporting issues about pyrogram. Questions and discussion go to the Telegram group.
   - name: Join the Telegram channel
-    url: https://t.me/wzgram_updates
+    url: https://t.me/TobigramNews
     about: Follow the channel for news, releases and announcements.

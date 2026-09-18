@@ -16,9 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+
+from __future__ import annotations
 
 from pyrogram import raw
+
 from ..object import Object
 
 
@@ -35,22 +37,22 @@ class FailedToAddMember(Object):
         premium_required_to_send_messages (``bool``, *optional*):
             True, if subscription to Telegram Premium is required to send the user chat invite link.
     """
+
     def __init__(
         self,
         *,
         user_id: int,
-        premium_would_allow_invite: Optional[bool] = None,
-        premium_required_to_send_messages: Optional[bool] = None,
+        premium_would_allow_invite: bool | None = None,
+        premium_required_to_send_messages: bool | None = None,
     ):
         self.user_id = user_id
         self.premium_would_allow_invite = premium_would_allow_invite
         self.premium_required_to_send_messages = premium_required_to_send_messages
 
     @staticmethod
-    def _parse(missing_invite: "raw.types.MissingInvitee") -> "FailedToAddMember":
+    def _parse(missing_invite: raw.types.MissingInvitee) -> FailedToAddMember:
         return FailedToAddMember(
             user_id=missing_invite.user_id,
             premium_would_allow_invite=missing_invite.premium_would_allow_invite,
-            premium_required_to_send_messages=missing_invite.premium_required_for_pm
+            premium_required_to_send_messages=missing_invite.premium_required_for_pm,
         )
-

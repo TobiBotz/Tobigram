@@ -16,18 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
 
 
 class SetChatTitle:
-    async def set_chat_title(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        title: str
-    ) -> bool:
+    async def set_chat_title(self: pyrogram.Client, chat_id: int | str, title: str) -> bool:
         """Change the title of a chat.
         Titles can't be changed for private chats.
         You must be an administrator in the chat for this to work and must have the appropriate admin rights.
@@ -60,17 +57,11 @@ class SetChatTitle:
 
         if isinstance(peer, raw.types.InputPeerChat):
             await self.invoke(
-                raw.functions.messages.EditChatTitle(
-                    chat_id=peer.chat_id,
-                    title=title
-                )
+                raw.functions.messages.EditChatTitle(chat_id=peer.chat_id, title=title)
             )
-        elif isinstance(peer, raw.types.InputPeerChannel):
+        elif isinstance(peer, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)):
             await self.invoke(
-                raw.functions.channels.EditTitle(
-                    channel=peer,
-                    title=title
-                )
+                raw.functions.channels.EditTitle(channel=utils.get_input_channel(peer), title=title)
             )
         else:
             raise ValueError(f'The chat_id "{chat_id}" belongs to a user')

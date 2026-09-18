@@ -16,22 +16,22 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Union
 
 import pyrogram
-from pyrogram import raw, utils
-from pyrogram import types
+from pyrogram import raw, types, utils
 
 
 class RestrictChatMember:
     async def restrict_chat_member(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        user_id: Union[int, str],
-        permissions: "types.ChatPermissions",
-        until_date: datetime = utils.zero_datetime()
-    ) -> "types.Chat":
+        self: pyrogram.Client,
+        chat_id: int | str,
+        user_id: int | str,
+        permissions: types.ChatPermissions,
+        until_date: datetime = utils.zero_datetime(),
+    ) -> types.Chat:
         """Restrict a user in a supergroup.
 
         You must be an administrator in the supergroup for this to work and must have the appropriate admin rights.
@@ -62,7 +62,7 @@ class RestrictChatMember:
             .. code-block:: python
 
                 from datetime import datetime, timedelta
-                from wzgram.types import ChatPermissions
+                from pyrogram.types import ChatPermissions
 
                 # Completely restrict chat member (mute) forever
                 await app.restrict_chat_member(chat_id, user_id, ChatPermissions())
@@ -79,7 +79,7 @@ class RestrictChatMember:
             raw.functions.channels.EditBanned(
                 channel=await self.resolve_peer(chat_id),
                 participant=await self.resolve_peer(user_id),
-                banned_rights=permissions.write(until_date)
+                banned_rights=permissions.write(until_date),
             )
         )
 

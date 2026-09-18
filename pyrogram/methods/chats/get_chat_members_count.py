@@ -16,17 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
 
 
 class GetChatMembersCount:
-    async def get_chat_members_count(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str]
-    ) -> int:
+    async def get_chat_members_count(self: pyrogram.Client, chat_id: int | str) -> int:
         """Get the number of members in a chat.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -50,18 +48,12 @@ class GetChatMembersCount:
         peer = await self.resolve_peer(chat_id)
 
         if isinstance(peer, raw.types.InputPeerChat):
-            r = await self.invoke(
-                raw.functions.messages.GetChats(
-                    id=[peer.chat_id]
-                )
-            )
+            r = await self.invoke(raw.functions.messages.GetChats(id=[peer.chat_id]))
 
             return r.chats[0].participants_count
-        elif isinstance(peer, raw.types.InputPeerChannel):
+        elif isinstance(peer, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)):
             r = await self.invoke(
-                raw.functions.channels.GetFullChannel(
-                    channel=peer
-                )
+                raw.functions.channels.GetFullChannel(channel=utils.get_input_channel(peer))
             )
 
             return r.full_chat.participants_count

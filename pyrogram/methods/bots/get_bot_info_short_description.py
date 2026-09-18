@@ -9,25 +9,26 @@
 #  (at your option) any later version.
 #
 #  Pyrogram is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  WITHOUT ANY WARRANTY; without even the implied warranty of
 #  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #  GNU Lesser General Public License for more details.
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, types
 
 
 class GetBotInfoShortDescription:
     async def get_bot_info_short_description(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         language_code: str = "",
-        for_my_bot: Optional[Union[int, str]] = None,
-    ) -> str:
+        for_my_bot: int | str | None = None,
+    ) -> types.BotShortDescription:
         """Use this method to get the current / owned bot short description for the given user language.
 
         .. note::
@@ -45,20 +46,20 @@ class GetBotInfoShortDescription:
                 The bot should have ``can_be_edited`` property set to True.
 
         Returns:
-            ``str``: On success, returns the text shown on a bot's profile page and sent together with the link when users share the bot in the given language.
+            :obj:`~pyrogram.types.BotShortDescription`: On success, returns the text shown on a bot's profile page and sent together with the link when users share the bot in the given language.
 
         Example:
             .. code-block:: python
 
                 bot_short_description = await app.get_bot_info_short_description()
+                print(bot_short_description.short_description)
         """
 
         bot_info = await self.invoke(
             raw.functions.bots.GetBotInfo(
                 bot=await self.resolve_peer(for_my_bot) if for_my_bot is not None else None,
-                lang_code=language_code
+                lang_code=language_code,
             )
         )
-        
-        return bot_info.about
 
+        return types.BotShortDescription.read(bot_info)

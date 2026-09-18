@@ -16,15 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import raw, types
 
 
 class GetUpgradedGiftValueInfo:
     async def get_upgraded_gift_value_info(
-        self: "pyrogram.Client",
-        link: str
-    ) -> "types.UpgradedGiftValueInfo":
+        self: pyrogram.Client, link: str
+    ) -> types.UpgradedGiftValueInfo:
         """Returns information about value of an upgraded gift by its name.
 
         .. include:: /_includes/usable-by/users.rst
@@ -55,10 +56,7 @@ class GetUpgradedGiftValueInfo:
             raise ValueError("Invalid gift link")
 
         r = await self.invoke(
-            raw.functions.payments.GetUniqueStarGiftValueInfo(
-                slug=slug.replace(" ", "")
-            )
+            raw.functions.payments.GetUniqueStarGiftValueInfo(slug=slug.replace(" ", ""))
         )
 
         return types.UpgradedGiftValueInfo._parse(r)
-

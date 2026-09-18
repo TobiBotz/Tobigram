@@ -16,7 +16,6 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
 
 import pyrogram
 from pyrogram import raw
@@ -27,10 +26,10 @@ class SetBotName:
         self: "pyrogram.Client",
         name: str,
         language_code: str = "",
-        for_my_bot: Optional[Union[int, str]] = None,
+        for_my_bot: int | str | None = None,
     ) -> bool:
         """Use this method to get the current / owned bot name for the given user language.
-        
+
         .. note::
 
             If the current account is an User, can be called only if the ``for_my_bot`` has ``can_be_edited`` property set to True.
@@ -61,7 +60,6 @@ class SetBotName:
             raw.functions.bots.SetBotInfo(
                 bot=await self.resolve_peer(for_my_bot) if for_my_bot is not None else None,
                 lang_code=language_code,
-                name=name
+                name=name,
             )
         )
-

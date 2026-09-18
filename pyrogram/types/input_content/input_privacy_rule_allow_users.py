@@ -16,11 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import asyncio
-from typing import Union, Iterable
+from collections.abc import Iterable
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
+
 from .input_privacy_rule import InputPrivacyRule
 
 
@@ -34,15 +37,16 @@ class InputPrivacyRuleAllowUsers(InputPrivacyRule):
 
     def __init__(
         self,
-        chat_ids: Union[int, str, Iterable[Union[int, str]]],
+        chat_ids: int | str | Iterable[int | str],
     ):
         super().__init__()
 
         self.chat_ids = chat_ids
 
-    async def write(self, client: "pyrogram.Client"):
-        users = list(self.chat_ids) if not isinstance(self.chat_ids, (int, str)) else [self.chat_ids]
+    async def write(self, client: pyrogram.Client):
+        users = (
+            list(self.chat_ids) if not isinstance(self.chat_ids, (int, str)) else [self.chat_ids]
+        )
         users = await asyncio.gather(*[client.resolve_peer(i) for i in users])
 
-        return raw.types.InputPrivacyValueAllowUsers(users=users)
-
+        return raw.types.InputPrivacyValueAllowUsers(users=[utils.get_input_user(i) for i in users])

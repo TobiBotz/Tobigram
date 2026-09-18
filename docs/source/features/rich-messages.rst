@@ -22,7 +22,7 @@ differently, which is the one thing worth understanding before you start.
 
 .. code-block:: python
 
-    from wzgram.types import InputRichMessage
+    from pyrogram.types import InputRichMessage
 
     await app.send_rich_message(
         chat_id="me",
@@ -35,7 +35,7 @@ differently, which is the one thing worth understanding before you start.
 
 .. code-block:: python
 
-    from wzgram.types import (
+    from pyrogram.types import (
         InputRichMessage,
         InputRichBlockSectionHeading,
         InputRichBlockParagraph,
@@ -57,7 +57,7 @@ differently, which is the one thing worth understanding before you start.
                 ],
                 ordered=False,
             ),
-            InputRichBlockPreformatted(text="pip install -U wzgram", language="bash"),
+            InputRichBlockPreformatted(text="pip install -U tobigram", language="bash"),
         ]),
     )
 
@@ -110,7 +110,7 @@ refers to it with a ``tg://`` link:
 
 .. code-block:: python
 
-    from wzgram.types import InputRichMessage, InputRichMessageMedia
+    from pyrogram.types import InputRichMessage, InputRichMessageMedia
 
     await app.send_rich_message(
         chat_id="me",
@@ -151,8 +151,8 @@ button does — ``url``, ``callback_data``, ``web_app``, ``login_url``, the
 
 .. code-block:: python
 
-    from wzgram import enums
-    from wzgram.types import InputRichBlockButtons, RichMessageButton
+    from pyrogram import enums
+    from pyrogram.types import InputRichBlockButtons, RichMessageButton
 
     InputRichBlockButtons(
         buttons=[
@@ -263,5 +263,5 @@ Gotchas
 - With ``blocks``, a block's ``photo_id`` is the *file's own* id, not a position in the
   vector. Copying an id from one message's media to another's will not resolve.
 - The three constructors are not interchangeable at the protocol level even though one
-  wzgram type covers them. Media attached in the block shape is ignored by the html shape
+  pyrogram type covers them. Media attached in the block shape is ignored by the html shape
   and the other way round.

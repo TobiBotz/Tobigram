@@ -3,15 +3,14 @@ requires = ["hatchling", "pyyaml", "jinja2"]
 build-backend = "hatchling.build"
 
 [project]
-name = "wzgram"
+name = "tobigram"
 dynamic = ["version"]
 description = "Elegant, modern and asynchronous Telegram MTProto API framework in Python for users and bots"
 readme = "README.md"
 requires-python = ">=3.10"
 authors = [{ name = "Dan", email = "dan@pyrogram.org" }]
 maintainers = [
-    { name = "rjriajul" },
-    { name = "SilentDemonSD" },
+    { name = "TobiBotz" },
 ]
 classifiers = [
     "Development Status :: 5 - Production/Stable",
@@ -36,7 +35,14 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
 ]
-dependencies = ["pysocks>=1.7.1", "warpcrypto>=2.0.7", "aiosqlite>=0.20.0"]
+dependencies = [
+    "warpcrypto>=2.0.7",
+    "aiosqlite>=0.20.0",
+    "python-socks>=3.1.1",
+    "orjson>=3.12.0",
+    "qrcode>=7.0",
+    "async-timeout>=4.0.3",
+]
 license = "LGPL-3.0-or-later"
 license-files = ["COPYING", "COPYING.lesser"]
 keywords = [
@@ -51,10 +57,10 @@ keywords = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/rjriajul/wzgram"
-Documentation = "https://wzgram.com"
-Source = "https://github.com/rjriajul/wzgram"
-Issues = "https://github.com/rjriajul/wzgram/issues"
+Homepage = "https://github.com/TobiBotz/Tobigram"
+Documentation = "https://docs.tobigram.com"
+Source = "https://github.com/TobiBotz/Tobigram"
+Issues = "https://github.com/TobiBotz/Tobigram/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -105,15 +111,22 @@ exclude = [
 
 [tool.hatch.build.targets.wheel]
 ignore-vcs = true
-packages = ["pyrogram", "wzgram"]
+packages = ["pyrogram"]
 
 [tool.poe.tasks]
 test = "pytest --no-header -q"
+test-fast = "pytest -n auto --no-header -q"
+lint = "ruff check"
+lint-fix = "ruff check --fix"
+fmt = "ruff format"
 venv = "uv sync --frozen"
 venv-dev = "uv sync --frozen --extra dev"
 api = { shell = "uv run python3 compiler/api/compiler.py && uv run python3 compiler/errors/compiler.py && uv run python3 compiler/methods/compiler.py" }
+api-refresh = "uv run --extra botapi python3 compiler/api/refresh.py"
 botapi = "uv run python3 compiler/botapi/compiler.py"
 botapi-refresh = "uv run --extra botapi python3 compiler/botapi/refresh.py"
+errors = "uv run python3 compiler/errors/compiler.py"
+errors-refresh = "uv run python3 compiler/errors/refresh.py"
 docs = { shell = "uv run python3 compiler/docs/compiler.py && uv run sphinx-build -b dirhtml docs/source docs/build -j auto" }
 docs-archive = { shell = "cd docs/build && zip -r docs.zip html/" }
 build = "uv build"
@@ -122,13 +135,16 @@ tag = { shell = "git tag v$(uv run python3 -c 'from pyrogram import __version__;
 dtag = { shell = "git tag -d v$(uv run python3 -c 'from pyrogram import __version__; print(__version__)') && git push origin -d --tags" }
 
 [tool.poe.tasks.clean]
-sequence = ["clean-venv", "clean-build", "clean-api", "clean-docs"]
+sequence = ["clean-venv", "clean-build", "clean-cache", "clean-api", "clean-docs"]
 
 [tool.poe.tasks.clean-venv]
 shell = "rm -rf .venv"
 
 [tool.poe.tasks.clean-build]
 shell = "rm -rf dist *.egg-info build"
+
+[tool.poe.tasks.clean-cache]
+shell = "python -c \"import pathlib, shutil; [shutil.rmtree(p, ignore_errors=True) for p in pathlib.Path('.').rglob('__pycache__')]; [p.unlink(missing_ok=True) for p in pathlib.Path('.').rglob('*.py[co]')]; print('Bytecode and __pycache__ cleaned')\""
 
 [tool.poe.tasks.clean-api]
 shell = "rm -rf pyrogram/errors/exceptions pyrogram/raw/all.py pyrogram/raw/base pyrogram/raw/functions pyrogram/raw/types"
@@ -140,3 +156,57 @@ shell = "rm -rf docs/build docs/source/api/bound-methods docs/source/api/methods
 asyncio_mode = "auto"
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+
+[dependency-groups]
+dev = [
+    "pytest-xdist>=3.8.0",
+    "ruff>=0.9.0",
+]
+
+[tool.ruff]
+line-length = 100
+
+# Compiler-generated paths that should not be linted
+extend-exclude = [
+    "pyrogram/raw/base",
+    "pyrogram/raw/functions",
+    "pyrogram/raw/types",
+    "pyrogram/raw/all.py",
+    "pyrogram/errors/exceptions",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.ruff.lint]
+select = [
+    "C4",     # Flake8-comprehensions (clean dict/list/set literals)
+    "E9",     # Syntax errors and unparseable files
+    "EXE",    # Executable permissions vs shebang mismatch
+    "F",      # Pyflakes (undefined variables, unused imports/variables)
+    "ICN",    # Import conventions
+    "INT",    # Gettext formatting errors
+    "ISC",    # Flake8-implicit-str-concat
+    "LOG",    # Flake8-logging (stdlib logging misuse)
+    "PIE",    # Flake8-pie (stray pass, duplicate keys)
+    "PLE",    # Pylint errors (real logic/runtime bugs)
+    "RSE",    # Raise statement formatting
+    "RUF013", # PEP 484 implicit Optional checks
+    "SLOT",   # Flake8-slots (immutable subclasses missing __slots__)
+    "T10",    # Debugger statements (breakpoint(), pdb)
+    "UP",     # Pyupgrade (modern Python 3.10+ syntax)
+    "W",      # Pycodestyle warnings
+    "YTT",    # Python version check bugs (Python 3.10+)
+]
+ignore = [
+    "W291",   # Trailing whitespace
+    "W292",   # Missing newline at end of file
+    "W293",   # Blank line contains whitespace
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Package __init__.py files re-export symbols without __all__
+"__init__.py" = ["F401", "F403"]
+# Test suites often declare fixtures, mocks, or re-exports
+"tests/*" = ["F401", "F403", "F841"]
+"compiler/docs/*" = ["C408"]

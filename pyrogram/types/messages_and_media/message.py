@@ -16,11 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import contextlib
 import logging
+from collections.abc import AsyncGenerator, Callable
 from datetime import datetime
 from functools import partial
-from typing import BinaryIO, Callable, Dict, List, Match, Optional, Union
+from itertools import groupby
+from re import Match
+from typing import BinaryIO, SupportsIndex
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
@@ -32,8 +37,7 @@ from pyrogram.errors import (
     MessageIdsEmpty,
     PeerIdInvalid,
 )
-from pyrogram.parser import Parser
-from pyrogram.parser import utils as parser_utils
+from pyrogram.parser import Parser, utils as parser_utils
 
 from ..listeners.listener import UNSET
 from ..object import Object
@@ -43,10 +47,22 @@ log = logging.getLogger(__name__)
 
 
 class Str(str):
+    """A message text or caption, indexed the way Telegram counts it.
+
+    Entity offsets and lengths are counted in UTF-16 units, so indexing and slicing count
+    them too: ``text[entity.offset:entity.offset + entity.length]`` is that entity's text.
+    An emoji, and any other code point outside the Basic Multilingual Plane, takes two of
+    those units, and a cut falling between them widens outward to the whole code point, so
+    a slice can come back one code point longer at either end than it asked for. Half a
+    code point is never returned.
+    """
+
+    __slots__ = ("entities",)
+
     def __init__(self, *args):
         super().__init__()
 
-        self.entities: Optional[List["types.MessageEntity"]] = None
+        self.entities: list[types.MessageEntity] | None = None
 
     def init(self, entities: list):
         self.entities = entities
@@ -61,11 +77,32 @@ class Str(str):
     def html(self) -> str:
         return Parser.unparse(self, self.entities, True)
 
-    def __getitem__(self, item) -> str:
-        return parser_utils.remove_surrogates(parser_utils.add_surrogates(self)[item])
+    def __getitem__(self, item: SupportsIndex | slice) -> str:
+        text = str(self)
+
+        if not parser_utils.SMP_RE.search(text):
+            return text[item]
+
+        # Telegram counts offsets in UTF-16 units, where a code point above `0xFFFF` takes
+        #  two, so "🔥 250" is 6 offsets long over 5 characters. This table says which
+        #  character each offset lands in: [0, 0, 1, 2, 3, 4]. The emoji owns offsets 0 and
+        #  1, so an index or a cut between the two still names the whole emoji.
+        character_index_at_offset: list[int] = []
+        for character_index, character in enumerate(text):
+            utf_16_units = 2 if ord(character) > 0xFFFF else 1
+            character_index_at_offset += [character_index] * utf_16_units
+
+        if not isinstance(item, slice):
+            return text[character_index_at_offset[item]]
+
+        # A slice spanning both offsets of the emoji names its character twice, and
+        #  `groupby` drops the repeat.
+        selected = character_index_at_offset[item]
+
+        return "".join(text[character_index] for character_index, _ in groupby(selected))
 
 
-def _parse_reply_markup(reply_markup: "raw.base.ReplyMarkup"):
+def _parse_reply_markup(reply_markup: raw.base.ReplyMarkup):
     if isinstance(reply_markup, raw.types.ReplyKeyboardForceReply):
         return types.ForceReply.read(reply_markup)
 
@@ -196,6 +233,9 @@ class Message(Object, Update):
             The message is a media message.
             This field will contain the enumeration type of the media message.
             You can use ``media = getattr(message, message.media.value)`` to access the media message.
+
+        media_content (:obj:`~pyrogram.types.MessageContent`, *optional*):
+            Structured container for attached message media (photos, videos, documents, etc.).
 
         paid_media (:obj:`~pyrogram.types.PaidMediaInfo`, *optional*):
             The message is a paid media message.
@@ -662,189 +702,192 @@ class Message(Object, Update):
         from_scheduled (``bool``, *optional*):
             True, if the message was sent by a scheduled message that has now fired.
     """
-    # TODO: Migrate media-related params into a MessageContent class (breaking change)
+
+    # Note: Media parameters are accessible directly on Message (for backward compatibility)
+    # and structured within Message.content (MessageContent).
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
+        client: pyrogram.Client | None = None,
         id: int,
-        from_user: Optional["types.User"] = None,
-        sender_chat: Optional["types.Chat"] = None,
-        sender_boost_count: Optional[int] = None,
-        sender_business_bot: Optional["types.User"] = None,
-        sender_tag: Optional[str] = None,
-        date: Optional[datetime] = None,
-        guest_query_id: Optional[str] = None,
-        chat: Optional["types.Chat"] = None,
-        topic_message: Optional[bool] = None,
-        automatic_forward: Optional[bool] = None,
-        from_offline: Optional[bool] = None,
-        show_caption_above_media: Optional[bool] = None,
-        external_reply: Optional["types.ExternalReplyInfo"] = None,
-        quote: Optional["types.TextQuote"] = None,
-        topic: Optional["types.ForumTopic"] = None,
-        forward_origin: Optional["types.MessageOrigin"] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        is_welcome_template: Optional[bool] = None,
-        anchor_message_id: Optional[int] = None,
-        rich_message: Optional["types.RichMessage"] = None,
-        reply_to_message_id: Optional[int] = None,
-        reply_to_story_id: Optional[int] = None,
-        reply_to_story_user_id: Optional[int] = None,
-        reply_to_top_message_id: Optional[int] = None,
-        reply_to_poll_option_id: Optional[str] = None,
-        reply_to_message: Optional["Message"] = None,
-        reply_to_story: Optional["types.Story"] = None,
-        reply_to_checklist_task_id: Optional[int] = None,
-        mentioned: Optional[bool] = None,
-        empty: Optional[bool] = None,
-        service: Optional["enums.MessageServiceType"] = None,
-        scheduled: Optional[bool] = None,
-        from_scheduled: Optional[bool] = None,
-        media: Optional["enums.MessageMediaType"] = None,
-        paid_media: Optional["types.PaidMediaInfo"] = None,
-        checklist: Optional["types.Checklist"] = None,
-        edit_date: Optional[datetime] = None,
-        edit_hidden: Optional[bool] = None,
-        media_group_id: Optional[int] = None,
-        author_signature: Optional[str] = None,
-        is_paid_post: Optional[bool] = None,
-        has_protected_content: Optional[bool] = None,
-        has_media_spoiler: Optional[bool] = None,
-        text: Optional[Str] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        audio: Optional["types.Audio"] = None,
-        document: Optional["types.Document"] = None,
-        photo: Optional["types.Photo"] = None,
-        live_photo: Optional["types.LivePhoto"] = None,
-        sticker: Optional["types.Sticker"] = None,
-        animation: Optional["types.Animation"] = None,
-        game: Optional["types.Game"] = None,
-        giveaway: Optional["types.Giveaway"] = None,
-        giveaway_winners: Optional["types.GiveawayWinners"] = None,
-        giveaway_completed: Optional["types.GiveawayCompleted"] = None,
-        managed_bot_created: Optional["types.ManagedBotCreated"] = None,
-        poll_option_added: Optional["types.PollOptionAdded"] = None,
-        poll_option_deleted: Optional["types.PollOptionDeleted"] = None,
-        invoice: Optional["types.Invoice"] = None,
-        story: Optional["types.Story"] = None,
-        video: Optional["types.Video"] = None,
-        video_processing_pending: Optional[bool] = None,
-        voice: Optional["types.Voice"] = None,
-        video_note: Optional["types.VideoNote"] = None,
-        caption: Optional[Str] = None,
-        contact: Optional["types.Contact"] = None,
-        location: Optional["types.Location"] = None,
-        venue: Optional["types.Venue"] = None,
-        web_page: Optional["types.WebPage"] = None,
-        link_preview_options: Optional["types.LinkPreviewOptions"] = None,
-        poll: Optional["types.Poll"] = None,
-        dice: Optional["types.Dice"] = None,
-        new_chat_members: Optional[List["types.User"]] = None,
-        left_chat_member: Optional["types.User"] = None,
-        chat_owner_left: Optional["types.ChatOwnerLeft"] = None,
-        chat_owner_changed: Optional["types.ChatOwnerChanged"] = None,
-        chat_join_type: Optional["enums.ChatJoinType"] = None,
-        new_chat_title: Optional[str] = None,
-        new_chat_photo: Optional["types.Photo"] = None,
-        delete_chat_photo: Optional[bool] = None,
-        group_chat_created: Optional[bool] = None,
-        supergroup_chat_created: Optional[bool] = None,
-        channel_chat_created: Optional[bool] = None,
-        migrate_to_chat_id: Optional[int] = None,
-        migrate_from_chat_id: Optional[int] = None,
-        pinned_message: Optional["Message"] = None,
-        game_high_score: Optional["types.GameHighScore"] = None,
-        views: Optional[int] = None,
-        forwards: Optional[int] = None,
-        via_bot: Optional["types.User"] = None,
-        outgoing: Optional[bool] = None,
-        matches: Optional[List[Match]] = None,
-        command: Optional[List[str]] = None,
-        forum_topic_created: Optional["types.ForumTopicCreated"] = None,
-        forum_topic_closed: Optional["types.ForumTopicClosed"] = None,
-        forum_topic_reopened: Optional["types.ForumTopicReopened"] = None,
-        forum_topic_edited: Optional["types.ForumTopicEdited"] = None,
-        general_forum_topic_hidden: Optional["types.GeneralForumTopicHidden"] = None,
-        general_forum_topic_unhidden: Optional["types.GeneralForumTopicUnhidden"] = None,
-        video_chat_scheduled: Optional["types.VideoChatScheduled"] = None,
-        history_cleared: Optional["types.HistoryCleared"] = None,
-        video_chat_started: Optional["types.VideoChatStarted"] = None,
-        video_chat_ended: Optional["types.VideoChatEnded"] = None,
-        video_chat_members_invited: Optional["types.VideoChatMembersInvited"] = None,
-        phone_call_started: Optional["types.PhoneCallStarted"] = None,
-        phone_call_ended: Optional["types.PhoneCallEnded"] = None,
-        web_app_data: Optional["types.WebAppData"] = None,
-        paid_messages_refunded: Optional["types.PaidMessagesRefunded"] = None,
-        paid_messages_price_changed: Optional["types.PaidMessagesPriceChanged"] = None,
-        direct_message_price_changed: Optional["types.DirectMessagePriceChanged"] = None,
-        checklist_tasks_done: Optional[List["types.ChecklistTasksDone"]] = None,
-        checklist_tasks_added: Optional[List["types.ChecklistTasksAdded"]] = None,
-        community_chat_added: Optional["types.CommunityChatAdded"] = None,
-        community_chat_joined: Optional["types.CommunityChatJoined"] = None,
-        community_chat_removed: Optional["types.CommunityChatRemoved"] = None,
-        premium_gift_code: Optional["types.PremiumGiftCode"] = None,
-        gifted_premium: Optional["types.GiftedPremium"] = None,
-        gifted_stars: Optional["types.GiftedStars"] = None,
-        gifted_grams: Optional["types.GiftedGrams"] = None,
-        gift: Optional["types.Gift"] = None,
-        is_prepaid_upgrade: Optional[bool] = None,
-        is_from_auction: Optional[bool] = None,
-        suggest_profile_photo: Optional["types.Photo"] = None,
-        suggest_birthday: Optional["types.Birthday"] = None,
-        users_shared: Optional["types.UsersShared"] = None,
-        chat_shared: Optional["types.ChatShared"] = None,
-        successful_payment: Optional["types.SuccessfulPayment"] = None,
-        refunded_payment: Optional["types.RefundedPayment"] = None,
-        suggested_post_approval_failed: Optional["types.SuggestedPostApprovalFailed"] = None,
-        suggested_post_approved: Optional["types.SuggestedPostApproved"] = None,
-        suggested_post_declined: Optional["types.SuggestedPostDeclined"] = None,
-        suggested_post_paid: Optional["types.SuggestedPostPaid"] = None,
-        suggested_post_refunded: Optional["types.SuggestedPostRefunded"] = None,
-        giveaway_created: Optional[bool] = None,
-        chat_set_theme: Optional["types.ChatTheme"] = None,
-        chat_set_background: Optional["types.ChatBackground"] = None,
-        set_message_auto_delete_time: Optional[int] = None,
-        chat_boost: Optional[int] = None,
-        write_access_allowed: Optional["types.WriteAccessAllowed"] = None,
-        connected_website: Optional[str] = None,
-        contact_registered: Optional["types.ContactRegistered"] = None,
-        proximity_alert_triggered: Optional["types.ProximityAlertTriggered"] = None,
-        giveaway_prize_stars: Optional["types.GiveawayPrizeStars"] = None,
-        screenshot_taken: Optional["types.ScreenshotTaken"] = None,
-        upgraded_gift_purchase_offer: Optional["types.UpgradedGiftPurchaseOffer"] = None,
-        upgraded_gift_purchase_offer_rejected: Optional["types.UpgradedGiftPurchaseOfferRejected"] = None,
-        chat_has_protected_content_toggled: Optional["types.ChatHasProtectedContentToggled"] = None,
-        chat_has_protected_content_disable_requested: Optional["types.ChatHasProtectedContentDisableRequested"] = None,
-        business_connection_id: Optional[str] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        reactions: Optional["types.MessageReactions"] = None,
-        send_paid_messages_stars: Optional[int] = None,
-        unread_media: Optional[bool] = None,
-        silent: Optional[bool] = None,
-        legacy: Optional[bool] = None,
-        pinned: Optional[bool] = None,
-        restriction_reason: Optional[List["types.RestrictionReason"]] = None,
-        fact_check: Optional["types.FactCheck"] = None,
-        suggested_post_info: Optional["types.SuggestedPostInfo"] = None,
-        channel_post: Optional[bool] = None,
-        repeat_period: Optional[int] = None,
-        summary_language_code: Optional[str] = None,
-        guest_bot_caller_user: Optional["types.User"] = None,
-        guest_bot_caller_chat: Optional["types.Chat"] = None,
-        receiver_user: Optional["types.User"] = None,
-        ephemeral_message_id: Optional[int] = None,
-        raw: Optional["raw.types.Message"] = None
+        from_user: types.User | None = None,
+        sender_chat: types.Chat | None = None,
+        sender_boost_count: int | None = None,
+        sender_business_bot: types.User | None = None,
+        sender_tag: str | None = None,
+        date: datetime | None = None,
+        guest_query_id: str | None = None,
+        chat: types.Chat | None = None,
+        topic_message: bool | None = None,
+        automatic_forward: bool | None = None,
+        from_offline: bool | None = None,
+        show_caption_above_media: bool | None = None,
+        external_reply: types.ExternalReplyInfo | None = None,
+        quote: types.TextQuote | None = None,
+        topic: types.ForumTopic | None = None,
+        forward_origin: types.MessageOrigin | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        is_welcome_template: bool | None = None,
+        anchor_message_id: int | None = None,
+        rich_message: types.RichMessage | None = None,
+        reply_to_message_id: int | None = None,
+        reply_to_story_id: int | None = None,
+        reply_to_story_user_id: int | None = None,
+        reply_to_top_message_id: int | None = None,
+        reply_to_poll_option_id: str | None = None,
+        reply_to_message: Message | None = None,
+        reply_to_story: types.Story | None = None,
+        reply_to_checklist_task_id: int | None = None,
+        mentioned: bool | None = None,
+        empty: bool | None = None,
+        service: enums.MessageServiceType | None = None,
+        scheduled: bool | None = None,
+        from_scheduled: bool | None = None,
+        media: enums.MessageMediaType | None = None,
+        media_content: types.MessageContent | None = None,
+        content: str | types.MessageContent | None = None,
+        paid_media: types.PaidMediaInfo | None = None,
+        checklist: types.Checklist | None = None,
+        edit_date: datetime | None = None,
+        edit_hidden: bool | None = None,
+        media_group_id: int | None = None,
+        author_signature: str | None = None,
+        is_paid_post: bool | None = None,
+        has_protected_content: bool | None = None,
+        has_media_spoiler: bool | None = None,
+        text: Str | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        audio: types.Audio | None = None,
+        document: types.Document | None = None,
+        photo: types.Photo | None = None,
+        live_photo: types.LivePhoto | None = None,
+        sticker: types.Sticker | None = None,
+        animation: types.Animation | None = None,
+        game: types.Game | None = None,
+        giveaway: types.Giveaway | None = None,
+        giveaway_winners: types.GiveawayWinners | None = None,
+        giveaway_completed: types.GiveawayCompleted | None = None,
+        managed_bot_created: types.ManagedBotCreated | None = None,
+        poll_option_added: types.PollOptionAdded | None = None,
+        poll_option_deleted: types.PollOptionDeleted | None = None,
+        invoice: types.Invoice | None = None,
+        story: types.Story | None = None,
+        video: types.Video | None = None,
+        video_processing_pending: bool | None = None,
+        voice: types.Voice | None = None,
+        video_note: types.VideoNote | None = None,
+        caption: Str | None = None,
+        contact: types.Contact | None = None,
+        location: types.Location | None = None,
+        venue: types.Venue | None = None,
+        web_page: types.WebPage | None = None,
+        link_preview_options: types.LinkPreviewOptions | None = None,
+        poll: types.Poll | None = None,
+        dice: types.Dice | None = None,
+        new_chat_members: list[types.User] | None = None,
+        left_chat_member: types.User | None = None,
+        chat_owner_left: types.ChatOwnerLeft | None = None,
+        chat_owner_changed: types.ChatOwnerChanged | None = None,
+        chat_join_type: enums.ChatJoinType | None = None,
+        new_chat_title: str | None = None,
+        new_chat_photo: types.Photo | None = None,
+        delete_chat_photo: bool | None = None,
+        group_chat_created: bool | None = None,
+        supergroup_chat_created: bool | None = None,
+        channel_chat_created: bool | None = None,
+        migrate_to_chat_id: int | None = None,
+        migrate_from_chat_id: int | None = None,
+        pinned_message: Message | None = None,
+        game_high_score: types.GameHighScore | None = None,
+        views: int | None = None,
+        forwards: int | None = None,
+        via_bot: types.User | None = None,
+        outgoing: bool | None = None,
+        matches: list[Match] | None = None,
+        command: list[str] | None = None,
+        forum_topic_created: types.ForumTopicCreated | None = None,
+        forum_topic_closed: types.ForumTopicClosed | None = None,
+        forum_topic_reopened: types.ForumTopicReopened | None = None,
+        forum_topic_edited: types.ForumTopicEdited | None = None,
+        general_forum_topic_hidden: types.GeneralForumTopicHidden | None = None,
+        general_forum_topic_unhidden: types.GeneralForumTopicUnhidden | None = None,
+        video_chat_scheduled: types.VideoChatScheduled | None = None,
+        history_cleared: types.HistoryCleared | None = None,
+        video_chat_started: types.VideoChatStarted | None = None,
+        video_chat_ended: types.VideoChatEnded | None = None,
+        video_chat_members_invited: types.VideoChatMembersInvited | None = None,
+        phone_call_started: types.PhoneCallStarted | None = None,
+        phone_call_ended: types.PhoneCallEnded | None = None,
+        web_app_data: types.WebAppData | None = None,
+        paid_messages_refunded: types.PaidMessagesRefunded | None = None,
+        paid_messages_price_changed: types.PaidMessagesPriceChanged | None = None,
+        direct_message_price_changed: types.DirectMessagePriceChanged | None = None,
+        checklist_tasks_done: list[types.ChecklistTasksDone] | None = None,
+        checklist_tasks_added: list[types.ChecklistTasksAdded] | None = None,
+        community_chat_added: types.CommunityChatAdded | None = None,
+        community_chat_joined: types.CommunityChatJoined | None = None,
+        community_chat_removed: types.CommunityChatRemoved | None = None,
+        premium_gift_code: types.PremiumGiftCode | None = None,
+        gifted_premium: types.GiftedPremium | None = None,
+        gifted_stars: types.GiftedStars | None = None,
+        gifted_grams: types.GiftedGrams | None = None,
+        gift: types.Gift | None = None,
+        is_prepaid_upgrade: bool | None = None,
+        is_from_auction: bool | None = None,
+        suggest_profile_photo: types.Photo | None = None,
+        suggest_birthday: types.Birthday | None = None,
+        users_shared: types.UsersShared | None = None,
+        chat_shared: types.ChatShared | None = None,
+        successful_payment: types.SuccessfulPayment | None = None,
+        refunded_payment: types.RefundedPayment | None = None,
+        suggested_post_approval_failed: types.SuggestedPostApprovalFailed | None = None,
+        suggested_post_approved: types.SuggestedPostApproved | None = None,
+        suggested_post_declined: types.SuggestedPostDeclined | None = None,
+        suggested_post_paid: types.SuggestedPostPaid | None = None,
+        suggested_post_refunded: types.SuggestedPostRefunded | None = None,
+        giveaway_created: bool | None = None,
+        chat_set_theme: types.ChatTheme | None = None,
+        chat_set_background: types.ChatBackground | None = None,
+        set_message_auto_delete_time: int | None = None,
+        chat_boost: int | None = None,
+        write_access_allowed: types.WriteAccessAllowed | None = None,
+        connected_website: str | None = None,
+        contact_registered: types.ContactRegistered | None = None,
+        proximity_alert_triggered: types.ProximityAlertTriggered | None = None,
+        giveaway_prize_stars: types.GiveawayPrizeStars | None = None,
+        screenshot_taken: types.ScreenshotTaken | None = None,
+        upgraded_gift_purchase_offer: types.UpgradedGiftPurchaseOffer | None = None,
+        upgraded_gift_purchase_offer_rejected: types.UpgradedGiftPurchaseOfferRejected
+        | None = None,
+        chat_has_protected_content_toggled: types.ChatHasProtectedContentToggled | None = None,
+        chat_has_protected_content_disable_requested: types.ChatHasProtectedContentDisableRequested
+        | None = None,
+        business_connection_id: str | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        reactions: types.MessageReactions | None = None,
+        send_paid_messages_stars: int | None = None,
+        unread_media: bool | None = None,
+        silent: bool | None = None,
+        legacy: bool | None = None,
+        pinned: bool | None = None,
+        restriction_reason: list[types.RestrictionReason] | None = None,
+        fact_check: types.FactCheck | None = None,
+        suggested_post_info: types.SuggestedPostInfo | None = None,
+        channel_post: bool | None = None,
+        repeat_period: int | None = None,
+        summary_language_code: str | None = None,
+        guest_bot_caller_user: types.User | None = None,
+        guest_bot_caller_chat: types.Chat | None = None,
+        receiver_user: types.User | None = None,
+        ephemeral_message_id: int | None = None,
+        raw: raw.types.Message | None = None,
     ):
         super().__init__(client)
 
@@ -884,7 +927,111 @@ class Message(Object, Update):
         self.service = service
         self.scheduled = scheduled
         self.from_scheduled = from_scheduled
+
+        if isinstance(content, types.MessageContent):
+            media_content = content
+
+        if media_content is not None:
+            if audio is None:
+                audio = media_content.audio
+            if document is None:
+                document = media_content.document
+            if photo is None:
+                photo = media_content.photo
+            if live_photo is None:
+                live_photo = media_content.live_photo
+            if sticker is None:
+                sticker = media_content.sticker
+            if animation is None:
+                animation = media_content.animation
+            if game is None:
+                game = media_content.game
+            if giveaway is None:
+                giveaway = media_content.giveaway
+            if giveaway_winners is None:
+                giveaway_winners = media_content.giveaway_winners
+            if invoice is None:
+                invoice = media_content.invoice
+            if story is None:
+                story = media_content.story
+            if video is None:
+                video = media_content.video
+            if voice is None:
+                voice = media_content.voice
+            if video_note is None:
+                video_note = media_content.video_note
+            if contact is None:
+                contact = media_content.contact
+            if location is None:
+                location = media_content.location
+            if venue is None:
+                venue = media_content.venue
+            if web_page is None:
+                web_page = media_content.web_page
+            if poll is None:
+                poll = media_content.poll
+            if dice is None:
+                dice = media_content.dice
+            if paid_media is None:
+                paid_media = media_content.paid_media
+            if checklist is None:
+                checklist = media_content.checklist
+            if media is None:
+                media = media_content.type
+        elif any(
+            (
+                audio,
+                document,
+                photo,
+                live_photo,
+                sticker,
+                animation,
+                game,
+                giveaway,
+                giveaway_winners,
+                invoice,
+                story,
+                video,
+                voice,
+                video_note,
+                contact,
+                location,
+                venue,
+                web_page,
+                poll,
+                dice,
+                paid_media,
+                checklist,
+            )
+        ):
+            media_content = types.MessageContent(
+                type=media or enums.MessageMediaType.UNSUPPORTED,
+                audio=audio,
+                document=document,
+                photo=photo,
+                live_photo=live_photo,
+                sticker=sticker,
+                animation=animation,
+                game=game,
+                giveaway=giveaway,
+                giveaway_winners=giveaway_winners,
+                invoice=invoice,
+                story=story,
+                video=video,
+                voice=voice,
+                video_note=video_note,
+                contact=contact,
+                location=location,
+                venue=venue,
+                web_page=web_page,
+                poll=poll,
+                dice=dice,
+                paid_media=paid_media,
+                checklist=checklist,
+            )
+
         self.media = media
+        self.media_content = media_content
         self.paid_media = paid_media
         self.checklist = checklist
         self.edit_date = edit_date
@@ -950,7 +1097,9 @@ class Message(Object, Update):
         self.upgraded_gift_purchase_offer = upgraded_gift_purchase_offer
         self.upgraded_gift_purchase_offer_rejected = upgraded_gift_purchase_offer_rejected
         self.chat_has_protected_content_toggled = chat_has_protected_content_toggled
-        self.chat_has_protected_content_disable_requested = chat_has_protected_content_disable_requested
+        self.chat_has_protected_content_disable_requested = (
+            chat_has_protected_content_disable_requested
+        )
         self.business_connection_id = business_connection_id
         self.reply_markup = reply_markup
         self.forum_topic_created = forum_topic_created
@@ -1022,25 +1171,27 @@ class Message(Object, Update):
 
     @staticmethod
     async def _parse_service(
-        client: "pyrogram.Client",
-        message: "raw.types.MessageService",
-        users: Dict[int, "raw.base.User"],
-        chats: Dict[int, "raw.base.Chat"],
+        client: pyrogram.Client,
+        message: raw.types.MessageService,
+        users: dict[int, raw.base.User],
+        chats: dict[int, raw.base.Chat],
         replies: int = 1,
-        business_connection_id: Optional[str] = None,
-        raw_reply_to_message: Optional["raw.base.Message"] = None
-    ) -> "Message":
+        business_connection_id: str | None = None,
+        raw_reply_to_message: raw.base.Message | None = None,
+    ) -> Message:
         from_id = utils.get_raw_peer_id(message.from_id)
         peer_id = utils.get_raw_peer_id(message.peer_id)
 
-        if isinstance(message.from_id, raw.types.PeerUser) and isinstance(message.peer_id, raw.types.PeerUser):
+        if isinstance(message.from_id, raw.types.PeerUser) and isinstance(
+            message.peer_id, raw.types.PeerUser
+        ):
             if from_id not in users or peer_id not in users:
                 try:
                     r = await client.invoke(
                         raw.functions.users.GetUsers(
                             id=[
                                 await client.resolve_peer(from_id),
-                                await client.resolve_peer(peer_id)
+                                await client.resolve_peer(peer_id),
                             ]
                         )
                     )
@@ -1207,7 +1358,9 @@ class Message(Object, Update):
             text = action.message
         elif isinstance(action, raw.types.MessageActionGeoProximityReached):
             service_type = enums.MessageServiceType.PROXIMITY_ALERT_TRIGGERED
-            proximity_alert_triggered = types.ProximityAlertTriggered._parse(client, action, users, chats)
+            proximity_alert_triggered = types.ProximityAlertTriggered._parse(
+                client, action, users, chats
+            )
         elif isinstance(action, raw.types.MessageActionGiftCode):
             service_type = enums.MessageServiceType.PREMIUM_GIFT_CODE
             premium_gift_code = await types.PremiumGiftCode._parse(client, action, users, chats)
@@ -1218,23 +1371,17 @@ class Message(Object, Update):
                 action,
                 gifter=users.get(from_id),
                 receiver=users.get(peer_id or from_id),
-                users=users
+                users=users,
             )
         elif isinstance(action, raw.types.MessageActionGiftStars):
             service_type = enums.MessageServiceType.GIFTED_STARS
             gifted_stars = await types.GiftedStars._parse(
-                client,
-                action,
-                gifter=users.get(from_id),
-                receiver=users.get(peer_id or from_id)
+                client, action, gifter=users.get(from_id), receiver=users.get(peer_id or from_id)
             )
         elif isinstance(action, raw.types.MessageActionGiftTon):
             service_type = enums.MessageServiceType.GIFTED_GRAMS
             gifted_grams = await types.GiftedGrams._parse(
-                client,
-                action,
-                gifter=users.get(from_id),
-                receiver=users.get(peer_id or from_id)
+                client, action, gifter=users.get(from_id), receiver=users.get(peer_id or from_id)
             )
         elif isinstance(action, raw.types.MessageActionGiveawayLaunch):
             service_type = enums.MessageServiceType.GIVEAWAY_CREATED
@@ -1245,15 +1392,7 @@ class Message(Object, Update):
                 client,
                 action,
                 types.Chat._parse(client, message, users, chats, is_chat=True),
-                getattr(
-                    getattr(
-                        message,
-                        "reply_to",
-                        None
-                    ),
-                    "reply_to_msg_id",
-                    None
-                )
+                getattr(getattr(message, "reply_to", None), "reply_to_msg_id", None),
             )
         elif isinstance(action, raw.types.MessageActionManagedBotCreated):
             service_type = enums.MessageServiceType.MANAGED_BOT_CREATED
@@ -1276,7 +1415,9 @@ class Message(Object, Update):
         elif isinstance(action, raw.types.MessageActionInviteToGroupCall):
             service_type = enums.MessageServiceType.VIDEO_CHAT_MEMBERS_INVITED
             video_chat_members_invited = types.VideoChatMembersInvited._parse(client, action, users)
-        elif isinstance(action, (raw.types.MessageActionPaymentSent, raw.types.MessageActionPaymentSentMe)):
+        elif isinstance(
+            action, (raw.types.MessageActionPaymentSent, raw.types.MessageActionPaymentSentMe)
+        ):
             service_type = enums.MessageServiceType.SUCCESSFUL_PAYMENT
             successful_payment = types.SuccessfulPayment._parse(action)
         elif isinstance(action, raw.types.MessageActionPaymentRefunded):
@@ -1285,7 +1426,9 @@ class Message(Object, Update):
         elif isinstance(action, raw.types.MessageActionSuggestedPostApproval):
             if action.balance_too_low:
                 service_type = enums.MessageServiceType.SUGGESTED_POST_APPROVAL_FAILED
-                suggested_post_approval_failed = await types.SuggestedPostApprovalFailed._parse(client, message)
+                suggested_post_approval_failed = await types.SuggestedPostApprovalFailed._parse(
+                    client, message
+                )
             elif action.rejected:
                 service_type = enums.MessageServiceType.SUGGESTED_POST_DECLINED
                 suggested_post_declined = await types.SuggestedPostDeclined._parse(client, message)
@@ -1308,7 +1451,10 @@ class Message(Object, Update):
         elif isinstance(action, raw.types.MessageActionPrizeStars):
             service_type = enums.MessageServiceType.GIVEAWAY_PRIZE_STARS
             giveaway_prize_stars = await types.GiveawayPrizeStars._parse(client, action, chats)
-        elif isinstance(action, (raw.types.MessageActionRequestedPeer, raw.types.MessageActionRequestedPeerSentMe)):
+        elif isinstance(
+            action,
+            (raw.types.MessageActionRequestedPeer, raw.types.MessageActionRequestedPeerSentMe),
+        ):
             _requested_chat = types.ChatShared._parse(client, action, chats)
 
             if _requested_chat is None:
@@ -1323,46 +1469,46 @@ class Message(Object, Update):
         elif isinstance(action, raw.types.MessageActionStarGiftPurchaseOffer):
             service_type = enums.MessageServiceType.UPGRADED_GIFT_PURCHASE_OFFER
             upgraded_gift_purchase_offer = await types.UpgradedGiftPurchaseOffer._parse(
-                client,
-                action,
-                users,
-                chats
+                client, action, users, chats
             )
         elif isinstance(action, raw.types.MessageActionStarGiftPurchaseOfferDeclined):
             service_type = enums.MessageServiceType.UPGRADED_GIFT_PURCHASE_OFFER_REJECTED
-            upgraded_gift_purchase_offer_rejected = await types.UpgradedGiftPurchaseOfferRejected._parse(
-                client,
-                action,
-                getattr(message.reply_to, "reply_to_msg_id", None),
-                users,
-                chats
+            upgraded_gift_purchase_offer_rejected = (
+                await types.UpgradedGiftPurchaseOfferRejected._parse(
+                    client, action, getattr(message.reply_to, "reply_to_msg_id", None), users, chats
+                )
             )
         elif isinstance(action, raw.types.MessageActionNoForwardsToggle):
             service_type = enums.MessageServiceType.CHAT_HAS_PROTECTED_CONTENT_TOGGLED
             chat_has_protected_content_toggled = types.ChatHasProtectedContentToggled._parse(
-                getattr(message.reply_to, "reply_to_msg_id", None),
-                action
+                getattr(message.reply_to, "reply_to_msg_id", None), action
             )
         elif isinstance(action, raw.types.MessageActionNoForwardsRequest):
             service_type = enums.MessageServiceType.CHAT_HAS_PROTECTED_CONTENT_DISABLE_REQUESTED
-            chat_has_protected_content_disable_requested = types.ChatHasProtectedContentDisableRequested._parse(action)
+            chat_has_protected_content_disable_requested = (
+                types.ChatHasProtectedContentDisableRequested._parse(action)
+            )
         elif isinstance(action, raw.types.MessageActionSecureValuesSent):
-             service_type = enums.MessageServiceType.PASSPORT_DATA_SEND
+            service_type = enums.MessageServiceType.PASSPORT_DATA_SEND
         elif isinstance(action, raw.types.MessageActionSecureValuesSentMe):
-             service_type = enums.MessageServiceType.PASSPORT_DATA_RECEIVED
+            service_type = enums.MessageServiceType.PASSPORT_DATA_RECEIVED
         elif isinstance(action, raw.types.MessageActionSetChatTheme):
             service_type = enums.MessageServiceType.CHAT_SET_THEME
             chat_set_theme = await types.ChatTheme._parse(client, action.theme)
         elif isinstance(action, raw.types.MessageActionSetChatWallPaper):
             service_type = enums.MessageServiceType.CHAT_SET_BACKGROUND
-            chat_set_background = types.ChatBackground._parse(client, action.wallpaper, action.same, action.for_both)
+            chat_set_background = types.ChatBackground._parse(
+                client, action.wallpaper, action.same, action.for_both
+            )
         elif isinstance(action, raw.types.MessageActionSetMessagesTTL):
             service_type = enums.MessageServiceType.SET_MESSAGE_AUTO_DELETE_TIME
             set_message_auto_delete_time = action.period
-        elif isinstance(action, (raw.types.MessageActionStarGift, raw.types.MessageActionStarGiftUnique)):
+        elif isinstance(
+            action, (raw.types.MessageActionStarGift, raw.types.MessageActionStarGiftUnique)
+        ):
             service_type = enums.MessageServiceType.GIFT
-            is_prepaid_upgrade=action.prepaid_upgrade
-            is_from_auction=getattr(action, "auction_acquired", None)
+            is_prepaid_upgrade = action.prepaid_upgrade
+            is_from_auction = getattr(action, "auction_acquired", None)
             gift = await types.Gift._parse(client, action, users=users, chats=chats)
         elif isinstance(action, raw.types.MessageActionSuggestProfilePhoto):
             service_type = enums.MessageServiceType.SUGGEST_PROFILE_PHOTO
@@ -1389,7 +1535,10 @@ class Message(Object, Update):
             else:
                 service_type = enums.MessageServiceType.FORUM_TOPIC_EDITED
                 forum_topic_edited = types.ForumTopicEdited._parse(action)
-        elif isinstance(action, (raw.types.MessageActionWebViewDataSent, raw.types.MessageActionWebViewDataSentMe)):
+        elif isinstance(
+            action,
+            (raw.types.MessageActionWebViewDataSent, raw.types.MessageActionWebViewDataSentMe),
+        ):
             service_type = enums.MessageServiceType.WEB_APP_DATA
             web_app_data = types.WebAppData._parse(action)
         elif isinstance(action, raw.types.MessageActionPaidMessagesRefunded):
@@ -1504,7 +1653,7 @@ class Message(Object, Update):
             reactions=types.MessageReactions._parse(client, message.reactions, users, chats),
             business_connection_id=business_connection_id,
             raw=message,
-            client=client
+            client=client,
         )
 
         if message.reply_to:
@@ -1521,16 +1670,22 @@ class Message(Object, Update):
 
         if isinstance(action, raw.types.MessageActionGameScore):
             parsed_message.service = enums.MessageServiceType.GAME_HIGH_SCORE
-            parsed_message.game_high_score = types.GameHighScore._parse_action(client, message, users)
+            parsed_message.game_high_score = types.GameHighScore._parse_action(
+                client, message, users
+            )
         elif isinstance(action, raw.types.MessageActionPinMessage):
             parsed_message.service = enums.MessageServiceType.PINNED_MESSAGE
-            parsed_message.pinned_message = parsed_message.reply_to_message # Why...
+            parsed_message.pinned_message = parsed_message.reply_to_message  # Why...
         elif isinstance(action, raw.types.MessageActionPollAppendAnswer):
             parsed_message.service = enums.MessageServiceType.POLL_OPTION_ADDED
-            parsed_message.poll_option_added = await types.PollOptionAdded._parse(client, parsed_message.reply_to_message, action)
+            parsed_message.poll_option_added = await types.PollOptionAdded._parse(
+                client, parsed_message.reply_to_message, action
+            )
         elif isinstance(action, raw.types.MessageActionPollDeleteAnswer):
             parsed_message.service = enums.MessageServiceType.POLL_OPTION_DELETED
-            parsed_message.poll_option_deleted = await types.PollOptionDeleted._parse(client, parsed_message.reply_to_message, action)
+            parsed_message.poll_option_deleted = await types.PollOptionDeleted._parse(
+                client, parsed_message.reply_to_message, action
+            )
 
         client.message_cache[(parsed_message.chat.id, parsed_message.id)] = parsed_message
 
@@ -1538,28 +1693,30 @@ class Message(Object, Update):
 
     @staticmethod
     async def _parse_message(
-        client: "pyrogram.Client",
-        message: "raw.types.Message",
-        users: Dict[int, "raw.base.User"],
-        chats: Dict[int, "raw.base.Chat"],
-        topics: Optional[Dict[int, "raw.base.ForumTopic"]] = None,
+        client: pyrogram.Client,
+        message: raw.types.Message,
+        users: dict[int, raw.base.User],
+        chats: dict[int, raw.base.Chat],
+        topics: dict[int, raw.base.ForumTopic] | None = None,
         is_scheduled: bool = False,
         replies: int = 1,
-        business_connection_id: Optional[str] = None,
-        guest_query_id: Optional[str] = None,
-        raw_reply_to_message: Optional["raw.base.Message"] = None
-    ) -> "Message":
+        business_connection_id: str | None = None,
+        guest_query_id: str | None = None,
+        raw_reply_to_message: raw.base.Message | None = None,
+    ) -> Message:
         from_id = utils.get_raw_peer_id(message.from_id)
         peer_id = utils.get_raw_peer_id(message.peer_id)
 
-        if isinstance(message.from_id, raw.types.PeerUser) and isinstance(message.peer_id, raw.types.PeerUser):
+        if isinstance(message.from_id, raw.types.PeerUser) and isinstance(
+            message.peer_id, raw.types.PeerUser
+        ):
             if from_id not in users or peer_id not in users:
                 try:
                     r = await client.invoke(
                         raw.functions.users.GetUsers(
                             id=[
                                 await client.resolve_peer(from_id),
-                                await client.resolve_peer(peer_id)
+                                await client.resolve_peer(peer_id),
                             ]
                         )
                     )
@@ -1586,7 +1743,7 @@ class Message(Object, Update):
         entities = types.List(
             filter(
                 lambda x: x is not None,
-                [types.MessageEntity._parse(client, entity, users) for entity in message.entities]
+                [types.MessageEntity._parse(client, entity, users) for entity in message.entities],
             )
         )
 
@@ -1628,141 +1785,58 @@ class Message(Object, Update):
         media = message.media
         media_type = None
         has_media_spoiler = None
+        content = None
 
         if media:
-            if isinstance(media, raw.types.MessageMediaPhoto):
-                if media.live_photo:
-                    doc = media.video
+            content = await types.MessageContent._parse(
+                client,
+                media,
+                message=raw.types.TextWithEntities(text=message.message, entities=message.entities)
+                if message.message
+                else None,
+                users=users,
+                chats=chats,
+            )
+            has_media_spoiler = getattr(media, "spoiler", None)
+            photo = content.photo
+            live_photo = content.live_photo
+            location = content.location
+            contact = content.contact
+            venue = content.venue
+            game = content.game
+            giveaway = content.giveaway
+            giveaway_winners = content.giveaway_winners
+            invoice = content.invoice
+            story = content.story
+            audio = content.audio
+            voice = content.voice
+            animation = content.animation
+            video = content.video
+            video_note = content.video_note
+            sticker = content.sticker
+            document = content.document
+            web_page = content.web_page
+            poll = content.poll
+            dice = content.dice
+            paid_media = content.paid_media
+            checklist = content.checklist
+            media_type = content.type
 
-                    if isinstance(doc, raw.types.Document):
-                        attributes = {type(i): i for i in doc.attributes}
-
-                        if raw.types.DocumentAttributeVideo in attributes:
-                            video_attributes = attributes[raw.types.DocumentAttributeVideo]
-
-                            live_photo = types.LivePhoto._parse(client, doc, video_attributes)
-
-                    media_type = enums.MessageMediaType.LIVE_PHOTO
-                else:
-                    media_type = enums.MessageMediaType.PHOTO
-
-                photo = types.Photo._parse(client, media.photo, media.ttl_seconds)
-                has_media_spoiler = media.spoiler
-            elif isinstance(media, raw.types.MessageMediaGeo):
-                location = types.Location._parse(media.geo)
-                media_type = enums.MessageMediaType.LOCATION
-            elif isinstance(media, raw.types.MessageMediaGeoLive):
-                location = types.Location._parse_media(media)
-                media_type = enums.MessageMediaType.LOCATION
-            elif isinstance(media, raw.types.MessageMediaContact):
-                contact = types.Contact._parse(client, media)
-                media_type = enums.MessageMediaType.CONTACT
-            elif isinstance(media, raw.types.MessageMediaVenue):
-                venue = types.Venue._parse(client, media)
-                media_type = enums.MessageMediaType.VENUE
-            elif isinstance(media, raw.types.MessageMediaGame):
-                game = types.Game._parse(client, media)
-                media_type = enums.MessageMediaType.GAME
-            elif isinstance(media, raw.types.MessageMediaGiveaway):
-                giveaway = types.Giveaway._parse(client, media, chats)
-                media_type = enums.MessageMediaType.GIVEAWAY
-            elif isinstance(media, raw.types.MessageMediaGiveawayResults):
-                giveaway_winners = await types.GiveawayWinners._parse(client, media, users, chats)
-                media_type = enums.MessageMediaType.GIVEAWAY_WINNERS
-            elif isinstance(media, raw.types.MessageMediaInvoice):
-                invoice = types.Invoice._parse(client, media)
-                media_type = enums.MessageMediaType.INVOICE
-            elif isinstance(media, raw.types.MessageMediaStory):
-                story = await types.Story._parse(client, media, media.peer, users, chats)
-                media_type = enums.MessageMediaType.STORY
-            elif isinstance(media, raw.types.MessageMediaDocument):
-                doc = media.document
-                has_media_spoiler = media.spoiler
-
-                if isinstance(doc, raw.types.Document):
-                    attributes = {type(i): i for i in doc.attributes}
-
-                    file_name = getattr(
-                        attributes.get(
-                            raw.types.DocumentAttributeFilename, None
-                        ), "file_name", None
-                    )
-
-                    if raw.types.DocumentAttributeAnimated in attributes:
-                        video_attributes = attributes.get(raw.types.DocumentAttributeVideo, None)
-
-                        if video_attributes and video_attributes.round_message:
-                            video_note = types.VideoNote._parse(client, doc, video_attributes, media.ttl_seconds)
-                            media_type = enums.MessageMediaType.VIDEO_NOTE
-                        else:
-                            animation = types.Animation._parse(client, doc, video_attributes, file_name)
-                            media_type = enums.MessageMediaType.ANIMATION
-                    elif raw.types.DocumentAttributeSticker in attributes:
-                        sticker = await types.Sticker._parse(client, doc, attributes)
-                        media_type = enums.MessageMediaType.STICKER
-                    elif raw.types.DocumentAttributeVideo in attributes:
-                        video_attributes = attributes[raw.types.DocumentAttributeVideo]
-
-                        if video_attributes.round_message:
-                            video_note = types.VideoNote._parse(client, doc, video_attributes, media.ttl_seconds)
-                            media_type = enums.MessageMediaType.VIDEO_NOTE
-                        else:
-                            video = types.Video._parse(client, doc, video_attributes, file_name, media.ttl_seconds, media.video_cover, media.video_timestamp, media.alt_documents or [])
-                            media_type = enums.MessageMediaType.VIDEO
-                    elif raw.types.DocumentAttributeAudio in attributes:
-                        audio_attributes = attributes[raw.types.DocumentAttributeAudio]
-
-                        if audio_attributes.voice:
-                            voice = types.Voice._parse(client, doc, audio_attributes, media.ttl_seconds)
-                            media_type = enums.MessageMediaType.VOICE
-                        else:
-                            audio = types.Audio._parse(client, doc, audio_attributes, file_name)
-                            media_type = enums.MessageMediaType.AUDIO
-                    else:
-                        document = types.Document._parse(client, doc, file_name)
-                        media_type = enums.MessageMediaType.DOCUMENT
-            elif isinstance(media, raw.types.MessageMediaWebPage):
-                media_type = enums.MessageMediaType.WEB_PAGE
-                web_page = types.WebPage._parse(client, media)
-            elif isinstance(media, raw.types.MessageMediaPoll):
-                poll = await types.Poll._parse(
-                    client,
-                    media,
-                    description=types.FormattedText._parse(
-                        client,
-                        raw.types.TextWithEntities(
-                            text=message.message,
-                            entities=message.entities
-                        )
-                    )  if message.message else None,
-                    users=users,
-                    chats=chats
-                )
-                media_type = enums.MessageMediaType.POLL
-            elif isinstance(media, raw.types.MessageMediaDice):
-                dice = types.Dice._parse(client, media)
-                media_type = enums.MessageMediaType.DICE
-            elif isinstance(media, raw.types.MessageMediaPaidMedia):
-                paid_media = types.PaidMediaInfo._parse(client, media)
-                media_type = enums.MessageMediaType.PAID_MEDIA
-            elif isinstance(media, raw.types.MessageMediaToDo):
-                media_type = enums.MessageMediaType.CHECKLIST
-                checklist = types.Checklist._parse(client, media, users, chats)
-            else:
-                media_type = enums.MessageMediaType.UNSUPPORTED
+            if media_type == enums.MessageMediaType.UNSUPPORTED:
                 media = None
 
         link_preview_options = types.LinkPreviewOptions._parse(
             media,
             getattr(getattr(media, "webpage", None), "url", utils.get_first_url(message.message)),
-            message.invert_media
+            message.invert_media,
         )
 
         reply_markup = _parse_reply_markup(message.reply_markup)
 
         reactions = (
             types.MessageReactions._parse(client, message.reactions, users, chats)
-            if message.reactions is not None else None
+            if message.reactions is not None
+            else None
         )
 
         parsed_message = Message(
@@ -1770,7 +1844,8 @@ class Message(Object, Update):
             effect_id=getattr(message, "effect", None),
             rich_message=(
                 await types.RichMessage._parse(client, message.rich_message, users, chats)
-                if message.rich_message is not None else None
+                if message.rich_message is not None
+                else None
             ),
             date=utils.timestamp_to_datetime(message.date),
             guest_query_id=str(guest_query_id) if guest_query_id else None,
@@ -1779,7 +1854,8 @@ class Message(Object, Update):
             sender_chat=sender_chat,
             sender_business_bot=(
                 types.User._parse(client, users.get(business_bot_id))
-                if business_bot_id is not None else None
+                if business_bot_id is not None
+                else None
             ),
             sender_tag=message.from_rank,
             text=(
@@ -1792,16 +1868,8 @@ class Message(Object, Update):
                 if media is not None and web_page is None
                 else None
             ),
-            entities=(
-                entities or None
-                if media is None or web_page is not None
-                else None
-            ),
-            caption_entities=(
-                entities or None
-                if media is not None and web_page is None
-                else None
-            ),
+            entities=(entities or None if media is None or web_page is not None else None),
+            caption_entities=(entities or None if media is not None and web_page is None else None),
             author_signature=message.post_author,
             is_paid_post=bool(getattr(message.suggested_post, "price", None)),
             has_protected_content=message.noforwards,
@@ -1811,6 +1879,7 @@ class Message(Object, Update):
             scheduled=is_scheduled,
             from_scheduled=message.from_scheduled,
             media=media_type,
+            media_content=content,
             paid_media=paid_media,
             checklist=checklist,
             show_caption_above_media=message.invert_media,
@@ -1844,7 +1913,8 @@ class Message(Object, Update):
             sender_boost_count=message.from_boosts_applied,
             via_bot=(
                 types.User._parse(client, users.get(message.via_bot_id))
-                if message.via_bot_id is not None else None
+                if message.via_bot_id is not None
+                else None
             ),
             outgoing=message.out,
             business_connection_id=business_connection_id,
@@ -1857,41 +1927,42 @@ class Message(Object, Update):
             pinned=message.pinned,
             restriction_reason=types.List(
                 types.RestrictionReason._parse(reason)
-                for reason in getattr(message, "restriction_reason", [])
-            ) or None,
+                for reason in (getattr(message, "restriction_reason", None) or [])
+            )
+            or None,
             fact_check=(
                 types.FactCheck._parse(client, message.factcheck, users)
-                if message.factcheck is not None else None
+                if message.factcheck is not None
+                else None
             ),
             suggested_post_info=(
                 types.SuggestedPostInfo._parse(message.suggested_post)
-                if message.suggested_post is not None else None
+                if message.suggested_post is not None
+                else None
             ),
             channel_post=message.post,
             repeat_period=message.schedule_repeat_period,
             summary_language_code=message.summary_from_language,
             guest_bot_caller_user=(
                 types.User._parse(client, users.get(guest_caller_id))
-                if guest_caller_id is not None else None
+                if guest_caller_id is not None
+                else None
             ),
             guest_bot_caller_chat=(
                 types.Chat._parse_chat(client, chats.get(guest_caller_id))
-                if guest_caller_id is not None else None
+                if guest_caller_id is not None
+                else None
             ),
             raw=message,
-            client=client
+            client=client,
         )
 
-        if (
-            forward_header and
-            forward_header.saved_from_peer and
-            forward_header.saved_from_msg_id
-        ):
+        if forward_header and forward_header.saved_from_peer and forward_header.saved_from_msg_id:
             saved_from_peer_id = utils.get_raw_peer_id(forward_header.saved_from_peer)
             saved_from_peer_chat = chats.get(saved_from_peer_id)
             if (
-                isinstance(saved_from_peer_chat, raw.types.Channel) and
-                not saved_from_peer_chat.megagroup
+                isinstance(saved_from_peer_chat, raw.types.Channel)
+                and not saved_from_peer_chat.megagroup
             ):
                 parsed_message.automatic_forward = True
 
@@ -1909,15 +1980,18 @@ class Message(Object, Update):
 
         if topics:
             parsed_message.topic = types.ForumTopic._parse(
-                client,
-                topics.get(parsed_message.message_thread_id), users=users, chats=chats
+                client, topics.get(parsed_message.message_thread_id), users=users, chats=chats
             )
 
             if parsed_message.topic:
-                client.topic_cache[(parsed_message.chat.id, parsed_message.topic.id)] = parsed_message.topic
+                client.topic_cache[(parsed_message.chat.id, parsed_message.topic.id)] = (
+                    parsed_message.topic
+                )
 
         if not parsed_message.topic and parsed_message.chat.is_forum:
-            parsed_topic = client.topic_cache[(parsed_message.chat.id, parsed_message.message_thread_id or 1)]
+            parsed_topic = client.topic_cache[
+                (parsed_message.chat.id, parsed_message.message_thread_id or 1)
+            ]
 
             if parsed_topic:
                 parsed_message.topic = parsed_topic
@@ -1925,18 +1999,22 @@ class Message(Object, Update):
                 try:
                     parsed_message.topic = await client.get_forum_topics_by_id(
                         chat_id=parsed_message.chat.id,
-                        topic_ids=parsed_message.message_thread_id or 1
+                        topic_ids=parsed_message.message_thread_id or 1,
                     )
 
                     if parsed_message.topic:
-                        client.topic_cache[(parsed_message.chat.id, parsed_message.topic.id)] = parsed_message.topic
+                        client.topic_cache[(parsed_message.chat.id, parsed_message.topic.id)] = (
+                            parsed_message.topic
+                        )
                 except (ChannelPrivate, ChannelForumMissing):
                     pass
 
         if chat.is_direct_messages and message.saved_peer_id:
             parsed_message.direct_messages_topic_id = message.saved_peer_id.user_id
 
-            parsed_topic = client.topic_cache[(parsed_message.chat.id, parsed_message.direct_messages_topic_id)]
+            parsed_topic = client.topic_cache[
+                (parsed_message.chat.id, parsed_message.direct_messages_topic_id)
+            ]
 
             if parsed_topic:
                 parsed_message.topic = parsed_topic
@@ -1944,11 +2022,13 @@ class Message(Object, Update):
                 try:
                     parsed_message.topic = await client.get_direct_messages_topics_by_id(
                         chat_id=parsed_message.chat.id,
-                        topic_ids=parsed_message.direct_messages_topic_id
+                        topic_ids=parsed_message.direct_messages_topic_id,
                     )
 
                     if parsed_message.topic:
-                        client.topic_cache[(parsed_message.chat.id, parsed_message.topic.id)] = parsed_message.topic
+                        client.topic_cache[(parsed_message.chat.id, parsed_message.topic.id)] = (
+                            parsed_message.topic
+                        )
                 except (ChannelPrivate, ChatAdminRequired):
                     pass
 
@@ -1959,45 +2039,51 @@ class Message(Object, Update):
 
     @staticmethod
     async def __parse_reply(
-        client: "pyrogram.Client",
-        parsed_message: "Message",
-        message: "raw.base.Message",
-        users: Dict[int, "raw.base.User"],
-        chats: Dict[int, "raw.base.Chat"],
+        client: pyrogram.Client,
+        parsed_message: Message,
+        message: raw.base.Message,
+        users: dict[int, raw.base.User],
+        chats: dict[int, raw.base.Chat],
         replies: int = 1,
-        business_connection_id: Optional[str] = None,
-        raw_reply_to_message: Optional["raw.base.Message"] = None
+        business_connection_id: str | None = None,
+        raw_reply_to_message: raw.base.Message | None = None,
     ):
         if isinstance(message.reply_to, raw.types.MessageReplyHeader):
             parsed_message.reply_to_message_id = message.reply_to.reply_to_msg_id
             parsed_message.reply_to_top_message_id = message.reply_to.reply_to_top_id
             parsed_message.reply_to_checklist_task_id = message.reply_to.todo_item_id
-            parsed_message.reply_to_poll_option_id = message.reply_to.poll_option.decode("utf-8") if message.reply_to.poll_option is not None else None
+            parsed_message.reply_to_poll_option_id = (
+                message.reply_to.poll_option.decode("utf-8")
+                if message.reply_to.poll_option is not None
+                else None
+            )
 
             if replies:
                 if message.reply_to.reply_to_peer_id:
-                    key = (utils.get_peer_id(message.reply_to.reply_to_peer_id), message.reply_to.reply_to_msg_id)
-                    reply_to_params = {"chat_id": key[0], 'message_ids': key[1]}
+                    key = (
+                        utils.get_peer_id(message.reply_to.reply_to_peer_id),
+                        message.reply_to.reply_to_msg_id,
+                    )
+                    reply_to_params = {"chat_id": key[0], "message_ids": key[1]}
                 else:
                     key = (parsed_message.chat.id, parsed_message.reply_to_message_id)
-                    reply_to_params = {'chat_id': key[0], 'reply_to_message_ids': message.id}
+                    reply_to_params = {"chat_id": key[0], "reply_to_message_ids": message.id}
 
                 parsed_message.reply_to_message = client.message_cache[key]
 
-                if raw_reply_to_message: # For business bots only
+                if raw_reply_to_message:  # For business bots only
                     parsed_message.reply_to_message = await types.Message._parse(
                         client,
                         raw_reply_to_message,
                         users,
                         chats,
                         business_connection_id=business_connection_id,
-                        replies=0
+                        replies=0,
                     )
                 elif client.fetch_replies and not parsed_message.reply_to_message:
                     with contextlib.suppress(ChannelPrivate, ChannelInvalid, MessageIdsEmpty):
                         parsed_message.reply_to_message = await client.get_messages(
-                            replies=replies - 1,
-                            **reply_to_params
+                            replies=replies - 1, **reply_to_params
                         )
 
             if message.reply_to.forum_topic:
@@ -2011,18 +2097,11 @@ class Message(Object, Update):
                     parsed_message.message_thread_id = 1
 
             if message.reply_to.quote:
-                parsed_message.quote = types.TextQuote._parse(
-                    client,
-                    users,
-                    message.reply_to
-                )
+                parsed_message.quote = types.TextQuote._parse(client, users, message.reply_to)
 
             if message.reply_to.reply_from:
                 parsed_message.external_reply = await types.ExternalReplyInfo._parse(
-                    client,
-                    message.reply_to,
-                    users,
-                    chats
+                    client, message.reply_to, users, chats
                 )
         elif isinstance(message.reply_to, raw.types.MessageReplyStoryHeader):
             parsed_message.reply_to_story_id = message.reply_to.story_id
@@ -2030,25 +2109,27 @@ class Message(Object, Update):
 
             if client.fetch_stories and client.me and not client.me.is_bot:
                 parsed_message.reply_to_story = await client.get_stories(
-                    utils.get_peer_id(message.reply_to.peer),
-                    message.reply_to.story_id
+                    utils.get_peer_id(message.reply_to.peer), message.reply_to.story_id
                 )
 
         return parsed_message
 
     @staticmethod
     async def _parse(
-        client: "pyrogram.Client",
-        message: "raw.base.Message",
-        users: Dict[int, "raw.base.User"],
-        chats: Dict[int, "raw.base.Chat"],
-        topics: Optional[Dict[int, "raw.base.ForumTopic"]] = None,
+        client: pyrogram.Client,
+        message: raw.base.Message,
+        users: dict[int, raw.base.User],
+        chats: dict[int, raw.base.Chat],
+        topics: dict[int, raw.base.ForumTopic] | None = None,
         is_scheduled: bool = False,
         replies: int = 1,
-        business_connection_id: Optional[str] = None,
-        guest_query_id: Optional[str] = None,
-        raw_reply_to_message: Optional["raw.base.Message"] = None
-    ) -> "Message":
+        business_connection_id: str | None = None,
+        guest_query_id: str | None = None,
+        raw_reply_to_message: raw.base.Message | None = None,
+    ) -> Message:
+        if isinstance(client, pyrogram.Client):
+            client.register_min_peers_from_message(message, users, chats)
+
         if isinstance(message, raw.types.MessageEmpty):
             return Message(
                 id=message.id,
@@ -2066,7 +2147,7 @@ class Message(Object, Update):
                 chats=chats,
                 replies=replies,
                 business_connection_id=business_connection_id,
-                raw_reply_to_message=raw_reply_to_message
+                raw_reply_to_message=raw_reply_to_message,
             )
 
         if isinstance(message, raw.types.Message):
@@ -2080,22 +2161,22 @@ class Message(Object, Update):
                 replies=replies,
                 business_connection_id=business_connection_id,
                 guest_query_id=guest_query_id,
-                raw_reply_to_message=raw_reply_to_message
+                raw_reply_to_message=raw_reply_to_message,
             )
 
         if isinstance(message, raw.types.EphemeralMessage):
             from_user = types.User._parse(client, users.get(utils.get_raw_peer_id(message.from_id)))
-            rich_message = await types.RichMessage._parse(
-                client, message.rich_message, users, chats
-            ) if message.rich_message else None
+            rich_message = (
+                await types.RichMessage._parse(client, message.rich_message, users, chats)
+                if message.rich_message
+                else None
+            )
 
             if message.peer_id is not None:
                 chat = types.Chat._parse(client, message, users, chats, is_chat=True)
             else:
                 counterpart = (
-                    message.receiver_id
-                    if message.out
-                    else utils.get_raw_peer_id(message.from_id)
+                    message.receiver_id if message.out else utils.get_raw_peer_id(message.from_id)
                 )
                 chat = types.Chat._parse_user_chat(client, users.get(counterpart))
 
@@ -2104,7 +2185,10 @@ class Message(Object, Update):
             entities = types.List(
                 filter(
                     lambda x: x is not None,
-                    [types.MessageEntity._parse(client, entity, users) for entity in message.entities or []]
+                    [
+                        types.MessageEntity._parse(client, entity, users)
+                        for entity in message.entities or []
+                    ],
                 )
             )
 
@@ -2160,54 +2244,48 @@ class Message(Object, Update):
         return self.content.html
 
     @property
-    def is_topic_message(self) -> Optional[bool]:
+    def is_topic_message(self) -> bool | None:
         return self.topic_message
 
     @property
-    def forward_from(self) -> Optional["types.User"]:
+    def forward_from(self) -> types.User | None:
         log.warning(
             "`message.forward_from` is deprecated and will be removed in future updates. Use `message.forward_origin.sender_user` instead."
         )
         return getattr(self.forward_origin, "sender_user", None)
 
     @property
-    def forward_sender_name(self) -> Optional[str]:
+    def forward_sender_name(self) -> str | None:
         log.warning(
             "`message.forward_sender_name` property is deprecated and will be removed in future updates. Use `message.forward_origin.sender_user_name` instead."
         )
         return getattr(self.forward_origin, "sender_user_name", None)
 
     @property
-    def forward_from_chat(self) -> Optional["types.Chat"]:
+    def forward_from_chat(self) -> types.Chat | None:
         log.warning(
             "`message.forward_from_chat` property is deprecated and will be removed in future updates. Use `message.forward_origin.chat.sender_chat` instead."
         )
         return getattr(
-            self.forward_origin,
-            "chat",
-            getattr(
-                self.forward_origin,
-                "sender_chat",
-                None
-            )
+            self.forward_origin, "chat", getattr(self.forward_origin, "sender_chat", None)
         )
 
     @property
-    def forward_from_message_id(self) -> Optional[int]:
+    def forward_from_message_id(self) -> int | None:
         log.warning(
             "`message.forward_from_message_id` property is deprecated and will be removed in future updates. Use `message.forward_origin.message_id` instead."
         )
         return getattr(self.forward_origin, "message_id", None)
 
     @property
-    def forward_signature(self) -> Optional[str]:
+    def forward_signature(self) -> str | None:
         log.warning(
             "`message.forward_signature` property is deprecated and will be removed in future updates. Use `message.forward_origin.author_signature` instead."
         )
         return getattr(self.forward_origin, "author_signature", None)
 
     @property
-    def forward_date(self) -> Optional[datetime]:
+    def forward_date(self) -> datetime | None:
         log.warning(
             "`message.forward_date` property is deprecated and will be removed in future updates. Use `message.forward_origin.date` instead."
         )
@@ -2217,42 +2295,38 @@ class Message(Object, Update):
 
     async def reply_animation(
         self,
-        animation: Union[str, BinaryIO],
+        animation: str | BinaryIO,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        has_spoiler: Optional[bool] = None,
-        show_caption_above_media: Optional[bool] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        has_spoiler: bool | None = None,
+        show_caption_above_media: bool | None = None,
         duration: int = 0,
         width: int = 0,
         height: int = 0,
-        thumb: Optional[Union[str, BinaryIO]] = None,
-        disable_notification: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        progress: Optional[Callable] = None,
+        thumb: str | BinaryIO | None = None,
+        disable_notification: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> Optional["Message"]:
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_animation` will automatically fill method attributes:
 
         * chat_id
@@ -2374,13 +2448,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -2417,7 +2489,6 @@ class Message(Object, Update):
             reply_markup=reply_markup,
             progress=progress,
             progress_args=progress_args,
-
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
             quote_entities=quote_entities,
@@ -2425,37 +2496,34 @@ class Message(Object, Update):
 
     async def answer_animation(
         self,
-        animation: Union[str, BinaryIO],
+        animation: str | BinaryIO,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        has_spoiler: Optional[bool] = None,
-        show_caption_above_media: Optional[bool] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        has_spoiler: bool | None = None,
+        show_caption_above_media: bool | None = None,
         duration: int = 0,
         width: int = 0,
         height: int = 0,
-        thumb: Optional[Union[str, BinaryIO]] = None,
-        disable_notification: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        progress: Optional[Callable] = None,
+        thumb: str | BinaryIO | None = None,
+        disable_notification: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-    ) -> Optional["Message"]:
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_animation` will automatically fill method attributes:
 
         * chat_id
@@ -2603,45 +2671,41 @@ class Message(Object, Update):
             suggested_post_parameters=suggested_post_parameters,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args
+            progress_args=progress_args,
         )
 
     async def reply_audio(
         self,
-        audio: Union[str, BinaryIO],
+        audio: str | BinaryIO,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
         duration: int = 0,
-        performer: Optional[str] = None,
-        title: Optional[str] = None,
-        thumb: Optional[Union[str, BinaryIO]] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
+        performer: str | None = None,
+        title: str | None = None,
+        thumb: str | BinaryIO | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> Optional["Message"]:
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_audio` will automatically fill method attributes:
 
         * chat_id
@@ -2757,13 +2821,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -2798,7 +2860,6 @@ class Message(Object, Update):
             reply_markup=reply_markup,
             progress=progress,
             progress_args=progress_args,
-
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
             quote_entities=quote_entities,
@@ -2806,35 +2867,32 @@ class Message(Object, Update):
 
     async def answer_audio(
         self,
-        audio: Union[str, BinaryIO],
+        audio: str | BinaryIO,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
         duration: int = 0,
-        performer: Optional[str] = None,
-        title: Optional[str] = None,
-        thumb: Optional[Union[str, BinaryIO]] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
+        performer: str | None = None,
+        title: str | None = None,
+        thumb: str | BinaryIO | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-    ) -> Optional["Message"]:
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_audio` will automatically fill method attributes:
 
         * chat_id
@@ -2974,7 +3032,7 @@ class Message(Object, Update):
             suggested_post_parameters=suggested_post_parameters,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args
+            progress_args=progress_args,
         )
 
     async def reply_contact(
@@ -2983,27 +3041,23 @@ class Message(Object, Update):
         first_name: str,
         last_name: str = "",
         vcard: str = "",
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> "Message":
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_contact` will automatically fill method attributes:
 
         * chat_id
@@ -3067,13 +3121,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -3099,7 +3151,6 @@ class Message(Object, Update):
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
             reply_markup=reply_markup,
-
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
             quote_entities=quote_entities,
@@ -3111,22 +3162,19 @@ class Message(Object, Update):
         first_name: str,
         last_name: str = "",
         vcard: str = "",
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None
-    ) -> "Message":
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_contact` will automatically fill method attributes:
 
         * chat_id
@@ -3205,45 +3253,41 @@ class Message(Object, Update):
             business_connection_id=self.business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )
 
     async def reply_document(
         self,
-        document: Union[str, BinaryIO],
-        thumb: Optional[Union[str, BinaryIO]] = None,
+        document: str | BinaryIO,
+        thumb: str | BinaryIO | None = None,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        file_name: Optional[str] = None,
-        force_document: Optional[bool] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        protect_content: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        file_name: str | None = None,
+        force_document: bool | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> Optional["Message"]:
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_document` will automatically fill method attributes:
 
         * chat_id
@@ -3362,13 +3406,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -3403,7 +3445,6 @@ class Message(Object, Update):
             reply_markup=reply_markup,
             progress=progress,
             progress_args=progress_args,
-
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
             quote_entities=quote_entities,
@@ -3411,35 +3452,32 @@ class Message(Object, Update):
 
     async def answer_document(
         self,
-        document: Union[str, BinaryIO],
-        thumb: Optional[Union[str, BinaryIO]] = None,
+        document: str | BinaryIO,
+        thumb: str | BinaryIO | None = None,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        file_name: Optional[str] = None,
-        force_document: Optional[bool] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        protect_content: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        file_name: str | None = None,
+        force_document: bool | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-    ) -> Optional["Message"]:
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_document` will automatically fill method attributes:
 
         * chat_id
@@ -3582,29 +3620,25 @@ class Message(Object, Update):
             suggested_post_parameters=suggested_post_parameters,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args
+            progress_args=progress_args,
         )
 
     async def reply_game(
         self,
         game_short_name: str,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-    ) -> "Message":
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_game` will automatically fill method attributes:
 
         * chat_id
@@ -3657,9 +3691,7 @@ class Message(Object, Update):
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -3676,27 +3708,23 @@ class Message(Object, Update):
             reply_parameters=reply_parameters,
             allow_paid_broadcast=allow_paid_broadcast,
             reply_markup=reply_markup,
-
             reply_to_message_id=reply_to_message_id,
         )
 
     async def answer_game(
         self,
         game_short_name: str,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None
-    ) -> "Message":
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_game` will automatically fill method attributes:
 
         * chat_id
@@ -3753,53 +3781,50 @@ class Message(Object, Update):
             effect_id=effect_id,
             reply_parameters=reply_parameters,
             allow_paid_broadcast=allow_paid_broadcast,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )
 
     async def reply_invoice(
         self,
         title: str,
         description: str,
-        payload: Union[str, bytes],
+        payload: str | bytes,
         currency: str,
-        prices: List["types.LabeledPrice"],
-        message_thread_id: Optional[int] = None,
-        provider_token: Optional[str] = None,
-        max_tip_amount: Optional[int] = None,
-        suggested_tip_amounts: Optional[List[int]] = None,
-        start_parameter: Optional[str] = None,
-        provider_data: Optional[str] = None,
-        photo_url: Optional[str] = None,
-        photo_size: Optional[int] = None,
-        photo_width: Optional[int] = None,
-        photo_height: Optional[int] = None,
-        need_name: Optional[bool] = None,
-        need_phone_number: Optional[bool] = None,
-        need_email: Optional[bool] = None,
-        need_shipping_address: Optional[bool] = None,
-        send_phone_number_to_provider: Optional[bool] = None,
-        send_email_to_provider: Optional[bool] = None,
-        is_flexible: Optional[bool] = None,
-        disable_notification: Optional[bool] = None,
-        protect_content: Optional[bool] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        subscription_period: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
+        prices: list[types.LabeledPrice],
+        message_thread_id: int | None = None,
+        provider_token: str | None = None,
+        max_tip_amount: int | None = None,
+        suggested_tip_amounts: list[int] | None = None,
+        start_parameter: str | None = None,
+        provider_data: str | None = None,
+        photo_url: str | None = None,
+        photo_size: int | None = None,
+        photo_width: int | None = None,
+        photo_height: int | None = None,
+        need_name: bool | None = None,
+        need_phone_number: bool | None = None,
+        need_email: bool | None = None,
+        need_shipping_address: bool | None = None,
+        send_phone_number_to_provider: bool | None = None,
+        send_email_to_provider: bool | None = None,
+        is_flexible: bool | None = None,
+        disable_notification: bool | None = None,
+        protect_content: bool | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        direct_messages_topic_id: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        subscription_period: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> Optional["Message"]:
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_invoice` will automatically fill method attributes:
 
         * chat_id
@@ -3922,9 +3947,7 @@ class Message(Object, Update):
             :obj:`~pyrogram.types.Message`: On success, the sent invoice message is returned.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=self.id
-            )
+            reply_parameters = types.ReplyParameters(message_id=self.id)
 
         if message_thread_id is None:
             message_thread_id = self.message_thread_id
@@ -3967,53 +3990,50 @@ class Message(Object, Update):
             reply_markup=reply_markup,
             caption=caption,
             parse_mode=parse_mode,
-            caption_entities=caption_entities
+            caption_entities=caption_entities,
         )
 
     async def answer_invoice(
         self,
         title: str,
         description: str,
-        payload: Union[str, bytes],
+        payload: str | bytes,
         currency: str,
-        prices: List["types.LabeledPrice"],
-        message_thread_id: Optional[int] = None,
-        provider_token: Optional[str] = None,
-        max_tip_amount: Optional[int] = None,
-        suggested_tip_amounts: Optional[List[int]] = None,
-        start_parameter: Optional[str] = None,
-        provider_data: Optional[str] = None,
-        photo_url: Optional[str] = None,
-        photo_size: Optional[int] = None,
-        photo_width: Optional[int] = None,
-        photo_height: Optional[int] = None,
-        need_name: Optional[bool] = None,
-        need_phone_number: Optional[bool] = None,
-        need_email: Optional[bool] = None,
-        need_shipping_address: Optional[bool] = None,
-        send_phone_number_to_provider: Optional[bool] = None,
-        send_email_to_provider: Optional[bool] = None,
-        is_flexible: Optional[bool] = None,
-        disable_notification: Optional[bool] = None,
-        protect_content: Optional[bool] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        subscription_period: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
+        prices: list[types.LabeledPrice],
+        message_thread_id: int | None = None,
+        provider_token: str | None = None,
+        max_tip_amount: int | None = None,
+        suggested_tip_amounts: list[int] | None = None,
+        start_parameter: str | None = None,
+        provider_data: str | None = None,
+        photo_url: str | None = None,
+        photo_size: int | None = None,
+        photo_width: int | None = None,
+        photo_height: int | None = None,
+        need_name: bool | None = None,
+        need_phone_number: bool | None = None,
+        need_email: bool | None = None,
+        need_shipping_address: bool | None = None,
+        send_phone_number_to_provider: bool | None = None,
+        send_email_to_provider: bool | None = None,
+        is_flexible: bool | None = None,
+        disable_notification: bool | None = None,
+        protect_content: bool | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        direct_messages_topic_id: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        subscription_period: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> Optional["Message"]:
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_invoice` will automatically fill method attributes:
 
         * chat_id
@@ -4175,38 +4195,34 @@ class Message(Object, Update):
             reply_markup=reply_markup,
             caption=caption,
             parse_mode=parse_mode,
-            caption_entities=caption_entities
+            caption_entities=caption_entities,
         )
 
     async def reply_location(
         self,
         latitude: float,
         longitude: float,
-        horizontal_accuracy: Optional[float] = None,
-        live_period: Optional[int] = None,
-        heading: Optional[int] = None,
-        proximity_alert_radius: Optional[int] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> "Message":
+        horizontal_accuracy: float | None = None,
+        live_period: int | None = None,
+        heading: int | None = None,
+        proximity_alert_radius: int | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_location` will automatically fill method attributes:
 
         * chat_id
@@ -4280,13 +4296,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -4314,7 +4328,6 @@ class Message(Object, Update):
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
             reply_markup=reply_markup,
-
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
             quote_entities=quote_entities,
@@ -4324,26 +4337,23 @@ class Message(Object, Update):
         self,
         latitude: float,
         longitude: float,
-        horizontal_accuracy: Optional[float] = None,
-        live_period: Optional[int] = None,
-        heading: Optional[int] = None,
-        proximity_alert_radius: Optional[int] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None
-    ) -> "Message":
+        horizontal_accuracy: float | None = None,
+        live_period: int | None = None,
+        heading: int | None = None,
+        proximity_alert_radius: int | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_location` will automatically fill method attributes:
 
         * chat_id
@@ -4434,25 +4444,24 @@ class Message(Object, Update):
             business_connection_id=self.business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )
 
     async def reply_media_group(
         self,
-        media: List[Union["types.InputMediaPhoto", "types.InputMediaVideo"]],
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> List["types.Message"]:
+        media: list[types.InputMediaPhoto | types.InputMediaVideo],
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> list[types.Message]:
         """Shortcut for method :obj:`~pyrogram.Client.send_media_group` will automatically fill method attributes:
 
         * chat_id
@@ -4506,13 +4515,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -4534,7 +4541,6 @@ class Message(Object, Update):
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
             business_connection_id=self.business_connection_id,
-
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
             quote_entities=quote_entities,
@@ -4542,15 +4548,15 @@ class Message(Object, Update):
 
     async def answer_media_group(
         self,
-        media: List[Union["types.InputMediaPhoto", "types.InputMediaVideo"]],
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None
-    ) -> List["types.Message"]:
+        media: list[types.InputMediaPhoto | types.InputMediaVideo],
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+    ) -> list[types.Message]:
         """Shortcut for method :obj:`~pyrogram.Client.send_media_group` will automatically fill method attributes:
 
         * chat_id
@@ -4615,42 +4621,38 @@ class Message(Object, Update):
             reply_parameters=reply_parameters,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
-            business_connection_id=self.business_connection_id
+            business_connection_id=self.business_connection_id,
         )
 
     async def reply(
         self,
         text: str,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        link_preview_options: Optional["types.LinkPreviewOptions"] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        show_caption_above_media: Optional[bool] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        protect_content: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-
-        quote: Optional[bool] = None,
-        disable_web_page_preview: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> "Message":
+        parse_mode: enums.ParseMode | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        link_preview_options: types.LinkPreviewOptions | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        show_caption_above_media: bool | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        quote: bool | None = None,
+        disable_web_page_preview: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_message` will automatically fill method attributes:
 
         * chat_id
@@ -4730,13 +4732,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -4767,7 +4767,6 @@ class Message(Object, Update):
             paid_message_star_count=paid_message_star_count,
             suggested_post_parameters=suggested_post_parameters,
             reply_markup=reply_markup,
-
             disable_web_page_preview=disable_web_page_preview,
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
@@ -4779,30 +4778,27 @@ class Message(Object, Update):
     async def answer(
         self,
         text: str,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        link_preview_options: Optional["types.LinkPreviewOptions"] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        show_caption_above_media: Optional[bool] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        protect_content: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None
-    ) -> "Message":
+        parse_mode: enums.ParseMode | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        link_preview_options: types.LinkPreviewOptions | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        show_caption_above_media: bool | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_message` will automatically fill method attributes:
 
         * chat_id
@@ -4902,45 +4898,41 @@ class Message(Object, Update):
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
             suggested_post_parameters=suggested_post_parameters,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )
 
     async def reply_photo(
         self,
-        photo: Union[str, BinaryIO],
+        photo: str | BinaryIO,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        has_spoiler: Optional[bool] = None,
-        show_caption_above_media: Optional[bool] = None,
-        ttl_seconds: Optional[int] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        protect_content: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        has_spoiler: bool | None = None,
+        show_caption_above_media: bool | None = None,
+        ttl_seconds: int | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> Optional["Message"]:
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_photo` will automatically fill method attributes:
 
         * chat_id
@@ -5055,13 +5047,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -5096,7 +5086,6 @@ class Message(Object, Update):
             reply_markup=reply_markup,
             progress=progress,
             progress_args=progress_args,
-
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
             quote_entities=quote_entities,
@@ -5104,35 +5093,32 @@ class Message(Object, Update):
 
     async def answer_photo(
         self,
-        photo: Union[str, BinaryIO],
+        photo: str | BinaryIO,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        has_spoiler: Optional[bool] = None,
-        show_caption_above_media: Optional[bool] = None,
-        ttl_seconds: Optional[int] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        protect_content: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
-        progress_args: tuple = ()
-    ) -> Optional["Message"]:
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        has_spoiler: bool | None = None,
+        show_caption_above_media: bool | None = None,
+        ttl_seconds: int | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_photo` will automatically fill method attributes:
 
         * chat_id
@@ -5271,49 +5257,46 @@ class Message(Object, Update):
             suggested_post_parameters=suggested_post_parameters,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args
+            progress_args=progress_args,
         )
 
     async def reply_poll(
         self,
-        question: "types.FormattedText",
-        options: List[Union[str, "types.InputPollOption"]],
-        description: Optional["types.FormattedText"] = None,
-        description_media: Optional["types.InputPollMedia"] = None,
-        message_thread_id: Optional[int] = None,
-        business_connection_id: Optional[str] = None,
+        question: types.FormattedText,
+        options: list[str | types.InputPollOption],
+        description: types.FormattedText | None = None,
+        description_media: types.InputPollMedia | None = None,
+        message_thread_id: int | None = None,
+        business_connection_id: str | None = None,
         is_anonymous: bool = True,
-        type: "enums.PollType" = enums.PollType.REGULAR,
-        allows_multiple_answers: Optional[bool] = None,
-        allows_revoting: Optional[bool] = None,
-        members_only: Optional[bool] = None,
-        country_codes: Optional[List[str]] = None,
-        shuffle_options: Optional[bool] = None,
-        allow_adding_options: Optional[bool] = None,
-        hide_results_until_closes: Optional[bool] = None,
-        correct_option_ids: Optional[List[int]] = None,
-        explanation: Optional["types.FormattedText"] = None,
-        explanation_media: Optional["types.InputPollMedia"] = None,
-        open_period: Optional[int] = None,
-        close_date: Optional[datetime] = None,
-        is_closed: Optional[bool] = None,
-        disable_notification: Optional[bool] = None,
-        protect_content: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        paid_message_star_count: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-    ) -> "Message":
+        type: enums.PollType = enums.PollType.REGULAR,
+        allows_multiple_answers: bool | None = None,
+        allows_revoting: bool | None = None,
+        members_only: bool | None = None,
+        country_codes: list[str] | None = None,
+        shuffle_options: bool | None = None,
+        allow_adding_options: bool | None = None,
+        hide_results_until_closes: bool | None = None,
+        correct_option_ids: list[int] | None = None,
+        explanation: types.FormattedText | None = None,
+        explanation_media: types.InputPollMedia | None = None,
+        open_period: int | None = None,
+        close_date: datetime | None = None,
+        is_closed: bool | None = None,
+        disable_notification: bool | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        paid_message_star_count: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_poll` will automatically fill method attributes:
 
         * chat_id
@@ -5444,9 +5427,7 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=self.id
-            )
+            reply_parameters = types.ReplyParameters(message_id=self.id)
 
         if message_thread_id is None:
             message_thread_id = self.message_thread_id
@@ -5487,44 +5468,41 @@ class Message(Object, Update):
 
     async def answer_poll(
         self,
-        question: "types.FormattedText",
-        options: List[Union[str, "types.InputPollOption"]],
-        description: Optional["types.FormattedText"] = None,
-        description_media: Optional["types.InputPollMedia"] = None,
-        message_thread_id: Optional[int] = None,
-        business_connection_id: Optional[str] = None,
+        question: types.FormattedText,
+        options: list[str | types.InputPollOption],
+        description: types.FormattedText | None = None,
+        description_media: types.InputPollMedia | None = None,
+        message_thread_id: int | None = None,
+        business_connection_id: str | None = None,
         is_anonymous: bool = True,
-        type: "enums.PollType" = enums.PollType.REGULAR,
-        allows_multiple_answers: Optional[bool] = None,
-        allows_revoting: Optional[bool] = None,
-        members_only: Optional[bool] = None,
-        country_codes: Optional[List[str]] = None,
-        shuffle_options: Optional[bool] = None,
-        allow_adding_options: Optional[bool] = None,
-        hide_results_until_closes: Optional[bool] = None,
-        correct_option_ids: Optional[List[int]] = None,
-        explanation: Optional["types.FormattedText"] = None,
-        explanation_media: Optional["types.InputPollMedia"] = None,
-        open_period: Optional[int] = None,
-        close_date: Optional[datetime] = None,
-        is_closed: Optional[bool] = None,
-        disable_notification: Optional[bool] = None,
-        protect_content: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        paid_message_star_count: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-    ) -> "Message":
+        type: enums.PollType = enums.PollType.REGULAR,
+        allows_multiple_answers: bool | None = None,
+        allows_revoting: bool | None = None,
+        members_only: bool | None = None,
+        country_codes: list[str] | None = None,
+        shuffle_options: bool | None = None,
+        allow_adding_options: bool | None = None,
+        hide_results_until_closes: bool | None = None,
+        correct_option_ids: list[int] | None = None,
+        explanation: types.FormattedText | None = None,
+        explanation_media: types.InputPollMedia | None = None,
+        open_period: int | None = None,
+        close_date: datetime | None = None,
+        is_closed: bool | None = None,
+        disable_notification: bool | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        paid_message_star_count: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_poll` will automatically fill method attributes:
 
         * chat_id
@@ -5693,25 +5671,22 @@ class Message(Object, Update):
     async def reply_dice(
         self,
         emoji: str = "🎲",
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        protect_content: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None
-    ) -> Optional["Message"]:
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        schedule_date: datetime | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_dice` will automatically fill method attributes:
 
         * chat_id
@@ -5773,9 +5748,7 @@ class Message(Object, Update):
             :obj:`~pyrogram.types.Message`: On success, the sent dice message is returned.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=self.id
-            )
+            reply_parameters = types.ReplyParameters(message_id=self.id)
 
         if message_thread_id is None:
             message_thread_id = self.message_thread_id
@@ -5794,31 +5767,28 @@ class Message(Object, Update):
             business_connection_id=self.business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )
 
     async def answer_dice(
         self,
         emoji: str = "🎲",
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        protect_content: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None
-    ) -> Optional["Message"]:
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        schedule_date: datetime | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_dice` will automatically fill method attributes:
 
         * chat_id
@@ -5895,38 +5865,34 @@ class Message(Object, Update):
             business_connection_id=self.business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )
 
     async def reply_sticker(
         self,
-        sticker: Union[str, BinaryIO],
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
+        sticker: str | BinaryIO,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> Optional["Message"]:
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_sticker` will automatically fill method attributes:
 
         * chat_id
@@ -6028,13 +5994,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -6062,7 +6026,6 @@ class Message(Object, Update):
             reply_markup=reply_markup,
             progress=progress,
             progress_args=progress_args,
-
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
             quote_entities=quote_entities,
@@ -6070,28 +6033,25 @@ class Message(Object, Update):
 
     async def answer_sticker(
         self,
-        sticker: Union[str, BinaryIO],
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
-        progress_args: tuple = ()
-    ) -> Optional["Message"]:
+        sticker: str | BinaryIO,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_sticker` will automatically fill method attributes:
 
         * chat_id
@@ -6210,7 +6170,7 @@ class Message(Object, Update):
             suggested_post_parameters=suggested_post_parameters,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args
+            progress_args=progress_args,
         )
 
     async def reply_venue(
@@ -6221,27 +6181,23 @@ class Message(Object, Update):
         address: str,
         foursquare_id: str = "",
         foursquare_type: str = "",
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> "Message":
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_venue` will automatically fill method attributes:
 
         * chat_id
@@ -6312,13 +6268,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -6346,7 +6300,6 @@ class Message(Object, Update):
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
             reply_markup=reply_markup,
-
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
             quote_entities=quote_entities,
@@ -6360,22 +6313,19 @@ class Message(Object, Update):
         address: str,
         foursquare_id: str = "",
         foursquare_type: str = "",
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None
-    ) -> "Message":
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_venue` will automatically fill method attributes:
 
         * chat_id
@@ -6463,52 +6413,48 @@ class Message(Object, Update):
             business_connection_id=self.business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )
 
     async def reply_video(
         self,
-        video: Union[str, BinaryIO],
+        video: str | BinaryIO,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        has_spoiler: Optional[bool] = None,
-        show_caption_above_media: Optional[bool] = None,
-        ttl_seconds: Optional[int] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        has_spoiler: bool | None = None,
+        show_caption_above_media: bool | None = None,
+        ttl_seconds: int | None = None,
         duration: int = 0,
         width: int = 0,
         height: int = 0,
-        video_start_timestamp: Optional[int] = None,
-        video_cover: Optional[Union[str, BinaryIO]] = None,
-        thumb: Optional[Union[str, BinaryIO]] = None,
+        video_start_timestamp: int | None = None,
+        video_cover: str | BinaryIO | None = None,
+        thumb: str | BinaryIO | None = None,
         supports_streaming: bool = True,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        no_sound: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        no_sound: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> Optional["Message"]:
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_video` will automatically fill method attributes:
 
         * chat_id
@@ -6671,13 +6617,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -6697,7 +6641,6 @@ class Message(Object, Update):
             has_spoiler=has_spoiler,
             show_caption_above_media=show_caption_above_media,
             ttl_seconds=ttl_seconds,
-
             duration=duration,
             width=width,
             height=height,
@@ -6720,7 +6663,6 @@ class Message(Object, Update):
             reply_markup=reply_markup,
             progress=progress,
             progress_args=progress_args,
-
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
             quote_entities=quote_entities,
@@ -6728,43 +6670,39 @@ class Message(Object, Update):
 
     async def answer_video(
         self,
-        video: Union[str, BinaryIO],
+        video: str | BinaryIO,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        has_spoiler: Optional[bool] = None,
-        show_caption_above_media: Optional[bool] = None,
-        ttl_seconds: Optional[int] = None,
-
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        has_spoiler: bool | None = None,
+        show_caption_above_media: bool | None = None,
+        ttl_seconds: int | None = None,
         duration: int = 0,
         width: int = 0,
         height: int = 0,
-        video_start_timestamp: Optional[int] = None,
-        video_cover: Optional[Union[str, BinaryIO]] = None,
-        thumb: Optional[Union[str, BinaryIO]] = None,
+        video_start_timestamp: int | None = None,
+        video_cover: str | BinaryIO | None = None,
+        thumb: str | BinaryIO | None = None,
         supports_streaming: bool = True,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        no_sound: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
-        progress_args: tuple = ()
-    ) -> Optional["Message"]:
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        no_sound: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_video` will automatically fill method attributes:
 
         * chat_id
@@ -6924,7 +6862,6 @@ class Message(Object, Update):
             has_spoiler=has_spoiler,
             show_caption_above_media=show_caption_above_media,
             ttl_seconds=ttl_seconds,
-
             duration=duration,
             width=width,
             height=height,
@@ -6946,44 +6883,39 @@ class Message(Object, Update):
             suggested_post_parameters=suggested_post_parameters,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args
+            progress_args=progress_args,
         )
 
     async def reply_video_note(
         self,
-        video_note: Union[str, BinaryIO],
+        video_note: str | BinaryIO,
         duration: int = 0,
         length: int = 1,
-        thumb: Optional[Union[str, BinaryIO]] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        protect_content: Optional[bool] = None,
-
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
+        thumb: str | BinaryIO | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> Optional["Message"]:
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_video_note` will automatically fill method attributes:
 
         * chat_id
@@ -7090,13 +7022,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -7121,7 +7051,6 @@ class Message(Object, Update):
             schedule_date=schedule_date,
             repeat_period=repeat_period,
             protect_content=protect_content,
-
             business_connection_id=self.business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
@@ -7129,7 +7058,6 @@ class Message(Object, Update):
             reply_markup=reply_markup,
             progress=progress,
             progress_args=progress_args,
-
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
             quote_entities=quote_entities,
@@ -7137,33 +7065,29 @@ class Message(Object, Update):
 
     async def answer_video_note(
         self,
-        video_note: Union[str, BinaryIO],
+        video_note: str | BinaryIO,
         duration: int = 0,
         length: int = 1,
-        thumb: Optional[Union[str, BinaryIO]] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        protect_content: Optional[bool] = None,
-
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
-        progress_args: tuple = ()
-    ) -> Optional["Message"]:
+        thumb: str | BinaryIO | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_video_note` will automatically fill method attributes:
 
         * chat_id
@@ -7285,50 +7209,44 @@ class Message(Object, Update):
             schedule_date=schedule_date,
             repeat_period=repeat_period,
             protect_content=protect_content,
-
             business_connection_id=self.business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
             suggested_post_parameters=suggested_post_parameters,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args
+            progress_args=progress_args,
         )
 
     async def reply_voice(
         self,
-        voice: Union[str, BinaryIO],
+        voice: str | BinaryIO,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
         duration: int = 0,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> Optional["Message"]:
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_voice` will automatically fill method attributes:
 
         * chat_id
@@ -7433,13 +7351,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -7464,7 +7380,6 @@ class Message(Object, Update):
             reply_parameters=reply_parameters,
             schedule_date=schedule_date,
             repeat_period=repeat_period,
-
             business_connection_id=self.business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
@@ -7472,7 +7387,6 @@ class Message(Object, Update):
             reply_markup=reply_markup,
             progress=progress,
             progress_args=progress_args,
-
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
             quote_entities=quote_entities,
@@ -7480,33 +7394,29 @@ class Message(Object, Update):
 
     async def answer_voice(
         self,
-        voice: Union[str, BinaryIO],
+        voice: str | BinaryIO,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
         duration: int = 0,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
-        progress_args: tuple = ()
-    ) -> Optional["Message"]:
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_voice` will automatically fill method attributes:
 
         * chat_id
@@ -7626,37 +7536,31 @@ class Message(Object, Update):
             reply_parameters=reply_parameters,
             schedule_date=schedule_date,
             repeat_period=repeat_period,
-
             business_connection_id=self.business_connection_id,
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
             suggested_post_parameters=suggested_post_parameters,
             reply_markup=reply_markup,
             progress=progress,
-            progress_args=progress_args
+            progress_args=progress_args,
         )
 
     async def reply_paid_media(
         self,
         stars_amount: int,
-        media: List[
-            Union[
-                "types.InputMediaPhoto",
-                "types.InputMediaVideo",
-            ]
-        ],
+        media: list[types.InputMediaPhoto | types.InputMediaVideo],
         caption: str = "",
-        payload: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        disable_notification: Optional[bool] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        protect_content: Optional[bool] = None,
-        show_caption_above_media: Optional[bool] = None
-    ) -> List["types.Message"]:
+        payload: str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        disable_notification: bool | None = None,
+        direct_messages_topic_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        schedule_date: datetime | None = None,
+        protect_content: bool | None = None,
+        show_caption_above_media: bool | None = None,
+    ) -> list[types.Message]:
         """Shortcut for method :obj:`~pyrogram.Client.send_paid_media` will automatically fill method attributes:
 
         * chat_id
@@ -7708,9 +7612,7 @@ class Message(Object, Update):
             List of :obj:`~pyrogram.types.Message`: On success, a list of messages is returned.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=self.id
-            )
+            reply_parameters = types.ReplyParameters(message_id=self.id)
 
         if direct_messages_topic_id is None:
             direct_messages_topic_id = self.direct_messages_topic_id
@@ -7730,30 +7632,25 @@ class Message(Object, Update):
             schedule_date=schedule_date,
             protect_content=protect_content,
             show_caption_above_media=show_caption_above_media,
-            business_connection_id=self.business_connection_id
+            business_connection_id=self.business_connection_id,
         )
 
     async def answer_paid_media(
         self,
         stars_amount: int,
-        media: List[
-            Union[
-                "types.InputMediaPhoto",
-                "types.InputMediaVideo",
-            ]
-        ],
+        media: list[types.InputMediaPhoto | types.InputMediaVideo],
         caption: str = "",
-        payload: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        disable_notification: Optional[bool] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        protect_content: Optional[bool] = None,
-        show_caption_above_media: Optional[bool] = None
-    ) -> List["types.Message"]:
+        payload: str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        disable_notification: bool | None = None,
+        direct_messages_topic_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        schedule_date: datetime | None = None,
+        protect_content: bool | None = None,
+        show_caption_above_media: bool | None = None,
+    ) -> list[types.Message]:
         """Shortcut for method :obj:`~pyrogram.Client.send_paid_media` will automatically fill method attributes:
 
         * chat_id
@@ -7822,36 +7719,32 @@ class Message(Object, Update):
             schedule_date=schedule_date,
             protect_content=protect_content,
             show_caption_above_media=show_caption_above_media,
-            business_connection_id=self.business_connection_id
+            business_connection_id=self.business_connection_id,
         )
 
     async def reply_cached_media(
         self,
         file_id: str,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> "Message":
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_cached_media` will automatically fill method attributes:
 
         * chat_id
@@ -7916,13 +7809,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -7948,7 +7839,6 @@ class Message(Object, Update):
             paid_message_star_count=paid_message_star_count,
             suggested_post_parameters=suggested_post_parameters,
             reply_markup=reply_markup,
-
             reply_to_message_id=reply_to_message_id,
             quote_text=quote_text,
             quote_entities=quote_entities,
@@ -7958,24 +7848,21 @@ class Message(Object, Update):
         self,
         file_id: str,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None
-    ) -> "Message":
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_cached_media` will automatically fill method attributes:
 
         * chat_id
@@ -8055,10 +7942,10 @@ class Message(Object, Update):
             allow_paid_broadcast=allow_paid_broadcast,
             paid_message_star_count=paid_message_star_count,
             suggested_post_parameters=suggested_post_parameters,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )
 
-    async def get_media_group(self) -> List["types.Message"]:
+    async def get_media_group(self) -> list[types.Message]:
         """Shortcut for method :obj:`~pyrogram.Client.get_media_group` will automatically fill method attributes:
 
         * chat_id
@@ -8070,15 +7957,9 @@ class Message(Object, Update):
         Raises:
             ValueError: In case the passed message id doesn't belong to a media group.
         """
-        return await self._client.get_media_group(
-            chat_id=self.chat.id,
-            message_id=self.id
-        )
+        return await self._client.get_media_group(chat_id=self.chat.id, message_id=self.id)
 
-    async def reply_chat_action(
-        self,
-        action: "enums.ChatAction"
-    ) -> bool:
+    async def reply_chat_action(self, action: enums.ChatAction) -> bool:
         """Shortcut for method :obj:`~pyrogram.Client.send_chat_action` will automatically fill method attributes:
 
         * chat_id
@@ -8096,27 +7977,24 @@ class Message(Object, Update):
             ValueError: In case the provided string is not a valid chat action.
         """
         return await self._client.send_chat_action(
-            chat_id=self.chat.id,
-            action=action,
-            business_connection_id=self.business_connection_id
+            chat_id=self.chat.id, action=action, business_connection_id=self.business_connection_id
         )
 
     async def reply_inline_bot_result(
         self,
         query_id: int,
         result_id: str,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[bool] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        paid_message_star_count: Optional[int] = None,
-
-        quote: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> "Message":
+        disable_notification: bool | None = None,
+        message_thread_id: bool | None = None,
+        direct_messages_topic_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        paid_message_star_count: int | None = None,
+        quote: bool | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_inline_bot_result` will automatically fill method attributes:
 
         * chat_id
@@ -8159,13 +8037,11 @@ class Message(Object, Update):
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
                 quote=quote_text,
-                quote_entities=quote_entities
+                quote_entities=quote_entities,
             )
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -8192,12 +8068,12 @@ class Message(Object, Update):
         self,
         query_id: int,
         result_id: str,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[bool] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        paid_message_star_count: Optional[int] = None
-    ) -> "Message":
+        disable_notification: bool | None = None,
+        message_thread_id: bool | None = None,
+        direct_messages_topic_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        paid_message_star_count: int | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_inline_bot_result` will automatically fill method attributes:
 
         * chat_id
@@ -8249,31 +8125,27 @@ class Message(Object, Update):
             message_thread_id=message_thread_id,
             direct_messages_topic_id=direct_messages_topic_id,
             reply_parameters=reply_parameters,
-            paid_message_star_count=paid_message_star_count
+            paid_message_star_count=paid_message_star_count,
         )
 
     async def reply_checklist(
         self,
-        checklist: "types.InputChecklist",
-        disable_notification: Optional[bool] = None,
-        protect_content: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        paid_message_star_count: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-
-        quote: Optional[bool] = None,
-    ) -> "Message":
+        checklist: types.InputChecklist,
+        disable_notification: bool | None = None,
+        protect_content: bool | None = None,
+        message_thread_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        paid_message_star_count: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        quote: bool | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_checklist` will automatically fill method attributes:
 
         * chat_id
@@ -8331,14 +8203,10 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=self.id
-            )
+            reply_parameters = types.ReplyParameters(message_id=self.id)
 
         if quote is not None:
-            log.warning(
-                "`quote` parameter is deprecated and will be removed in future updates."
-            )
+            log.warning("`quote` parameter is deprecated and will be removed in future updates.")
 
             if not quote:
                 reply_parameters = None
@@ -8363,24 +8231,21 @@ class Message(Object, Update):
 
     async def answer_checklist(
         self,
-        checklist: "types.InputChecklist",
-        disable_notification: Optional[bool] = None,
-        protect_content: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        paid_message_star_count: Optional[int] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-    ) -> "Message":
+        checklist: types.InputChecklist,
+        disable_notification: bool | None = None,
+        protect_content: bool | None = None,
+        message_thread_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        paid_message_star_count: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.send_checklist` will automatically fill method attributes:
 
         * chat_id
@@ -8468,8 +8333,7 @@ class Message(Object, Update):
     def _ephemeral_target(self) -> int:
         if not self.is_ephemeral:
             raise ValueError(
-                "this is not an ephemeral message; use the ordinary edit and delete "
-                "methods for it"
+                "this is not an ephemeral message; use the ordinary edit and delete methods for it"
             )
 
         if self.receiver_user is None:
@@ -8482,13 +8346,13 @@ class Message(Object, Update):
 
     async def edit_ephemeral_text(
         self,
-        text: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        rich_message: Optional["types.InputRichMessage"] = None,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        welcome: Optional[bool] = None,
-    ) -> Optional["Message"]:
+        text: str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        rich_message: types.InputRichMessage | None = None,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        welcome: bool | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.edit_ephemeral_message_text` will automatically fill method attributes:
 
         * chat_id
@@ -8544,12 +8408,12 @@ class Message(Object, Update):
     async def edit_ephemeral_caption(
         self,
         caption: str,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        show_caption_above_media: Optional[bool] = None,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        welcome: Optional[bool] = None,
-    ) -> Optional["Message"]:
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        show_caption_above_media: bool | None = None,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        welcome: bool | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.edit_ephemeral_message_caption` will automatically fill method attributes:
 
         * chat_id
@@ -8602,10 +8466,10 @@ class Message(Object, Update):
 
     async def edit_ephemeral_media(
         self,
-        media: "types.InputMedia",
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        welcome: Optional[bool] = None,
-    ) -> Optional["Message"]:
+        media: types.InputMedia,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        welcome: bool | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.edit_ephemeral_message_media` will automatically fill method attributes:
 
         * chat_id
@@ -8615,7 +8479,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                from wzgram.types import InputMediaPhoto
+                from pyrogram.types import InputMediaPhoto
 
                 await message.edit_ephemeral_media(InputMediaPhoto("new.jpg"))
 
@@ -8647,9 +8511,9 @@ class Message(Object, Update):
 
     async def edit_ephemeral_reply_markup(
         self,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        welcome: Optional[bool] = None,
-    ) -> Optional["Message"]:
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        welcome: bool | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.edit_ephemeral_message_reply_markup` will automatically fill method attributes:
 
         * chat_id
@@ -8659,7 +8523,7 @@ class Message(Object, Update):
         Example:
             .. code-block:: python
 
-                from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
+                from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
                 await message.edit_ephemeral_reply_markup(
                     InlineKeyboardMarkup([[InlineKeyboardButton("Done", "done")]])
@@ -8717,24 +8581,23 @@ class Message(Object, Update):
     async def reply_ephemeral_text(
         self,
         text: str,
-        receiver_id: Optional[Union[int, str]] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        reply_markup: Optional[Union[
-            "types.InlineKeyboardMarkup",
-            "types.ReplyKeyboardMarkup",
-            "types.ReplyKeyboardRemove",
-            "types.ForceReply"
-        ]] = None,
-        query_id: Optional[int] = None,
-        rich_text: Optional[Union[str, "types.InputRichMessage"]] = None,
-        rich_text_parse_mode: "enums.ParseMode" = enums.ParseMode.MARKDOWN,
-        rich_text_media: Optional[List["types.InputRichMessageMedia"]] = None,
-        welcome: Optional[bool] = None,
-        anchor: Optional[bool] = None,
-        show_caption_above_media: Optional[bool] = None,
-        protect_content: Optional[bool] = None,
-    ) -> Optional["Message"]:
+        receiver_id: int | str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        query_id: int | None = None,
+        rich_text: str | types.InputRichMessage | None = None,
+        rich_text_parse_mode: enums.ParseMode = enums.ParseMode.MARKDOWN,
+        rich_text_media: list[types.InputRichMessageMedia] | None = None,
+        welcome: bool | None = None,
+        anchor: bool | None = None,
+        show_caption_above_media: bool | None = None,
+        protect_content: bool | None = None,
+    ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.send_ephemeral_message` will automatically fill method attributes:
 
         * chat_id
@@ -8830,14 +8693,13 @@ class Message(Object, Update):
     async def edit_text(
         self,
         text: str,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        link_preview_options: Optional["types.LinkPreviewOptions"] = None,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-
-        show_caption_above_media: Optional[bool] = None,
-        disable_web_page_preview: Optional[bool] = None,
-    ) -> "Message":
+        parse_mode: enums.ParseMode | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        link_preview_options: types.LinkPreviewOptions | None = None,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        show_caption_above_media: bool | None = None,
+        disable_web_page_preview: bool | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.edit_message_text` will automatically fill method attributes:
 
         * chat_id
@@ -8881,7 +8743,6 @@ class Message(Object, Update):
             link_preview_options=link_preview_options,
             business_connection_id=self.business_connection_id,
             reply_markup=reply_markup,
-
             show_caption_above_media=show_caption_above_media,
             disable_web_page_preview=disable_web_page_preview,
         )
@@ -8891,11 +8752,11 @@ class Message(Object, Update):
     async def edit_caption(
         self,
         caption: str,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        show_caption_above_media: Optional[bool] = None
-    ) -> "Message":
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        show_caption_above_media: bool | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.edit_message_caption` will automatically fill method attributes:
 
         * chat_id
@@ -8934,14 +8795,12 @@ class Message(Object, Update):
             caption_entities=caption_entities,
             business_connection_id=self.business_connection_id,
             show_caption_above_media=show_caption_above_media,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )
 
     async def edit_media(
-        self,
-        media: "types.InputMedia",
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None
-    ) -> "Message":
+        self, media: types.InputMedia, reply_markup: types.InlineKeyboardMarkup | None = None
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.edit_message_media` will automatically fill method attributes:
 
         * chat_id
@@ -8971,14 +8830,14 @@ class Message(Object, Update):
             message_id=self.id,
             media=media,
             business_connection_id=self.business_connection_id,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )
 
     async def edit_checklist(
         self,
-        checklist: "types.InputChecklist",
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None
-    ) -> "Message":
+        checklist: types.InputChecklist,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.edit_message_checklist` will automatically fill method attributes:
 
         * chat_id
@@ -9003,10 +8862,12 @@ class Message(Object, Update):
             message_id=self.id,
             checklist=checklist,
             business_connection_id=self.business_connection_id,
-            reply_markup=reply_markup
+            reply_markup=reply_markup,
         )
 
-    async def edit_reply_markup(self, reply_markup: Optional["types.InlineKeyboardMarkup"] = None) -> "Message":
+    async def edit_reply_markup(
+        self, reply_markup: types.InlineKeyboardMarkup | None = None
+    ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.edit_message_reply_markup` will automatically fill method attributes:
 
         * chat_id
@@ -9024,20 +8885,18 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         return await self._client.edit_message_reply_markup(
-            chat_id=self.chat.id,
-            message_id=self.id,
-            reply_markup=reply_markup
+            chat_id=self.chat.id, message_id=self.id, reply_markup=reply_markup
         )
 
     async def edit_live_location(
         self,
         latitude: float,
         longitude: float,
-        horizontal_accuracy: Optional[float] = None,
-        live_period: Optional[int] = None,
-        heading: Optional[int] = None,
-        proximity_alert_radius: Optional[int] = None
-    ) -> "Message":
+        horizontal_accuracy: float | None = None,
+        live_period: int | None = None,
+        heading: int | None = None,
+        proximity_alert_radius: int | None = None,
+    ) -> Message:
         """Use this method to edit live location messages.
 
         Parameters:
@@ -9075,22 +8934,18 @@ class Message(Object, Update):
                 id=self.id,
                 media=raw.types.InputMediaGeoLive(
                     geo_point=raw.types.InputGeoPoint(
-                        lat=latitude,
-                        long=longitude,
-                        accuracy_radius=horizontal_accuracy
+                        lat=latitude, long=longitude, accuracy_radius=horizontal_accuracy
                     ),
                     heading=heading,
                     period=live_period,
-                    proximity_notification_radius=proximity_alert_radius
-                )
+                    proximity_notification_radius=proximity_alert_radius,
+                ),
             )
         )
 
         return next(iter(await utils.parse_messages(client=self._client, messages=r)), None)
 
-    async def stop_live_location(
-        self
-    ) -> "Message":
+    async def stop_live_location(self) -> Message:
         """Use this method to stop updating a live location message before live_period expires.
 
         Returns:
@@ -9101,9 +8956,8 @@ class Message(Object, Update):
                 peer=await self._client.resolve_peer(self.chat.id),
                 id=self.id,
                 media=raw.types.InputMediaGeoLive(
-                    geo_point=raw.types.InputGeoPointEmpty(),
-                    stopped=True
-                )
+                    geo_point=raw.types.InputGeoPointEmpty(), stopped=True
+                ),
             )
         )
 
@@ -9111,19 +8965,19 @@ class Message(Object, Update):
 
     async def forward(
         self,
-        chat_id: Union[int, str],
-        message_thread_id: Optional[int] = None,
-        disable_notification: Optional[bool] = None,
-        hide_sender_name: Optional[bool] = None,
-        hide_captions: Optional[bool] = None,
-        schedule_date: Optional[datetime] = None,
-        protect_content: Optional[bool] = None,
-        repeat_period: Optional[int] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        video_start_timestamp: Optional[int] = None,
-        paid_message_star_count: Optional[int] = None,
-        effect_id: Optional[int] = None
-    ) -> Union["types.Message", List["types.Message"]]:
+        chat_id: int | str,
+        message_thread_id: int | None = None,
+        disable_notification: bool | None = None,
+        hide_sender_name: bool | None = None,
+        hide_captions: bool | None = None,
+        schedule_date: datetime | None = None,
+        protect_content: bool | None = None,
+        repeat_period: int | None = None,
+        allow_paid_broadcast: bool | None = None,
+        video_start_timestamp: int | None = None,
+        paid_message_star_count: int | None = None,
+        effect_id: int | None = None,
+    ) -> types.Message | list[types.Message]:
         """Shortcut for method :obj:`~pyrogram.Client.forward_messages` will automatically fill method attributes:
 
         * from_chat_id
@@ -9198,42 +9052,40 @@ class Message(Object, Update):
             allow_paid_broadcast=allow_paid_broadcast,
             video_start_timestamp=video_start_timestamp,
             paid_message_star_count=paid_message_star_count,
-            effect=effect_id
+            effect=effect_id,
         )
 
     async def copy(
         self,
-        chat_id: Union[int, str],
-        caption: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        video_cover: Optional[Union[str, BinaryIO]] = None,
-        video_start_timestamp: Optional[int] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        protect_content: Optional[bool] = None,
-        has_spoiler: Optional[bool] = None,
-        show_caption_above_media: Optional[bool] = None,
-        business_connection_id: Optional[str] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[Union[
-            "types.InlineKeyboardMarkup",
-            "types.ReplyKeyboardMarkup",
-            "types.ReplyKeyboardRemove",
-            "types.ForceReply"
-        ]] = object,
-
-        reply_to_chat_id: Optional[Union[int, str]] = None,
-        reply_to_message_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-    ) -> "types.Message":
+        chat_id: int | str,
+        caption: str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        video_cover: str | BinaryIO | None = None,
+        video_start_timestamp: int | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        protect_content: bool | None = None,
+        has_spoiler: bool | None = None,
+        show_caption_above_media: bool | None = None,
+        business_connection_id: str | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = object,
+        reply_to_chat_id: int | str | None = None,
+        reply_to_message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> types.Message:
         """Shortcut for method :obj:`~pyrogram.Client.copy_message` will automatically fill method attributes:
 
         * from_chat_id
@@ -9337,13 +9189,46 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if self.service:
-            log.warning("Service messages cannot be copied. chat_id: %s, message_id: %s",
-                        self.chat.id, self.id)
+            log.warning(
+                "Service messages cannot be copied. chat_id: %s, message_id: %s",
+                self.chat.id,
+                self.id,
+            )
         elif self.game and not await self._client.storage.is_bot():
-            log.warning("Users cannot send messages with Game media type. chat_id: %s, message_id: %s",
-                        self.chat.id, self.id)
+            log.warning(
+                "Users cannot send messages with Game media type. chat_id: %s, message_id: %s",
+                self.chat.id,
+                self.id,
+            )
         elif self.empty:
             log.warning("Empty messages cannot be copied.")
+        elif self.rich_message:
+            if reply_parameters is None and reply_to_message_id is not None:
+                reply_parameters = types.ReplyParameters(
+                    message_id=reply_to_message_id,
+                    chat_id=reply_to_chat_id,
+                    quote=quote_text,
+                    quote_entities=quote_entities,
+                )
+
+            return await self._client.send_rich_message(
+                chat_id=chat_id,
+                rich_text=self.rich_message,
+                disable_notification=disable_notification,
+                message_thread_id=message_thread_id,
+                reply_parameters=reply_parameters,
+                schedule_date=schedule_date,
+                protect_content=self.has_protected_content
+                if protect_content is None
+                else protect_content,
+                effect_id=effect_id,
+                reply_markup=self.reply_markup if reply_markup is object else reply_markup,
+                business_connection_id=business_connection_id,
+                allow_paid_broadcast=allow_paid_broadcast,
+                paid_message_star_count=paid_message_star_count,
+                direct_messages_topic_id=direct_messages_topic_id,
+                suggested_post_parameters=suggested_post_parameters,
+            )
         elif self.text:
             return await self._client.send_message(
                 chat_id,
@@ -9366,7 +9251,7 @@ class Message(Object, Update):
                 direct_messages_topic_id=direct_messages_topic_id,
                 effect_id=effect_id,
                 suggested_post_parameters=suggested_post_parameters,
-                reply_markup=self.reply_markup if reply_markup is object else reply_markup
+                reply_markup=self.reply_markup if reply_markup is object else reply_markup,
             )
         elif self.media:
             send_media = partial(
@@ -9383,13 +9268,15 @@ class Message(Object, Update):
                 protect_content=protect_content,
                 effect_id=effect_id,
                 has_spoiler=self.has_media_spoiler if has_spoiler is None else has_spoiler,
-                show_caption_above_media=self.show_caption_above_media if show_caption_above_media is None else show_caption_above_media,
+                show_caption_above_media=self.show_caption_above_media
+                if show_caption_above_media is None
+                else show_caption_above_media,
                 business_connection_id=business_connection_id,
                 allow_paid_broadcast=allow_paid_broadcast,
                 paid_message_star_count=paid_message_star_count,
                 direct_messages_topic_id=direct_messages_topic_id,
                 suggested_post_parameters=suggested_post_parameters,
-                reply_markup=self.reply_markup if reply_markup is object else reply_markup
+                reply_markup=self.reply_markup if reply_markup is object else reply_markup,
             )
 
             if self.photo:
@@ -9410,21 +9297,35 @@ class Message(Object, Update):
                     parse_mode=parse_mode,
                     caption_entities=caption_entities,
                     has_spoiler=self.has_media_spoiler if has_spoiler is None else has_spoiler,
-                    show_caption_above_media=self.show_caption_above_media if show_caption_above_media is None else show_caption_above_media,
+                    show_caption_above_media=self.show_caption_above_media
+                    if show_caption_above_media is None
+                    else show_caption_above_media,
                     disable_notification=disable_notification,
-                    message_thread_id=self.message_thread_id if message_thread_id is None else message_thread_id,
-                    business_connection_id=self.business_connection_id if business_connection_id is None else business_connection_id,
+                    message_thread_id=self.message_thread_id
+                    if message_thread_id is None
+                    else message_thread_id,
+                    business_connection_id=self.business_connection_id
+                    if business_connection_id is None
+                    else business_connection_id,
                     schedule_date=schedule_date,
-                    protect_content=self.has_protected_content if protect_content is None else protect_content,
+                    protect_content=self.has_protected_content
+                    if protect_content is None
+                    else protect_content,
                     allow_paid_broadcast=allow_paid_broadcast,
                     paid_message_star_count=paid_message_star_count,
                     direct_messages_topic_id=direct_messages_topic_id,
                     suggested_post_parameters=suggested_post_parameters,
                     reply_parameters=reply_parameters,
                     reply_markup=self.reply_markup if reply_markup is object else reply_markup,
-                    video_cover=video_cover if video_cover is not None else self.video.video_cover.file_id if self.video.video_cover else None,
-                    video_start_timestamp=video_start_timestamp if video_start_timestamp is not None else self.video.video_start_timestamp,
-                    effect_id=effect_id
+                    video_cover=video_cover
+                    if video_cover is not None
+                    else self.video.video_cover.file_id
+                    if self.video.video_cover
+                    else None,
+                    video_start_timestamp=video_start_timestamp
+                    if video_start_timestamp is not None
+                    else self.video.video_start_timestamp,
+                    effect_id=effect_id,
                 )
             elif self.animation:
                 file_id = self.animation.file_id
@@ -9450,7 +9351,7 @@ class Message(Object, Update):
                     direct_messages_topic_id=direct_messages_topic_id,
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
-                    business_connection_id=business_connection_id
+                    business_connection_id=business_connection_id,
                 )
             elif self.location:
                 return await self._client.send_location(
@@ -9466,7 +9367,7 @@ class Message(Object, Update):
                     direct_messages_topic_id=direct_messages_topic_id,
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
-                    business_connection_id=business_connection_id
+                    business_connection_id=business_connection_id,
                 )
             elif self.venue:
                 return await self._client.send_venue(
@@ -9486,11 +9387,13 @@ class Message(Object, Update):
                     direct_messages_topic_id=direct_messages_topic_id,
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
-                    business_connection_id=business_connection_id
+                    business_connection_id=business_connection_id,
                 )
             elif self.poll:
                 if self.poll.type == enums.PollType.QUIZ and not self.poll.correct_option_ids:
-                    raise ValueError("You can copy quiz polls which are closed or were sent (not forwarded) by the bot or to the private chat with the bot.")
+                    raise ValueError(
+                        "You can copy quiz polls which are closed or were sent (not forwarded) by the bot or to the private chat with the bot."
+                    )
 
                 return await self._client.send_poll(
                     chat_id,
@@ -9521,7 +9424,7 @@ class Message(Object, Update):
                     game_short_name=self.game.short_name,
                     disable_notification=disable_notification,
                     allow_paid_broadcast=allow_paid_broadcast,
-                    message_thread_id=message_thread_id
+                    message_thread_id=message_thread_id,
                 )
             elif self.dice:
                 return await self._client.send_dice(
@@ -9537,7 +9440,7 @@ class Message(Object, Update):
                     direct_messages_topic_id=direct_messages_topic_id,
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
-                    business_connection_id=business_connection_id
+                    business_connection_id=business_connection_id,
                 )
             else:
                 raise ValueError(f"Unable to copy a {self.media} message")
@@ -9551,32 +9454,31 @@ class Message(Object, Update):
                 caption=caption,
                 parse_mode=parse_mode,
                 caption_entities=caption_entities,
-                message_thread_id=message_thread_id
+                message_thread_id=message_thread_id,
             )
         else:
             raise ValueError("Can't copy this message")
 
     async def copy_media_group(
         self,
-        chat_id: Union[int, str],
-        captions: Optional[Union[List[str], str]] = None,
-        has_spoilers: Optional[Union[List[bool], bool]] = None,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        show_caption_above_media: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-
-        reply_to_message_id: Optional[int] = None,
-        reply_to_chat_id: Optional[Union[int, str]] = None,
-        reply_to_story_id: Optional[int] = None,
-        quote_text: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        quote_entities: Optional[List["types.MessageEntity"]] = None,
-        quote_offset: Optional[int] = None,
-    ) -> List["types.Message"]:
+        chat_id: int | str,
+        captions: list[str] | str | None = None,
+        has_spoilers: list[bool] | bool | None = None,
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        show_caption_above_media: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        reply_to_message_id: int | None = None,
+        reply_to_chat_id: int | str | None = None,
+        reply_to_story_id: int | None = None,
+        quote_text: str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+        quote_offset: int | None = None,
+    ) -> list[types.Message]:
         """Shortcut for method :obj:`~pyrogram.Client.copy_media_group` will automatically fill method attributes:
 
         * from_chat_id
@@ -9662,20 +9564,18 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         r = await self._client.delete_messages(
-            chat_id=self.chat.id,
-            message_ids=self.id,
-            revoke=revoke
+            chat_id=self.chat.id, message_ids=self.id, revoke=revoke
         )
 
         return bool(r)
 
     async def click(
         self,
-        x: Union[int, str] = 0,
-        y: Optional[int] = None,
-        quote: Optional[bool] = None,
+        x: int | str = 0,
+        y: int | None = None,
+        quote: bool | None = None,
         timeout: int = 10,
-        password: Optional[str] = None
+        password: str | None = None,
     ):
         """Bound method *click* of :obj:`~pyrogram.types.Message`.
 
@@ -9756,11 +9656,7 @@ class Message(Object, Update):
 
         if isinstance(x, int) and y is None:
             try:
-                button = [
-                    button
-                    for row in keyboard
-                    for button in row
-                ][x]
+                button = [button for row in keyboard for button in row][x]
             except IndexError:
                 raise ValueError(f"The button at index {x} doesn't exist")
         elif isinstance(x, int) and isinstance(y, int):
@@ -9772,12 +9668,7 @@ class Message(Object, Update):
             label = x.encode("utf-16", "surrogatepass").decode("utf-16")
 
             try:
-                button = [
-                    button
-                    for row in keyboard
-                    for button in row
-                    if label == button.text
-                ][0]
+                button = [button for row in keyboard for button in row if label == button.text][0]
             except IndexError:
                 raise ValueError(f"The button with label '{x}' doesn't exists")
         else:
@@ -9786,16 +9677,14 @@ class Message(Object, Update):
         if is_inline:
             if button.callback_data:
                 if button.requires_password and password is None:
-                    raise ValueError(
-                        "This button requires a password"
-                    )
+                    raise ValueError("This button requires a password")
 
                 return await self._client.request_callback_answer(
                     chat_id=self.chat.id,
                     message_id=self.id,
                     callback_data=button.callback_data,
                     password=password,
-                    timeout=timeout
+                    timeout=timeout,
                 )
             elif button.url:
                 return button.url
@@ -9803,18 +9692,13 @@ class Message(Object, Update):
                 web_app = button.web_app
 
                 bot_peer_id = (
-                    self.via_bot and
-                    self.via_bot.id
-                ) or (
-                    self.from_user and
-                    self.from_user.is_bot and
-                    self.from_user.id
-                ) or None
+                    (self.via_bot and self.via_bot.id)
+                    or (self.from_user and self.from_user.is_bot and self.from_user.id)
+                    or None
+                )
 
                 if not bot_peer_id:
-                    raise ValueError(
-                        "This button requires a bot as the sender"
-                    )
+                    raise ValueError("This button requires a bot as the sender")
 
                 return await self._client.open_web_app(
                     chat_id=self.chat.id,
@@ -9840,9 +9724,7 @@ class Message(Object, Update):
                 await self.answer(text=button)
 
     async def react(
-        self,
-        emoji: Optional[Union[int, str, List[Union[int, str]]]] = None,
-        big: bool = False
+        self, emoji: int | str | list[int | str] | None = None, big: bool = False
     ) -> bool:
         """Shortcut for method :obj:`~pyrogram.Client.send_reaction` will automatically fill method attributes:
 
@@ -9877,12 +9759,12 @@ class Message(Object, Update):
             message_id=self.id,
             emoji=emoji,
             big=big,
-            business_connection_id=self.business_connection_id
+            business_connection_id=self.business_connection_id,
         )
 
     async def retract_vote(
         self,
-    ) -> "types.Poll":
+    ) -> types.Poll:
         """Shortcut for method :obj:`~pyrogram.Client.retract_vote` will automatically fill method attributes:
 
         * chat_id
@@ -9895,18 +9777,15 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
 
-        return await self._client.retract_vote(
-            chat_id=self.chat.id,
-            message_id=self.id
-        )
+        return await self._client.retract_vote(chat_id=self.chat.id, message_id=self.id)
 
     async def download(
         self,
         file_name: str = "",
         in_memory: bool = False,
         block: bool = True,
-        progress: Optional[Callable] = None,
-        progress_args: tuple = ()
+        progress: Callable | None = None,
+        progress_args: tuple = (),
     ) -> str:
         """Shortcut for method :obj:`~pyrogram.Client.download_media` will automatically fill method attributes:
 
@@ -9966,10 +9845,7 @@ class Message(Object, Update):
             progress_args=progress_args,
         )
 
-    async def vote(
-        self,
-        option: Union[int, List[int]]
-    ) -> "types.Poll":
+    async def vote(self, option: int | list[int]) -> types.Poll:
         """Shortcut for method :obj:`~pyrogram.Client.vote_poll` will automatically fill method attributes:
 
         * chat_id
@@ -9987,12 +9863,12 @@ class Message(Object, Update):
         """
 
         return await self._client.vote_poll(
-            chat_id=self.chat.id,
-            message_id=self.id,
-            options=option
+            chat_id=self.chat.id, message_id=self.id, options=option
         )
 
-    async def pin(self, disable_notification: bool = False, both_sides: bool = False) -> Optional["types.Message"]:
+    async def pin(
+        self, disable_notification: bool = False, both_sides: bool = False
+    ) -> types.Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.pin_chat_message` will automatically fill method attributes:
 
         * chat_id
@@ -10017,7 +9893,7 @@ class Message(Object, Update):
             chat_id=self.chat.id,
             message_id=self.id,
             disable_notification=disable_notification,
-            both_sides=both_sides
+            both_sides=both_sides,
         )
 
     async def unpin(self) -> bool:
@@ -10032,10 +9908,7 @@ class Message(Object, Update):
         Raises:
             RPCError: In case of a Telegram RPC error.
         """
-        return await self._client.unpin_chat_message(
-            chat_id=self.chat.id,
-            message_id=self.id
-        )
+        return await self._client.unpin_chat_message(chat_id=self.chat.id, message_id=self.id)
 
     async def read(self) -> bool:
         """Shortcut for method :obj:`~pyrogram.Client.read_chat_history` will automatically fill method attributes:
@@ -10049,10 +9922,7 @@ class Message(Object, Update):
         Raises:
             RPCError: In case of a Telegram RPC error.
         """
-        return await self._client.read_chat_history(
-            chat_id=self.chat.id,
-            max_id=self.id
-        )
+        return await self._client.read_chat_history(chat_id=self.chat.id, max_id=self.id)
 
     async def view(self) -> bool:
         """Shortcut for method :obj:`~pyrogram.Client.view_messages` will automatically fill method attributes:
@@ -10066,12 +9936,9 @@ class Message(Object, Update):
         Raises:
             RPCError: In case of a Telegram RPC error.
         """
-        return await self._client.view_messages(
-            chat_id=self.chat.id,
-            message_id=self.id
-        )
+        return await self._client.view_messages(chat_id=self.chat.id, message_id=self.id)
 
-    async def pay(self) -> "types.PaymentResult":
+    async def pay(self) -> types.PaymentResult:
         """Bound method *pay* of :obj:`~pyrogram.types.Message`.
 
         Use as a shortcut for:
@@ -10098,19 +9965,13 @@ class Message(Object, Update):
         Returns:
             :obj:`~pyrogram.types.PaymentResult`: On success, the payment result is returned.
         """
-        invoice = types.InputInvoiceMessage(
-            chat_id=self.chat.id,
-            message_id=self.id
-        )
+        invoice = types.InputInvoiceMessage(chat_id=self.chat.id, message_id=self.id)
 
         form = await self._client.get_payment_form(invoice)
 
-        return await self._client.send_payment_form(
-            payment_form_id=form.id,
-            input_invoice=invoice
-        )
+        return await self._client.send_payment_form(payment_form_id=form.id, input_invoice=invoice)
 
-    async def accept_gift_purchase_offer(self) -> "types.Message":
+    async def accept_gift_purchase_offer(self) -> types.Message:
         """Shortcut for method :obj:`~pyrogram.Client.process_gift_purchase_offer` will automatically fill method attributes:
 
         * message_id
@@ -10118,12 +9979,9 @@ class Message(Object, Update):
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent message is returned.
         """
-        return await self._client.process_gift_purchase_offer(
-            message_id=self.id,
-            accept=True
-        )
+        return await self._client.process_gift_purchase_offer(message_id=self.id, accept=True)
 
-    async def reject_gift_purchase_offer(self) -> "types.Message":
+    async def reject_gift_purchase_offer(self) -> types.Message:
         """Shortcut for method :obj:`~pyrogram.Client.process_gift_purchase_offer` will automatically fill method attributes:
 
         * message_id
@@ -10131,12 +9989,9 @@ class Message(Object, Update):
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent message is returned.
         """
-        return await self._client.process_gift_purchase_offer(
-            message_id=self.id,
-            accept=False
-        )
+        return await self._client.process_gift_purchase_offer(message_id=self.id, accept=False)
 
-    async def summarize(self, translate_to_language_code: Optional[str] = None) -> "types.FormattedText":
+    async def summarize(self, translate_to_language_code: str | None = None) -> types.FormattedText:
         """Shortcut for method :obj:`~pyrogram.Client.summarize_text` will automatically fill method attributes:
 
         * peer
@@ -10165,17 +10020,10 @@ class Message(Object, Update):
             translate_to_language_code = self._client.lang_code
 
         return await self._client.summarize_text(
-            peer=self.chat.id,
-            id=self.id,
-            to_lang=translate_to_language_code
+            peer=self.chat.id, id=self.id, to_lang=translate_to_language_code
         )
-    async def wait_for_click(
-        self,
-        user_id=None,
-        timeout=UNSET,
-        filters=None,
-        alert=True
-    ):
+
+    async def wait_for_click(self, user_id=None, timeout=UNSET, filters=None, alert=True):
         """Bound method *wait_for_click* of :obj:`~pyrogram.types.Message`.
 
         Use as a shortcut for:
@@ -10222,5 +10070,138 @@ class Message(Object, Update):
             unallowed_click_alert=alert,
             chat_id=self.chat.id,
             user_id=user_id,
-            message_id=self.id
+            message_id=self.id,
+        )
+
+    async def report(
+        self,
+        reason: enums.ReportReason | raw.base.ReportReason | str = enums.ReportReason.SPAM,
+        message: str = "",
+        option: bytes = b"",
+    ) -> bool:
+        """Bound method *report* of :obj:`~pyrogram.types.Message`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.report_messages(chat_id, message_id, reason, message, option)
+
+        Parameters:
+            reason (:obj:`~pyrogram.enums.ReportReason` | ``str``, *optional*):
+                The reason for reporting. Defaults to :obj:`~pyrogram.enums.ReportReason.SPAM`.
+
+            message (``str``, *optional*):
+                Additional explanatory text or details about the report. Defaults to "".
+
+            option (``bytes``, *optional*):
+                Specific report option bytes. Defaults to b"".
+
+        Example:
+            .. code-block:: python
+
+                await message.report(enums.ReportReason.SPAM)
+
+        Returns:
+            ``bool``: On success, True is returned.
+        """
+        return await self._client.report_messages(
+            chat_id=self.chat.id,
+            message_ids=self.id,
+            reason=reason,
+            message=message,
+            option=option,
+        )
+
+    async def transcribe(self) -> types.TranscribedAudio:
+        """Bound method *transcribe* of :obj:`~pyrogram.types.Message`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.transcribe_audio(
+                chat_id=message.chat.id,
+                message_id=message.id
+            )
+
+        Example:
+            .. code-block:: python
+
+                transcription = await message.transcribe()
+                print(transcription.text)
+
+        Returns:
+            :obj:`~pyrogram.types.TranscribedAudio`: On success, the transcribed audio object is returned.
+        """
+        return await self._client.transcribe_audio(
+            chat_id=self.chat.id,
+            message_id=self.id,
+        )
+
+    def get_reactions(
+        self,
+        reaction: raw.base.Reaction | types.Reaction | str | int | None = None,
+        limit: int = 0,
+    ) -> AsyncGenerator[types.MessagePeerReaction, None] | None:
+        """Bound method *get_reactions* of :obj:`~pyrogram.types.Message`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.get_message_reactions(
+                chat_id=message.chat.id,
+                message_id=message.id
+            )
+
+        Parameters:
+            reaction (``str`` | ``int`` | :obj:`~pyrogram.types.Reaction`, *optional*):
+                Target reaction to filter by. Defaults to None (returns all reactions).
+
+            limit (``int``, *optional*):
+                Limits the number of reactions to be retrieved.
+                By default, no limit is applied and all reactions are returned.
+
+        Example:
+            .. code-block:: python
+
+                async for reaction in message.get_reactions():
+                    print(reaction.user.first_name, reaction.reaction)
+
+        Returns:
+            ``Generator``: A generator yielding :obj:`~pyrogram.types.MessagePeerReaction` objects.
+        """
+        return self._client.get_message_reactions(
+            chat_id=self.chat.id,
+            message_id=self.id,
+            reaction=reaction,
+            limit=limit,
+        )
+
+    async def get_read_participants(self) -> list[types.ReadParticipantDate]:
+        """Bound method *get_read_participants* of :obj:`~pyrogram.types.Message`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.get_message_read_participants(
+                chat_id=message.chat.id,
+                message_id=message.id
+            )
+
+        Example:
+            .. code-block:: python
+
+                readers = await message.get_read_participants()
+                for reader in readers:
+                    print(reader.user_id, reader.date)
+
+        Returns:
+            List of :obj:`~pyrogram.types.ReadParticipantDate`: On success, a list of participants and read dates is returned.
+        """
+        return await self._client.get_message_read_participants(
+            chat_id=self.chat.id,
+            message_id=self.id,
         )

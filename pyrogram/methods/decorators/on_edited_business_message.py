@@ -16,7 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Callable, Optional, Union
+from __future__ import annotations
+
+from collections.abc import Callable
 
 import pyrogram
 from pyrogram.filters import Filter
@@ -24,8 +26,8 @@ from pyrogram.filters import Filter
 
 class OnEditedBusinessMessage:
     def on_edited_business_message(
-        self: Union["OnEditedBusinessMessage", Filter, None] = None,
-        filters: Optional[Filter] = None,
+        self: OnEditedBusinessMessage | Filter | None = None,
+        filters: Filter | None = None,
         group: int = 0,
     ) -> Callable:
         """Decorator for handling edited messages from business connection.
@@ -46,7 +48,9 @@ class OnEditedBusinessMessage:
 
         def decorator(func: Callable) -> Callable:
             if isinstance(self, pyrogram.Client):
-                self.add_handler(pyrogram.handlers.EditedBusinessMessageHandler(func, filters), group)
+                self.add_handler(
+                    pyrogram.handlers.EditedBusinessMessageHandler(func, filters), group
+                )
             elif isinstance(self, Filter) or self is None:
                 if not hasattr(func, "handlers"):
                     func.handlers = []
@@ -54,11 +58,10 @@ class OnEditedBusinessMessage:
                 func.handlers.append(
                     (
                         pyrogram.handlers.EditedBusinessMessageHandler(func, self),
-                        group if filters is None else filters
+                        group if filters is None else filters,
                     )
                 )
 
             return func
 
         return decorator
-

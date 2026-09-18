@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -24,8 +25,8 @@ from pyrogram import raw
 
 class ShowChatStories:
     async def show_chat_stories(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
     ) -> bool:
         """Show the active stories of a user and display them in the action bar on the homescreen.
 
@@ -48,10 +49,8 @@ class ShowChatStories:
         """
         r = await self.invoke(
             raw.functions.stories.TogglePeerStoriesHidden(
-                peer=await self.resolve_peer(chat_id),
-                hidden=False
+                peer=await self.resolve_peer(chat_id), hidden=False
             )
         )
 
         return r
-

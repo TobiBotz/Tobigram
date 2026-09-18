@@ -16,20 +16,18 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types, utils
 from pyrogram.errors import UserNotParticipant
 
 
 class GetChatMember:
     async def get_chat_member(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        user_id: Union[int, str]
-    ) -> "types.ChatMember":
+        self: pyrogram.Client, chat_id: int | str, user_id: int | str
+    ) -> types.ChatMember:
         """Get information about one member of a chat.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -56,14 +54,17 @@ class GetChatMember:
         user = await self.resolve_peer(user_id)
 
         if isinstance(chat, raw.types.InputPeerChat):
-            if not isinstance(user, (raw.types.InputPeerUser, raw.types.InputPeerSelf)):
+            if not isinstance(
+                user,
+                (
+                    raw.types.InputPeerUser,
+                    raw.types.InputPeerSelf,
+                    raw.types.InputPeerUserFromMessage,
+                ),
+            ):
                 raise UserNotParticipant
 
-            r = await self.invoke(
-                raw.functions.messages.GetFullChat(
-                    chat_id=chat.chat_id
-                )
-            )
+            r = await self.invoke(raw.functions.messages.GetFullChat(chat_id=chat.chat_id))
 
             members = getattr(r.full_chat.participants, "participants", [])
             users = {i.id: i for i in r.users}
@@ -77,13 +78,11 @@ class GetChatMember:
                 else:
                     if member.user.id == user.user_id:
                         return member
-            else:
-                raise UserNotParticipant
-        elif isinstance(chat, raw.types.InputPeerChannel):
+            raise UserNotParticipant
+        elif isinstance(chat, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)):
             r = await self.invoke(
                 raw.functions.channels.GetParticipant(
-                    channel=chat,
-                    participant=user
+                    channel=utils.get_input_channel(chat), participant=user
                 )
             )
 

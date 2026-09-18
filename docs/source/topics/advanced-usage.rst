@@ -1,10 +1,10 @@
 Advanced Usage
 ==============
 
-wzgram's API -- which consists of well documented :doc:`methods <../api/methods/index>` and
+pyrogram's API -- which consists of well documented :doc:`methods <../api/methods/index>` and
 :doc:`types <../api/types/index>` -- exists to provide an easier interface to the more complex Telegram API.
 
-In this section, you'll be shown the alternative way of communicating with Telegram using wzgram: the main "raw"
+In this section, you'll be shown the alternative way of communicating with Telegram using pyrogram: the main "raw"
 Telegram API with its functions and types.
 
 
@@ -15,7 +15,7 @@ Telegram Raw API
 
 If you can't find a high-level method for your needs or if you want complete, low-level access to the whole
 Telegram API, you have to use the raw :mod:`~pyrogram.raw.functions` and :mod:`~pyrogram.raw.types`. Both are generated
-from the TL schema, so they always match the layer wzgram was built against; the names come
+from the TL schema, so they always match the layer pyrogram was built against; the names come
 straight from `Telegram's own schema <https://core.telegram.org/methods>`_.
 
 As already hinted, raw functions and types can be less convenient. This section will therefore explain some pitfalls to
@@ -23,12 +23,12 @@ take into consideration when working with the raw API.
 
 .. tip::
 
-    Every available high-level method in wzgram is built on top of these raw functions.
+    Every available high-level method in pyrogram is built on top of these raw functions.
 
 Invoking Functions
 ------------------
 
-Unlike the :doc:`methods <../api/methods/index>` found in wzgram's API, which can be called in the usual simple way,
+Unlike the :doc:`methods <../api/methods/index>` found in pyrogram's API, which can be called in the usual simple way,
 functions to be invoked from the raw Telegram API have a different way of usage.
 
 First of all, both :mod:`raw functions <pyrogram.raw.functions>` and :mod:`raw types <pyrogram.raw.types>`
@@ -45,8 +45,8 @@ Here's some examples:
 
     .. code-block:: python
 
-        from wzgram import Client
-        from wzgram.raw import functions
+        from pyrogram import Client
+        from pyrogram.raw import functions
 
         async with Client("my_account") as app:
             await app.invoke(
@@ -60,8 +60,8 @@ Here's some examples:
 
     .. code-block:: python
 
-        from wzgram import Client
-        from wzgram.raw import functions, types
+        from pyrogram import Client
+        from pyrogram.raw import functions, types
 
         async with Client("my_account") as app:
             # Set online status
@@ -74,8 +74,8 @@ Here's some examples:
 
     .. code-block:: python
 
-        from wzgram import Client
-        from wzgram.raw import functions, types
+        from pyrogram import Client
+        from pyrogram.raw import functions, types
 
         async with Client("my_account") as app:
             r = await app.invoke(
@@ -90,7 +90,7 @@ Chat IDs
 --------
 
 The way Telegram works makes it not possible to directly send a message to a user or a chat by using their IDs only.
-Instead, a pair of ``id`` and ``access_hash`` wrapped in a so called ``InputPeer`` is always needed. wzgram allows
+Instead, a pair of ``id`` and ``access_hash`` wrapped in a so called ``InputPeer`` is always needed. pyrogram allows
 sending messages with IDs only thanks to cached access hashes.
 
 There are three different InputPeer types, one for each kind of Telegram entity.
@@ -100,17 +100,17 @@ Whenever an InputPeer is needed you must pass one of these:
 - :class:`~pyrogram.raw.types.InputPeerChat` -  Basic Chats
 - :class:`~pyrogram.raw.types.InputPeerChannel` - Channels & Supergroups
 
-But you don't necessarily have to manually instantiate each object because wzgram already provides
+But you don't necessarily have to manually instantiate each object because pyrogram already provides
 :meth:`~pyrogram.Client.resolve_peer` as a convenience utility method that returns the correct InputPeer
 by accepting a peer ID only.
 
 Another thing to take into consideration about chat IDs is the way they are represented: they are all integers and
 all positive within their respective raw types.
 
-Things are different when working with wzgram's API because having them in the same space could lead to
-collisions, and that's why wzgram uses a slightly different representation for each kind of ID.
+Things are different when working with pyrogram's API because having them in the same space could lead to
+collisions, and that's why pyrogram uses a slightly different representation for each kind of ID.
 
-For example, given the ID *123456789*, here's how wzgram can tell entities apart:
+For example, given the ID *123456789*, here's how pyrogram can tell entities apart:
 
 - ``+ID`` User: *123456789*
 - ``-ID`` Chat: *-123456789*
@@ -125,4 +125,4 @@ high-level method.
     add fields. Code that builds raw objects by hand is what breaks on an upgrade — the
     high-level methods are updated for you.
 
-.. _Community: https://t.me/WzGram_Chat
+.. _Community: https://t.me/TobigramChat

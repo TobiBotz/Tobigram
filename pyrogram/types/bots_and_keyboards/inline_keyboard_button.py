@@ -16,16 +16,17 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+from __future__ import annotations
+
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 from pyrogram.enums import ButtonStyle
+
 from ..object import Object
 
 
-def read_button_type(t: "raw.base.InlineButtonType") -> dict:
+def read_button_type(t: raw.base.InlineButtonType) -> dict:
     """The InlineButtonType union as the keyword arguments that describe it.
 
     InlineKeyboardButton and RichMessageButton are two Bot API types over the
@@ -84,21 +85,21 @@ def read_button_type(t: "raw.base.InlineButtonType") -> dict:
 
 def write_button_type(
     *,
-    callback_data: Optional[Union[str, bytes]] = None,
-    copy_text: Optional["types.CopyTextButton"] = None,
-    pay: Optional[bool] = None,
-    requires_password: Optional[bool] = None,
-    url: Optional[str] = None,
-    login_url: Optional["types.LoginUrl"] = None,
-    login_bot: Optional["raw.base.InputUser"] = None,
-    user: Optional["raw.base.InputUser"] = None,
-    switch_inline_query: Optional[str] = None,
-    switch_inline_query_current_chat: Optional[str] = None,
-    switch_inline_query_chosen_chat: Optional["types.SwitchInlineQueryChosenChat"] = None,
-    callback_game: Optional["types.CallbackGame"] = None,
-    web_app: Optional["types.WebAppInfo"] = None,
-    disabled: Optional["types.DisabledButton"] = None
-) -> "raw.base.InlineButtonType":
+    callback_data: str | bytes | None = None,
+    copy_text: types.CopyTextButton | None = None,
+    pay: bool | None = None,
+    requires_password: bool | None = None,
+    url: str | None = None,
+    login_url: types.LoginUrl | None = None,
+    login_bot: raw.base.InputUser | None = None,
+    user: raw.base.InputUser | None = None,
+    switch_inline_query: str | None = None,
+    switch_inline_query_current_chat: str | None = None,
+    switch_inline_query_chosen_chat: types.SwitchInlineQueryChosenChat | None = None,
+    callback_game: types.CallbackGame | None = None,
+    web_app: types.WebAppInfo | None = None,
+    disabled: types.DisabledButton | None = None,
+) -> raw.base.InlineButtonType:
     """The peers are passed in already resolved.
 
     A rich message block writes its buttons from a synchronous ``write()``, and
@@ -132,7 +133,7 @@ def write_button_type(
     if switch_inline_query_chosen_chat is not None:
         return raw.types.InlineButtonTypeSwitchInline(
             query=switch_inline_query_chosen_chat.query or "",
-            peer_types=switch_inline_query_chosen_chat._peer_types()
+            peer_types=switch_inline_query_chosen_chat._peer_types(),
         )
 
     if switch_inline_query is not None:
@@ -140,8 +141,7 @@ def write_button_type(
 
     if switch_inline_query_current_chat is not None:
         return raw.types.InlineButtonTypeSwitchInline(
-            query=switch_inline_query_current_chat,
-            same_peer=True
+            query=switch_inline_query_current_chat, same_peer=True
         )
 
     if callback_game is not None:
@@ -228,21 +228,21 @@ class InlineKeyboardButton(Object):
     def __init__(
         self,
         text: str,
-        callback_data: Optional[Union[str, bytes]] = None,
-        url: Optional[str] = None,
-        web_app: Optional["types.WebAppInfo"] = None,
-        login_url: Optional["types.LoginUrl"] = None,
-        user_id: Optional[int] = None,
-        switch_inline_query: Optional[str] = None,
-        switch_inline_query_current_chat: Optional[str] = None,
-        callback_game: Optional["types.CallbackGame"] = None,
-        switch_inline_query_chosen_chat: Optional["types.SwitchInlineQueryChosenChat"] = None,
-        copy_text: Optional["types.CopyTextButton"] = None,
-        pay: Optional[bool] = None,
-        disabled: Optional["types.DisabledButton"] = None,
-        icon_custom_emoji_id: Optional[str] = None,
+        callback_data: str | bytes | None = None,
+        url: str | None = None,
+        web_app: types.WebAppInfo | None = None,
+        login_url: types.LoginUrl | None = None,
+        user_id: int | None = None,
+        switch_inline_query: str | None = None,
+        switch_inline_query_current_chat: str | None = None,
+        callback_game: types.CallbackGame | None = None,
+        switch_inline_query_chosen_chat: types.SwitchInlineQueryChosenChat | None = None,
+        copy_text: str | types.CopyTextButton | None = None,
+        pay: bool | None = None,
+        disabled: types.DisabledButton | None = None,
+        icon_custom_emoji_id: str | None = None,
         style: ButtonStyle = ButtonStyle.DEFAULT,
-        requires_password: Optional[bool] = None
+        requires_password: bool | None = None,
     ):
         super().__init__()
 
@@ -257,14 +257,16 @@ class InlineKeyboardButton(Object):
         self.switch_inline_query_current_chat = switch_inline_query_current_chat
         self.callback_game = callback_game
         self.switch_inline_query_chosen_chat = switch_inline_query_chosen_chat
-        self.copy_text = copy_text
+        self.copy_text = (
+            types.CopyTextButton(text=copy_text) if isinstance(copy_text, str) else copy_text
+        )
         self.pay = pay
         self.disabled = disabled
         self.icon_custom_emoji_id = icon_custom_emoji_id
         self.style = style
 
     @staticmethod
-    def _parse_raw_style(style: "raw.base.KeyboardButtonStyle"):
+    def _parse_raw_style(style: raw.base.KeyboardButtonStyle):
         if style is None:
             return ButtonStyle.DEFAULT, None
         icon = str(style.icon) if style.icon is not None else None
@@ -282,14 +284,12 @@ class InlineKeyboardButton(Object):
         return {"style": style, "icon_custom_emoji_id": icon}
 
     @staticmethod
-    def read(b: "raw.base.KeyboardInlineButton"):
+    def read(b: raw.base.KeyboardInlineButton):
         return InlineKeyboardButton(
-            text=b.text,
-            **read_button_type(b.type),
-            **InlineKeyboardButton._with_style(b)
+            text=b.text, **read_button_type(b.type), **InlineKeyboardButton._with_style(b)
         )
 
-    def _to_raw_style(self) -> "raw.base.KeyboardButtonStyle":
+    def _to_raw_style(self) -> raw.base.KeyboardButtonStyle:
         icon = int(self.icon_custom_emoji_id) if self.icon_custom_emoji_id is not None else None
         if self.style == ButtonStyle.PRIMARY:
             return raw.types.KeyboardButtonStyle(bg_primary=True, icon=icon)
@@ -301,7 +301,7 @@ class InlineKeyboardButton(Object):
             return raw.types.KeyboardButtonStyle(icon=icon)
         return None
 
-    async def write(self, client: "pyrogram.Client"):
+    async def write(self, client: pyrogram.Client):
         return raw.types.KeyboardInlineButton(
             text=self.text,
             type=write_button_type(
@@ -317,16 +317,14 @@ class InlineKeyboardButton(Object):
                     else None
                 ),
                 user=(
-                    await client.resolve_peer(self.user_id)
-                    if self.user_id is not None
-                    else None
+                    await client.resolve_peer(self.user_id) if self.user_id is not None else None
                 ),
                 switch_inline_query=self.switch_inline_query,
                 switch_inline_query_current_chat=self.switch_inline_query_current_chat,
                 switch_inline_query_chosen_chat=self.switch_inline_query_chosen_chat,
                 callback_game=self.callback_game,
                 web_app=self.web_app,
-                disabled=self.disabled
+                disabled=self.disabled,
             ),
-            style=self._to_raw_style()
+            style=self._to_raw_style(),
         )

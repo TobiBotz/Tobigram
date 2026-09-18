@@ -16,21 +16,22 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+from __future__ import annotations
+
 
 import pyrogram
-from pyrogram import raw, enums
+from pyrogram import enums, raw
 
 
 class GetWebAppLinkUrl:
     async def get_web_app_link_url(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        bot_user_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
+        bot_user_id: int | str,
         web_app_short_name: str,
         start_parameter: str = "",
         allow_write_access: bool = False,
-        platform: Optional["enums.ClientPlatform"] = None
+        platform: enums.ClientPlatform | None = None,
     ) -> str:
         """Returns an HTTPS URL of a Web App to open.
 
@@ -70,15 +71,12 @@ class GetWebAppLinkUrl:
             raw.functions.messages.RequestAppWebView(
                 peer=await self.resolve_peer(chat_id),
                 app=raw.types.InputBotAppShortName(
-                    bot_id=await self.resolve_peer(bot_user_id),
-                    short_name=web_app_short_name
+                    bot_id=await self.resolve_peer(bot_user_id), short_name=web_app_short_name
                 ),
                 platform=platform.value,
                 write_allowed=allow_write_access,
                 start_param=start_parameter,
-
             )
         )
 
         return r.url
-

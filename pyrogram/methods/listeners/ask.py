@@ -16,29 +16,31 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import enums, types
+from pyrogram.errors import ListenerStopped
 from pyrogram.filters import Filter
 
-from .listen import UNSET
+from .listen import UNSET, resolve_listener_ids
 
 
 class Ask:
     async def ask(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str, List[Union[int, str]]],
+        self: pyrogram.Client,
+        chat_id: int | str | list[int | str],
         text: str,
-        filters: Optional[Filter] = None,
-        listener_type: "enums.ListenerTypes" = enums.ListenerTypes.MESSAGE,
-        timeout: Optional[float] = UNSET,
-        unallowed_click_alert: Union[bool, str] = True,
-        user_id: Optional[Union[int, str, List[Union[int, str]]]] = None,
-        message_id: Optional[Union[int, List[int]]] = None,
-        inline_message_id: Optional[Union[str, List[str]]] = None,
-        **kwargs
-    ) -> Union["types.Message", "types.CallbackQuery"]:
+        filters: Filter | None = None,
+        listener_type: enums.ListenerTypes = enums.ListenerTypes.MESSAGE,
+        timeout: float | None = UNSET,
+        unallowed_click_alert: bool | str = True,
+        user_id: int | str | list[int | str] | None = None,
+        message_id: int | list[int] | None = None,
+        inline_message_id: str | list[str] | None = None,
+        **kwargs,
+    ) -> types.Message | types.CallbackQuery:
         """Send a message and wait for the answer to it.
 
         Shortcut for :meth:`~pyrogram.Client.send_message` followed by
@@ -97,24 +99,43 @@ class Ask:
                 answer = await app.ask(chat_id, "What is your name?", timeout=60)
                 await answer.reply(f"Hello {answer.text}")
         """
-        sent_message = await self.send_message(
-            chat_id[0] if isinstance(chat_id, list) else chat_id,
-            text,
-            **kwargs
-        )
+        if self.no_updates:
+            raise ListenerStopped("Cannot listen for updates on a client started with no_updates")
 
-        response = await self.listen(
-            filters=filters,
-            listener_type=listener_type,
-            timeout=timeout,
-            unallowed_click_alert=unallowed_click_alert,
-            chat_id=chat_id,
-            user_id=user_id,
+        if timeout is UNSET:
+            timeout = self.listener_timeout
+
+        target_chat_id = chat_id[0] if isinstance(chat_id, list) else chat_id
+        resolved_chat_id = await resolve_listener_ids(self, chat_id)
+        resolved_user_id = await resolve_listener_ids(self, user_id)
+
+        identifier = types.Identifier(
+            chat_id=resolved_chat_id,
+            user_id=resolved_user_id,
             message_id=message_id,
-            inline_message_id=inline_message_id
+            inline_message_id=inline_message_id,
         )
 
-        if response is not None:
-            response.sent_message = sent_message
+        future = self.loop.create_future()
 
-        return response
+        listener = types.Listener(
+            listener_type=listener_type,
+            identifier=identifier,
+            filters=filters,
+            future=future,
+            unallowed_click_alert=unallowed_click_alert,
+        )
+
+        self.listeners.add(listener, timeout)
+        parked = self.dispatcher.park()
+
+        try:
+            sent_message = await self.send_message(target_chat_id, text, **kwargs)
+            response = await future
+            if response is not None:
+                response.sent_message = sent_message
+            return response
+        finally:
+            if parked:
+                self.dispatcher.unpark()
+            self.listeners.remove(listener)

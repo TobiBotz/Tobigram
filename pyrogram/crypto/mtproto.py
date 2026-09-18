@@ -16,16 +16,21 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from io import BytesIO
 
 import warpcrypto
-from warpcrypto import kdf
 
 from pyrogram.errors import SecurityCheckMismatch
 from pyrogram.raw.core import Message
 
+kdf = warpcrypto.kdf
 
-def pack(message: Message, salt: int, session_id: bytes, auth_key: bytes, auth_key_id: bytes) -> bytes:
+
+def pack(
+    message: Message, salt: int, session_id: bytes, auth_key: bytes, auth_key_id: bytes
+) -> bytes:
     data = message.write()
     msg_id = int.from_bytes(data[0:8], "little", signed=True)
     seq_no = int.from_bytes(data[8:12], "little", signed=False)
@@ -33,12 +38,7 @@ def pack(message: Message, salt: int, session_id: bytes, auth_key: bytes, auth_k
     return warpcrypto.pack_message(msg_id, seq_no, body, salt, session_id, auth_key, auth_key_id)
 
 
-def unpack(
-    b: BytesIO,
-    session_id: bytes,
-    auth_key: bytes,
-    auth_key_id: bytes
-) -> Message:
+def unpack(b: BytesIO, session_id: bytes, auth_key: bytes, auth_key_id: bytes) -> Message:
     packed = b.read()
     msg_id, seq_no, length, body_bytes, total_len = warpcrypto.unpack_message(
         packed, session_id, auth_key, auth_key_id
@@ -54,11 +54,11 @@ def unpack(
         message = Message.read(buf)
     except KeyError as e:
         if e.args[0] == 0:
-            raise ConnectionError(f"Received empty data. Check your internet connection.")
+            raise ConnectionError("Received empty data. Check your internet connection.")
 
         left = body_bytes.hex()
-        left = [left[i:i + 64] for i in range(0, len(left), 64)]
-        left = [[left[i:i + 8] for i in range(0, len(left), 8)] for left in left]
+        left = [left[i : i + 64] for i in range(0, len(left), 64)]
+        left = [[left[i : i + 8] for i in range(0, len(left), 8)] for left in left]
         left = "\n".join(" ".join(x for x in left) for left in left)
 
         raise ValueError(f"The server sent an unknown constructor: {hex(e.args[0])}\n{left}")

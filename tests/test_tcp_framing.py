@@ -154,9 +154,7 @@ async def test_every_transport_reports_a_mid_message_stall_as_broken(quick_timeo
 
 
 async def test_a_stall_between_the_prefix_and_the_body_is_broken_too(quick_timeout):
-    protocol = make_raw_protocol(
-        ScriptedReader((64).to_bytes(4, "little"), "STALL", b"A" * 64)
-    )
+    protocol = make_raw_protocol(ScriptedReader((64).to_bytes(4, "little"), "STALL", b"A" * 64))
 
     with pytest.raises(OSError) as exc:
         await protocol.recv()
@@ -167,22 +165,16 @@ async def test_a_stall_between_the_prefix_and_the_body_is_broken_too(quick_timeo
 
 
 async def test_an_idle_socket_between_messages_stays_recoverable(quick_timeout):
-    protocol = make_raw_protocol(
-        ScriptedReader((4).to_bytes(4, "little") + b"AAAA", "STALL")
-    )
+    protocol = make_raw_protocol(ScriptedReader((4).to_bytes(4, "little") + b"AAAA", "STALL"))
 
     assert await protocol.recv() == b"AAAA"
 
     with pytest.raises(TimeoutError):
-        await Connection.__dict__["recv"](
-            SimpleNamespace(protocol=protocol)
-        )
+        await Connection.__dict__["recv"](SimpleNamespace(protocol=protocol))
 
 
 async def test_the_message_boundary_is_reset_between_messages(quick_timeout):
-    protocol = make_raw_protocol(
-        ScriptedReader((4).to_bytes(4, "little") + b"AAAA", "STALL")
-    )
+    protocol = make_raw_protocol(ScriptedReader((4).to_bytes(4, "little") + b"AAAA", "STALL"))
     conn = SimpleNamespace(protocol=protocol)
 
     assert await Connection.__dict__["recv"](conn) == b"AAAA"

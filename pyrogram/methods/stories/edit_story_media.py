@@ -16,34 +16,38 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import os
-from typing import List, Optional, Union, BinaryIO, Callable
+from collections.abc import Callable
+from typing import BinaryIO
 
 import pyrogram
-from pyrogram import enums, raw, types, utils, StopTransmission
+from pyrogram import StopTransmission, enums, raw, types, utils
 from pyrogram.errors import FilePartMissing
 from pyrogram.file_id import FileId
 
+
 class EditStoryMedia:
     async def edit_story_media(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         story_id: int,
-        media: Optional[Union[str, BinaryIO]] = None,
-        media_areas: Optional[List["types.MediaArea"]] = None,
+        media: str | BinaryIO | None = None,
+        media_areas: list[types.MediaArea] | None = None,
         duration: int = 0,
         width: int = 0,
         height: int = 0,
-        thumb: Optional[Union[str, BinaryIO]] = None,
+        thumb: str | BinaryIO | None = None,
         supports_streaming: bool = True,
-        file_name: Optional[str] = None,
-        caption: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        music: Optional[Union[str, "types.Document"]] = None,
-        progress: Optional[Callable] = None,
-        progress_args: tuple = ()
-    ) -> "types.Story":
+        file_name: str | None = None,
+        caption: str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        music: str | types.Document | None = None,
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+    ) -> types.Story:
         """Edit story media.
 
         .. include:: /_includes/usable-by/users.rst
@@ -127,7 +131,9 @@ class EditStoryMedia:
             if isinstance(media, str):
                 if os.path.isfile(media):
                     thumb = await self.save_file(thumb)
-                    file = await self.save_file(media, progress=progress, progress_args=progress_args)
+                    file = await self.save_file(
+                        media, progress=progress, progress_args=progress_args
+                    )
                     mime_type = self.guess_mime_type(file.name)
                     if mime_type == "video/mp4":
                         media = raw.types.InputMediaUploadedDocument(
@@ -136,13 +142,15 @@ class EditStoryMedia:
                             thumb=thumb,
                             attributes=[
                                 raw.types.DocumentAttributeVideo(
-                                    supports_streaming=supports_streaming if supports_streaming is not None else None,
+                                    supports_streaming=supports_streaming,
                                     duration=duration,
                                     w=width,
                                     h=height,
                                 ),
-                                raw.types.DocumentAttributeFilename(file_name=file_name or os.path.basename(media))
-                            ]
+                                raw.types.DocumentAttributeFilename(
+                                    file_name=file_name or os.path.basename(media)
+                                ),
+                            ],
                         )
                     else:
                         media = raw.types.InputMediaUploadedPhoto(
@@ -161,20 +169,22 @@ class EditStoryMedia:
                         thumb=thumb,
                         attributes=[
                             raw.types.DocumentAttributeVideo(
-                                supports_streaming=supports_streaming if supports_streaming is not None else None,
+                                supports_streaming=supports_streaming,
                                 duration=duration,
                                 w=width,
                                 h=height,
                             ),
-                            raw.types.DocumentAttributeFilename(file_name=file_name or media.name)
-                        ]
+                            raw.types.DocumentAttributeFilename(file_name=file_name or media.name),
+                        ],
                     )
                 else:
                     media = raw.types.InputMediaUploadedPhoto(
                         file=file,
                     )
 
-            message, entities = (await utils.parse_text_entities(self, caption, parse_mode, caption_entities)).values()
+            message, entities = (
+                await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
+            ).values()
 
             music_doc = None
             if music:
@@ -183,13 +193,11 @@ class EditStoryMedia:
                     music_doc = raw.types.InputDocument(
                         id=decoded.media_id,
                         access_hash=decoded.access_hash,
-                        file_reference=decoded.file_reference
+                        file_reference=decoded.file_reference,
                     )
                 else:
                     music_doc = raw.types.InputDocument(
-                        id=music.id,
-                        access_hash=music.access_hash,
-                        file_reference=music.file_ref
+                        id=music.id, access_hash=music.access_hash, file_reference=music.file_ref
                     )
 
             while True:
@@ -199,7 +207,8 @@ class EditStoryMedia:
                             peer=await self.resolve_peer(chat_id),
                             id=story_id,
                             media=media,
-                            media_areas=[await area.write(self) for area in (media_areas or [])] or None,
+                            media_areas=[await area.write(self) for area in (media_areas or [])]
+                            or None,
                             caption=message,
                             entities=entities,
                             privacy_rules=None,
@@ -216,11 +225,10 @@ class EditStoryMedia:
                                 i.story,
                                 i.peer,
                                 {i.id: i for i in r.users},
-                                {i.id: i for i in r.chats}
+                                {i.id: i for i in r.chats},
                             )
 
                     # a send that succeeded is never re-sent, whatever the answer carried
                     return None
         except StopTransmission:
             return None
-

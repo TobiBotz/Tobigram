@@ -16,17 +16,19 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import raw
 
 
 class UpdateProfile:
     async def update_profile(
-        self: "pyrogram.Client",
-        first_name: Optional[str] = None,
-        last_name: Optional[str] = None,
-        bio: Optional[str] = None
+        self: pyrogram.Client,
+        first_name: str | None = None,
+        last_name: str | None = None,
+        bio: str | None = None,
     ) -> bool:
         """Update your profile details such as first name, last name and bio.
 
@@ -56,7 +58,7 @@ class UpdateProfile:
                 await app.update_profile(first_name="Pyrogram")
 
                 # Update first name and bio
-                await app.update_profile(first_name="wzgram", bio="https://wzgram.com/")
+                await app.update_profile(first_name="pyrogram", bio="https://pyrogram.com/")
 
                 # Remove the last name
                 await app.update_profile(last_name="")
@@ -65,9 +67,7 @@ class UpdateProfile:
         return bool(
             await self.invoke(
                 raw.functions.account.UpdateProfile(
-                    first_name=first_name,
-                    last_name=last_name,
-                    about=bio
+                    first_name=first_name, last_name=last_name, about=bio
                 )
             )
         )

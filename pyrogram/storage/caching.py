@@ -16,35 +16,31 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import os
 import time
 from collections import OrderedDict
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 from pyrogram import raw
 
 from .. import utils
 
-PEER_CACHE_SIZE = int(os.environ.get("WZGRAM_PEER_CACHE", 4096))
+PEER_CACHE_SIZE = int(os.environ.get("PYROGRAM_PEER_CACHE", 4096))
 PEER_WRITE_TTL = 60 * 60
 
 
-def get_input_peer(peer_id: int, access_hash: int, peer_type: str) -> "raw.base.InputPeer":
+def get_input_peer(peer_id: int, access_hash: int, peer_type: str) -> raw.base.InputPeer:
     if peer_type in ["user", "bot"]:
-        return raw.types.InputPeerUser(
-            user_id=peer_id,
-            access_hash=access_hash
-        )
+        return raw.types.InputPeerUser(user_id=peer_id, access_hash=access_hash)
 
     if peer_type == "group":
-        return raw.types.InputPeerChat(
-            chat_id=-peer_id
-        )
+        return raw.types.InputPeerChat(chat_id=-peer_id)
 
     if peer_type in ["direct", "channel", "forum", "supergroup"]:
         return raw.types.InputPeerChannel(
-            channel_id=utils.get_channel_id(peer_id),
-            access_hash=access_hash
+            channel_id=utils.get_channel_id(peer_id), access_hash=access_hash
         )
 
     raise ValueError(f"Invalid peer type: {peer_type}")
@@ -62,22 +58,20 @@ class PeerRowCache:
     def __init__(self, size: int = PEER_CACHE_SIZE, write_ttl: float = PEER_WRITE_TTL):
         self.size = size
         self.write_ttl = write_ttl
-        self._rows: "OrderedDict[int, Tuple[Tuple[int, int, str], Optional[str], Optional[float]]]" = OrderedDict()
+        self._rows: OrderedDict[int, tuple[tuple[int, int, str], str | None, float | None]] = (
+            OrderedDict()
+        )
 
     def __len__(self) -> int:
         return len(self._rows)
 
-    def get(self, peer_id: int) -> Optional[Tuple[int, int, str]]:
+    def get(self, peer_id: int) -> tuple[int, int, str] | None:
         entry = self._rows.get(peer_id)
 
         return entry[0] if entry is not None else None
 
     def matches(
-        self,
-        peer_id: int,
-        access_hash: int,
-        peer_type: str,
-        phone_number: Optional[str] = None
+        self, peer_id: int, access_hash: int, peer_type: str, phone_number: str | None = None
     ) -> bool:
         entry = self._rows.get(peer_id)
 
@@ -92,19 +86,12 @@ class PeerRowCache:
         return row == (peer_id, access_hash, peer_type) and phone == phone_number
 
     def remember(
-        self,
-        row: Tuple[int, int, str],
-        phone_number: Optional[str] = None,
-        written: bool = False
+        self, row: tuple[int, int, str], phone_number: str | None = None, written: bool = False
     ) -> None:
         rows = self._rows
 
         rows.pop(row[0], None)
-        rows[row[0]] = (
-            tuple(row),
-            phone_number,
-            time.monotonic() if written else None
-        )
+        rows[row[0]] = (tuple(row), phone_number, time.monotonic() if written else None)
 
         if len(rows) > self.size:
             while len(rows) > self.size:
@@ -129,7 +116,7 @@ class SessionAttrCache:
     MISSING = object()
 
     def __init__(self):
-        self._values: Dict[str, Any] = {}
+        self._values: dict[str, Any] = {}
 
     def __contains__(self, attr: str) -> bool:
         return attr in self._values
@@ -144,14 +131,13 @@ class SessionAttrCache:
     def remember(self, attr: str, value: Any) -> None:
         self._values[attr] = self.MISSING if value is None else value
 
-    def load(self, values: Dict[str, Any]) -> None:
+    def load(self, values: dict[str, Any]) -> None:
         for attr, value in values.items():
             self._values[attr] = value
 
-    def snapshot(self) -> Dict[str, Any]:
+    def snapshot(self) -> dict[str, Any]:
         return {
-            attr: (None if value is self.MISSING else value)
-            for attr, value in self._values.items()
+            attr: (None if value is self.MISSING else value) for attr, value in self._values.items()
         }
 
     def clear(self) -> None:

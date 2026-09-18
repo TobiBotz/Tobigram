@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -24,11 +25,8 @@ from pyrogram import raw, types, utils
 
 class ReorderCollectionGifts:
     async def reorder_collection_gifts(
-        self: "pyrogram.Client",
-        owner_id: Union[int, str],
-        collection_id: int,
-        gift_ids: List[str]
-    ) -> "types.GiftCollection":
+        self: pyrogram.Client, owner_id: int | str, collection_id: int, gift_ids: list[str]
+    ) -> types.GiftCollection:
         """Changes order of gifts in a collection.
 
         .. include:: /_includes/usable-by/users.rst
@@ -60,11 +58,8 @@ class ReorderCollectionGifts:
 
         r = await self.invoke(
             raw.functions.payments.UpdateStarGiftCollection(
-                peer=await self.resolve_peer(owner_id),
-                collection_id=collection_id,
-                order=stargifts
+                peer=await self.resolve_peer(owner_id), collection_id=collection_id, order=stargifts
             )
         )
 
         return await types.GiftCollection._parse(self, r)
-

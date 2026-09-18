@@ -16,7 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Iterable, Union
+from __future__ import annotations
+
+from collections.abc import Iterable
 
 import pyrogram
 from pyrogram import raw
@@ -24,10 +26,10 @@ from pyrogram import raw
 
 class ViewMessages:
     async def view_messages(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        message_id: Union[int, Iterable[int]],
-        increment: bool = True
+        self: pyrogram.Client,
+        chat_id: int | str,
+        message_id: int | Iterable[int],
+        increment: bool = True,
     ) -> bool:
         """Increment the view counter of one or more messages.
 
@@ -57,9 +59,7 @@ class ViewMessages:
 
         await self.invoke(
             raw.functions.messages.GetMessagesViews(
-                peer=await self.resolve_peer(chat_id),
-                id=ids,
-                increment=increment
+                peer=await self.resolve_peer(chat_id), id=ids, increment=increment
             )
         )
 

@@ -16,16 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import raw, types, utils
 
 
 class ProcessGiftPurchaseOffer:
     async def process_gift_purchase_offer(
-        self: "pyrogram.Client",
-        message_id: int,
-        accept: bool
-    ) -> "types.Message":
+        self: pyrogram.Client, message_id: int, accept: bool
+    ) -> types.Message:
         """Handles a pending gift purchase offer.
 
         .. include:: /_includes/usable-by/users.rst
@@ -42,11 +42,7 @@ class ProcessGiftPurchaseOffer:
             :obj:`~pyrogram.types.Message`: On success, the sent Message is returned.
         """
         r = await self.invoke(
-            raw.functions.payments.ResolveStarGiftOffer(
-                offer_msg_id=message_id,
-                decline=not accept
-            )
+            raw.functions.payments.ResolveStarGiftOffer(offer_msg_id=message_id, decline=not accept)
         )
 
         return next(iter(await utils.parse_messages(client=self, messages=r)), None)
-

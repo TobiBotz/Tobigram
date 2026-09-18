@@ -102,6 +102,6 @@ class Bots(
     SetBotName,
     SetChatMenuButton,
     SetGameScore,
-    SetManagedBotAccessSettings
+    SetManagedBotAccessSettings,
 ):
     pass

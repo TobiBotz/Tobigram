@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 import logging
 from pathlib import Path
 
@@ -28,7 +29,7 @@ log = logging.getLogger(__name__)
 
 
 class MemoryStorage(SQLiteStorage):
-    def __init__(self, name: str, workdir=None, session_string: Optional[str] = None):
+    def __init__(self, name: str, workdir=None, session_string: str | None = None):
         super().__init__(name, workdir=workdir if workdir is not None else Path.cwd())
 
         self.session_string = session_string

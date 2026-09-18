@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import enums, types, utils
@@ -26,17 +27,17 @@ from .edit_ephemeral_message import edit_ephemeral
 
 class EditEphemeralMessageText:
     async def edit_ephemeral_message_text(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        receiver_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
+        receiver_id: int | str,
         message_id: int,
-        text: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        rich_message: Optional["types.InputRichMessage"] = None,
-        reply_markup: Optional["types.InlineKeyboardMarkup"] = None,
-        welcome: Optional[bool] = None,
-    ) -> Optional["types.Message"]:
+        text: str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        rich_message: types.InputRichMessage | None = None,
+        reply_markup: types.InlineKeyboardMarkup | None = None,
+        welcome: bool | None = None,
+    ) -> types.Message | None:
         """Edit the text of an ephemeral message.
 
         .. include:: /_includes/usable-by/bots.rst
@@ -88,7 +89,10 @@ class EditEphemeralMessageText:
         """
         if rich_message is not None:
             return await edit_ephemeral(
-                self, chat_id, receiver_id, message_id,
+                self,
+                chat_id,
+                receiver_id,
+                message_id,
                 rich_message=rich_message.write(),
                 reply_markup=reply_markup,
                 welcome=welcome,
@@ -99,7 +103,10 @@ class EditEphemeralMessageText:
         ).values()
 
         return await edit_ephemeral(
-            self, chat_id, receiver_id, message_id,
+            self,
+            chat_id,
+            receiver_id,
+            message_id,
             message=message,
             entities=parsed_entities,
             reply_markup=reply_markup,

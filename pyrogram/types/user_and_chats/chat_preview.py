@@ -16,11 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional
+from __future__ import annotations
+
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
+
 from ..object import Object
 
 
@@ -47,12 +48,12 @@ class ChatPreview(Object):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
+        client: pyrogram.Client | None = None,
         title: str,
         type: str,
         members_count: int,
-        photo: Optional["types.Photo"] = None,
-        members: Optional[List["types.User"]] = None
+        photo: types.Photo | None = None,
+        members: list[types.User] | None = None,
     ):
         super().__init__(client)
 
@@ -63,16 +64,20 @@ class ChatPreview(Object):
         self.members = members
 
     @staticmethod
-    def _parse(client, chat_invite: "raw.types.ChatInvite") -> "ChatPreview":
+    def _parse(client, chat_invite: raw.types.ChatInvite) -> ChatPreview:
         return ChatPreview(
             title=chat_invite.title,
-            type=("group" if not chat_invite.channel else
-                  "channel" if chat_invite.broadcast else
-                  "supergroup"),
+            type=(
+                "group"
+                if not chat_invite.channel
+                else "channel"
+                if chat_invite.broadcast
+                else "supergroup"
+            ),
             members_count=chat_invite.participants_count,
             photo=types.Photo._parse(client, chat_invite.photo),
             members=[types.User._parse(client, user) for user in chat_invite.participants] or None,
-            client=client
+            client=client,
         )
 
     # TODO: Consider merging into Chat by adding a members field (get_chat can replace get_chat_preview)

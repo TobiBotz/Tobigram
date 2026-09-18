@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from enum import auto
 
 from .auto_name import AutoName
@@ -32,4 +34,3 @@ class GiftForResaleOrder(AutoName):
 
     NUMBER = auto()
     "The gifts will be sorted by their number from the smallest to the largest"
-

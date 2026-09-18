@@ -16,20 +16,20 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, List
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class AnswerShippingQuery:
     async def answer_shipping_query(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         shipping_query_id: str,
         ok: bool,
-        shipping_options: Optional[List["types.ShippingOption"]] = None,
-        error_message: Optional[str] = None
+        shipping_options: list[types.ShippingOption] | None = None,
+        error_message: str | None = None,
     ):
         """If you sent an invoice requesting a shipping address and the parameter ``is_flexible`` was specified, the API sends the confirmation in the form of an :obj:`~pyrogram.handlers.ShippingQueryHandler`.
 
@@ -70,13 +70,11 @@ class AnswerShippingQuery:
         r = await self.invoke(
             raw.functions.messages.SetBotShippingResults(
                 query_id=int(shipping_query_id),
-                shipping_options=[
-                    so.write()
-                    for so in shipping_options
-                ] if shipping_options else None,
-                error=error_message
+                shipping_options=[so.write() for so in shipping_options]
+                if shipping_options
+                else None,
+                error=error_message,
             )
         )
 
         return r
-

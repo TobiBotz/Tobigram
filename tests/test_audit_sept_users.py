@@ -58,12 +58,14 @@ def test_accepted_gift_types_only_disallows_what_was_set_to_false():
     written = types.AcceptedGiftTypes(limited_gifts=False).write()
 
     assert written.disallow_limited_stargifts is True
-    assert not any((
-        written.disallow_unlimited_stargifts,
-        written.disallow_unique_stargifts,
-        written.disallow_stargifts_from_channels,
-        written.disallow_premium_gifts,
-    )), "a field left as None is not a refusal"
+    assert not any(
+        (
+            written.disallow_unlimited_stargifts,
+            written.disallow_unique_stargifts,
+            written.disallow_stargifts_from_channels,
+            written.disallow_premium_gifts,
+        )
+    ), "a field left as None is not a refusal"
 
 
 async def test_update_birthday_refuses_a_partial_date_and_removes_on_no_arguments():
@@ -127,9 +129,7 @@ async def test_a_bot_reads_a_channels_photo_from_the_full_chat(monkeypatch):
     from pyrogram.methods.users.get_chat_photos import GetChatPhotos
     from pyrogram.methods.users.get_chat_photos_count import GetChatPhotosCount
 
-    photo = raw.types.Photo(
-        id=1, access_hash=1, file_reference=b"", date=0, sizes=[], dc_id=2
-    )
+    photo = raw.types.Photo(id=1, access_hash=1, file_reference=b"", date=0, sizes=[], dc_id=2)
     parsed = SimpleNamespace(file_id="id", file_unique_id="current")
 
     monkeypatch.setattr(

@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional, Union
 
 import pyrogram
 from pyrogram import raw, utils
@@ -27,11 +28,11 @@ MUTE_FOREVER = 2147483647
 
 class UpdateChatNotifications:
     async def update_chat_notifications(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        mute: Optional[bool] = None,
-        mute_until: Optional[datetime] = None,
-        show_previews: Optional[bool] = None
+        self: pyrogram.Client,
+        chat_id: int | str,
+        mute: bool | None = None,
+        mute_until: datetime | None = None,
+        show_previews: bool | None = None,
     ) -> bool:
         """Update the notification settings of a chat.
 
@@ -73,12 +74,9 @@ class UpdateChatNotifications:
 
         return await self.invoke(
             raw.functions.account.UpdateNotifySettings(
-                peer=raw.types.InputNotifyPeer(
-                    peer=await self.resolve_peer(chat_id)
-                ),
+                peer=raw.types.InputNotifyPeer(peer=await self.resolve_peer(chat_id)),
                 settings=raw.types.InputPeerNotifySettings(
-                    show_previews=show_previews,
-                    mute_until=mute_until_ts
-                )
+                    show_previews=show_previews, mute_until=mute_until_ts
+                ),
             )
         )

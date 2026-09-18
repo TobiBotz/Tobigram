@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Dict, List, Optional, Union
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
@@ -100,27 +101,27 @@ class Poll(Object, Update):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
+        client: pyrogram.Client | None = None,
         id: str,
-        question: Optional["types.FormattedText"] = None,
-        options: List["types.PollOption"],
-        total_voter_count: Optional[int] = None,
+        question: types.FormattedText | None = None,
+        options: list[types.PollOption],
+        total_voter_count: int | None = None,
         is_closed: bool,
-        is_anonymous: Optional[bool] = None,
-        type: Optional["enums.PollType"] = None,
-        allows_multiple_answers: Optional[bool] = None,
-        allows_revoting: Optional[bool] = None,
-        members_only: Optional[bool] = None,
-        country_codes: Optional[List[str]] = None,
-        chosen_option_ids: Optional[List[int]] = None,
-        correct_option_ids: Optional[List[int]] = None,
-        explanation: Optional["types.FormattedText"] = None,
-        explanation_media: Optional["types.MessageContent"] = None,
-        open_period: Optional[int] = None,
-        close_date: Optional[datetime] = None,
-        description: Optional["types.FormattedText"] = None,
-        description_media: Optional["types.MessageContent"] = None,
-        voter: Optional[Union["types.User", "types.Chat"]] = None,
+        is_anonymous: bool | None = None,
+        type: enums.PollType | None = None,
+        allows_multiple_answers: bool | None = None,
+        allows_revoting: bool | None = None,
+        members_only: bool | None = None,
+        country_codes: list[str] | None = None,
+        chosen_option_ids: list[int] | None = None,
+        correct_option_ids: list[int] | None = None,
+        explanation: types.FormattedText | None = None,
+        explanation_media: types.MessageContent | None = None,
+        open_period: int | None = None,
+        close_date: datetime | None = None,
+        description: types.FormattedText | None = None,
+        description_media: types.MessageContent | None = None,
+        voter: types.User | types.Chat | None = None,
     ):
         super().__init__(client)
 
@@ -148,21 +149,24 @@ class Poll(Object, Update):
     @staticmethod
     async def _parse(
         client,
-        media_poll: Union["raw.types.MessageMediaPoll", "raw.types.UpdateMessagePoll"],
-        description: Optional["types.FormattedText"] = None,
-        users: Dict[int, "raw.types.User"] = {},
-        chats: Dict[int, "raw.types.Chat"] = {},
-    ) -> "Poll":
+        media_poll: raw.types.MessageMediaPoll | raw.types.UpdateMessagePoll,
+        description: types.FormattedText | None = None,
+        users: dict[int, raw.types.User] = {},
+        chats: dict[int, raw.types.Chat] = {},
+    ) -> Poll:
         poll: raw.types.Poll = media_poll.poll
         poll_results: raw.types.PollResults = media_poll.results
-        results: List[raw.types.PollAnswerVoters] = poll_results.results
+        results: list[raw.types.PollAnswerVoters] = poll_results.results
 
         chosen_option_ids = []
         correct_option_ids = []
         options = []
 
         vote_percentages = Poll.get_vote_percentage(
-            [((results[i].voters or 0) if i < len(results) else 0) for i in range(len(poll.answers))],
+            [
+                ((results[i].voters or 0) if i < len(results) else 0)
+                for i in range(len(poll.answers))
+            ],
             media_poll.results.total_voters or 0,
         )
 
@@ -187,7 +191,9 @@ class Poll(Object, Update):
                     text=types.FormattedText._parse(client, answer.text),
                     media=await types.MessageContent._parse(
                         client, answer.media, users=users, chats=chats
-                    ) if answer.media else None,
+                    )
+                    if answer.media
+                    else None,
                     voter_count=voter_count,
                     vote_percentage=vote_percentages[i],
                     recent_voters=types.List(
@@ -230,9 +236,8 @@ class Poll(Object, Update):
             explanation=types.FormattedText._parse(
                 client,
                 raw.types.TextWithEntities(
-                    text=poll_results.solution,
-                    entities=poll_results.solution_entities
-                )
+                    text=poll_results.solution, entities=poll_results.solution_entities
+                ),
             )
             if poll_results.solution
             else None,
@@ -252,17 +257,19 @@ class Poll(Object, Update):
                 media_poll.attached_media,
                 users=users,
                 chats=chats,
-            ) if getattr(media_poll, "attached_media", None) else None,
+            )
+            if getattr(media_poll, "attached_media", None)
+            else None,
             client=client,
         )
 
     @staticmethod
     async def _parse_update(
         client,
-        update: Union["raw.types.UpdateMessagePoll", "raw.types.UpdateMessagePollVote"],
-        users: Dict[int, "raw.types.User"] = {},
-        chats: Dict[int, "raw.types.Chat"] = {},
-    ) -> "Poll":
+        update: raw.types.UpdateMessagePoll | raw.types.UpdateMessagePollVote,
+        users: dict[int, raw.types.User] = {},
+        chats: dict[int, raw.types.Chat] = {},
+    ) -> Poll:
         if isinstance(update, raw.types.UpdateMessagePoll):
             if update.poll is not None:
                 return await Poll._parse(client, update, users=users, chats=chats)
@@ -281,7 +288,9 @@ class Poll(Object, Update):
 
                 options.append(
                     types.PollOption(
-                        persistent_id=result.option.decode("utf-8"), voter_count=result.voters or 0, client=client
+                        persistent_id=result.option.decode("utf-8"),
+                        voter_count=result.voters or 0,
+                        client=client,
                     )
                 )
 
@@ -311,7 +320,7 @@ class Poll(Object, Update):
             )
 
     @staticmethod
-    def get_vote_percentage(voter_counts: List[int], total_voter_count: int) -> List[int]:
+    def get_vote_percentage(voter_counts: list[int], total_voter_count: int) -> list[int]:
         total = sum(voter_counts)
 
         total_voter_count = min(total_voter_count, total)
@@ -337,7 +346,7 @@ class Poll(Object, Update):
         if percent_sum == 100:
             return result
 
-        options: Dict[int, Dict] = {}
+        options: dict[int, dict] = {}
         for i, vc in enumerate(voter_counts):
             key = vc + 1
             if key not in options:
@@ -371,4 +380,3 @@ class Poll(Object, Update):
                     break
 
         return result
-

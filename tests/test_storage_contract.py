@@ -9,7 +9,7 @@ to ``ENGINES`` to be held to the same rules.
 
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import pytest
 
@@ -20,14 +20,14 @@ from pyrogram.storage import HybridStorage, RemoteStorage, SQLiteStorage
 class FakeRemote(RemoteStorage):
     """A RemoteStorage backed by dicts, standing in for Mongo or Redis."""
 
-    def __init__(self, name: str = "fake", session_string: Optional[str] = None):
+    def __init__(self, name: str = "fake", session_string: str | None = None):
         super().__init__(name, session_string=session_string)
 
-        self.session: Optional[Dict[str, Any]] = None
-        self.peers: Dict[int, Tuple[int, int, str, Optional[str], int]] = {}
-        self.usernames: Dict[str, int] = {}
-        self.states: Dict[int, Tuple[int, int, int, int, int]] = {}
-        self.stored_version: Optional[int] = None
+        self.session: dict[str, Any] | None = None
+        self.peers: dict[int, tuple[int, int, str, str | None, int]] = {}
+        self.usernames: dict[str, int] = {}
+        self.states: dict[int, tuple[int, int, int, int, int]] = {}
+        self.stored_version: int | None = None
 
         self.connected = False
         self.reads = 0
@@ -332,13 +332,13 @@ class TestClientSelection:
             "explicit",
             api_id=12345,
             api_hash="0123456789abcdef0123456789abcdef",
-            session_string="WZ_whatever",
+            session_string="test_dummy_session_string",
             storage_engine=engine,
             workdir=tmp_path,
         )
 
         assert client.storage is engine
-        assert engine.session_string == "WZ_whatever"
+        assert engine.session_string == "test_dummy_session_string"
 
     def test_explicit_engine_wins_over_in_memory(self, tmp_path):
         import pyrogram

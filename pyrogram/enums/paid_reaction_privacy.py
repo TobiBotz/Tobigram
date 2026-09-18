@@ -15,7 +15,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
-from enum import auto
+
+from __future__ import annotations
 
 from pyrogram import raw
 
@@ -33,4 +34,3 @@ class PaidReactionPrivacy(AutoName):
 
     CHAT = raw.types.PaidReactionPrivacyPeer
     "Send reaction as specific chat. You can get all available chats in :meth:`~pyrogram.Client.get_send_as_chats`"
-

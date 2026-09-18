@@ -33,10 +33,12 @@ from .get_story_views import GetStoryViews
 from .hide_chat_stories import HideChatStories
 from .pin_chat_stories import PinChatStories
 from .read_chat_stories import ReadChatStories
+from .report_story import ReportStory
 from .send_story import SendStory
 from .show_chat_stories import ShowChatStories
 from .unpin_chat_stories import UnpinChatStories
 from .view_stories import ViewStories
+
 
 class Stories(
     CanPostStories,
@@ -56,10 +58,10 @@ class Stories(
     HideChatStories,
     PinChatStories,
     ReadChatStories,
+    ReportStory,
     SendStory,
     ShowChatStories,
     UnpinChatStories,
     ViewStories,
 ):
     pass
-

@@ -16,11 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Dict, Optional
 
 import pyrogram
 from pyrogram import raw, types, utils
+
 from ..object import Object
 
 
@@ -47,12 +49,12 @@ class ChatJoiner(Object):
     def __init__(
         self,
         *,
-        client: "pyrogram.Client",
-        user: "types.User",
-        date: Optional[datetime] = None,
-        bio: Optional[str] = None,
-        pending: Optional[bool] = None,
-        approved_by: Optional["types.User"] = None,
+        client: pyrogram.Client,
+        user: types.User,
+        date: datetime | None = None,
+        bio: str | None = None,
+        pending: bool | None = None,
+        approved_by: types.User | None = None,
     ):
         super().__init__(client)
 
@@ -64,20 +66,17 @@ class ChatJoiner(Object):
 
     @staticmethod
     def _parse(
-        client: "pyrogram.Client",
-        joiner: "raw.base.ChatInviteImporter",
-        users: Dict[int, "raw.base.User"],
-    ) -> "ChatJoiner":
+        client: pyrogram.Client,
+        joiner: raw.base.ChatInviteImporter,
+        users: dict[int, raw.base.User],
+    ) -> ChatJoiner:
         return ChatJoiner(
             user=types.User._parse(client, users[joiner.user_id]),
             date=utils.timestamp_to_datetime(joiner.date),
             pending=joiner.requested,
             bio=joiner.about,
             approved_by=(
-                types.User._parse(client, users[joiner.approved_by])
-                if joiner.approved_by
-                else None
+                types.User._parse(client, users[joiner.approved_by]) if joiner.approved_by else None
             ),
-            client=client
+            client=client,
         )
-

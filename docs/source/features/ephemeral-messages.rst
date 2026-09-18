@@ -21,7 +21,7 @@ Sending one
 
 .. code-block:: python
 
-    from wzgram import Client, filters
+    from pyrogram import Client, filters
 
     app = Client("my_bot")
 
@@ -49,7 +49,7 @@ carry buttons; ``reply_parameters``, so it can quote the message that triggered 
 
 .. code-block:: python
 
-    from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
     await app.send_ephemeral_message(
         chat_id=group_id,
@@ -103,7 +103,7 @@ Sending or managing them needs the ``can_send_welcome_messages`` administrator r
 
 .. code-block:: python
 
-    from wzgram.types import ChatPrivileges
+    from pyrogram.types import ChatPrivileges
 
     await app.promote_chat_member(
         group_id, bot_id,
@@ -140,7 +140,7 @@ ordinary send method rather than by calling a separate one, so every send method
 
 .. code-block:: python
 
-    from wzgram.types import EphemeralMessageParameters
+    from pyrogram.types import EphemeralMessageParameters
 
     await app.send_photo(
         chat_id, "chart.png", caption="Only you can see this",
@@ -255,5 +255,5 @@ Gotchas
   three messages. A welcome message is the exception: it is stored once and shown to
   everyone who arrives.
 - The Bot API also lets ``sendMessage`` and the media send methods carry
-  ``ephemeral_message_parameters``. wzgram does not: send an ephemeral message through
+  ``ephemeral_message_parameters``. pyrogram does not: send an ephemeral message through
   :meth:`~pyrogram.Client.send_ephemeral_message`.

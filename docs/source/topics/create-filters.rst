@@ -1,7 +1,7 @@
 Creating Filters
 ================
 
-wzgram already provides lots of built-in :class:`~pyrogram.filters` to work with, but in case you can't find a
+pyrogram already provides lots of built-in :class:`~pyrogram.filters` to work with, but in case you can't find a
 specific one for your needs or want to build a custom filter by yourself you can use
 :meth:`filters.create() <pyrogram.filters.create>`.
 
@@ -19,11 +19,11 @@ button:
 
 .. code-block:: python
 
-    from wzgram.types import InlineKeyboardMarkup, InlineKeyboardButton
+    from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
     await app.send_message(
         chat_id="username",  # Change this to your username or id
-        text="wzgram custom filter test",
+        text="pyrogram custom filter test",
         reply_markup=InlineKeyboardMarkup(
             [[InlineKeyboardButton("Press me", "pyrogram")]]
         )
@@ -42,7 +42,7 @@ queries containing "pyrogram" as data:
 
 .. code-block:: python
 
-    from wzgram import filters
+    from pyrogram import filters
 
     async def func(_, __, query):
         return query.data == "pyrogram"
@@ -72,7 +72,7 @@ This is how a dynamic custom filter looks like:
 
 .. code-block:: python
 
-    from wzgram import filters
+    from pyrogram import filters
 
     def dynamic_data_filter(data):
         async def func(flt, _, query):

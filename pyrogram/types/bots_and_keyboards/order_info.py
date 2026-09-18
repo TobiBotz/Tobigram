@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 
 from pyrogram import types
 
@@ -44,10 +45,10 @@ class OrderInfo(Object):
     def __init__(
         self,
         *,
-        name: Optional[str] = None,
-        phone_number: Optional[str] = None,
-        email: Optional[str] = None,
-        shipping_address: Optional["types.ShippingAddress"] = None
+        name: str | None = None,
+        phone_number: str | None = None,
+        email: str | None = None,
+        shipping_address: types.ShippingAddress | None = None,
     ):
         super().__init__()
 
@@ -55,4 +56,3 @@ class OrderInfo(Object):
         self.phone_number = phone_number
         self.email = email
         self.shipping_address = shipping_address
-

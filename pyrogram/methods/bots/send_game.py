@@ -16,44 +16,42 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Union, Optional
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import raw, types, utils
 
 
 class SendGame:
     async def send_game(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         game_short_name: str,
-        disable_notification: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        protect_content: Optional[bool] = None,
-        reply_markup: Optional[Union[
-            "types.InlineKeyboardMarkup",
-            "types.ReplyKeyboardMarkup",
-            "types.ReplyKeyboardRemove",
-            "types.ForceReply"
-        ]] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        message_thread_id: Optional[int] = None,
-        business_connection_id: Optional[str] = None,
-        effect_id: Optional[int] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        background: Optional[bool] = None,
-        clear_draft: Optional[bool] = None,
-        update_stickersets_order: Optional[bool] = None,
-        send_as: Optional[Union[int, str]] = None,
-        quick_reply_shortcut: Optional[int] = None,
-    ) -> "types.Message":
+        disable_notification: bool | None = None,
+        reply_to_message_id: int | None = None,
+        protect_content: bool | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        message_thread_id: int | None = None,
+        business_connection_id: str | None = None,
+        effect_id: int | None = None,
+        allow_paid_broadcast: bool | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        background: bool | None = None,
+        clear_draft: bool | None = None,
+        update_stickersets_order: bool | None = None,
+        send_as: int | str | None = None,
+        quick_reply_shortcut: int | None = None,
+    ) -> types.Message:
         """Send a game.
 
         .. include:: /_includes/usable-by/bots.rst
@@ -142,41 +140,42 @@ class SendGame:
                 peer=await self.resolve_peer(chat_id),
                 media=raw.types.InputMediaGame(
                     id=raw.types.InputGameShortName(
-                        bot_id=raw.types.InputUserSelf(),
-                        short_name=game_short_name
+                        bot_id=raw.types.InputUserSelf(), short_name=game_short_name
                     ),
                 ),
                 message="",
                 entities=None,
                 silent=disable_notification if disable_notification is not None else None,
-                reply_to=await utils.get_reply_to(
-                    self,
-                    reply_parameters,
-                    message_thread_id
-                ),
+                reply_to=await utils.get_reply_to(self, reply_parameters, message_thread_id),
                 random_id=self.rnd_id(),
                 noforwards=protect_content,
                 effect=effect_id,
                 allow_paid_floodskip=allow_paid_broadcast,
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
                 schedule_repeat_period=repeat_period,
-                allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
-                suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+                allow_paid_stars=paid_message_star_count
+                if paid_message_star_count is not None
+                else None,
+                suggested_post=suggested_post_parameters.write()
+                if suggested_post_parameters
+                else None,
                 background=background,
                 clear_draft=clear_draft,
                 update_stickersets_order=update_stickersets_order,
                 send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
-                reply_markup=await reply_markup.write(self) if reply_markup else None
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(
+                    shortcut_id=quick_reply_shortcut
+                )
+                if quick_reply_shortcut is not None
+                else None,
+                reply_markup=await reply_markup.write(self) if reply_markup else None,
             ),
             sleep_threshold=60,
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
         for i in r.updates:
             if isinstance(i, (raw.types.UpdateNewMessage, raw.types.UpdateNewChannelMessage)):
                 return await types.Message._parse(
-                    self, i.message,
-                    {i.id: i for i in r.users},
-                    {i.id: i for i in r.chats}
+                    self, i.message, {i.id: i for i in r.users}, {i.id: i for i in r.chats}
                 )

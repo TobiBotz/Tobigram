@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Dict, List, Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -34,10 +35,12 @@ class UsersShared(Object):
         users (List of :obj:`~pyrogram.types.User`):
             List of requested users.
     """
+
     def __init__(
-        self, *,
+        self,
+        *,
         button_id: int,
-        users: List["types.User"],
+        users: list[types.User],
     ):
         super().__init__()
 
@@ -46,13 +49,10 @@ class UsersShared(Object):
 
     @staticmethod
     def _parse(
-        client: "pyrogram.Client",
-        action: Union[
-            "raw.types.MessageActionRequestedPeer",
-            "raw.types.MessageActionRequestedPeerSentMe"
-        ],
-        users: Dict[int, "raw.base.User"] = {}
-    ) -> Optional["UsersShared"]:
+        client: pyrogram.Client,
+        action: raw.types.MessageActionRequestedPeer | raw.types.MessageActionRequestedPeerSentMe,
+        users: dict[int, raw.base.User] = {},
+    ) -> UsersShared | None:
         requested_users = types.List()
 
         for peer in action.peers:
@@ -73,12 +73,8 @@ class UsersShared(Object):
                         last_name=getattr(peer, "last_name", None),
                         username=getattr(peer, "username", None),
                         photo=types.Photo._parse(client, getattr(peer, "photo", None)),
-                        client=client
+                        client=client,
                     )
                 )
 
-        return UsersShared(
-            button_id=action.button_id,
-            users=requested_users
-        )
-
+        return UsersShared(button_id=action.button_id, users=requested_users)

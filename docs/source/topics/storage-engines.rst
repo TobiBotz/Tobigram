@@ -1,7 +1,7 @@
 Storage Engines
 ===============
 
-Every time you login to Telegram, some personal piece of data are created and held by both parties (the client, wzgram
+Every time you login to Telegram, some personal piece of data are created and held by both parties (the client, pyrogram
 and the server, Telegram). This session data is uniquely bound to your own account, indefinitely (until you logout or
 decide to manually terminate it) and is used to authorize a client to execute API calls on behalf of your identity.
 
@@ -12,12 +12,12 @@ Persisting Sessions
 -------------------
 
 In order to make a client reconnect successfully between restarts, that is, without having to start a new
-authorization process from scratch each time, wzgram needs to store the generated session data somewhere.
+authorization process from scratch each time, pyrogram needs to store the generated session data somewhere.
 
 Different Storage Engines
 -------------------------
 
-wzgram ships four kinds of storage engine. Two keep the session on the machine that is
+pyrogram ships four kinds of storage engine. Two keep the session on the machine that is
 running — a **File Storage** and a **Memory Storage**, both backed by SQLite — and two keep
 it somewhere that outlives the machine: a **Remote Storage** (MongoDB or Redis) and a
 **Hybrid Storage**, which is a local cache in front of a remote one.
@@ -37,13 +37,13 @@ To use this type of engine, simply pass any name of your choice to the ``name`` 
 
 .. code-block:: python
 
-    from wzgram import Client
+    from pyrogram import Client
 
     async with Client("my_account") as app:
         print(await app.get_me())
 
 Once you successfully log in (either with a user or a bot identity), a session file will be created and saved to disk as
-``my_account.session``. Any subsequent client restart will make wzgram search for a file named that way and the
+``my_account.session``. Any subsequent client restart will make pyrogram search for a file named that way and the
 session database will be automatically loaded.
 
 Memory Storage
@@ -54,7 +54,7 @@ In case you don't want to have any session file saved to disk, you can use an in
 
 .. code-block:: python
 
-    from wzgram import Client
+    from pyrogram import Client
 
     async with Client("my_account", in_memory=True) as app:
         print(await app.get_me())
@@ -70,7 +70,7 @@ In case you want to use an in-memory storage, but also want to keep access to th
 
 .. code-block:: python
 
-    from wzgram import Client
+    from pyrogram import Client
 
     async with Client("my_account", in_memory=True) as app:
         print(await app.export_session_string())
@@ -80,18 +80,18 @@ login using the same session; the storage used will still be in-memory:
 
 .. code-block:: python
 
-    from wzgram import Client
+    from pyrogram import Client
 
     session_string = "...ZnUIFD8jsjXTb8g_vpxx48k1zkov9sapD-tzjz-S4WZv70M..."
 
     async with Client("my_account", session_string=session_string) as app:
         print(await app.get_me())
 
-Session strings are useful when you want to run authorized wzgram clients on platforms whose ephemeral filesystems
+Session strings are useful when you want to run authorized pyrogram clients on platforms whose ephemeral filesystems
 make a file-based storage engine impractical.
 
-wzgram's strings start with ``WZ_`` and carry a CRC32, so a string mangled in transit is
-told apart from one that is merely in an older format, and every format wzgram has ever
+pyrogram's strings carry a CRC32, so a string mangled in transit is
+told apart from one that is merely in an older format, and every format pyrogram has ever
 exported still decodes. :doc:`/features/session-strings` covers the format, the repair pass
 and what a string is safe to be stored in.
 
@@ -112,13 +112,13 @@ Drivers are optional and imported only when the storage is opened:
 
 .. code-block:: bash
 
-    $ pip install "wzgram[mongo]"      # motor
-    $ pip install "wzgram[redis]"      # redis
+    $ pip install "tobigram[mongo]"      # motor
+    $ pip install "tobigram[redis]"      # redis
 
 .. code-block:: python
 
-    from wzgram import Client
-    from wzgram.storage import MongoStorage
+    from pyrogram import Client
+    from pyrogram.storage import MongoStorage
 
     app = Client(
         "my_account",
@@ -134,7 +134,7 @@ already-created client to share with the rest of your program:
 .. code-block:: python
 
     from motor.motor_asyncio import AsyncIOMotorClient
-    from wzgram.storage import MongoStorage, RedisStorage
+    from pyrogram.storage import MongoStorage, RedisStorage
 
     MongoStorage("my_account", AsyncIOMotorClient(uri), database="sessions")
     RedisStorage("my_account", redis_client, prefix="bots:my_account")
@@ -143,12 +143,12 @@ already-created client to share with the rest of your program:
 
     In Redis, an evicted session key is a lost login. Peers are a cache and can be evicted
     safely, but the session hash cannot — run the database with
-    ``maxmemory-policy noeviction``, or give wzgram a database of its own. Opening the
+    ``maxmemory-policy noeviction``, or give pyrogram a database of its own. Opening the
     storage logs a warning when the server reports any other policy.
 
 Coming from pyrofork's MongoStorage? Its documents carry no ``server_address`` or ``port``.
 :meth:`MongoStorage.import_pyrofork() <pyrogram.storage.MongoStorage.import_pyrofork>` reads
-that layout once and writes wzgram's, resolving the address from the datacenter id.
+that layout once and writes pyrogram's, resolving the address from the datacenter id.
 
 Hybrid Storage
 --------------
@@ -159,8 +159,8 @@ front of any backend:
 
 .. code-block:: python
 
-    from wzgram import Client
-    from wzgram.storage import HybridStorage, MongoStorage
+    from pyrogram import Client
+    from pyrogram.storage import HybridStorage, MongoStorage
 
     app = Client(
         "my_account",
@@ -236,7 +236,7 @@ libraries.
 
 .. code-block:: python
 
-    from wzgram import Client
+    from pyrogram import Client
     from .tele_storage import TelethonStorage  # assumes that the path downloaded is accurate
 
     workdir = Path(__file__).parent
@@ -258,4 +258,4 @@ libraries.
             is_bot=is_bot
         )
     ) as app:
-        await app.send_message(chat_id="me", text="Greetings from **wzgram**!")
+        await app.send_message(chat_id="me", text="Greetings from **pyrogram**!")

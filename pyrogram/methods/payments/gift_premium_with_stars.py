@@ -17,7 +17,8 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from typing import List, Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
@@ -25,14 +26,14 @@ from pyrogram import enums, raw, types, utils
 
 class GiftPremiumWithStars:
     async def gift_premium_with_stars(
-        self: "pyrogram.Client",
-        user_id: Union[int, str],
+        self: pyrogram.Client,
+        user_id: int | str,
         month_count: int,
-        text: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        star_count: Optional[int] = None,
-    ) -> Optional["types.Message"]:
+        text: str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        star_count: int | None = None,
+    ) -> types.Message | None:
         """Allows to buy a Telegram Premium subscription for another user with payment in Telegram Stars.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -68,7 +69,9 @@ class GiftPremiumWithStars:
 
                 await app.gift_premium_with_stars(user_id=123, month_count=3)
         """
-        text, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
+        text, entities = (
+            await utils.parse_text_entities(self, text, parse_mode, entities)
+        ).values()
         entities = entities or []
 
         invoice = raw.types.InputInvoicePremiumGiftStars(
@@ -77,14 +80,12 @@ class GiftPremiumWithStars:
             message=raw.types.TextWithEntities(
                 text=text,
                 entities=entities,
-            ) if text else None
+            )
+            if text
+            else None,
         )
 
-        form = await self.invoke(
-            raw.functions.payments.GetPaymentForm(
-                invoice=invoice
-            )
-        )
+        form = await self.invoke(raw.functions.payments.GetPaymentForm(invoice=invoice))
 
         if star_count is not None:
             if star_count < 0:
@@ -94,16 +95,12 @@ class GiftPremiumWithStars:
                 raise ValueError("Have not enough Telegram Stars.")
 
         r = await self.invoke(
-            raw.functions.payments.SendStarsForm(
-                form_id=form.form_id,
-                invoice=invoice
-            )
+            raw.functions.payments.SendStarsForm(form_id=form.form_id, invoice=invoice)
         )
 
         messages = await utils.parse_messages(
             client=self,
-            messages=r.updates if isinstance(r, raw.types.payments.PaymentResult) else r
+            messages=r.updates if isinstance(r, raw.types.payments.PaymentResult) else r,
         )
 
         return messages[0] if messages else None
-

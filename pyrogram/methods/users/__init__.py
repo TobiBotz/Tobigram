@@ -27,6 +27,8 @@ from .get_common_chats import GetCommonChats
 from .get_default_emoji_statuses import GetDefaultEmojiStatuses
 from .get_me import GetMe
 from .get_users import GetUsers
+from .report_profile_photo import ReportProfilePhoto
+from .report_user import ReportUser
 from .set_emoji_status import SetEmojiStatus
 from .set_personal_channel import SetPersonalChannel
 from .set_profile_photo import SetProfilePhoto
@@ -49,6 +51,8 @@ class Users(
     GetDefaultEmojiStatuses,
     GetMe,
     GetUsers,
+    ReportProfilePhoto,
+    ReportUser,
     SetEmojiStatus,
     SetPersonalChannel,
     SetProfilePhoto,
@@ -56,6 +60,6 @@ class Users(
     UnblockUser,
     UpdateBirthday,
     UpdateProfile,
-    UpdateStatus
+    UpdateStatus,
 ):
     pass

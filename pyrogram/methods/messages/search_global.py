@@ -16,26 +16,26 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import AsyncGenerator, Optional, Union
+from __future__ import annotations
+
+from collections.abc import AsyncGenerator
 
 import pyrogram
-from pyrogram import raw, enums
-from pyrogram import types
-from pyrogram import utils
+from pyrogram import enums, raw, types, utils
 
 
 class SearchGlobal:
     async def search_global(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         query: str = "",
-        filter: "enums.MessagesFilter" = enums.MessagesFilter.EMPTY,
+        filter: enums.MessagesFilter = enums.MessagesFilter.EMPTY,
         limit: int = 0,
-        broadcasts_only: Optional[bool] = None,
-        groups_only: Optional[bool] = None,
-        users_only: Optional[bool] = None,
-        folder_id: Optional[int] = None,
-        community: Union[int, str] = None,
-    ) -> Optional[AsyncGenerator["types.Message", None]]:
+        broadcasts_only: bool | None = None,
+        groups_only: bool | None = None,
+        users_only: bool | None = None,
+        folder_id: int | None = None,
+        community: int | str | None = None,
+    ) -> AsyncGenerator[types.Message, None] | None:
         """Search messages globally from all of your chats.
 
         If you want to get the messages count only, see :meth:`~pyrogram.Client.search_global_count`.
@@ -51,7 +51,7 @@ class SearchGlobal:
             query (``str``, *optional*):
                 Text query string.
                 Use "@" to search for mentions.
-            
+
             filter (:obj:`~pyrogram.enums.MessagesFilter`, *optional*):
                 Pass a filter in order to search for specific kind of messages only.
                 Defaults to any message (no filter).
@@ -81,7 +81,7 @@ class SearchGlobal:
         Example:
             .. code-block:: python
 
-                from wzgram import enums
+                from pyrogram import enums
 
                 # Search for "pyrogram". Get the first 50 results
                 async for message in app.search_global("pyrogram", limit=50):
@@ -117,11 +117,13 @@ class SearchGlobal:
                         groups_only=groups_only if groups_only is not None else None,
                         users_only=users_only if users_only is not None else None,
                         folder_id=folder_id,
-                        community=await self.resolve_peer(community) if community is not None else None
+                        community=await self.resolve_peer(community)
+                        if community is not None
+                        else None,
                     ),
-                    sleep_threshold=60
+                    sleep_threshold=60,
                 ),
-                replies=0
+                replies=0,
             )
 
             if not messages:

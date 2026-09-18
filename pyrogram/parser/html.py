@@ -16,16 +16,18 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import html
 import logging
 import re
 from html.parser import HTMLParser
-from typing import Optional
 
 import pyrogram
 from pyrogram import raw
 from pyrogram.enums import MessageEntityType
 from pyrogram.errors import PeerIdInvalid
+
 from . import utils
 
 log = logging.getLogger(__name__)
@@ -34,7 +36,7 @@ log = logging.getLogger(__name__)
 class Parser(HTMLParser):
     MENTION_RE = re.compile(r"tg://user\?id=(\d+)")
 
-    def __init__(self, client: "pyrogram.Client"):
+    def __init__(self, client: pyrogram.Client):
         super().__init__()
 
         self.client = client
@@ -70,9 +72,11 @@ class Parser(HTMLParser):
                     active_pres[-1].language = _class[9:]
                 return
             entity = raw.types.MessageEntityCode
-        elif tag in ["spoiler", "tg-spoiler"]:
-            entity = raw.types.MessageEntitySpoiler
-        elif tag == "span" and attrs.get("class", "") == "tg-spoiler":
+        elif (
+            tag in ["spoiler", "tg-spoiler"]
+            or tag == "span"
+            and attrs.get("class", "") == "tg-spoiler"
+        ):
             entity = raw.types.MessageEntitySpoiler
         elif tag == "a":
             url = attrs.get("href", "")
@@ -87,16 +91,20 @@ class Parser(HTMLParser):
                 extra["url"] = url
         elif tag in ["emoji", "tg-emoji"]:
             custom_emoji_id = attrs.get("emoji-id") or attrs.get("id")
-            if custom_emoji_id is None:
+
+            try:
+                extra["document_id"] = int(custom_emoji_id)
+            except (TypeError, ValueError):
                 return
+
             entity = raw.types.MessageEntityCustomEmoji
-            extra["document_id"] = int(custom_emoji_id)
         elif tag == "tg-time":
-            unix = attrs.get("unix")
-            if unix is None:
+            try:
+                extra["date"] = int(attrs.get("unix"))
+            except (TypeError, ValueError):
                 return
+
             entity = raw.types.MessageEntityFormattedDate
-            extra["date"] = int(unix)
             date_time_format = attrs.get("format", "")
             extra = self._parse_date_time_format(extra, date_time_format)
         else:
@@ -159,7 +167,7 @@ class Parser(HTMLParser):
 
 
 class HTML:
-    def __init__(self, client: Optional["pyrogram.Client"]):
+    def __init__(self, client: pyrogram.Client | None):
         self.client = client
 
     async def parse(self, text: str):
@@ -196,7 +204,7 @@ class HTML:
 
         return {
             "message": utils.remove_surrogates(parser.text),
-            "entities": sorted(entities, key=lambda e: e.offset) or None
+            "entities": sorted(entities, key=lambda e: e.offset) or None,
         }
 
     @staticmethod
@@ -294,7 +302,9 @@ class HTML:
 
         # no need to sort, but still add entities starting from the end
         for entity, offset in reversed(entities_offsets):
-            text = text[:offset] + entity + html.escape(text[offset:last_offset]) + text[last_offset:]
+            text = (
+                text[:offset] + entity + html.escape(text[offset:last_offset]) + text[last_offset:]
+            )
             last_offset = offset
 
         text = html.escape(text[:last_offset]) + text[last_offset:]

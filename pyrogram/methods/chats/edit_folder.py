@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
@@ -24,25 +25,25 @@ from pyrogram import enums, raw, types, utils
 
 class EditFolder:
     async def edit_folder(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         folder_id: int,
-        name: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        animate_custom_emoji: Optional[bool] = None,
-        icon: Optional[str] = None,
-        color: Optional["enums.FolderColor"] = None,
-        pinned_chats: Optional[List[Union[int, str]]] = None,
-        included_chats: Optional[List[Union[int, str]]] = None,
-        excluded_chats: Optional[List[Union[int, str]]] = None,
-        exclude_muted: Optional[bool] = None,
-        exclude_read: Optional[bool] = None,
-        exclude_archived: Optional[bool] = None,
-        include_contacts: Optional[bool] = None,
-        include_non_contacts: Optional[bool] = None,
-        include_bots: Optional[bool] = None,
-        include_groups: Optional[bool] = None,
-        include_channels: Optional[bool] = None
+        name: str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        animate_custom_emoji: bool | None = None,
+        icon: str | None = None,
+        color: enums.FolderColor | None = None,
+        pinned_chats: list[int | str] | None = None,
+        included_chats: list[int | str] | None = None,
+        excluded_chats: list[int | str] | None = None,
+        exclude_muted: bool | None = None,
+        exclude_read: bool | None = None,
+        exclude_archived: bool | None = None,
+        include_contacts: bool | None = None,
+        include_non_contacts: bool | None = None,
+        include_bots: bool | None = None,
+        include_groups: bool | None = None,
+        include_channels: bool | None = None,
     ) -> bool:
         """Update chat folder.
 
@@ -124,7 +125,8 @@ class EditFolder:
         dialog_filters = await self.invoke(raw.functions.messages.GetDialogFilters())
 
         raw_folders = [
-            folder for folder in dialog_filters.filters
+            folder
+            for folder in dialog_filters.filters
             if isinstance(folder, (raw.types.DialogFilter, raw.types.DialogFilterChatlist))
         ]
 
@@ -135,12 +137,11 @@ class EditFolder:
             raise ValueError(f"Folder with id {folder_id} not found")
 
         if name is not None:
-            name, title_entities = (await utils.parse_text_entities(self, name, parse_mode, entities)).values()
+            name, title_entities = (
+                await utils.parse_text_entities(self, name, parse_mode, entities)
+            ).values()
 
-            folder.title = raw.types.TextWithEntities(
-                text=name,
-                entities=title_entities or []
-            )
+            folder.title = raw.types.TextWithEntities(text=name, entities=title_entities or [])
 
         changes = {}
 
@@ -156,24 +157,20 @@ class EditFolder:
             ("include_channels", "broadcasts", include_channels),
             ("pinned_chats", "pinned_peers", pinned_chats),
             ("included_chats", "include_peers", included_chats),
-            ("excluded_chats", "exclude_peers", excluded_chats)
+            ("excluded_chats", "exclude_peers", excluded_chats),
         ):
             if value is not None:
                 changes[argument] = (field, value)
 
         if animate_custom_emoji is not None:
-            changes["animate_custom_emoji"] = (
-                "title_noanimate", not animate_custom_emoji
-            )
+            changes["animate_custom_emoji"] = ("title_noanimate", not animate_custom_emoji)
 
         if color is not None:
             changes["color"] = ("color", color.value)
 
         for argument, (field, _) in changes.items():
             if field not in folder.__slots__:
-                raise ValueError(
-                    f"Folder with id {folder_id} does not support {argument}"
-                )
+                raise ValueError(f"Folder with id {folder_id} does not support {argument}")
 
         for field, value in changes.values():
             if field in ("pinned_peers", "include_peers", "exclude_peers"):
@@ -182,9 +179,5 @@ class EditFolder:
             setattr(folder, field, value)
 
         return await self.invoke(
-            raw.functions.messages.UpdateDialogFilter(
-                id=folder_id,
-                filter=folder
-            )
+            raw.functions.messages.UpdateDialogFilter(id=folder_id, filter=folder)
         )
-

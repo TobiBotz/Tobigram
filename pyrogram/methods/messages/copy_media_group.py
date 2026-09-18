@@ -16,39 +16,40 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Union, List, Optional
 
 import pyrogram
-from pyrogram import types, utils, raw
+from pyrogram import raw, types, utils
 
 
 class CopyMediaGroup:
     async def copy_media_group(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        from_chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
+        from_chat_id: int | str,
         message_id: int,
-        captions: Optional[Union[List[str], str]] = None,
-        disable_notification: Optional[bool] = None,
-        reply_to_message_id: Optional[int] = None,
-        schedule_date: Optional[datetime] = None,
-        protect_content: Optional[bool] = None,
-        effect_id: Optional[int] = None,
-        show_caption_above_media: Optional[bool] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        background: Optional[bool] = None,
-        clear_draft: Optional[bool] = None,
-        update_stickersets_order: Optional[bool] = None,
-        send_as: Optional[Union[int, str]] = None,
-        quick_reply_shortcut: Optional[int] = None,
-        business_connection_id: Optional[str] = None,
-        has_spoilers: Optional[bool] = None,
-    ) -> List["types.Message"]:
+        captions: list[str] | str | None = None,
+        disable_notification: bool | None = None,
+        reply_to_message_id: int | None = None,
+        schedule_date: datetime | None = None,
+        protect_content: bool | None = None,
+        effect_id: int | None = None,
+        show_caption_above_media: bool | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        background: bool | None = None,
+        clear_draft: bool | None = None,
+        update_stickersets_order: bool | None = None,
+        send_as: int | str | None = None,
+        quick_reply_shortcut: int | None = None,
+        business_connection_id: str | None = None,
+        has_spoilers: bool | None = None,
+    ) -> list[types.Message]:
         """Copy a media group by providing one of the message ids.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -141,15 +142,13 @@ class CopyMediaGroup:
                 await app.copy_media_group(to_chat, from_chat, 123)
 
                 await app.copy_media_group(to_chat, from_chat, 123, captions="single caption")
-                
+
                 await app.copy_media_group(to_chat, from_chat, 123,
                     captions=["caption 1", None, ""])
         """
 
         if reply_parameters is None and reply_to_message_id is not None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id
-            )
+            reply_parameters = types.ReplyParameters(message_id=reply_to_message_id)
 
         media_group = await self.get_media_group(from_chat_id, message_id)
         multi_media = []
@@ -173,18 +172,17 @@ class CopyMediaGroup:
             elif isinstance(captions, str):
                 text, entities = (await self.parser.parse(captions if i == 0 else "")).values()
             elif message.caption and message.caption != "None":
-                text, entities = (await utils.parse_text_entities(
-                    self, message.caption, None, message.caption_entities
-                )).values()
+                text, entities = (
+                    await utils.parse_text_entities(
+                        self, message.caption, None, message.caption_entities
+                    )
+                ).values()
             else:
                 text, entities = "", None
 
             multi_media.append(
                 raw.types.InputSingleMedia(
-                    media=media,
-                    random_id=self.rnd_id(),
-                    message=text,
-                    entities=entities or None
+                    media=media, random_id=self.rnd_id(), message=text, entities=entities or None
                 )
             )
 
@@ -197,35 +195,55 @@ class CopyMediaGroup:
                     self,
                     reply_parameters,
                     message_thread_id,
-                    direct_messages_topic_id=direct_messages_topic_id
+                    direct_messages_topic_id=direct_messages_topic_id,
                 ),
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
                 noforwards=protect_content,
                 effect=effect_id,
-                invert_media=show_caption_above_media if show_caption_above_media is not None else None,
-                allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
-                allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
+                invert_media=show_caption_above_media
+                if show_caption_above_media is not None
+                else None,
+                allow_paid_floodskip=allow_paid_broadcast
+                if allow_paid_broadcast is not None
+                else None,
+                allow_paid_stars=paid_message_star_count
+                if paid_message_star_count is not None
+                else None,
                 background=background if background is not None else None,
                 clear_draft=clear_draft if clear_draft is not None else None,
-                update_stickersets_order=update_stickersets_order if update_stickersets_order is not None else None,
+                update_stickersets_order=update_stickersets_order
+                if update_stickersets_order is not None
+                else None,
                 send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(
+                    shortcut_id=quick_reply_shortcut
+                )
+                if quick_reply_shortcut is not None
+                else None,
             ),
             sleep_threshold=60,
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
         return await utils.parse_messages(
             self,
             raw.types.messages.Messages(
-                messages=[m.message for m in filter(
-                    lambda u: isinstance(u, (raw.types.UpdateNewMessage,
-                                             raw.types.UpdateNewChannelMessage,
-                                             raw.types.UpdateNewScheduledMessage)),
-                    r.updates
-                )],
+                messages=[
+                    m.message
+                    for m in filter(
+                        lambda u: isinstance(
+                            u,
+                            (
+                                raw.types.UpdateNewMessage,
+                                raw.types.UpdateNewChannelMessage,
+                                raw.types.UpdateNewScheduledMessage,
+                            ),
+                        ),
+                        r.updates,
+                    )
+                ],
                 topics=[],
                 users=r.users,
-                chats=r.chats
-            )
+                chats=r.chats,
+            ),
         )

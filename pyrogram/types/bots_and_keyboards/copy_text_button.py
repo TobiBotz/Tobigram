@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+
+from __future__ import annotations
 
 from ..object import Object
 
@@ -29,7 +30,7 @@ class CopyTextButton(Object):
             The text to be copied to the clipboard; 1-256 characters.
     """
 
-    def __init__(self, text: Optional[str] = None):
+    def __init__(self, text: str | None = None):
         super().__init__()
 
         self.text = text

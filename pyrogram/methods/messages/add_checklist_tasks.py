@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types
@@ -24,10 +25,10 @@ from pyrogram import raw, types
 
 class AddChecklistTasks:
     async def add_checklist_tasks(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         message_id: int,
-        tasks: List["types.InputChecklistTask"]
+        tasks: list[types.InputChecklistTask],
     ) -> int:
         """Add tasks to a checklist in a message.
 
@@ -66,9 +67,8 @@ class AddChecklistTasks:
             raw.functions.messages.AppendTodoList(
                 peer=await self.resolve_peer(chat_id),
                 msg_id=message_id,
-                list=[await task.write(self) for task in tasks]
+                list=[await task.write(self) for task in tasks],
             )
         )
 
         return True
-

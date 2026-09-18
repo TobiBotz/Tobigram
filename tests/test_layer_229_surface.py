@@ -24,6 +24,7 @@ another in the TL schema, which is the seam a parameter goes missing at.
 
 import ast
 import inspect
+import re
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
@@ -38,9 +39,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def _raw_user(user_id, first_name="U"):
-    return raw.types.User(
-        id=user_id, first_name=first_name, usernames=[], restriction_reason=[]
-    )
+    return raw.types.User(id=user_id, first_name=first_name, usernames=[], restriction_reason=[])
 
 
 class TestRichMessageButton:
@@ -87,9 +86,7 @@ class TestRichMessageButton:
 
     def test_the_default_style_writes_nothing(self):
         assert types.RichMessageButton(text="x", url="u").write().style is None
-        assert (
-            types.RichMessageButton._parse_style(None) == enums.RichButtonStyle.DEFAULT
-        )
+        assert types.RichMessageButton._parse_style(None) == enums.RichButtonStyle.DEFAULT
 
     async def test_it_parses_back(self):
         page_button = raw.types.PageButton(
@@ -205,9 +202,7 @@ class TestInstantViewBlocks:
     async def test_a_table_parses_its_compact_flag(self):
         block = await types.RichBlock._parse(
             Mock(),
-            raw.types.PageBlockTable(
-                title=raw.types.TextPlain(text=""), rows=[], compact=True
-            ),
+            raw.types.PageBlockTable(title=raw.types.TextPlain(text=""), rows=[], compact=True),
         )
 
         assert block.is_compact is True
@@ -235,10 +230,7 @@ class TestWelcomeMessages:
         raw_rights = _admin_rights(rights)
 
         assert raw_rights.manage_welcome_messages is True
-        assert (
-            types.ChatAdministratorRights._parse(raw_rights).can_send_welcome_messages
-            is True
-        )
+        assert types.ChatAdministratorRights._parse(raw_rights).can_send_welcome_messages is True
 
     @pytest.mark.parametrize(
         "path",
@@ -315,9 +307,7 @@ class TestMessageGenerationStopped:
             action=raw.types.SendMessageStopDraftAction(random_id=99),
             top_msg_id=3,
         )
-        parsed = types.MessageGenerationStopped._parse(
-            Mock(), update, {5: _raw_user(5)}, {}
-        )
+        parsed = types.MessageGenerationStopped._parse(Mock(), update, {5: _raw_user(5)}, {})
 
         assert parsed.draft_id == 99
         assert parsed.chat.id == 5
@@ -326,9 +316,7 @@ class TestMessageGenerationStopped:
     def test_any_other_typing_action_is_not_one(self):
         """Every SendMessageAction arrives on these updates, and only one has a handler."""
 
-        update = raw.types.UpdateUserTyping(
-            user_id=5, action=raw.types.SendMessageTypingAction()
-        )
+        update = raw.types.UpdateUserTyping(user_id=5, action=raw.types.SendMessageTypingAction())
 
         assert types.MessageGenerationStopped._parse(Mock(), update, {}, {}) is None
 
@@ -337,9 +325,7 @@ class TestMessageGenerationStopped:
         parser = dispatcher.update_parsers[raw.types.UpdateUserTyping]
 
         parsed, handler_type = await parser(
-            raw.types.UpdateUserTyping(
-                user_id=5, action=raw.types.SendMessageTypingAction()
-            ),
+            raw.types.UpdateUserTyping(user_id=5, action=raw.types.SendMessageTypingAction()),
             {},
             {},
         )
@@ -477,9 +463,7 @@ class TestEphemeralMessageParameters:
         client = AsyncMock()
         client.rnd_id = Mock(return_value=1)
         client.link_preview_options = None
-        client.parser.parse = AsyncMock(
-            return_value={"message": "hi", "entities": None}
-        )
+        client.parser.parse = AsyncMock(return_value={"message": "hi", "entities": None})
         client.resolve_peer = AsyncMock(
             return_value=raw.types.InputPeerUser(user_id=7, access_hash=0)
         )
@@ -489,9 +473,7 @@ class TestEphemeralMessageParameters:
 
     @pytest.mark.parametrize("method", SEND_METHODS)
     def test_every_send_method_accepts_it(self, method):
-        parameters = inspect.signature(
-            getattr(pyrogram.Client, method)
-        ).parameters
+        parameters = inspect.signature(getattr(pyrogram.Client, method)).parameters
 
         assert "ephemeral_message_parameters" in parameters
 
@@ -507,7 +489,12 @@ class TestEphemeralMessageParameters:
 
         source = inspect.getsource(getattr(pyrogram.Client, method))
         builds = source.count("raw.functions.messages.Send")
-        routed = source.count("as_ephemeral(self, ephemeral_message_parameters,")
+        routed = len(
+            re.findall(
+                r"as_ephemeral\s*\(\s*self\s*,\s*ephemeral_message_parameters\s*,",
+                source,
+            )
+        )
 
         assert builds and builds == routed, (
             f"{method} builds {builds} send request(s) and routes {routed}"
@@ -525,7 +512,9 @@ class TestEphemeralMessageParameters:
         client = self._client()
 
         await pyrogram.Client.send_message(
-            client, 1, "hi",
+            client,
+            1,
+            "hi",
             ephemeral_message_parameters=types.EphemeralMessageParameters(
                 receiver_user_id=7,
                 callback_query_id="42",
@@ -556,10 +545,11 @@ class TestEphemeralMessageParameters:
 
         with caplog.at_level("WARNING"):
             await pyrogram.Client.send_message(
-                client, 1, "hi", disable_notification=True,
-                ephemeral_message_parameters=types.EphemeralMessageParameters(
-                    receiver_user_id=7
-                ),
+                client,
+                1,
+                "hi",
+                disable_notification=True,
+                ephemeral_message_parameters=types.EphemeralMessageParameters(receiver_user_id=7),
             )
 
         assert "silent" in caplog.text
@@ -569,10 +559,10 @@ class TestEphemeralMessageParameters:
 
         with caplog.at_level("WARNING"):
             await pyrogram.Client.send_message(
-                client, 1, "hi",
-                ephemeral_message_parameters=types.EphemeralMessageParameters(
-                    receiver_user_id=7
-                ),
+                client,
+                1,
+                "hi",
+                ephemeral_message_parameters=types.EphemeralMessageParameters(receiver_user_id=7),
             )
 
         assert not caplog.text
@@ -580,9 +570,7 @@ class TestEphemeralMessageParameters:
     async def test_the_media_survives_the_translation(self):
         from pyrogram.methods.ephemeral.as_ephemeral import as_ephemeral
 
-        media = raw.types.InputMediaGeoPoint(
-            geo_point=raw.types.InputGeoPoint(lat=1.0, long=2.0)
-        )
+        media = raw.types.InputMediaGeoPoint(geo_point=raw.types.InputGeoPoint(lat=1.0, long=2.0))
         request = raw.functions.messages.SendMedia(
             peer=raw.types.InputPeerChat(chat_id=1),
             media=media,
@@ -637,7 +625,7 @@ class TestEditEphemeralMessage:
     """ephemeral.editMessage is new in layer 229.
 
     Before it there was no way to edit an ephemeral message over MTProto at all,
-    which is why four Bot API methods had no wzgram counterpart. All four go
+    which is why four Bot API methods had no pyrogram counterpart. All four go
     through one RPC and differ only in which of its optional fields they fill.
     """
 
@@ -655,9 +643,7 @@ class TestEditEphemeralMessage:
     def test_they_share_one_invoke(self):
         """Four copies of a request is how one of them ends up missing a field."""
 
-        sources = [
-            inspect.getsource(getattr(pyrogram.Client, m)) for m in self.METHODS
-        ]
+        sources = [inspect.getsource(getattr(pyrogram.Client, m)) for m in self.METHODS]
         builds = [s for s in sources if "raw.functions.ephemeral.EditMessage(" in s]
 
         assert not builds, "the RPC belongs in edit_ephemeral, not in each method"
@@ -669,18 +655,14 @@ class TestEditEphemeralMessage:
     def _client(text=""):
         client = AsyncMock()
         client.invoke.return_value = Mock(updates=[], users=[], chats=[])
-        client.parser.parse = AsyncMock(
-            return_value={"message": text or None, "entities": None}
-        )
+        client.parser.parse = AsyncMock(return_value={"message": text or None, "entities": None})
 
         return client
 
     async def test_the_text_form_sends_text(self):
         client = self._client("hello")
 
-        await pyrogram.Client.edit_ephemeral_message_text(
-            client, 1, 2, 3, "hello"
-        )
+        await pyrogram.Client.edit_ephemeral_message_text(client, 1, 2, 3, "hello")
 
         request = client.invoke.await_args.args[0]
 
@@ -693,8 +675,7 @@ class TestEditEphemeralMessage:
         client = self._client()
 
         await pyrogram.Client.edit_ephemeral_message_text(
-            client, 1, 2, 3, "ignored",
-            rich_message=types.InputRichMessage(html="<b>hi</b>")
+            client, 1, 2, 3, "ignored", rich_message=types.InputRichMessage(html="<b>hi</b>")
         )
 
         request = client.invoke.await_args.args[0]
@@ -844,9 +825,7 @@ class TestEphemeralBoundMethods:
 
         kwargs = message._client.delete_ephemeral_message.await_args.kwargs
 
-        assert (kwargs["chat_id"], kwargs["receiver_id"], kwargs["message_id"]) == (
-            -100, 7, 11
-        )
+        assert (kwargs["chat_id"], kwargs["receiver_id"], kwargs["message_id"]) == (-100, 7, 11)
 
     async def test_a_reply_goes_to_the_sender_and_quotes_the_message(self):
         message = self._message(ephemeral=False)
@@ -873,9 +852,7 @@ class TestEphemeralBoundMethods:
 
 class TestChatWelcomeMessagesFlag:
     def test_a_full_channel_carries_it(self):
-        assert "has_welcome_messages" in inspect.getsource(
-            types.Chat._parse_full_channel
-        )
+        assert "has_welcome_messages" in inspect.getsource(types.Chat._parse_full_channel)
 
     def test_a_full_chat_carries_it(self):
         assert "has_welcome_messages" in inspect.getsource(types.Chat._parse_full_chat)
@@ -912,9 +889,13 @@ class TestParsedTextIsRefusedOnInput:
 
     def test_plain_text_and_raw_text_still_pass(self):
         assert types.InputRichBlockParagraph(text="hi").write().text
-        assert types.InputRichBlockParagraph(
-            text=raw.types.TextBold(text=raw.types.TextPlain(text="hi"))
-        ).write().text
+        assert (
+            types.InputRichBlockParagraph(
+                text=raw.types.TextBold(text=raw.types.TextPlain(text="hi"))
+            )
+            .write()
+            .text
+        )
 
     async def test_a_plain_text_button_round_trips(self):
         """TextPlain parses back to str, which is the one shape that survives."""
@@ -932,9 +913,7 @@ class TestCommunityLookupIsGuarded:
     """chats is keyed by id across every peer kind, so a community id can miss."""
 
     def test_a_non_community_resolves_to_nothing(self):
-        channel = raw.types.Channel(
-            id=42, title="T", photo=raw.types.ChatPhotoEmpty(), date=0
-        )
+        channel = raw.types.Channel(id=42, title="T", photo=raw.types.ChatPhotoEmpty(), date=0)
         action = raw.types.MessageActionChatJoinedViaCommunity(community_id=42)
 
         parsed = types.CommunityChatJoined._parse(Mock(), action, {42: channel})
@@ -943,9 +922,7 @@ class TestCommunityLookupIsGuarded:
         assert parsed.community is None
 
     def test_a_community_still_resolves(self):
-        community = raw.types.Community(
-            id=42, title="T", date=0, photo=raw.types.ChatPhotoEmpty()
-        )
+        community = raw.types.Community(id=42, title="T", date=0, photo=raw.types.ChatPhotoEmpty())
         action = raw.types.MessageActionChatJoinedViaCommunity(community_id=42)
 
         parsed = types.CommunityChatJoined._parse(Mock(), action, {42: community})
@@ -965,9 +942,9 @@ class TestForceReply:
         assert types.InlineKeyboardMarkup.read(written).force_reply is True
 
     async def test_a_reply_markup_carries_it(self):
-        written = await types.ReplyKeyboardMarkup(
-            keyboard=[["a"]], force_reply=True
-        ).write(AsyncMock())
+        written = await types.ReplyKeyboardMarkup(keyboard=[["a"]], force_reply=True).write(
+            AsyncMock()
+        )
 
         assert written.force_reply is True
         assert types.ReplyKeyboardMarkup.read(written).force_reply is True
@@ -982,17 +959,15 @@ class TestForceReply:
 
 class TestDisabledButton:
     async def test_it_is_accepted_and_written(self):
-        written = await types.InlineKeyboardButton(
-            text="x", disabled=types.DisabledButton()
-        ).write(AsyncMock())
+        written = await types.InlineKeyboardButton(text="x", disabled=types.DisabledButton()).write(
+            AsyncMock()
+        )
 
         assert isinstance(written.type, raw.types.InlineButtonTypeDisabled)
 
     async def test_it_reads_back_as_the_type(self):
         button = types.InlineKeyboardButton.read(
-            raw.types.KeyboardInlineButton(
-                text="x", type=raw.types.InlineButtonTypeDisabled()
-            )
+            raw.types.KeyboardInlineButton(text="x", type=raw.types.InlineButtonTypeDisabled())
         )
 
         assert isinstance(button.disabled, types.DisabledButton)
@@ -1003,11 +978,7 @@ class TestPartialRichMessage:
         return raw.types.RichMessage(
             blocks=[
                 raw.types.PageBlockBlockquoteBlocks(
-                    blocks=[
-                        raw.types.PageBlockParagraph(
-                            text=raw.types.TextPlain(text="hello")
-                        )
-                    ],
+                    blocks=[raw.types.PageBlockParagraph(text=raw.types.TextPlain(text="hello"))],
                     caption=raw.types.TextPlain(text=""),
                 )
             ],

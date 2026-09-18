@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import enums, types
@@ -27,11 +28,11 @@ from .listen import UNSET
 
 class WaitForMessage:
     async def wait_for_message(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        filters: Optional[Filter] = None,
-        timeout: Optional[float] = UNSET
-    ) -> "types.Message":
+        self: pyrogram.Client,
+        chat_id: int | str,
+        filters: Filter | None = None,
+        timeout: float | None = UNSET,
+    ) -> types.Message:
         """Wait for the next message in a chat.
 
         Shortcut for :meth:`~pyrogram.Client.listen` with a message listener.
@@ -65,5 +66,5 @@ class WaitForMessage:
             filters=filters,
             listener_type=enums.ListenerTypes.MESSAGE,
             timeout=timeout,
-            chat_id=chat_id
+            chat_id=chat_id,
         )

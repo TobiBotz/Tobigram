@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import re
 
 import pyrogram
@@ -24,9 +26,7 @@ from pyrogram import raw
 
 class DeleteFolderInviteLink:
     async def delete_folder_invite_link(
-        self: "pyrogram.Client",
-        chat_folder_id: int,
-        invite_link: str
+        self: pyrogram.Client, chat_folder_id: int, invite_link: str
     ) -> bool:
         """Deletes an invite link for a chat folder.
 
@@ -51,7 +51,10 @@ class DeleteFolderInviteLink:
                     invite_link="https://t.me/addlist/abcde"
                 )
         """
-        match = re.match(r"^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:addlist/|\+))([\w-]+)$", invite_link)
+        match = re.match(
+            r"^(?:https?://)?(?:www\.)?(?:t(?:elegram)?\.(?:org|me|dog)/(?:addlist/|\+))([\w-]+)$",
+            invite_link,
+        )
 
         if match:
             slug = match.group(1)
@@ -62,10 +65,8 @@ class DeleteFolderInviteLink:
 
         r = await self.invoke(
             raw.functions.chatlists.DeleteExportedInvite(
-                chatlist=raw.types.InputChatlistDialogFilter(filter_id=chat_folder_id),
-                slug=slug
+                chatlist=raw.types.InputChatlistDialogFilter(filter_id=chat_folder_id), slug=slug
             )
         )
 
         return r
-

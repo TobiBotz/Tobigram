@@ -68,9 +68,9 @@ def test_sent_web_app_message_without_inline_keyboard_has_no_id():
 
 async def test_story_privacy_survives_a_disallow_rule_after_the_public_rule():
     client = SimpleNamespace(me=None, fetch_stories=False)
-    users = {7: raw.types.User(
-        id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1
-    )}
+    users = {
+        7: raw.types.User(id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1)
+    }
     story = raw.types.StoryItem(
         id=1,
         date=0,
@@ -110,9 +110,12 @@ def test_identify_keeps_an_outgoing_message_in_saved_messages():
 
 
 def test_identify_still_drops_an_outgoing_message_elsewhere():
-    assert registry_module._identify(
-        enums.ListenerTypes.MESSAGE, _message(chat_id=1, user_id=10, outgoing=True)
-    ) is None
+    assert (
+        registry_module._identify(
+            enums.ListenerTypes.MESSAGE, _message(chat_id=1, user_id=10, outgoing=True)
+        )
+        is None
+    )
 
 
 def test_restart_docstring_no_longer_promises_a_connection_error():
@@ -122,9 +125,17 @@ def test_restart_docstring_no_longer_promises_a_connection_error():
 def test_invoice_photo_url():
     from pyrogram import raw, types
 
-    photo = raw.types.WebDocument(url="https://example.com/p.jpg", access_hash=1, size=1, mime_type="image/jpeg", attributes=[])
+    photo = raw.types.WebDocument(
+        url="https://example.com/p.jpg",
+        access_hash=1,
+        size=1,
+        mime_type="image/jpeg",
+        attributes=[],
+    )
     media = raw.types.MessageMediaInvoice(
         title="t", description="d", currency="USD", total_amount=100, start_param="", photo=photo
     )
     assert types.Invoice._parse(None, media).photo_url == "https://example.com/p.jpg"
-    assert types.Invoice._parse(None, raw.types.Invoice(currency="XTR", prices=[])).photo_url is None
+    assert (
+        types.Invoice._parse(None, raw.types.Invoice(currency="XTR", prices=[])).photo_url is None
+    )

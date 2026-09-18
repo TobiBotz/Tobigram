@@ -21,7 +21,8 @@
 # Source: tl:account.updateBusinessGreetingMessage
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -29,8 +30,8 @@ from pyrogram import raw
 
 class UpdateBusinessGreetingMessage:
     async def update_business_greeting_message(
-        self: "pyrogram.Client",
-        message: Optional[raw.types.InputBusinessGreetingMessage] = None,
+        self: pyrogram.Client,
+        message: raw.types.InputBusinessGreetingMessage | None = None,
     ) -> bool:
         """Set an automatic greeting message for new conversations.
 

@@ -16,10 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import asyncio
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from pyrogram import raw
 
@@ -93,12 +95,12 @@ class HybridStorage(Storage):
         self,
         name: str,
         backend: Storage,
-        workdir: Optional[Path] = None,
+        workdir: Path | None = None,
         cache_in_memory: bool = True,
         queue_size: int = 1024,
         warm_peers: int = PEER_CACHE_SIZE,
         flush_timeout: float = 10.0,
-        session_string: Optional[str] = None,
+        session_string: str | None = None,
     ):
         super().__init__(name)
 
@@ -114,10 +116,10 @@ class HybridStorage(Storage):
         )
 
         self._queue: asyncio.Queue = asyncio.Queue(maxsize=queue_size)
-        self._writer: Optional[asyncio.Task] = None
+        self._writer: asyncio.Task | None = None
         self._closing = False
         self._dropped = 0
-        self._inflight: Optional[str] = None
+        self._inflight: str | None = None
 
     async def open(self) -> None:
         await self.local.open()
@@ -249,12 +251,10 @@ class HybridStorage(Storage):
             await self.backend.update_peers(payload)
         elif kind == USERNAME_WRITE:
             await self.backend.update_usernames(payload)
-        elif kind == STATE_WRITE:
-            await self.backend.update_state(payload)
-        elif kind == STATE_DELETE:
+        elif kind == STATE_WRITE or kind == STATE_DELETE:
             await self.backend.update_state(payload)
 
-    async def flush(self, timeout: Optional[float] = None) -> None:
+    async def flush(self, timeout: float | None = None) -> None:
         """Wait for every queued write to reach the backend."""
         timeout = self.flush_timeout if timeout is None else timeout
 
@@ -351,21 +351,21 @@ class HybridStorage(Storage):
     def _pending(self) -> int:
         return self._queue.qsize() + (1 if self._inflight is not None else 0)
 
-    async def update_peers(self, peers: List[Tuple[int, int, str, str]]) -> None:
+    async def update_peers(self, peers: list[tuple[int, int, str, str]]) -> None:
         if not peers:
             return
 
         await self.local.update_peers(peers)
         self._enqueue(PEER_WRITE, list(peers))
 
-    async def update_usernames(self, usernames: List[Tuple[int, List[str]]]) -> None:
+    async def update_usernames(self, usernames: list[tuple[int, list[str]]]) -> None:
         if not usernames:
             return
 
         await self.local.update_usernames(usernames)
         self._enqueue(USERNAME_WRITE, list(usernames))
 
-    async def update_state(self, value: Tuple[int, int, int, int, int] = object):
+    async def update_state(self, value: tuple[int, int, int, int, int] = object):
         if value is object:
             return await self.local.update_state()
 
@@ -378,7 +378,7 @@ class HybridStorage(Storage):
 
         return None
 
-    async def get_peer_by_id(self, peer_id: int) -> "raw.base.InputPeer":
+    async def get_peer_by_id(self, peer_id: int) -> raw.base.InputPeer:
         try:
             return await self.local.get_peer_by_id(peer_id)
         except KeyError:
@@ -409,13 +409,13 @@ class HybridStorage(Storage):
         if stored is not None:
             await self.local.update_peers([(stored[0], stored[1], stored[2], None)])
 
-    async def get_peer_by_username(self, username: str) -> "raw.base.InputPeer":
+    async def get_peer_by_username(self, username: str) -> raw.base.InputPeer:
         try:
             return await self.local.get_peer_by_username(username)
         except KeyError:
             return await self.backend.get_peer_by_username(username)
 
-    async def get_peer_by_phone_number(self, phone_number: str) -> "raw.base.InputPeer":
+    async def get_peer_by_phone_number(self, phone_number: str) -> raw.base.InputPeer:
         try:
             return await self.local.get_peer_by_phone_number(phone_number)
         except KeyError:

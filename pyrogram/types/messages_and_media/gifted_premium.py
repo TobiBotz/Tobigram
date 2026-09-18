@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import random
-from typing import Dict, List, Optional
 
 from pyrogram import raw, types, utils
 
@@ -62,20 +63,21 @@ class GiftedPremium(Object):
         caption_entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
             Entities of the text message.
     """
+
     def __init__(
         self,
         *,
-        gifter: Optional["types.User"] = None,
-        receiver: "types.User",
-        currency: Optional[str] = None,
-        amount: Optional[int] = None,
-        cryptocurrency: Optional[str] = None,
-        cryptocurrency_amount: Optional[int] = None,
-        month_count: Optional[int] = None,
-        day_count: Optional[int] = None,
-        sticker: Optional["types.Sticker"] = None,
-        caption: Optional[str] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None
+        gifter: types.User | None = None,
+        receiver: types.User,
+        currency: str | None = None,
+        amount: int | None = None,
+        cryptocurrency: str | None = None,
+        cryptocurrency_amount: int | None = None,
+        month_count: int | None = None,
+        day_count: int | None = None,
+        sticker: types.Sticker | None = None,
+        caption: str | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
     ):
         super().__init__()
 
@@ -94,19 +96,20 @@ class GiftedPremium(Object):
     @staticmethod
     async def _parse(
         client,
-        action: "raw.types.MessageActionGiftPremium",
-        gifter: "raw.base.User",
-        receiver: "raw.base.User",
-        users: Dict[int, "raw.base.User"]
-    ) -> "GiftedPremium":
+        action: raw.types.MessageActionGiftPremium,
+        gifter: raw.base.User,
+        receiver: raw.base.User,
+        users: dict[int, raw.base.User],
+    ) -> GiftedPremium:
         raw_stickers = await client.invoke(
             raw.functions.messages.GetStickerSet(
-                stickerset=raw.types.InputStickerSetPremiumGifts(),
-                hash=0
+                stickerset=raw.types.InputStickerSetPremiumGifts(), hash=0
             )
         )
 
-        caption, caption_entities = (utils.parse_text_with_entities(client, getattr(action, "message", None), users)).values()
+        caption, caption_entities = (
+            utils.parse_text_with_entities(client, getattr(action, "message", None), users)
+        ).values()
 
         return GiftedPremium(
             gifter=types.User._parse(client, gifter),
@@ -121,16 +124,12 @@ class GiftedPremium(Object):
                 types.List(
                     [
                         await types.Sticker._parse(
-                            client,
-                            doc,
-                            {
-                                type(i): i for i in doc.attributes
-                            }
-                        ) for doc in raw_stickers.documents
+                            client, doc, {type(i): i for i in doc.attributes}
+                        )
+                        for doc in raw_stickers.documents
                     ]
                 )
             ),
             caption=caption,
-            caption_entities=caption_entities
+            caption_entities=caption_entities,
         )
-

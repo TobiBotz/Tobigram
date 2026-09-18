@@ -13,7 +13,7 @@ Text Formatting
 .. role:: strike-italic
     :class: strike-italic
 
-wzgram uses a custom Markdown dialect for text formatting which adds some unique features that make writing styled
+Tobigram uses a custom Markdown dialect for text formatting which adds some unique features that make writing styled
 texts easier in both Markdown and HTML. You can send sophisticated text messages and media captions using a
 variety of decorations that can also be nested in order to combine multiple styles together.
 
@@ -35,21 +35,19 @@ Basic Styles
 ------------
 
 When formatting your messages, you can choose between Markdown-style, HTML-style or both (default). The following is a
-list of the basic styles currently supported by wzgram.
+list of the basic styles currently supported by Tobigram.
 
 - **bold**
 - *italic*
 - :underline:`underline`
 - :strike:`strike`
-- blockquote
+- blockquote and expandable blockquote
 - ``inline fixed-width code``
-- .. code-block:: text
-
-    pre-formatted
-      fixed-width
-        code block
+- pre-formatted fixed-width code block
 - spoiler
-- `text URL <https://wzgram.com/>`_
+- custom emoji (``<emoji id="...">``)
+- formatted date and time (``<tg-time unix="...">``)
+- `text URL <https://docs.tobigram.com/>`_
 - `user text mention <tg://user?id=123456789>`_
 
 
@@ -75,7 +73,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.HTML` to the *pa
 
     <blockquote expandable>expandable block quotation</blockquote>
 
-    <a href="https://wzgram.com/">text URL</a>
+    <a href="https://pyrogram.com/">text URL</a>
 
     <a href="tg://user?id=123456789">inline mention</a>
 
@@ -95,7 +93,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.HTML` to the *pa
 
 .. code-block:: python
 
-    from wzgram.enums import ParseMode
+    from pyrogram.enums import ParseMode
 
     await app.send_message(
         chat_id="me",
@@ -108,7 +106,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.HTML` to the *pa
 
             "<b>bold <i>italic bold <s>italic bold strike <tg-spoiler>italic bold strike spoiler</tg-spoiler></s> <u>underline italic bold</u></i> bold</b>\n\n"
 
-            "<a href=\"https://wzgram.com/\">inline URL</a> "
+            "<a href=\"https://tobigram.com/\">inline URL</a> "
             "<a href=\"tg://user?id=23122162\">inline mention of a user</a>\n"
             "<tg-emoji emoji-id=5469770542288478598>👍</tg-emoji> "
             "<code>inline fixed-width code</code> "
@@ -159,10 +157,9 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.MARKDOWN` to the
 
 .. note::
 
-    There is no Markdown syntax for **blockquotes** or **custom emoji**. A leading ``>`` is
-    sent as a literal ``>``, and ``![emoji](tg://emoji?id=...)`` parses as a text link. Use
-    ``<blockquote>`` and ``<tg-emoji>`` instead — in HTML mode, or mixed into the default
-    combined mode.
+    Blockquotes can be written in Markdown using ``>`` (for standard quotes) and ``**>...||`` (for expandable quotes).
+    For custom emoji, use HTML syntax (``<emoji id="...">`` or ``<tg-emoji emoji-id="...">``).
+    In the default combined parse mode, you can mix HTML emoji tags alongside Markdown styles freely.
 
 .. code-block:: text
 
@@ -184,7 +181,11 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.MARKDOWN` to the
 
     ||spoiler||
 
-    [text URL](https://wzgram.com/)
+    >block quotation
+
+    **>expandable block quotation||
+
+    [text URL](https://tobigram.com/)
 
     [text user mention](tg://user?id=123456789)
 
@@ -193,7 +194,7 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.MARKDOWN` to the
 
 .. code-block:: python
 
-    from wzgram.enums import ParseMode
+    from pyrogram.enums import ParseMode
 
     await app.send_message(
         chat_id="me",
@@ -203,11 +204,13 @@ To strictly use this mode, pass :obj:`~pyrogram.enums.ParseMode.MARKDOWN` to the
             "--underline--, "
             "~~strike~~, "
             "||spoiler||, "
-            "[URL](https://wzgram.com/), "
+            ">quoted block\n"
+            "**>expandable quote||\n"
+            "[URL](https://tobigram.com/), "
             "`code`, "
-            "```py"
+            "```py\n"
             "for i in range(10):\n"
-            "    print(i)"
+            "    print(i)\n"
             "```\n"
 
         ),
@@ -234,7 +237,7 @@ If you don't like this behaviour you can always choose to only enable either Mar
 
 .. code-block:: python
 
-    from wzgram.enums import ParseMode
+    from pyrogram.enums import ParseMode
 
     await app.send_message(chat_id="me", text="**bold**, <i>italic</i>", parse_mode=ParseMode.MARKDOWN)
     await app.send_message(chat_id="me", text="**bold**, <i>italic</i>", parse_mode=ParseMode.HTML)
@@ -250,7 +253,7 @@ The text will be sent as-is.
 
 .. code-block:: python
 
-    from wzgram.enums import ParseMode
+    from pyrogram.enums import ParseMode
 
     await app.send_message(chat_id="me", text="**bold**, <i>italic</i>", parse_mode=ParseMode.DISABLED)
 
@@ -297,50 +300,11 @@ Here there are some example texts you can try sending:
 RichText (Rich Media Text Formatting)
 --------------------------------------
 
-RichText is used for page blocks, article rendering and inline rich media formatting.
-It is a different wire format from MessageEntity-based text formatting and supports additional decorations.
+RichText is used for Instant View page blocks, article rendering and inline rich media formatting.
+It is a different wire format from MessageEntity-based text formatting and supports advanced decorations
+such as LaTeX mathematical formulas, subscripts, superscripts, highlighted text backgrounds, and named anchors.
 
-The following RichText types are available for reading (parsing) from Telegram page blocks:
+For complete guides, usage tutorials, and working code examples:
 
-.. code-block:: text
-
-    RichTextPlain          — plain text string
-    RichTextBold           — bold text
-    RichTextItalic         — italic text
-    RichTextUnderline      — underlined text
-    RichTextStrikethrough  — strikethrough text
-    RichTextSpoiler        — spoiler text
-    RichTextCode           — monospace / inline code
-    RichTextSubscript      — subscript text
-    RichTextSuperscript    — superscript text
-    RichTextMarked         — highlighted / marked text
-    RichTextDateTime       — formatted date and time
-    RichTextCustomEmoji    — custom emoji
-    RichTextMathematicalExpression — LaTeX math expression
-    RichTextUrl            — text with URL
-    RichTextEmailAddress   — email address
-    RichTextPhoneNumber    — phone number
-    RichTextBankCardNumber — bank card number
-    RichTextMention        — username mention
-    RichTextHashtag        — hashtag
-    RichTextCashtag        — cashtag
-    RichTextBotCommand     — bot command
-    RichTextTextMention    — user mention by ID
-    RichTextAnchor         — named anchor
-    RichTextAnchorLink     — link to an anchor
-    RichTextReference      — reference to an anchor
-    RichTextReferenceLink  — link to a reference
-    RichTextImage          — inline image
-
-To construct rich messages for sending, use :class:`~pyrogram.types.InputRichMessage`
-with raw HTML or Markdown text, which is parsed server-side:
-
-.. code-block:: python
-
-    from wzgram.types import InputRichMessage
-
-    rich = InputRichMessage(
-        html="<b>bold</b> <tg-emoji emoji-id=5469770542288478598>👍</tg-emoji>"
-    )
-
-    # Pass to methods that accept InputRichMessage (e.g. answer_web_app)
+- See :doc:`Rich Text Formatting </topics/rich-text>` for comprehensive details on syntax, formulas, and supported types.
+- See :doc:`Rich Messages </features/rich-messages>` for sending structured bot documents with headings, tables, and media.

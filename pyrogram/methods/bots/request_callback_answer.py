@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, utils
@@ -24,12 +25,12 @@ from pyrogram import raw, utils
 
 class RequestCallbackAnswer:
     async def request_callback_answer(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         message_id: int,
-        callback_data: Union[str, bytes],
+        callback_data: str | bytes,
         timeout: int = 10,
-        password: Optional[str] = None
+        password: str | None = None,
     ):
         """Request a callback answer from bots.
         This is the equivalent of clicking an inline button containing callback data.
@@ -76,10 +77,11 @@ class RequestCallbackAnswer:
                 msg_id=message_id,
                 data=data,
                 password=utils.compute_password_check(
-                    await self.invoke(raw.functions.account.GetPassword()),
-                    password
-                ) if password is not None else None
+                    await self.invoke(raw.functions.account.GetPassword()), password
+                )
+                if password is not None
+                else None,
             ),
             retries=0,
-            timeout=timeout
+            timeout=timeout,
         )

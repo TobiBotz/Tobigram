@@ -9,9 +9,9 @@ being handed off for anything smaller than a transfer part.
 """
 
 import asyncio
-from io import BytesIO
 import tempfile
 import time
+from io import BytesIO
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -101,12 +101,15 @@ async def bench_message_parse():
 
     from unittest.mock import Mock
 
-    user = raw.types.User(
-        id=1, first_name="U", usernames=[], restriction_reason=[], access_hash=1
-    )
+    user = raw.types.User(id=1, first_name="U", usernames=[], restriction_reason=[], access_hash=1)
     channel = raw.types.Channel(
-        id=100, title="C", photo=raw.types.ChatPhotoEmpty(), date=0, access_hash=1,
-        usernames=[], restriction_reason=[],
+        id=100,
+        title="C",
+        photo=raw.types.ChatPhotoEmpty(),
+        date=0,
+        access_hash=1,
+        usernames=[],
+        restriction_reason=[],
     )
     message = raw.types.Message(
         id=1,

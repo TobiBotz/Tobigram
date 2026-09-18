@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from ..object import Object
 
 
@@ -33,15 +35,9 @@ class KeyboardButtonRequestManagedBot(Object):
             Suggested username for the bot.
     """
 
-    def __init__(
-        self, *,
-        button_id: int,
-        suggested_name: str,
-        suggested_username: str
-    ):
+    def __init__(self, *, button_id: int, suggested_name: str, suggested_username: str):
         super().__init__()
 
         self.button_id = button_id
         self.suggested_name = suggested_name
         self.suggested_username = suggested_username
-

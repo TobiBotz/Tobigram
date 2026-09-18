@@ -22,7 +22,6 @@ from typing import Any
 
 from ..tl_object import TLObject
 
-
 _double = Struct("d").unpack
 
 

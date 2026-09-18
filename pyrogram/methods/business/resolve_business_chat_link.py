@@ -21,7 +21,8 @@
 # Source: tl:account.resolveBusinessChatLink
 # ***************************
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -29,9 +30,9 @@ from pyrogram import raw
 
 class ResolveBusinessChatLink:
     async def resolve_business_chat_link(
-        self: "pyrogram.Client",
-        slug: Optional[str] = None,
-    ) -> "raw.types.account.ResolvedBusinessChatLinks":
+        self: pyrogram.Client,
+        slug: str | None = None,
+    ) -> raw.types.account.ResolvedBusinessChatLinks:
         """Resolve a business chat link slug to its info.
 
         .. include:: /_includes/usable-by/users.rst

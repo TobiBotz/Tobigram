@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 
 import pyrogram
@@ -26,8 +28,11 @@ log = logging.getLogger(__name__)
 
 class Start:
     async def start(
-        self: "pyrogram.Client"
-    ):
+        self: pyrogram.Client,
+        *,
+        use_qr: bool = False,
+        except_ids: list[int] | None = None,
+    ) -> pyrogram.Client:
         """Start the client.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -35,6 +40,15 @@ class Start:
 
         This method connects the client to Telegram and, in case of new sessions, automatically manages the
         authorization process using an interactive prompt.
+
+        Parameters:
+            use_qr (``bool``, *optional*):
+                Use QR code authorization instead of the interactive prompt.
+                For new authorizations only.
+                Defaults to False.
+
+            except_ids (List of ``int``, *optional*):
+                List of already logged-in user IDs, to prevent logging in twice with the same user.
 
         Returns:
             :obj:`~pyrogram.Client`: The started client itself.
@@ -45,7 +59,7 @@ class Start:
         Example:
             .. code-block:: python
 
-                from wzgram import Client
+                from pyrogram import Client
 
                 app = Client("my_account")
 
@@ -62,7 +76,10 @@ class Start:
 
         try:
             if not is_authorized:
-                await self.authorize()
+                if use_qr:
+                    await self.authorize_qr(except_ids=except_ids)
+                else:
+                    await self.authorize()
 
             if not await self.storage.is_bot() and self.takeout:
                 self.takeout_id = (await self.invoke(raw.functions.account.InitTakeoutSession())).id

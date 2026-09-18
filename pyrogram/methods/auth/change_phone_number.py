@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 import re
 
@@ -27,8 +29,8 @@ log = logging.getLogger(__name__)
 
 class ChangePhoneNumber:
     async def change_phone_number(
-        self: "pyrogram.Client", phone_number: str, phone_code_hash: str, phone_code: str
-    ) -> "types.User":
+        self: pyrogram.Client, phone_number: str, phone_code_hash: str, phone_code: str
+    ) -> types.User:
         """Change a user phone number in Telegram with a valid confirmation code.
 
         .. include:: /_includes/usable-by/users.rst
@@ -50,11 +52,8 @@ class ChangePhoneNumber:
 
         r = await self.invoke(
             raw.functions.account.ChangePhone(
-                phone_number=phone_number,
-                phone_code_hash=phone_code_hash,
-                phone_code=phone_code
+                phone_number=phone_number, phone_code_hash=phone_code_hash, phone_code=phone_code
             )
         )
 
         return types.User._parse(self, r)
-

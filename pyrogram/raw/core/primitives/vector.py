@@ -17,11 +17,11 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from io import BytesIO
-from typing import cast, Union, Any
+from typing import Any, cast
 
-from .int import Int, Long
 from ..list import List
 from ..tl_object import TLObject
+from .int import Int, Long
 
 
 class Vector(bytes, TLObject):
@@ -30,7 +30,7 @@ class Vector(bytes, TLObject):
     # Method added to handle the special case when a query returns a bare Vector (of Ints);
     # i.e., RpcResult body starts with 0x1cb5c415 (Vector Id) - e.g., messages.GetMessagesViews.
     @staticmethod
-    def read_bare(b: BytesIO, size: int) -> Union[int, Any]:
+    def read_bare(b: BytesIO, size: int) -> int | Any:
         if size == 4:
             return Int.read(b)
 

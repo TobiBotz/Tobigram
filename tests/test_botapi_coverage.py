@@ -17,8 +17,7 @@ from coverage import (
 
 COVERAGE = Coverage()
 PACKAGE_SOURCES = [
-    (path, path.read_text(encoding="utf-8"))
-    for path in sorted((ROOT / "pyrogram").rglob("*.py"))
+    (path, path.read_text(encoding="utf-8")) for path in sorted((ROOT / "pyrogram").rglob("*.py"))
 ]
 
 MANIFEST_FINDINGS = COVERAGE.check_manifest()
@@ -28,9 +27,7 @@ DOCSTRING_FINDINGS = COVERAGE.check_docstrings()
 def entities(kind):
     entry = COVERAGE.manifest.get(kind) or {}
 
-    return sorted(
-        set(entry.get("supported") or []) | set(entry.get("pending") or {})
-    )
+    return sorted(set(entry.get("supported") or []) | set(entry.get("pending") or {}))
 
 
 def findings_for(entity):
@@ -73,7 +70,7 @@ def test_no_manifest_finding_is_unattributed():
 @pytest.mark.parametrize(
     "name,detail",
     [(f.entity, f.detail) for f in DOCSTRING_FINDINGS],
-    ids=[f.entity for f in DOCSTRING_FINDINGS]
+    ids=[f.entity for f in DOCSTRING_FINDINGS],
 )
 def test_docstring_matches_the_signature(name, detail):
     pytest.fail(f"{name}: {detail}")
@@ -116,8 +113,7 @@ def test_unsupported_entries_are_kept_out_of_the_manifest():
     assert declared, "aliases.yaml should declare the Bot API surface MTProto lacks"
     assert not declared & tracked, (
         "these are declared unsupported but still surveyed, so the reason "
-        "recorded against them does nothing: "
-        + ", ".join(sorted(declared & tracked))
+        "recorded against them does nothing: " + ", ".join(sorted(declared & tracked))
     )
 
 
@@ -132,18 +128,16 @@ ALIAS_TARGETS = [
 
 
 @pytest.mark.parametrize(
-    "entity,spec_field,target",
-    ALIAS_TARGETS,
-    ids=[f"{e}.{f}" for e, f, _ in ALIAS_TARGETS]
+    "entity,spec_field,target", ALIAS_TARGETS, ids=[f"{e}.{f}" for e, f, _ in ALIAS_TARGETS]
 )
 def test_an_alias_target_is_populated_from_raw_data(entity, spec_field, target):
-    """An alias claims wzgram already exposes the field under another name.
+    """An alias claims pyrogram already exposes the field under another name.
 
     Pointing at a parameter that nothing fills and nothing reads would satisfy
     the coverage check while the value is always None, which is worse than
     leaving the gap recorded.
     """
-    symbol = COVERAGE.wzgram_type(entity)
+    symbol = COVERAGE.tobigram_type(entity)
 
     if symbol is None:
         pytest.skip(f"{entity} does not resolve")
@@ -168,7 +162,7 @@ def test_an_alias_target_is_populated_from_raw_data(entity, spec_field, target):
 
 
 def test_no_exclusion_masks_a_field_that_exists():
-    """An exclusion must only ever cover a field wzgram genuinely lacks.
+    """An exclusion must only ever cover a field pyrogram genuinely lacks.
 
     Presence is checked before the unsupported table, so a field that is present
     counts as satisfied and stays checked. Letting the exclusion win first would
@@ -179,8 +173,8 @@ def test_no_exclusion_masks_a_field_that_exists():
     masked = []
 
     for table, resolve in (
-        ("field_unsupported", COVERAGE.wzgram_type),
-        ("method_field_unsupported", COVERAGE.wzgram_method),
+        ("field_unsupported", COVERAGE.tobigram_type),
+        ("method_field_unsupported", COVERAGE.tobigram_method),
     ):
         for entity, fields in (aliases.get(table) or {}).items():
             if entity == "*":
@@ -194,7 +188,7 @@ def test_no_exclusion_masks_a_field_that_exists():
             for field in fields:
                 gaps = (
                     COVERAGE.type_gaps(entity)
-                    if resolve is COVERAGE.wzgram_type
+                    if resolve is COVERAGE.tobigram_type
                     else COVERAGE.method_botapi_gaps(entity)
                 )
 
@@ -221,9 +215,7 @@ def test_every_exclusion_carries_a_reason():
     for table in ("field_unsupported", "method_field_unsupported"):
         for entity, fields in (aliases.get(table) or {}).items():
             blank += [
-                f"{entity}.{field}"
-                for field, reason in fields.items()
-                if not str(reason).strip()
+                f"{entity}.{field}" for field, reason in fields.items() if not str(reason).strip()
             ]
 
     assert not blank, "excluded without saying why: " + ", ".join(sorted(blank))
@@ -255,7 +247,7 @@ def test_the_enum_axis_actually_resolves_enums():
     assert ENUM_REFERENCE_RE.findall("'enums.MessageEntityType'") == ["MessageEntityType"]
     assert ENUM_REFERENCE_RE.findall("ButtonStyle") == ["ButtonStyle"]
 
-    symbol = COVERAGE.wzgram_type("MessageEntity")
+    symbol = COVERAGE.tobigram_type("MessageEntity")
 
     assert symbol.annotations.get("type"), "annotations must be captured from the AST"
     assert "MessageEntityType" in COVERAGE.enums
@@ -263,8 +255,7 @@ def test_the_enum_axis_actually_resolves_enums():
 
 def test_enumerated_values_are_read_from_the_description():
     field = next(
-        f for f in COVERAGE.spec["types"]["MessageEntity"]["fields"]
-        if f["name"] == "type"
+        f for f in COVERAGE.spec["types"]["MessageEntity"]["fields"] if f["name"] == "type"
     )
 
     assert len(enumerated_values(field)) > 15, (
@@ -273,23 +264,16 @@ def test_enumerated_values_are_read_from_the_description():
     )
 
 
-ENUM_CASES = [
-    (kind, name)
-    for kind in ("types", "methods")
-    for name in COVERAGE.implemented(kind)
-]
+ENUM_CASES = [(kind, name) for kind in ("types", "methods") for name in COVERAGE.implemented(kind)]
 
 
-@pytest.mark.parametrize(
-    "kind,name", ENUM_CASES, ids=[f"{k[:-1]}.{n}" for k, n in ENUM_CASES]
-)
+@pytest.mark.parametrize("kind,name", ENUM_CASES, ids=[f"{k[:-1]}.{n}" for k, n in ENUM_CASES])
 def test_enum_members_cover_the_documented_values(kind, name):
     recorded = set(
         ((COVERAGE.manifest[kind].get("pending") or {}).get(name) or {}).get("enums") or []
     )
     gaps = set(COVERAGE.enum_gaps(kind, name) or [])
 
-    assert gaps <= recorded, (
-        f"{name} accepts documented values with no enum member: "
-        + ", ".join(sorted(gaps - recorded))
+    assert gaps <= recorded, f"{name} accepts documented values with no enum member: " + ", ".join(
+        sorted(gaps - recorded)
     )

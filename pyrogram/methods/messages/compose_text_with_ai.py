@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types
@@ -24,12 +25,12 @@ from pyrogram import raw, types
 
 class ComposeTextWithAI:
     async def compose_text_with_ai(
-        self: "pyrogram.Client",
-        text: Union[str, "types.FormattedText"],
-        translate_to_language_code: Optional[str] = None,
-        style_name: Optional[str] = None,
-        add_emojis: Optional[bool] = None,
-    ) -> "types.FormattedText":
+        self: pyrogram.Client,
+        text: str | types.FormattedText,
+        translate_to_language_code: str | None = None,
+        style_name: str | None = None,
+        add_emojis: bool | None = None,
+    ) -> types.FormattedText:
         """Changes text using an AI model.
 
         .. include:: /_includes/usable-by/users.rst
@@ -78,4 +79,3 @@ class ComposeTextWithAI:
         )
 
         return types.FormattedText._parse(self, r.result_text)
-

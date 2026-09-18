@@ -15,7 +15,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
-from typing import Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types
@@ -23,11 +24,8 @@ from pyrogram import raw, types
 
 class SetGiftCollectionName:
     async def set_gift_collection_name(
-        self: "pyrogram.Client",
-        owner_id: Union[int, str],
-        collection_id: int,
-        name: str
-    ) -> "types.GiftCollection":
+        self: pyrogram.Client, owner_id: int | str, collection_id: int, name: str
+    ) -> types.GiftCollection:
         """Changes name of a gift collection.
 
         .. include:: /_includes/usable-by/users.rst
@@ -53,11 +51,8 @@ class SetGiftCollectionName:
         """
         r = await self.invoke(
             raw.functions.payments.UpdateStarGiftCollection(
-                peer=await self.resolve_peer(owner_id),
-                collection_id=collection_id,
-                title=name
+                peer=await self.resolve_peer(owner_id), collection_id=collection_id, title=name
             )
         )
 
         return await types.GiftCollection._parse(self, r)
-

@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Dict, List, Optional, Union
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -67,11 +68,11 @@ class RichText(Object):
 
     @staticmethod
     async def _parse(
-        client: "pyrogram.Client",
-        rich_text: "raw.base.RichText",
-        users: Dict[int, "raw.base.User"] = {},
-        chats: Dict[int, "raw.base.Chat"] = {},
-    ) -> Optional[Union[str, List["RichText"], "RichText"]]:
+        client: pyrogram.Client,
+        rich_text: raw.base.RichText,
+        users: dict[int, raw.base.User] = {},
+        chats: dict[int, raw.base.Chat] = {},
+    ) -> str | list[RichText] | RichText | None:
         if isinstance(rich_text, raw.types.TextPlain):
             return rich_text.text
 
@@ -247,9 +248,7 @@ class RichText(Object):
             )
 
         if isinstance(rich_text, raw.types.TextButton):
-            return RichTextButton(
-                button=await types.RichMessageButton._parse(client, rich_text)
-            )
+            return RichTextButton(button=await types.RichMessageButton._parse(client, rich_text))
 
 
 class RichTextButton(RichText):
@@ -262,7 +261,7 @@ class RichTextButton(RichText):
 
     def __init__(
         self,
-        button: "types.RichMessageButton",
+        button: types.RichMessageButton,
     ):
         super().__init__()
 
@@ -279,7 +278,7 @@ class RichTextBold(RichText):
 
     def __init__(
         self,
-        text: "types.RichText",
+        text: types.RichText,
     ):
         super().__init__()
 
@@ -296,7 +295,7 @@ class RichTextItalic(RichText):
 
     def __init__(
         self,
-        text: "types.RichText",
+        text: types.RichText,
     ):
         super().__init__()
 
@@ -313,7 +312,7 @@ class RichTextUnderline(RichText):
 
     def __init__(
         self,
-        text: "types.RichText",
+        text: types.RichText,
     ):
         super().__init__()
 
@@ -330,7 +329,7 @@ class RichTextStrikethrough(RichText):
 
     def __init__(
         self,
-        text: "types.RichText",
+        text: types.RichText,
     ):
         super().__init__()
 
@@ -347,7 +346,7 @@ class RichTextSpoiler(RichText):
 
     def __init__(
         self,
-        text: "types.RichText",
+        text: types.RichText,
     ):
         super().__init__()
 
@@ -371,9 +370,9 @@ class RichTextDateTime(RichText):
 
     def __init__(
         self,
-        text: "types.RichText",
+        text: types.RichText,
         date: datetime,
-        date_time_format: Optional[str] = None,
+        date_time_format: str | None = None,
     ):
         super().__init__()
 
@@ -395,8 +394,8 @@ class RichTextTextMention(RichText):
 
     def __init__(
         self,
-        text: "types.RichText",
-        user: "types.User",
+        text: types.RichText,
+        user: types.User,
     ):
         super().__init__()
 
@@ -414,7 +413,7 @@ class RichTextSubscript(RichText):
 
     def __init__(
         self,
-        text: "types.RichText",
+        text: types.RichText,
     ):
         super().__init__()
 
@@ -431,7 +430,7 @@ class RichTextSuperscript(RichText):
 
     def __init__(
         self,
-        text: "types.RichText",
+        text: types.RichText,
     ):
         super().__init__()
 
@@ -448,7 +447,7 @@ class RichTextMarked(RichText):
 
     def __init__(
         self,
-        text: "types.RichText",
+        text: types.RichText,
     ):
         super().__init__()
 
@@ -465,7 +464,7 @@ class RichTextCode(RichText):
 
     def __init__(
         self,
-        text: "types.RichText",
+        text: types.RichText,
     ):
         super().__init__()
 
@@ -519,7 +518,7 @@ class RichTextUrl(RichText):
             URL of the link.
     """
 
-    def __init__(self, text: "types.RichText", url: str):
+    def __init__(self, text: types.RichText, url: str):
         super().__init__()
 
         self.text = text
@@ -537,7 +536,7 @@ class RichTextEmailAddress(RichText):
             The email address.
     """
 
-    def __init__(self, text: "types.RichText", email_address: str):
+    def __init__(self, text: types.RichText, email_address: str):
         super().__init__()
 
         self.text = text
@@ -555,7 +554,7 @@ class RichTextPhoneNumber(RichText):
             The phone number.
     """
 
-    def __init__(self, text: "types.RichText", phone_number: str):
+    def __init__(self, text: types.RichText, phone_number: str):
         super().__init__()
 
         self.text = text
@@ -573,7 +572,7 @@ class RichTextBankCardNumber(RichText):
             The bank card number.
     """
 
-    def __init__(self, text: "types.RichText", bank_card_number: str):
+    def __init__(self, text: types.RichText, bank_card_number: str):
         super().__init__()
 
         self.text = text
@@ -591,7 +590,7 @@ class RichTextMention(RichText):
             The username.
     """
 
-    def __init__(self, text: "types.RichText", username: str):
+    def __init__(self, text: types.RichText, username: str):
         super().__init__()
 
         self.text = text
@@ -609,7 +608,7 @@ class RichTextHashtag(RichText):
             The hashtag.
     """
 
-    def __init__(self, text: "types.RichText", hashtag: str):
+    def __init__(self, text: types.RichText, hashtag: str):
         super().__init__()
 
         self.text = text
@@ -651,8 +650,8 @@ class RichTextDiff(RichText):
 
     def __init__(
         self,
-        text: "types.RichText",
-        old_text: "types.RichText",
+        text: types.RichText,
+        old_text: types.RichText,
     ):
         super().__init__()
 
@@ -671,7 +670,7 @@ class RichTextCashtag(RichText):
             The cashtag.
     """
 
-    def __init__(self, text: "types.RichText", cashtag: str):
+    def __init__(self, text: types.RichText, cashtag: str):
         super().__init__()
 
         self.text = text
@@ -689,7 +688,7 @@ class RichTextBotCommand(RichText):
             The bot command.
     """
 
-    def __init__(self, text: "types.RichText", bot_command: str):
+    def __init__(self, text: types.RichText, bot_command: str):
         super().__init__()
 
         self.text = text
@@ -707,7 +706,7 @@ class RichTextAnchor(RichText):
             The name of the anchor.
     """
 
-    def __init__(self, text: "types.RichText", name: str):
+    def __init__(self, text: types.RichText, name: str):
         super().__init__()
 
         self.text = text
@@ -726,7 +725,7 @@ class RichTextAnchorLink(RichText):
             If the name is empty, then the link brings back to the top of the message.
     """
 
-    def __init__(self, text: "types.RichText", anchor_name: str):
+    def __init__(self, text: types.RichText, anchor_name: str):
         super().__init__()
 
         self.text = text
@@ -744,7 +743,7 @@ class RichTextReference(RichText):
             The name of the reference.
     """
 
-    def __init__(self, text: "types.RichText", name: str):
+    def __init__(self, text: types.RichText, name: str):
         super().__init__()
 
         self.text = text
@@ -762,9 +761,8 @@ class RichTextReferenceLink(RichText):
             The name of the reference.
     """
 
-    def __init__(self, text: "types.RichText", reference_name: str):
+    def __init__(self, text: types.RichText, reference_name: str):
         super().__init__()
 
         self.text = text
         self.reference_name = reference_name
-

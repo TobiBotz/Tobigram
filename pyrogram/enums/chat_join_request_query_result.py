@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from pyrogram import raw
 
 from .auto_name import AutoName
@@ -35,4 +37,3 @@ class ChatJoinRequestQueryResult(AutoName):
 
     WEB_VIEW = raw.types.JoinChatBotResultWebView
     "Open a webview for the user."
-

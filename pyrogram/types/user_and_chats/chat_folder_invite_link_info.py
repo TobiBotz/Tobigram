@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -42,9 +43,9 @@ class ChatFolderInviteLinkInfo(Object):
     def __init__(
         self,
         *,
-        chat_folder_info: "types.ChatFolderInfo",
-        missing_chats: Optional[List["types.Chat"]] = None,
-        added_chats: Optional[List["types.Chat"]] = None,
+        chat_folder_info: types.ChatFolderInfo,
+        missing_chats: list[types.Chat] | None = None,
+        added_chats: list[types.Chat] | None = None,
     ):
         self.chat_folder_info = chat_folder_info
         self.missing_chats = missing_chats
@@ -52,8 +53,8 @@ class ChatFolderInviteLinkInfo(Object):
 
     @staticmethod
     async def _parse(
-        client: "pyrogram.Client", invite: "raw.base.chatlists.ChatlistInvite"
-    ) -> "ChatFolderInviteLinkInfo":
+        client: pyrogram.Client, invite: raw.base.chatlists.ChatlistInvite
+    ) -> ChatFolderInviteLinkInfo:
         if isinstance(invite, raw.types.chatlists.ChatlistInvite):
             title = types.FormattedText._parse(client, invite.title)
 
@@ -94,4 +95,3 @@ class ChatFolderInviteLinkInfo(Object):
                 )
                 or None,
             )
-

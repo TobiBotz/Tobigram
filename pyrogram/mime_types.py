@@ -18,6 +18,8 @@
 
 # From https://svn.apache.org/repos/asf/httpd/httpd/trunk/docs/conf/mime.types.
 # Extended with extra mime types specific to Telegram.
+from __future__ import annotations
+
 mime_types = """
 # This file maps Internet media types to unique file extension(s).
 # Although created for httpd, this file is used by many software systems
@@ -1879,4 +1881,3 @@ x-conference/x-cooltalk				ice
 application/x-bad-tgsticker		tgs
 application/x-tgsticker		tgs
 """
-

@@ -16,10 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+from __future__ import annotations
+
 
 import pyrogram
-from pyrogram import types, raw
+from pyrogram import raw, types
+
 from ..object import Object
 from ..update import Update
 
@@ -53,14 +55,14 @@ class PreCheckoutQuery(Object, Update):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
+        client: pyrogram.Client | None = None,
         id: str,
-        from_user: "types.User",
+        from_user: types.User,
         currency: str,
         total_amount: int,
         invoice_payload: str,
-        shipping_option_id: Optional[str] = None,
-        order_info: Optional["types.OrderInfo"] = None
+        shipping_option_id: str | None = None,
+        order_info: types.OrderInfo | None = None,
     ):
         super().__init__(client)
 
@@ -74,10 +76,10 @@ class PreCheckoutQuery(Object, Update):
 
     @staticmethod
     async def _parse(
-        client: "pyrogram.Client",
-        pre_checkout_query: "raw.types.UpdateBotPrecheckoutQuery",
-        users: dict
-    ) -> "PreCheckoutQuery":
+        client: pyrogram.Client,
+        pre_checkout_query: raw.types.UpdateBotPrecheckoutQuery,
+        users: dict,
+    ) -> PreCheckoutQuery:
         # Try to decode pre-checkout query payload into string. If that fails, fallback to bytes instead of decoding by
         # ignoring/replacing errors, this way, button clicks will still work.
         try:
@@ -98,12 +100,14 @@ class PreCheckoutQuery(Object, Update):
                 email=pre_checkout_query.info.email,
                 shipping_address=types.ShippingAddress._parse(
                     pre_checkout_query.info.shipping_address
-                )
-            ) if pre_checkout_query.info else None,
-            client=client
+                ),
+            )
+            if pre_checkout_query.info
+            else None,
+            client=client,
         )
 
-    async def answer(self, ok: Optional[bool] = None, error_message: Optional[str] = None):
+    async def answer(self, ok: bool | None = None, error_message: str | None = None):
         """Bound method *answer* of :obj:`~pyrogram.types.PreCheckoutQuery`.
 
         Use this method as a shortcut for:
@@ -131,8 +135,5 @@ class PreCheckoutQuery(Object, Update):
             ``bool``: True, on success.
         """
         return await self._client.answer_pre_checkout_query(
-            pre_checkout_query_id=self.id,
-            ok=ok,
-            error_message=error_message
+            pre_checkout_query_id=self.id, ok=ok, error_message=error_message
         )
-

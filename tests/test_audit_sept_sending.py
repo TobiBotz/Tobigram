@@ -1,9 +1,7 @@
 import io
 from unittest.mock import AsyncMock
 
-import pytest
-
-from pyrogram import enums, raw, types, utils
+from pyrogram import enums, raw, types
 from pyrogram.methods.messages.delete_scheduled_messages import DeleteScheduledMessages
 from pyrogram.methods.messages.edit_message_text import EditMessageText
 from pyrogram.methods.messages.get_scheduled_messages import GetScheduledMessages
@@ -18,8 +16,14 @@ def _empty_updates():
     return raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0)
 
 
-class _Client(SendMediaGroup, SendMessage, SendVenue, EditMessageText,
-              GetScheduledMessages, DeleteScheduledMessages):
+class _Client(
+    SendMediaGroup,
+    SendMessage,
+    SendVenue,
+    EditMessageText,
+    GetScheduledMessages,
+    DeleteScheduledMessages,
+):
     parse_mode = enums.ParseMode.MARKDOWN
     link_preview_options = None
     me = None
@@ -47,8 +51,16 @@ class _Client(SendMediaGroup, SendMessage, SendVenue, EditMessageText,
         if isinstance(query, raw.functions.messages.UploadMedia):
             return raw.types.MessageMediaDocument(
                 document=raw.types.Document(
-                    id=1, access_hash=2, file_reference=b"", date=0, mime_type="",
-                    size=1, dc_id=2, attributes=[], thumbs=[], video_thumbs=[]
+                    id=1,
+                    access_hash=2,
+                    file_reference=b"",
+                    date=0,
+                    mime_type="",
+                    size=1,
+                    dc_id=2,
+                    attributes=[],
+                    thumbs=[],
+                    video_thumbs=[],
                 )
             )
 
@@ -81,14 +93,19 @@ async def test_a_reply_shortcut_forwards_its_legacy_reply_and_quote_kwargs():
 async def test_a_grouped_audio_or_document_keeps_its_file_name():
     client = _Client()
 
-    await client.send_media_group("me", [
-        types.InputMediaAudio(io.BytesIO(b"a"), file_name="song.ogg"),
-        types.InputMediaDocument(io.BytesIO(b"d"), file_name="notes.txt"),
-    ])
+    await client.send_media_group(
+        "me",
+        [
+            types.InputMediaAudio(io.BytesIO(b"a"), file_name="song.ogg"),
+            types.InputMediaDocument(io.BytesIO(b"d"), file_name="notes.txt"),
+        ],
+    )
 
     uploads = [q.media for q in client.sent if isinstance(q, raw.functions.messages.UploadMedia)]
     names = [
-        a.file_name for m in uploads for a in m.attributes
+        a.file_name
+        for m in uploads
+        for a in m.attributes
         if isinstance(a, raw.types.DocumentAttributeFilename)
     ]
     assert names == ["song.ogg", "notes.txt"]
@@ -97,10 +114,13 @@ async def test_a_grouped_audio_or_document_keeps_its_file_name():
 async def test_a_grouped_document_is_forced_to_stay_a_file():
     client = _Client()
 
-    await client.send_media_group("me", [
-        types.InputMediaDocument(io.BytesIO(b"d")),
-        types.InputMediaDocument(io.BytesIO(b"d"), disable_content_type_detection=False),
-    ])
+    await client.send_media_group(
+        "me",
+        [
+            types.InputMediaDocument(io.BytesIO(b"d")),
+            types.InputMediaDocument(io.BytesIO(b"d"), disable_content_type_detection=False),
+        ],
+    )
 
     uploads = [q.media for q in client.sent if isinstance(q, raw.functions.messages.UploadMedia)]
     assert [m.force_file for m in uploads] == [True, False]
@@ -166,9 +186,11 @@ async def test_scheduled_history_is_parsed_as_scheduled(monkeypatch):
         return types.Message(id=message.id)
 
     monkeypatch.setattr(types.Message, "_parse", fake_parse)
-    client = _Client(raw.types.messages.Messages(
-        messages=[raw.types.MessageEmpty(id=1)], topics=[], chats=[], users=[]
-    ))
+    client = _Client(
+        raw.types.messages.Messages(
+            messages=[raw.types.MessageEmpty(id=1)], topics=[], chats=[], users=[]
+        )
+    )
 
     await client.get_scheduled_messages("me")
 
@@ -189,10 +211,15 @@ async def test_copying_media_uses_the_callers_effect():
 
 async def test_deleting_scheduled_messages_reports_the_servers_answer():
     deleted = raw.types.Updates(
-        updates=[raw.types.UpdateDeleteScheduledMessages(
-            peer=raw.types.PeerUser(user_id=1), messages=[1]
-        )],
-        users=[], chats=[], date=0, seq=0
+        updates=[
+            raw.types.UpdateDeleteScheduledMessages(
+                peer=raw.types.PeerUser(user_id=1), messages=[1]
+            )
+        ],
+        users=[],
+        chats=[],
+        date=0,
+        seq=0,
     )
 
     assert await _Client(deleted).delete_scheduled_messages("me", [1]) is True

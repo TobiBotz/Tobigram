@@ -16,19 +16,21 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+
+from __future__ import annotations
+
 import pyrogram
 from pyrogram import raw
 
 
 class AnswerCallbackQuery:
     async def answer_callback_query(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         callback_query_id: str,
-        text: Optional[str] = None,
-        show_alert: Optional[bool] = None,
-        url: Optional[str] = None,
-        cache_time: int = 0
+        text: str | None = None,
+        show_alert: bool | None = None,
+        url: str | None = None,
+        cache_time: int = 0,
     ):
         """Send answers to callback queries sent from inline keyboards.
         The answer will be displayed to the user as a notification at the top of the chat screen or as an alert.
@@ -77,6 +79,6 @@ class AnswerCallbackQuery:
                 cache_time=cache_time,
                 alert=show_alert if show_alert is not None else None,
                 message=text or None,
-                url=url or None
+                url=url or None,
             )
         )

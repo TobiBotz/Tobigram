@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 
 from pyrogram import raw
 
@@ -40,9 +41,9 @@ class GiftBackground(Object):
     def __init__(
         self,
         *,
-        center_color: Optional[int] = None,
-        edge_color: Optional[int] = None,
-        text_color: Optional[int] = None
+        center_color: int | None = None,
+        edge_color: int | None = None,
+        text_color: int | None = None,
     ):
         super().__init__()
 
@@ -51,14 +52,12 @@ class GiftBackground(Object):
         self.text_color = text_color
 
     @staticmethod
-    def _parse(
-        background: "raw.base.StarGiftBackground"
-    ) -> Optional["GiftBackground"]:
+    def _parse(background: raw.base.StarGiftBackground) -> GiftBackground | None:
         if not isinstance(background, raw.types.StarGiftBackground):
             return None
 
         return GiftBackground(
             center_color=background.center_color,
             edge_color=background.edge_color,
-            text_color=background.text_color
+            text_color=background.text_color,
         )

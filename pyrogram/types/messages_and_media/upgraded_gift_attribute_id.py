@@ -15,7 +15,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
-from typing import Optional
+from __future__ import annotations
+
 
 from pyrogram import raw, types
 
@@ -38,22 +39,13 @@ class UpgradedGiftAttributeId(Object):
         super().__init__()
 
     @staticmethod
-    def _parse(
-        attribute_id: "raw.base.StarGiftAttributeId"
-    ) -> Optional["UpgradedGiftAttributeId"]:
+    def _parse(attribute_id: raw.base.StarGiftAttributeId) -> UpgradedGiftAttributeId | None:
         if not attribute_id:
             return None
 
         if isinstance(attribute_id, raw.types.StarGiftAttributeIdModel):
-            return types.UpgradedGiftAttributeIdModel(
-                sticker_id=attribute_id.document_id
-            )
+            return types.UpgradedGiftAttributeIdModel(sticker_id=attribute_id.document_id)
         elif isinstance(attribute_id, raw.types.StarGiftAttributeIdPattern):
-            return types.UpgradedGiftAttributeIdSymbol(
-                sticker_id=attribute_id.document_id
-            )
+            return types.UpgradedGiftAttributeIdSymbol(sticker_id=attribute_id.document_id)
         elif isinstance(attribute_id, raw.types.StarGiftAttributeIdBackdrop):
-            return types.UpgradedGiftAttributeIdBackdrop(
-                backdrop_id=attribute_id.backdrop_id
-            )
-
+            return types.UpgradedGiftAttributeIdBackdrop(backdrop_id=attribute_id.backdrop_id)

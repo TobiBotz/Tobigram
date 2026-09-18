@@ -16,10 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+from __future__ import annotations
 
-from pyrogram import raw
-from pyrogram import enums
+
+from pyrogram import enums, raw
+
 from ..object import Object
 
 
@@ -37,29 +38,30 @@ class ChatColor(Object):
     def __init__(
         self,
         *,
-        color: Optional[Union["enums.ReplyColor", "enums.ProfileColor"]] = None,
-        background_emoji_id: Optional[int] = None
+        color: enums.ReplyColor | enums.ProfileColor | None = None,
+        background_emoji_id: int | None = None,
     ):
         self.color = color
         self.background_emoji_id = background_emoji_id
 
     @staticmethod
-    def _parse(color: Optional["raw.types.PeerColor"] = None) -> Optional["ChatColor"]:
+    def _parse(color: raw.types.PeerColor | None = None) -> ChatColor | None:
         if not isinstance(color, raw.types.PeerColor):
             return None
 
         return ChatColor(
             color=enums.ReplyColor(color.color) if color.color is not None else None,
-            background_emoji_id=getattr(color, "background_emoji_id", None)
+            background_emoji_id=getattr(color, "background_emoji_id", None),
         )
 
     @staticmethod
-    def _parse_profile_color(color: Optional["raw.types.PeerColor"] = None) -> Optional["ChatColor"]:
+    def _parse_profile_color(
+        color: raw.types.PeerColor | None = None,
+    ) -> ChatColor | None:
         if not isinstance(color, raw.types.PeerColor):
             return None
 
         return ChatColor(
             color=enums.ProfileColor(color.color) if color.color is not None else None,
-            background_emoji_id=getattr(color, "background_emoji_id", None)
+            background_emoji_id=getattr(color, "background_emoji_id", None),
         )
-

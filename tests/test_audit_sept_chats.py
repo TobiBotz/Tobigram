@@ -20,7 +20,9 @@ def _chat_full(participants, users):
         full_chat=raw.types.ChatFull(
             id=5,
             about="",
-            participants=raw.types.ChatParticipants(chat_id=5, participants=participants, version=1),
+            participants=raw.types.ChatParticipants(
+                chat_id=5, participants=participants, version=1
+            ),
             notify_settings=raw.types.PeerNotifySettings(),
         ),
         chats=[],
@@ -29,7 +31,9 @@ def _chat_full(participants, users):
 
 
 async def test_an_expired_custom_emoji_id_is_skipped_not_crashed():
-    from pyrogram.methods.messages.get_custom_emoji_stickers import GetCustomEmojiStickers
+    from pyrogram.methods.messages.get_custom_emoji_stickers import (
+        GetCustomEmojiStickers,
+    )
 
     class _Client(GetCustomEmojiStickers):
         async def invoke(self, query, *args, **kwargs):
@@ -215,7 +219,11 @@ async def test_unbanning_in_a_basic_group_does_not_ask_a_channel_rpc():
 
     class _Client(UnbanChatMember):
         async def resolve_peer(self, peer_id):
-            return raw.types.InputPeerChat(chat_id=5) if peer_id == -5 else raw.types.InputPeerUser(user_id=1, access_hash=0)
+            return (
+                raw.types.InputPeerChat(chat_id=5)
+                if peer_id == -5
+                else raw.types.InputPeerUser(user_id=1, access_hash=0)
+            )
 
         async def invoke(self, query, *args, **kwargs):
             sent.append(query)

@@ -16,12 +16,17 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from hashlib import sha256
 
 import warpcrypto
+
 from pyrogram.crypto.aes import ige256_encrypt as tg_ige_enc
 from pyrogram.crypto.mtproto import kdf
 
-AUTH_KEY = sha256(b"t").digest() + sha256(b"t2").digest() \
-         + sha256(b"t3").digest() + sha256(b"t4").digest() \
-         + sha256(b"t5").digest()
+AUTH_KEY = (
+    sha256(b"t").digest()
+    + sha256(b"t2").digest()
+    + sha256(b"t3").digest()
+    + sha256(b"t4").digest()
+    + sha256(b"t5").digest()
+)
 AUTH_KEY_ID = sha256(AUTH_KEY).digest()[-8:]
 SESSION_ID = os.urandom(8)
 SALT = 1234567890
@@ -69,13 +74,13 @@ def run():
     # Can't compare directly due to os.urandom, but we can verify length match
     assert len(r1) == len(r2), f"output lengths mismatch: {len(r1)} vs {len(r2)}"
 
-    print(f"===== tgcrypto vs WarpCrypto — Multi-Client Scaling =====")
+    print("===== tgcrypto vs WarpCrypto — Multi-Client Scaling =====")
     print(f"Payload: {len(PAYLOAD)} bytes")
-    print(f"Ops per client: 200")
+    print("Ops per client: 200")
     print()
 
     header = f"  {'Clients':>7s} | {'Pool':>5s} | {'tgcrypto':>10s} | {'WarpCrypto':>10s} | {'ratio':>7s}"
-    sep = f"  {'-'*7}-+-{'-'*5}-+-{'-'*10}-+-{'-'*10}-+-{'-'*7}"
+    sep = f"  {'-' * 7}-+-{'-' * 5}-+-{'-' * 10}-+-{'-' * 10}-+-{'-' * 7}"
     print(header)
     print(sep)
 
@@ -98,16 +103,18 @@ def run():
         total_ops = num_clients * 200
         tg_tp = total_ops / best_tg
         wp_tp = total_ops / best_wp
-        print(f"  {num_clients:>7d} | {best_pool_tg:>3d}/{best_pool_wp:<1d} | {tg_tp:>10.0f} | {wp_tp:>10.0f} | {wp_tp/tg_tp:>6.2f}x")
+        print(
+            f"  {num_clients:>7d} | {best_pool_tg:>3d}/{best_pool_wp:<1d} | {tg_tp:>10.0f} | {wp_tp:>10.0f} | {wp_tp / tg_tp:>6.2f}x"
+        )
 
     print()
-    print(f"  Pool column shows: optimal for tgcrypto / WarpCrypto")
-    print(f"  Ratio > 1.0 means WarpCrypto faster")
+    print("  Pool column shows: optimal for tgcrypto / WarpCrypto")
+    print("  Ratio > 1.0 means WarpCrypto faster")
 
     for title, nc in [("16 clients", 16), ("128 clients", 128)]:
         print(f"\n  --- Deep-dive: {title} ---")
         print(f"  {'Pool':>5s} | {'tgcrypto (s)':>13s} | {'WarpCrypto (s)':>15s} | {'ratio':>7s}")
-        print(f"  {'-'*5}-+-{'-'*13}-+-{'-'*15}-+-{'-'*7}")
+        print(f"  {'-' * 5}-+-{'-' * 13}-+-{'-' * 15}-+-{'-' * 7}")
         for pool_sz in [1, 2, 4, 8, 16, 32]:
             dt_tg = simulate_clients(tgcrypto_pack, nc, 200, pool_sz)
             dt_wp = simulate_clients(warpcrypto_pack, nc, 200, pool_sz)

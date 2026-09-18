@@ -21,7 +21,8 @@
 # Source: tl:account.getBusinessChatLinks
 # ***************************
 
-from typing import List
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -29,8 +30,8 @@ from pyrogram import raw
 
 class GetBusinessChatLinks:
     async def get_business_chat_links(
-        self: "pyrogram.Client",
-    ) -> List["raw.types.BusinessChatLink"]:
+        self: pyrogram.Client,
+    ) -> list[raw.types.BusinessChatLink]:
         """Get all business chat links.
 
         .. include:: /_includes/usable-by/users.rst
@@ -44,10 +45,6 @@ class GetBusinessChatLinks:
                 await app.get_business_chat_links(...)
         """
 
-        r = await self.invoke(
-            raw.functions.account.GetBusinessChatLinks(
-
-            )
-        )
+        r = await self.invoke(raw.functions.account.GetBusinessChatLinks())
 
         return r.links

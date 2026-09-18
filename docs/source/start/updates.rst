@@ -1,8 +1,8 @@
 Handling Updates
 ================
 
-:doc:`Invoking API methods <invoking>` sequentially is one way to use wzgram. This page deals with Telegram updates
-and how to handle new incoming messages or other events in wzgram.
+:doc:`Invoking API methods <invoking>` sequentially is one way to use pyrogram. This page deals with Telegram updates
+and how to handle new incoming messages or other events in pyrogram.
 
 
 -----
@@ -31,7 +31,7 @@ The most elegant way to register a message handler is by using the :meth:`~pyrog
 
 .. code-block:: python
 
-    from wzgram import Client
+    from pyrogram import Client
 
     app = Client("my_account")
 
@@ -58,8 +58,8 @@ function and registers it in your Client. It is useful in case you want to progr
 
 .. code-block:: python
 
-    from wzgram import Client
-    from wzgram.handlers import MessageHandler
+    from pyrogram import Client
+    from pyrogram.handlers import MessageHandler
 
 
     async def my_function(client, message):

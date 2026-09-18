@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import List, Union, Optional
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -25,26 +26,26 @@ from pyrogram import raw, types, utils
 
 class ForwardMediaGroup:
     async def forward_media_group(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        from_chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
+        from_chat_id: int | str,
         message_id: int,
-        message_thread_id: Optional[int] = None,
-        disable_notification: Optional[bool] = None,
-        schedule_date: Optional[datetime] = None,
-        hide_sender_name: Optional[bool] = None,
-        hide_captions: Optional[bool] = None,
-        protect_content: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        paid_message_star_count: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        repeat_period: Optional[int] = None,
-        background: Optional[bool] = None,
-        send_as: Optional[Union[int, str]] = None,
-        quick_reply_shortcut: Optional[int] = None,
-        business_connection_id: Optional[str] = None,
-    ) -> List["types.Message"]:
+        message_thread_id: int | None = None,
+        disable_notification: bool | None = None,
+        schedule_date: datetime | None = None,
+        hide_sender_name: bool | None = None,
+        hide_captions: bool | None = None,
+        protect_content: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        paid_message_star_count: int | None = None,
+        effect_id: int | None = None,
+        repeat_period: int | None = None,
+        background: bool | None = None,
+        send_as: int | str | None = None,
+        quick_reply_shortcut: int | None = None,
+        business_connection_id: str | None = None,
+    ) -> list[types.Message]:
         """Forward a media group by providing one of the message ids.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -135,25 +136,33 @@ class ForwardMediaGroup:
                 drop_author=hide_sender_name if hide_sender_name is not None else None,
                 drop_media_captions=hide_captions if hide_captions is not None else None,
                 noforwards=protect_content,
-                allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
+                allow_paid_floodskip=allow_paid_broadcast
+                if allow_paid_broadcast is not None
+                else None,
                 reply_to=await utils.get_reply_to(
                     client=self,
                     reply_parameters=reply_parameters,
-                    message_thread_id=message_thread_id
+                    message_thread_id=message_thread_id,
                 ),
-                allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
+                allow_paid_stars=paid_message_star_count
+                if paid_message_star_count is not None
+                else None,
                 effect=effect_id,
                 schedule_repeat_period=repeat_period,
                 background=background if background is not None else None,
                 send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(
+                    shortcut_id=quick_reply_shortcut
+                )
+                if quick_reply_shortcut is not None
+                else None,
                 with_my_score=None,
                 top_msg_id=message_thread_id,
                 suggested_post=None,
                 video_timestamp=None,
             ),
             sleep_threshold=60,
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
         return await utils.parse_messages(client=self, messages=r)

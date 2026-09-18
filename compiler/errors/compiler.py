@@ -42,13 +42,13 @@ def start():
     shutil.rmtree(DEST, ignore_errors=True)
     os.makedirs(DEST)
 
-    files = [i for i in os.listdir(os.path.join(HOME, "source"))]
+    files = os.listdir(os.path.join(HOME, "source"))
 
     with open(NOTICE_PATH, encoding="utf-8") as f:
         notice = []
 
-        for line in f.readlines():
-            notice.append("# {}".format(line).strip())
+        for line in f:
+            notice.append(f"# {line}".strip())
 
         notice = "\n".join(notice)
 
@@ -62,7 +62,7 @@ def start():
         for i in files:
             code, name = re.search(r"(\d+)_([A-Z_]+)", i).groups()
 
-            f_all.write("    {}: {{\n".format(code))
+            f_all.write(f"    {code}: {{\n")
 
             init = os.path.join(DEST, "__init__.py")
 
@@ -71,18 +71,24 @@ def start():
                     f_init.write(notice + "\n\n")
 
             with open(init, "a", encoding="utf-8") as f_init:
-                f_init.write("from .{}_{} import *\n".format(name.lower(), code))
+                f_init.write(f"from .{name.lower()}_{code} import *\n")
 
-            with open(os.path.join(HOME, "source", i), encoding="utf-8") as f_csv, \
-                open(os.path.join(DEST, "{}_{}.py".format(name.lower(), code)), "w", encoding="utf-8") as f_class:
+            with (
+                open(os.path.join(HOME, "source", i), encoding="utf-8") as f_csv,
+                open(
+                    os.path.join(DEST, f"{name.lower()}_{code}.py"), "w", encoding="utf-8"
+                ) as f_class,
+            ):
                 reader = csv.reader(f_csv, delimiter="\t")
 
                 super_class = caml(name)
-                name = " ".join([str(i.capitalize()) for i in re.sub(r"_", " ", name).lower().split(" ")])
+                name = " ".join(
+                    [str(i.capitalize()) for i in re.sub(r"_", " ", name).lower().split(" ")]
+                )
 
                 sub_classes = []
 
-                f_all.write("        \"_\": \"{}\",\n".format(super_class))
+                f_all.write(f'        "_": "{super_class}",\n')
 
                 for j, row in enumerate(reader):
                     if j == 0:
@@ -99,27 +105,36 @@ def start():
                     sub_class = re.sub(r"^2", "Two", sub_class)
                     sub_class = re.sub(r" ", "", sub_class)
 
-                    f_all.write("        \"{}\": \"{}\",\n".format(error_id, sub_class))
+                    f_all.write(f'        "{error_id}": "{sub_class}",\n')
 
                     sub_classes.append((sub_class, error_id, error_message))
 
-                with open(os.path.join(HOME, "template", "class.txt"), "r", encoding="utf-8") as f_class_template:
+                with open(
+                    os.path.join(HOME, "template", "class.txt"), encoding="utf-8"
+                ) as f_class_template:
                     class_template = f_class_template.read()
 
-                    with open(os.path.join(HOME, "template", "sub_class.txt"), "r", encoding="utf-8") as f_sub_class_template:
+                    with open(
+                        os.path.join(HOME, "template", "sub_class.txt"), encoding="utf-8"
+                    ) as f_sub_class_template:
                         sub_class_template = f_sub_class_template.read()
 
                     class_template = class_template.format(
                         notice=notice,
                         super_class=super_class,
                         code=code,
-                        docstring='"""{}"""'.format(name),
-                        sub_classes="".join([sub_class_template.format(
-                            sub_class=k[0],
-                            super_class=super_class,
-                            id="\"{}\"".format(k[1]),
-                            docstring='"""{}"""'.format(k[2])
-                        ) for k in sub_classes])
+                        docstring=f'"""{name}"""',
+                        sub_classes="".join(
+                            [
+                                sub_class_template.format(
+                                    sub_class=k[0],
+                                    super_class=super_class,
+                                    id=f'"{k[1]}"',
+                                    docstring=f'"""{k[2]}"""',
+                                )
+                                for k in sub_classes
+                            ]
+                        ),
                     )
 
                 f_class.write(class_template)
@@ -137,4 +152,3 @@ def start():
 
 if "__main__" == __name__:
     start()
-

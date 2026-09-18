@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw
@@ -24,12 +25,12 @@ from pyrogram import raw
 
 class UnpinChatMessage:
     async def unpin_chat_message(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        self: pyrogram.Client,
+        chat_id: int | str,
         message_id: int = 0,
-        disable_notification: Optional[bool] = None,
-        both_sides: Optional[bool] = None,
-        business_connection_id: Optional[str] = None,
+        disable_notification: bool | None = None,
+        both_sides: bool | None = None,
+        business_connection_id: str | None = None,
     ) -> bool:
         """Unpin a message in a group, channel or your own chat.
         You must be an administrator in the chat for this to work and must have the "can_pin_messages" admin
@@ -71,9 +72,9 @@ class UnpinChatMessage:
                 id=message_id,
                 silent=disable_notification if disable_notification is not None else None,
                 unpin=True,
-                pm_oneside=not both_sides if both_sides is not None else None
+                pm_oneside=not both_sides if both_sides is not None else None,
             ),
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
         return True

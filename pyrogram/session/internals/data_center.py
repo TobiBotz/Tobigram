@@ -16,10 +16,11 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Tuple
+
+from __future__ import annotations
 
 
-def get_dc_address(dc_id: int, test_mode: bool, ipv6: bool, media: bool) -> Tuple[str, int]:
+def get_dc_address(dc_id: int, test_mode: bool, ipv6: bool, media: bool) -> tuple[str, int]:
     if test_mode:
         if ipv6:
             ip = DataCenter.TEST_IPV6[dc_id]
@@ -55,13 +56,10 @@ class DataCenter:
         3: "149.154.175.100",
         4: "149.154.167.91",
         5: "91.108.56.130",
-        203: "91.105.192.100"
+        203: "91.105.192.100",
     }
 
-    PROD_MEDIA = {
-        2: "149.154.167.151",
-        4: "149.154.164.250"
-    }
+    PROD_MEDIA = {2: "149.154.167.151", 4: "149.154.164.250"}
 
     TEST_IPV6 = {
         1: "2001:b28:f23d:f001::e",
@@ -75,10 +73,10 @@ class DataCenter:
         3: "2001:b28:f23d:f003::a",
         4: "2001:67c:4e8:f004::a",
         5: "2001:b28:f23f:f005::a",
-        203: "2a0a:f280:0203:000a:5000:0000:0000:0100"
+        203: "2a0a:f280:0203:000a:5000:0000:0000:0100",
     }
 
     PROD_IPV6_MEDIA = {
         2: "2001:067c:04e8:f002:0000:0000:0000:000b",
-        4: "2001:067c:04e8:f004:0000:0000:0000:000b"
+        4: "2001:067c:04e8:f004:0000:0000:0000:000b",
     }

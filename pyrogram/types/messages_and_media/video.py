@@ -1,23 +1,24 @@
-#  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-present Dan <https://github.com/delivrance>
+# Pyrogram - Telegram MTProto API Client Library for Python
+# Copyright (C) 2017-present Dan <https://github.com/delivrance>
 #
-#  This file is part of Pyrogram.
+# This file is part of Pyrogram.
 #
-#  Pyrogram is free software: you can redistribute it and/or modify
-#  it under the terms of the GNU Lesser General Public License as published
-#  by the Free Software Foundation, either version 3 of the License, or
-#  (at your option) any later version.
+# Pyrogram is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
 #
-#  Pyrogram is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU Lesser General Public License for more details.
+# Pyrogram is distributed in the hope that it will be useful,
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
 #
-#  You should have received a copy of the GNU Lesser General Public License
-#  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+# You should have received a copy of the GNU Lesser General Public License
+# along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+
+from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -61,7 +62,7 @@ class Video(Object):
         supports_streaming (``bool``, *optional*):
             True, if the video was uploaded with streaming support.
 
-        ttl_seconds (``int``. *optional*):
+        ttl_seconds (``int``, *optional*):
             Time-to-live seconds, for secret photos.
 
         date (:py:obj:`~datetime.datetime`, *optional*):
@@ -76,29 +77,30 @@ class Video(Object):
         video_start_timestamp (``int``, *optional*):
             Video startpoint, in seconds.
 
-        alternative_videos (List of :obj:`~pyrogram.types.Video`, *optional*):
-            Alternative qualities of the video in MPEG4 format, encoded with H.264 codec.
+        alternative_videos (List of :obj:`~pyrogram.types.VideoQuality`, *optional*):
+            Alternative qualities of the video.
     """
+
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
+        client: pyrogram.Client | None = None,
         file_id: str,
         file_unique_id: str,
         width: int,
         height: int,
         codec: str,
         duration: int,
-        file_name: Optional[str] = None,
-        mime_type: Optional[str] = None,
-        file_size: Optional[int] = None,
-        supports_streaming: Optional[bool] = None,
-        ttl_seconds: Optional[int] = None,
-        date: Optional[datetime] = None,
-        thumbs: Optional[List["types.Thumbnail"]] = None,
-        video_cover: Optional["types.Photo"] = None,
-        video_start_timestamp: Optional[int] = None,
-        alternative_videos: Optional[List["types.Video"]] = []
+        file_name: str | None = None,
+        mime_type: str | None = None,
+        file_size: int | None = None,
+        supports_streaming: bool | None = None,
+        ttl_seconds: int | None = None,
+        date: datetime | None = None,
+        thumbs: list[types.Thumbnail] | None = None,
+        video_cover: types.Photo | None = None,
+        video_start_timestamp: int | None = None,
+        alternative_videos: list[types.VideoQuality] | None = [],
     ):
         super().__init__(client)
 
@@ -122,27 +124,22 @@ class Video(Object):
     @staticmethod
     def _parse(
         client,
-        video: "raw.types.Document",
-        video_attributes: "raw.types.DocumentAttributeVideo",
-        file_name: Optional[str] = None,
-        ttl_seconds: Optional[int] = None,
-        video_cover = None,
-        video_start_timestamp: Optional[int] = None,
-        alternative_videos: List["raw.types.Document"] = []
-    ) -> "Video":
+        video: raw.types.Document,
+        video_attributes: raw.types.DocumentAttributeVideo,
+        file_name: str | None = None,
+        ttl_seconds: int | None = None,
+        video_cover=None,
+        video_start_timestamp: int | None = None,
+        alternative_videos: list[raw.types.Document] = [],
+    ) -> Video:
         _alt_videos = types.List()
 
         for alt_doc in alternative_videos or []:
             alt_attrs = {type(i): i for i in alt_doc.attributes}
-            alt_file_name = getattr(
-                alt_attrs.get(raw.types.DocumentAttributeFilename), "file_name", None
-            )
             alt_video_attr = alt_attrs.get(raw.types.DocumentAttributeVideo)
 
             if alt_video_attr:
-                _alt_videos.append(
-                    types.Video._parse(client, alt_doc, alt_video_attr, alt_file_name)
-                )
+                _alt_videos.append(types.VideoQuality._parse(client, alt_doc, alt_video_attr))
 
         return Video(
             file_id=FileId(
@@ -150,11 +147,10 @@ class Video(Object):
                 dc_id=video.dc_id,
                 media_id=video.id,
                 access_hash=video.access_hash,
-                file_reference=video.file_reference
+                file_reference=video.file_reference,
             ).encode(),
             file_unique_id=FileUniqueId(
-                file_unique_type=FileUniqueType.DOCUMENT,
-                media_id=video.id
+                file_unique_type=FileUniqueType.DOCUMENT, media_id=video.id
             ).encode(),
             width=getattr(video_attributes, "w", None),
             height=getattr(video_attributes, "h", None),
@@ -170,6 +166,5 @@ class Video(Object):
             video_cover=types.Photo._parse(client, video_cover),
             video_start_timestamp=video_start_timestamp,
             alternative_videos=_alt_videos or None,
-            client=client
+            client=client,
         )
-

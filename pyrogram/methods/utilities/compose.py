@@ -16,20 +16,19 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import asyncio
 import logging
-from typing import List
 
 log = logging.getLogger(__name__)
 
 import pyrogram
+
 from .idle import idle
 
 
-async def compose(
-    clients: List["pyrogram.Client"],
-    sequential: bool = False
-):
+async def compose(clients: list[pyrogram.Client], sequential: bool = False):
     """Run multiple clients at once.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -51,7 +50,7 @@ async def compose(
         .. code-block:: python
 
             import asyncio
-            from wzgram import Client, compose
+            from pyrogram import Client, compose
 
 
             async def main():
@@ -79,12 +78,10 @@ async def compose(
             except Exception:
                 log.exception("Failed to start client %s", c.name)
     else:
-        results = await asyncio.gather(
-            *[c.start() for c in clients], return_exceptions=True
-        )
+        results = await asyncio.gather(*[c.start() for c in clients], return_exceptions=True)
         for c, result in zip(clients, results):
             if isinstance(result, Exception):
-                log.exception("Failed to start client %s", c.name, exc_info=result)
+                log.error("Failed to start client %s", c.name, exc_info=result)
             else:
                 started.append(c)
 
@@ -100,9 +97,7 @@ async def compose(
             except Exception:
                 log.exception("Failed to stop client %s", c.name)
     else:
-        results = await asyncio.gather(
-            *[c.stop() for c in started], return_exceptions=True
-        )
+        results = await asyncio.gather(*[c.stop() for c in started], return_exceptions=True)
         for c, result in zip(started, results):
             if isinstance(result, Exception):
-                log.exception("Failed to stop client %s", c.name, exc_info=result)
+                log.error("Failed to stop client %s", c.name, exc_info=result)

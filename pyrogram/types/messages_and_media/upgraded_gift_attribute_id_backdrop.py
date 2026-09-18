@@ -15,6 +15,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import annotations
+
 from pyrogram import raw
 
 from .upgraded_gift_attribute_id import UpgradedGiftAttributeId
@@ -27,6 +29,7 @@ class UpgradedGiftAttributeIdBackdrop(UpgradedGiftAttributeId):
         backdrop_id (``int``):
             Identifier of the sticker representing the backdrop.
     """
+
     def __init__(
         self,
         backdrop_id: int,
@@ -35,8 +38,5 @@ class UpgradedGiftAttributeIdBackdrop(UpgradedGiftAttributeId):
 
         self.backdrop_id = backdrop_id
 
-    def write(self) -> "raw.types.StarGiftAttributeIdBackdrop":
-        return raw.types.StarGiftAttributeIdBackdrop(
-            backdrop_id=self.backdrop_id
-        )
-
+    def write(self) -> raw.types.StarGiftAttributeIdBackdrop:
+        return raw.types.StarGiftAttributeIdBackdrop(backdrop_id=self.backdrop_id)

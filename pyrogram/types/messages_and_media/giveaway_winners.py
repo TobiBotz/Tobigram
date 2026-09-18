@@ -16,14 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import List, Optional
 
 import pyrogram
+from pyrogram import errors, raw, types, utils
 
-from pyrogram import raw, types, utils, errors
 from ..object import Object
-
 
 
 class GiveawayWinners(Object):
@@ -77,21 +77,21 @@ class GiveawayWinners(Object):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
-        chat: "types.Chat",
+        client: pyrogram.Client | None = None,
+        chat: types.Chat,
         giveaway_message_id: int,
         winners_selection_date: datetime,
         quantity: int,
         winner_count: int,
-        unclaimed_prize_count: Optional[int] = None,
-        winners: List["types.User"],
-        giveaway_message: Optional["types.Message"] = None,
-        additional_chat_count: Optional[int] = None,
-        prize_star_count: Optional[int] = None,
-        premium_subscription_month_count: Optional[int] = None,
-        only_new_members: Optional[bool] = None,
-        was_refunded: Optional[bool] = None,
-        prize_description: Optional[str] = None
+        unclaimed_prize_count: int | None = None,
+        winners: list[types.User],
+        giveaway_message: types.Message | None = None,
+        additional_chat_count: int | None = None,
+        prize_star_count: int | None = None,
+        premium_subscription_month_count: int | None = None,
+        only_new_members: bool | None = None,
+        was_refunded: bool | None = None,
+        prize_description: str | None = None,
     ):
         super().__init__(client)
 
@@ -112,11 +112,8 @@ class GiveawayWinners(Object):
 
     @staticmethod
     async def _parse(
-        client,
-        giveaway_media: "raw.types.MessageMediaGiveawayResults",
-        users: dict,
-        chats: dict
-    ) -> "GiveawayWinners":
+        client, giveaway_media: raw.types.MessageMediaGiveawayResults, users: dict, chats: dict
+    ) -> GiveawayWinners:
         if not isinstance(giveaway_media, raw.types.MessageMediaGiveawayResults):
             return
 
@@ -126,7 +123,7 @@ class GiveawayWinners(Object):
             giveaway_message = await client.get_messages(
                 chat_id=utils.get_channel_id(giveaway_media.channel_id),
                 message_ids=giveaway_media.launch_msg_id,
-                replies=0
+                replies=0,
             )
         except (errors.ChannelPrivate, errors.ChannelInvalid):
             pass
@@ -139,13 +136,15 @@ class GiveawayWinners(Object):
             quantity=giveaway_media.winners_count + giveaway_media.unclaimed_count,
             winner_count=giveaway_media.winners_count,
             unclaimed_prize_count=giveaway_media.unclaimed_count,
-            winners=types.List(types.User._parse(client, users.get(i)) for i in giveaway_media.winners) or None,
+            winners=types.List(
+                types.User._parse(client, users.get(i)) for i in giveaway_media.winners
+            )
+            or None,
             additional_chat_count=getattr(giveaway_media, "additional_peers_count", None),
             prize_star_count=giveaway_media.stars,
             premium_subscription_month_count=getattr(giveaway_media, "months", None),
             only_new_members=getattr(giveaway_media, "only_new_subscribers", None),
             was_refunded=getattr(giveaway_media, "refunded", None),
             prize_description=getattr(giveaway_media, "prize_description", None),
-            client=client
+            client=client,
         )
-

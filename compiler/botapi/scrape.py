@@ -28,7 +28,7 @@ APPROVED_NO_SUBTYPES = {
 }
 # List of all approved multi-returns.
 APPROVED_MULTI_RETURNS = [
-    ['Message', 'Boolean']  # Edit returns either the new message, or an OK to confirm the edit.
+    ["Message", "Boolean"]  # Edit returns either the new message, or an OK to confirm the edit.
 ]
 
 
@@ -49,8 +49,8 @@ def retrieve_info(url: str) -> dict:
         "version": version,
         "release_date": release_tag.get_text(),
         "changelog": changelog_url,
-        METHODS: dict(),
-        TYPES: dict(),
+        METHODS: {},
+        TYPES: {},
     }
 
     for x in list(dev_rules.children):  # type: Tag
@@ -73,7 +73,9 @@ def retrieve_info(url: str) -> dict:
             continue
 
         if x.name == "p":
-            items[curr_type][curr_name].setdefault("description", []).extend(clean_tg_description(x, url))
+            items[curr_type][curr_name].setdefault("description", []).extend(
+                clean_tg_description(x, url)
+            )
 
         if x.name == "table":
             get_fields(curr_name, curr_type, x, items, url)
@@ -84,7 +86,9 @@ def retrieve_info(url: str) -> dict:
         # Only methods have return types.
         # We check this every time just in case the description has been updated, and we have new return types to add.
         if curr_type == METHODS and items[curr_type][curr_name].get("description"):
-            get_method_return_type(curr_name, curr_type, items[curr_type][curr_name].get("description"), items)
+            get_method_return_type(
+                curr_name, curr_type, items[curr_type][curr_name].get("description"), items
+            )
 
     return items
 
@@ -128,7 +132,7 @@ def get_fields(curr_name: str, curr_type: str, x: Tag, items: dict, url: str):
                     "name": children[0].get_text(),
                     "types": clean_tg_type(children[1].get_text()),
                     "required": children[2].get_text() == "Yes",
-                    "description": clean_tg_field_description(children[3], url)
+                    "description": clean_tg_field_description(children[3], url),
                 }
             )
 
@@ -143,7 +147,9 @@ def get_fields(curr_name: str, curr_type: str, x: Tag, items: dict, url: str):
     items[curr_type][curr_name]["fields"] = fields
 
 
-def get_method_return_type(curr_name: str, curr_type: str, description_items: list[str], items: dict):
+def get_method_return_type(
+    curr_name: str, curr_type: str, description_items: list[str], items: dict
+):
     description = "\n".join(description_items)
     ret_search = re.search(".*(?:on success,)([^.]*)", description, re.IGNORECASE)
     ret_search2 = re.search(".*(?:returns)([^.]*)(?:on success)?", description, re.IGNORECASE)
@@ -182,7 +188,8 @@ def extract_return_type(curr_type: str, curr_name: str, ret_str: str, items: dic
     else:
         words = ret_str.split()
         rets = [
-            r for ret in words
+            r
+            for ret in words
             for r in clean_tg_type(ret.translate(str.maketrans("", "", string.punctuation)))
             if ret[0].isupper()
         ]
@@ -225,16 +232,16 @@ def clean_tg_description(t: Tag, url: str) -> list[str]:
     text = re.sub(r"(\s){2,}", r"\1", text)
 
     # Replace weird UTF-8 quotes with proper quotes
-    text = text.replace('”', '"').replace('“', '"')
+    text = text.replace("”", '"').replace("“", '"')
 
     # Replace weird unicode ellipsis with three dots
     text = text.replace("…", "...")
 
     # Use sensible dashes
-    text = text.replace(u"\u2013", "-")
-    text = text.replace(u"\u2014", "-")
+    text = text.replace("\u2013", "-")
+    text = text.replace("\u2014", "-")
     # Use sensible single quotes
-    text = text.replace(u"\u2019", "'")
+    text = text.replace("\u2019", "'")
 
     # Split on newlines to improve description output.
     return [t.strip() for t in text.split("\n") if t.strip()]
@@ -260,11 +267,15 @@ def clean_tg_type(t: str) -> list[str]:
     pref = ""
     if t.startswith("Array of "):
         pref = "Array of "
-        t = t[len("Array of "):]
+        t = t[len("Array of ") :]
 
     fixed_ors = [x.strip() for x in t.split(" or ")]  # Fix situations like "A or B"
-    fixed_ands = [x.strip() for fo in fixed_ors for x in fo.split(" and ")]  # Fix situations like "A and B"
-    fixed_commas = [x.strip() for fa in fixed_ands for x in fa.split(", ")]  # Fix situations like "A, B"
+    fixed_ands = [
+        x.strip() for fo in fixed_ors for x in fo.split(" and ")
+    ]  # Fix situations like "A and B"
+    fixed_commas = [
+        x.strip() for fa in fixed_ands for x in fa.split(", ")
+    ]  # Fix situations like "A, B"
     return [pref + get_proper_type(x) for x in fixed_commas]
 
 
@@ -285,15 +296,21 @@ def verify_type_parameters(items: dict) -> bool:
             description = "".join(values.get("description", []))
             # Some types are abstract and have no information or subtypes - this is mentioned in their description.
             # Otherwise, check if they're manually approved.
-            if not subtypes and \
-                    not ("currently holds no information" in description.lower() or type_name in APPROVED_NO_SUBTYPES):
+            if not subtypes and not (
+                "currently holds no information" in description.lower()
+                or type_name in APPROVED_NO_SUBTYPES
+            ):
                 print("TYPE", type_name, "has no fields or subtypes, and is not approved")
                 issue_found = True
                 continue
 
             # Handle case for:
             # 'Currently, it can be either a String for plain text, an Array of RichText, or any of the following types:'
-            m = re.search(r"it can be either (.*?), or any of the following types:", description, re.IGNORECASE)
+            m = re.search(
+                r"it can be either (.*?), or any of the following types:",
+                description,
+                re.IGNORECASE,
+            )
             if m:
                 parts = m.group(1).split(",")
                 description_types = []
@@ -304,7 +321,9 @@ def verify_type_parameters(items: dict) -> bool:
                     if type_match:
                         description_types.append(type_match.group(1) or type_match.group(2))
                 # subtypes.extend(description_types)
-                subtypes = description_types + subtypes  # adds ['String', 'Array of RichText'] to end of list
+                subtypes = (
+                    description_types + subtypes
+                )  # adds ['String', 'Array of RichText'] to end of list
                 values["subtypes"] = subtypes
 
             for st in subtypes:
@@ -327,7 +346,7 @@ def verify_type_parameters(items: dict) -> bool:
             field_types = param.get("types")
             for field_type_name in field_types:
                 while field_type_name.startswith("Array of "):
-                    field_type_name = field_type_name[len("Array of "):]
+                    field_type_name = field_type_name[len("Array of ") :]
 
                 if field_type_name not in items[TYPES] and field_type_name not in TG_CORE_TYPES:
                     print("UNKNOWN FIELD TYPE", field_type_name)
@@ -364,7 +383,7 @@ def verify_method_parameters(items: dict) -> bool:
             types = param.get("types")
             for t in types:
                 while t.startswith("Array of "):
-                    t = t[len("Array of "):]
+                    t = t[len("Array of ") :]
 
                 if t not in items[TYPES] and t not in TG_CORE_TYPES:
                     issue_found = True
@@ -373,7 +392,7 @@ def verify_method_parameters(items: dict) -> bool:
         # check all return types are valid
         for ret in values.get("returns", []):
             while ret.startswith("Array of "):
-                ret = ret[len("Array of "):]
+                ret = ret[len("Array of ") :]
 
             if ret not in items[TYPES] and ret not in TG_CORE_TYPES:
                 issue_found = True
@@ -397,5 +416,5 @@ def main():
             json.dump(items, f)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -16,20 +16,20 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class ExportChatInviteLink:
     async def export_chat_invite_link(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        subscription_period: Optional[int] = None,
-        subscription_price: Optional[int] = None,
-    ) -> "types.ChatInviteLink":
+        self: pyrogram.Client,
+        chat_id: int | str,
+        subscription_period: int | None = None,
+        subscription_price: int | None = None,
+    ) -> types.ChatInviteLink:
         """Generate a new primary invite link for a chat; any previously generated primary link is revoked.
 
         You must be an administrator in the chat for this to work and must have the appropriate admin rights.
@@ -67,11 +67,12 @@ class ExportChatInviteLink:
         r = await self.invoke(
             raw.functions.messages.ExportChatInvite(
                 subscription_pricing=raw.types.StarsSubscriptionPricing(
-                    period=subscription_period,
-                    amount=subscription_price
-                ) if subscription_period is not None and subscription_price is not None else None,
+                    period=subscription_period, amount=subscription_price
+                )
+                if subscription_period is not None and subscription_price is not None
+                else None,
                 peer=await self.resolve_peer(chat_id),
-                legacy_revoke_permanent=True
+                legacy_revoke_permanent=True,
             )
         )
 

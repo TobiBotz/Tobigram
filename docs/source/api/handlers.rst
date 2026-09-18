@@ -8,8 +8,8 @@ handlers are built at runtime.
 
 .. code-block:: python
 
-    from wzgram import Client, filters
-    from wzgram.handlers import MessageHandler
+    from pyrogram import Client, filters
+    from pyrogram.handlers import MessageHandler
 
 
     async def echo(client, message):
@@ -65,6 +65,7 @@ Chats and members
 -----------------
 
 .. autoclass:: pyrogram.handlers.ChatMemberUpdatedHandler()
+.. autoclass:: pyrogram.handlers.ChatLeftHandler()
 .. autoclass:: pyrogram.handlers.ChatJoinRequestHandler()
 .. autoclass:: pyrogram.handlers.ChatBoostHandler()
 .. autoclass:: pyrogram.handlers.UserStatusHandler()

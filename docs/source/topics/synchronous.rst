@@ -1,14 +1,14 @@
 Synchronous Usage
 =================
 
-wzgram is asynchronous. Every API method is a coroutine, and there is no synchronous mode:
+pyrogram is asynchronous. Every API method is a coroutine, and there is no synchronous mode:
 calling ``app.send_message(...)`` without awaiting it returns a coroutine object and sends
 nothing.
 
 .. warning::
 
     Older Pyrogram versions shipped a compatibility layer that wrapped every method so it
-    could be called without ``await`` — ``with app:`` instead of ``async with app:``. wzgram
+    could be called without ``await`` — ``with app:`` instead of ``async with app:``. pyrogram
     does not have it. Code relying on it fails quietly: the coroutine is created, never
     scheduled, and Python warns that it was never awaited.
 
@@ -27,7 +27,7 @@ shuts the loop down:
 
     import asyncio
 
-    from wzgram import Client
+    from pyrogram import Client
 
 
     async def main():
@@ -45,7 +45,7 @@ online until you stop it:
 
 .. code-block:: python
 
-    from wzgram import Client, filters
+    from pyrogram import Client, filters
 
     app = Client("my_account")
 
@@ -75,7 +75,7 @@ writing the ``asyncio.run`` yourself:
 Calling from synchronous code
 -----------------------------
 
-When wzgram has to live inside something that is not async — a Django view, a Flask route, a
+When pyrogram has to live inside something that is not async — a Django view, a Flask route, a
 worker in a thread pool — run the client in its own loop and hand work to it:
 
 .. code-block:: python
@@ -83,7 +83,7 @@ worker in a thread pool — run the client in its own loop and hand work to it:
     import asyncio
     import threading
 
-    from wzgram import Client
+    from pyrogram import Client
 
     loop = asyncio.new_event_loop()
     threading.Thread(target=loop.run_forever, daemon=True).start()
@@ -117,5 +117,5 @@ Push that work to a thread:
         result = await asyncio.to_thread(expensive_blocking_call, message.text)
         await message.reply(result)
 
-This is the same reason wzgram runs crypto above ``WZGRAM_INLINE_CRYPTO_MAX`` in a thread
+This is the same reason pyrogram runs crypto above ``PYROGRAM_INLINE_CRYPTO_MAX`` in a thread
 pool — see :doc:`/features/performance`.

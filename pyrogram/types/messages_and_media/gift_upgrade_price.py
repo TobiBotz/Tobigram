@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
 
 from pyrogram import raw, utils
@@ -34,21 +36,14 @@ class GiftUpgradePrice(Object):
             The amount of Telegram Stars required to pay to upgrade the gift.
     """
 
-    def __init__(
-        self,
-        *,
-        date: datetime,
-        star_count: int
-    ):
+    def __init__(self, *, date: datetime, star_count: int):
         super().__init__()
 
         self.date = date
         self.star_count = star_count
 
     @staticmethod
-    def _parse(attr: "raw.base.StarGiftUpgradePrice") -> "GiftUpgradePrice":
+    def _parse(attr: raw.base.StarGiftUpgradePrice) -> GiftUpgradePrice:
         return GiftUpgradePrice(
-            date=utils.timestamp_to_datetime(attr.date),
-            star_count=attr.upgrade_stars
+            date=utils.timestamp_to_datetime(attr.date), star_count=attr.upgrade_stars
         )
-

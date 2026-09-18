@@ -15,6 +15,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+from __future__ import annotations
+
 from pyrogram import raw
 
 from ..object import Object
@@ -34,7 +36,7 @@ class GiftResalePrice(Object):
     ):
         super().__init__()
 
-    def write(self) -> "raw.base.StarsAmount":
+    def write(self) -> raw.base.StarsAmount:
         raise NotImplementedError
 
 
@@ -45,20 +47,14 @@ class GiftResalePriceStar(GiftResalePrice):
         star_count (``int``):
             The amount of Telegram Stars expected to be paid for the gift.
     """
-    def __init__(
-        self,
-        *,
-        star_count: int
-    ):
+
+    def __init__(self, *, star_count: int):
         super().__init__()
 
         self.star_count = star_count
 
-    def write(self) -> "raw.types.StarsAmount":
-        return raw.types.StarsAmount(
-            amount=self.star_count,
-            nanos=0
-        )
+    def write(self) -> raw.types.StarsAmount:
+        return raw.types.StarsAmount(amount=self.star_count, nanos=0)
 
 
 class GiftResalePriceTon(GiftResalePrice):
@@ -68,17 +64,13 @@ class GiftResalePriceTon(GiftResalePrice):
         toncoin_cent_count (``int``):
             The amount of 1/100 of Toncoin expected to be paid for the gift.
     """
-    def __init__(
-        self,
-        *,
-        toncoin_cent_count: int
-    ):
+
+    def __init__(self, *, toncoin_cent_count: int):
         super().__init__()
 
         self.toncoin_cent_count = toncoin_cent_count
 
-    def write(self) -> "raw.types.StarsTonAmount":
+    def write(self) -> raw.types.StarsTonAmount:
         return raw.types.StarsTonAmount(
             amount=self.toncoin_cent_count,
         )
-

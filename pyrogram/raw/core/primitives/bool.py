@@ -21,7 +21,6 @@ from typing import Any
 
 from ..tl_object import TLObject
 
-
 _true_id = (0x997275B5).to_bytes(4, "little")
 
 

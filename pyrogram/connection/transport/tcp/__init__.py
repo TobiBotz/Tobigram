@@ -22,5 +22,21 @@ from .tcp_abridged_o import TCPAbridgedO
 from .tcp_full import TCPFull
 from .tcp_intermediate import TCPIntermediate
 from .tcp_intermediate_o import TCPIntermediateO
+from .tcp_intermediate_padded import TCPIntermediatePadded
 from .tcp_padded_intermediate import TCPPaddedIntermediate
 from .tcp_padded_intermediate_o import TCPPaddedIntermediateO
+
+TCPIntermediatePaddedO = TCPPaddedIntermediateO
+
+__all__ = [
+    "TCP",
+    "TCPAbridged",
+    "TCPAbridgedO",
+    "TCPFull",
+    "TCPIntermediate",
+    "TCPIntermediateO",
+    "TCPIntermediatePadded",
+    "TCPIntermediatePaddedO",
+    "TCPPaddedIntermediate",
+    "TCPPaddedIntermediateO",
+]

@@ -16,18 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Callable
+from __future__ import annotations
+
+from collections.abc import Callable
 
 import pyrogram
 from pyrogram.filters import Filter
 
 
 class OnDeletedMessages:
-    def on_deleted_messages(
-        self=None,
-        filters=None,
-        group: int = 0
-    ) -> Callable:
+    def on_deleted_messages(self=None, filters=None, group: int = 0) -> Callable:
         """Decorator for handling deleted messages.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -55,7 +53,7 @@ class OnDeletedMessages:
                 func.handlers.append(
                     (
                         pyrogram.handlers.DeletedMessagesHandler(func, self),
-                        group if filters is None else filters
+                        group if filters is None else filters,
                     )
                 )
 

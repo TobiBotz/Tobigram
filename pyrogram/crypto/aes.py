@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 import logging
 
 import warpcrypto
@@ -33,19 +34,23 @@ def ige256_decrypt(data: bytes, key: bytes, iv: bytes) -> bytes:
     return warpcrypto.ige256_decrypt(data, key, iv)
 
 
-def ctr256_encrypt(data: bytes, key: bytes, iv: bytearray, state: Optional[bytearray] = None) -> bytes:
+def ctr256_encrypt(data: bytes, key: bytes, iv: bytearray, state: bytearray | None = None) -> bytes:
     return warpcrypto.ctr256_encrypt(data, key, iv, state or bytearray(1))
 
 
-def ctr256_decrypt(data: bytes, key: bytes, iv: bytearray, state: Optional[bytearray] = None) -> bytes:
+def ctr256_decrypt(data: bytes, key: bytes, iv: bytearray, state: bytearray | None = None) -> bytes:
     return warpcrypto.ctr256_decrypt(data, key, iv, state or bytearray(1))
 
 
-def ctr256_encrypt_inplace(data: bytearray, key: bytes, iv: bytearray, state: Optional[bytearray] = None):
+def ctr256_encrypt_inplace(
+    data: bytearray, key: bytes, iv: bytearray, state: bytearray | None = None
+):
     return warpcrypto.ctr256_encrypt_inplace(data, key, iv, state or bytearray(1))
 
 
-def ctr256_decrypt_inplace(data: bytearray, key: bytes, iv: bytearray, state: Optional[bytearray] = None):
+def ctr256_decrypt_inplace(
+    data: bytearray, key: bytes, iv: bytearray, state: bytearray | None = None
+):
     return warpcrypto.ctr256_decrypt_inplace(data, key, iv, state or bytearray(1))
 
 

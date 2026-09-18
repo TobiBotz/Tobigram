@@ -16,18 +16,20 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import os
 import signal
-from signal import signal as signal_fn, SIGINT, SIGTERM, SIGABRT
+from signal import SIGABRT, SIGINT, SIGTERM
+from signal import signal as signal_fn
 
 log = logging.getLogger(__name__)
 
 # Signal number to name
 signals = {
-    k: v for v, k in signal.__dict__.items()
-    if v.startswith("SIG") and not v.startswith("SIG_")
+    k: v for v, k in signal.__dict__.items() if v.startswith("SIG") and not v.startswith("SIG_")
 }
 
 
@@ -50,7 +52,7 @@ async def idle():
         .. code-block:: python
 
             import asyncio
-            from wzgram import Client, idle
+            from pyrogram import Client, idle
 
 
             async def main():
@@ -84,8 +86,16 @@ async def idle():
     watched = (SIGINT, SIGTERM, SIGABRT)
     previous = {}
 
-    for s in watched:
-        previous[s] = signal_fn(s, signal_handler)
+    import threading
+
+    is_main = threading.current_thread() is threading.main_thread()
+
+    if is_main:
+        for s in watched:
+            try:
+                previous[s] = signal_fn(s, signal_handler)
+            except (ValueError, OSError):
+                pass
 
     try:
         while True:
@@ -99,6 +109,10 @@ async def idle():
         # left installed, the handler cancels a task that is already done, so the
         # next Ctrl-C does nothing at all - including during the client.stop()
         # that Client.run runs right after this returns
-        for s, handler in previous.items():
-            if handler is not None:
-                signal_fn(s, handler)
+        if is_main:
+            for s, handler in previous.items():
+                if handler is not None:
+                    try:
+                        signal_fn(s, handler)
+                    except (ValueError, OSError):
+                        pass

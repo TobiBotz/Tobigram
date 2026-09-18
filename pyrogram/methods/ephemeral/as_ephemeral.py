@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
-from typing import Optional
 
 import pyrogram
 from pyrogram import raw, types
@@ -45,10 +46,10 @@ UNSUPPORTED = (
 
 
 async def as_ephemeral(
-    client: "pyrogram.Client",
-    parameters: Optional["types.EphemeralMessageParameters"],
-    request: "raw.core.TLObject"
-) -> "raw.core.TLObject":
+    client: pyrogram.Client,
+    parameters: types.EphemeralMessageParameters | None,
+    request: raw.core.TLObject,
+) -> raw.core.TLObject:
     """The ephemeral form of a send request, or the request unchanged.
 
     Bot API 10.3 sends an ephemeral message by adding ephemeral_message_parameters to
@@ -64,25 +65,20 @@ async def as_ephemeral(
     if parameters is None:
         return request
 
-    dropped = [
-        name for name in UNSUPPORTED
-        if getattr(request, name, None) not in (None, False)
-    ]
+    dropped = [name for name in UNSUPPORTED if getattr(request, name, None) not in (None, False)]
 
     if dropped:
         log.warning(
             "ephemeral.sendMessage has no field for %s, so %s dropped",
             ", ".join(dropped),
-            "they were" if len(dropped) > 1 else "it was"
+            "they were" if len(dropped) > 1 else "it was",
         )
 
     return raw.functions.ephemeral.SendMessage(
         peer=request.peer,
         receiver_id=await client.resolve_peer(parameters.receiver_user_id),
         query_id=(
-            int(parameters.callback_query_id)
-            if parameters.callback_query_id is not None
-            else None
+            int(parameters.callback_query_id) if parameters.callback_query_id is not None else None
         ),
         anchor=parameters.replace_callback_query_message or None,
         message=getattr(request, "message", None) or "",

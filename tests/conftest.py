@@ -18,6 +18,7 @@ def session_id():
 @pytest.fixture(scope="session")
 def auth_key_id(auth_key):
     from hashlib import sha1
+
     return sha1(auth_key).digest()[-8:]
 
 

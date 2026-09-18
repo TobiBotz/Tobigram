@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import asyncio
 import heapq
 import inspect
@@ -23,7 +25,6 @@ import itertools
 import logging
 import os
 import weakref
-from typing import Dict, List, Optional, Tuple
 
 import pyrogram
 from pyrogram.errors import ListenerLimitReached, ListenerStopped, ListenerTimeout
@@ -33,13 +34,13 @@ from .listener import Listener
 
 log = logging.getLogger(__name__)
 
-MAX_LISTENERS = int(os.environ.get("WZGRAM_MAX_LISTENERS", 1000))
+MAX_LISTENERS = int(os.environ.get("PYROGRAM_MAX_LISTENERS", 1000))
 
 _CHAT = 0
 _USER = 1
 _GLOBAL = 2
 
-_budgets: "weakref.WeakKeyDictionary" = weakref.WeakKeyDictionary()
+_budgets: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 
 
 class ListenerBudget:
@@ -80,9 +81,8 @@ def listener_budget(limit: int = MAX_LISTENERS) -> ListenerBudget:
 
 
 def _identify(
-    listener_type: "pyrogram.enums.ListenerTypes",
-    update
-) -> Optional[Tuple[Identifier, Optional[int], Optional[int]]]:
+    listener_type: pyrogram.enums.ListenerTypes, update
+) -> tuple[Identifier, int | None, int | None] | None:
     """Reduce an update to the criteria a listener matches against."""
     if listener_type is pyrogram.enums.ListenerTypes.CALLBACK_QUERY:
         message = getattr(update, "message", None)
@@ -97,10 +97,10 @@ def _identify(
                 chat_id=chat_id,
                 user_id=user_id,
                 message_id=getattr(message, "id", None),
-                inline_message_id=getattr(update, "inline_message_id", None)
+                inline_message_id=getattr(update, "inline_message_id", None),
             ),
             chat_id,
-            user_id
+            user_id,
         )
 
     if getattr(update, "scheduled", False):
@@ -119,17 +119,13 @@ def _identify(
         user_id = getattr(getattr(update, "sender_chat", None), "id", None)
 
     return (
-        Identifier(
-            chat_id=chat_id,
-            user_id=user_id,
-            message_id=getattr(update, "id", None)
-        ),
+        Identifier(chat_id=chat_id, user_id=user_id, message_id=getattr(update, "id", None)),
         chat_id,
-        user_id
+        user_id,
     )
 
 
-def _as_keys(value) -> List:
+def _as_keys(value) -> list:
     if value is None:
         return []
 
@@ -141,7 +137,7 @@ def _consume_exception(future: asyncio.Future):
         future.exception()
 
 
-async def _invoke(client: "pyrogram.Client", callback, update):
+async def _invoke(client: pyrogram.Client, callback, update):
     try:
         if inspect.iscoroutinefunction(callback):
             await callback(client, update)
@@ -164,20 +160,28 @@ class ListenerRegistry:
     """
 
     __slots__ = (
-        "_client", "_live", "_buckets", "_heap", "_stale", "_seq",
-        "_wake", "_reaper", "_budget", "closed"
+        "_buckets",
+        "_budget",
+        "_client",
+        "_heap",
+        "_live",
+        "_reaper",
+        "_seq",
+        "_stale",
+        "_wake",
+        "closed",
     )
 
-    def __init__(self, client: "pyrogram.Client"):
+    def __init__(self, client: pyrogram.Client):
         self._client = client
-        self._live: Dict[int, Listener] = {}
-        self._buckets: Dict[Tuple, Dict[int, Listener]] = {}
-        self._heap: List[Tuple[float, int, Listener, float]] = []
+        self._live: dict[int, Listener] = {}
+        self._buckets: dict[tuple, dict[int, Listener]] = {}
+        self._heap: list[tuple[float, int, Listener, float]] = []
         self._stale = 0
         self._seq = itertools.count()
         self._wake = asyncio.Event()
-        self._reaper: Optional[asyncio.Task] = None
-        self._budget: Optional[ListenerBudget] = None
+        self._reaper: asyncio.Task | None = None
+        self._budget: ListenerBudget | None = None
         self.closed = False
 
     def __bool__(self) -> bool:
@@ -195,7 +199,7 @@ class ListenerRegistry:
 
         return self._budget
 
-    def _keys_for(self, listener: Listener) -> Tuple:
+    def _keys_for(self, listener: Listener) -> tuple:
         identifier = listener.identifier
         listener_type = listener.listener_type
 
@@ -211,7 +215,7 @@ class ListenerRegistry:
 
         return ((listener_type, _GLOBAL, None),)
 
-    def add(self, listener: Listener, timeout: Optional[float] = None):
+    def add(self, listener: Listener, timeout: float | None = None):
         if self.closed:
             raise ListenerStopped("Client is stopping")
 
@@ -255,8 +259,7 @@ class ListenerRegistry:
 
     def _schedule(self, listener: Listener, timeout: float):
         heapq.heappush(
-            self._heap,
-            (self._client.loop.time() + timeout, next(self._seq), listener, timeout)
+            self._heap, (self._client.loop.time() + timeout, next(self._seq), listener, timeout)
         )
 
         if self._reaper is None or self._reaper.done():
@@ -337,30 +340,27 @@ class ListenerRegistry:
         return True
 
     def find(
-        self,
-        listener_type: "pyrogram.enums.ListenerTypes",
-        pattern: Identifier
-    ) -> List[Listener]:
+        self, listener_type: pyrogram.enums.ListenerTypes, pattern: Identifier
+    ) -> list[Listener]:
         """Every live listener whose own criteria *pattern* covers."""
         return [
             listener
             for listener in self._live.values()
-            if listener.listener_type is listener_type
-            and pattern.matches(listener.identifier)
+            if listener.listener_type is listener_type and pattern.matches(listener.identifier)
         ]
 
     def _candidates(
         self,
-        listener_type: "pyrogram.enums.ListenerTypes",
-        chat_id: Optional[int],
-        user_id: Optional[int]
-    ) -> List[Listener]:
-        found: List[Listener] = []
+        listener_type: pyrogram.enums.ListenerTypes,
+        chat_id: int | None,
+        user_id: int | None,
+    ) -> list[Listener]:
+        found: list[Listener] = []
 
         for key in (
             (listener_type, _CHAT, chat_id) if chat_id is not None else None,
             (listener_type, _USER, user_id) if user_id is not None else None,
-            (listener_type, _GLOBAL, None)
+            (listener_type, _GLOBAL, None),
         ):
             if key is None:
                 continue
@@ -373,10 +373,7 @@ class ListenerRegistry:
         return found
 
     async def feed(
-        self,
-        client: "pyrogram.Client",
-        listener_type: "pyrogram.enums.ListenerTypes",
-        update
+        self, client: pyrogram.Client, listener_type: pyrogram.enums.ListenerTypes, update
     ) -> bool:
         """Hand an update to a matching listener, reporting whether it was consumed.
 
@@ -394,7 +391,7 @@ class ListenerRegistry:
         if not candidates:
             return False
 
-        stranger: Optional[Listener] = None
+        stranger: Listener | None = None
 
         for listener in candidates:
             if not listener.pending:
@@ -407,9 +404,7 @@ class ListenerRegistry:
                 continue
 
             try:
-                passed = await pyrogram.filters.check_filter(
-                    listener.filters, client, update
-                )
+                passed = await pyrogram.filters.check_filter(listener.filters, client, update)
             except Exception:
                 log.exception("Listener filter raised, ignoring listener")
                 continue
@@ -455,17 +450,12 @@ class ListenerRegistry:
         permissive = Identifier(
             chat_id=listener.identifier.chat_id,
             message_id=listener.identifier.message_id,
-            inline_message_id=listener.identifier.inline_message_id
+            inline_message_id=listener.identifier.inline_message_id,
         )
 
         return permissive.matches(data)
 
-    async def _reject(
-        self,
-        client: "pyrogram.Client",
-        listener: Listener,
-        update
-    ) -> bool:
+    async def _reject(self, client: pyrogram.Client, listener: Listener, update) -> bool:
         if not getattr(client, "unallowed_click_alert", True):
             return False
 

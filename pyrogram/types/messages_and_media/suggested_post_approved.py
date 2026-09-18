@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Optional
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -42,12 +43,14 @@ class SuggestedPostApproved(Object):
         send_date (:py:obj:`~datetime.datetime`, *optional*):
             Date when the post will be published.
     """
+
     def __init__(
-        self, *,
-        suggested_post_message_id: Optional[int] = None,
-        suggested_post_message: Optional["types.Message"] = None,
-        price: Optional["types.SuggestedPostPrice"] = None,
-        send_date: Optional[datetime] = None
+        self,
+        *,
+        suggested_post_message_id: int | None = None,
+        suggested_post_message: types.Message | None = None,
+        price: types.SuggestedPostPrice | None = None,
+        send_date: datetime | None = None,
     ):
         super().__init__()
 
@@ -58,10 +61,9 @@ class SuggestedPostApproved(Object):
 
     @staticmethod
     async def _parse(
-        client: "pyrogram.Client",
-        message: "raw.types.MessageService"
-    ) -> "SuggestedPostApproved":
-        action: "raw.types.MessageActionSuggestedPostApproval" = message.action
+        client: pyrogram.Client, message: raw.types.MessageService
+    ) -> SuggestedPostApproved:
+        action: raw.types.MessageActionSuggestedPostApproval = message.action
 
         if not isinstance(action, raw.types.MessageActionSuggestedPostApproval):
             return None
@@ -79,8 +81,7 @@ class SuggestedPostApproved(Object):
             if client.fetch_replies:
                 try:
                     suggested_post_message = await client.get_messages(
-                        chat_id=chat_id,
-                        message_ids=suggested_post_message_id
+                        chat_id=chat_id, message_ids=suggested_post_message_id
                     )
                 except MessageIdsEmpty:
                     pass
@@ -89,6 +90,5 @@ class SuggestedPostApproved(Object):
             suggested_post_message_id=suggested_post_message_id,
             suggested_post_message=suggested_post_message,
             price=types.SuggestedPostPrice._parse(action.price),
-            send_date=utils.timestamp_to_datetime(action.schedule_date)
+            send_date=utils.timestamp_to_datetime(action.schedule_date),
         )
-

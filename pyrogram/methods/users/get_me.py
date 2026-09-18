@@ -16,15 +16,14 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class GetMe:
-    async def get_me(
-        self: "pyrogram.Client"
-    ) -> "types.User":
+    async def get_me(self: pyrogram.Client) -> types.User:
         """Get your own user identity.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -38,11 +37,7 @@ class GetMe:
                 me = await app.get_me()
                 print(me)
         """
-        r = await self.invoke(
-            raw.functions.users.GetFullUser(
-                id=raw.types.InputUserSelf()
-            )
-        )
+        r = await self.invoke(raw.functions.users.GetFullUser(id=raw.types.InputUserSelf()))
 
         users = {u.id: u for u in r.users}
 

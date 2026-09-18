@@ -16,10 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import io
 import pathlib
 import re
-from typing import BinaryIO, Callable, List, Optional, Union
+from collections.abc import Callable
+from typing import BinaryIO
 
 import pyrogram
 from pyrogram import raw, utils
@@ -70,13 +73,13 @@ class InputMediaDocument(InputMedia):
 
     def __init__(
         self,
-        media: Union[str, BinaryIO],
-        thumb: Optional[str] = None,
+        media: str | BinaryIO,
+        thumb: str | None = None,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List[MessageEntity]] = None,
-        file_name: Optional[str] = None,
-        disable_content_type_detection: Optional[bool] = None
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[MessageEntity] | None = None,
+        file_name: str | None = None,
+        disable_content_type_detection: bool | None = None,
     ):
         super().__init__(media, caption, parse_mode, caption_entities)
 
@@ -87,12 +90,12 @@ class InputMediaDocument(InputMedia):
     async def write(
         self,
         *,
-        client: "pyrogram.Client",
-        chat_id: Optional[Union[int, str]] = None,
-        progress: Optional[Callable] = None,
+        client: pyrogram.Client,
+        chat_id: int | str | None = None,
+        progress: Callable | None = None,
         progress_args: tuple = (),
-        **kwargs
-    ) -> "raw.base.InputMedia":
+        **kwargs,
+    ) -> raw.base.InputMedia:
         if chat_id is None:
             peer = raw.types.InputPeerSelf()
         else:
@@ -108,7 +111,8 @@ class InputMediaDocument(InputMedia):
                             self.media, progress=progress, progress_args=progress_args
                         ),
                         force_file=(
-                            True if self.disable_content_type_detection is None
+                            True
+                            if self.disable_content_type_detection is None
                             else self.disable_content_type_detection
                         ),
                         thumb=await client.save_file(self.thumb),
@@ -137,4 +141,3 @@ class InputMediaDocument(InputMedia):
             )
 
         return utils.get_input_media_from_file_id(self.media, FileType.DOCUMENT)
-

@@ -16,11 +16,18 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, Optional
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw
-from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType, ThumbnailSource
+from pyrogram.file_id import (
+    FileId,
+    FileType,
+    FileUniqueId,
+    FileUniqueType,
+    ThumbnailSource,
+)
 
 from ..object import Object
 
@@ -55,7 +62,7 @@ class ChatPhoto(Object):
     def __init__(
         self,
         *,
-        client: Optional["pyrogram.Client"] = None,
+        client: pyrogram.Client | None = None,
         small_file_id: str,
         small_photo_unique_id: str,
         big_file_id: str,
@@ -75,7 +82,7 @@ class ChatPhoto(Object):
     @staticmethod
     def _parse(
         client,
-        chat_photo: Union["raw.types.UserProfilePhoto", "raw.types.ChatPhoto", "raw.types.Photo"],
+        chat_photo: raw.types.UserProfilePhoto | raw.types.ChatPhoto | raw.types.Photo,
         peer_id: int,
         peer_access_hash: int,
     ):
@@ -126,4 +133,3 @@ class ChatPhoto(Object):
             is_personal=getattr(chat_photo, "personal", None),
             client=client,
         )
-

@@ -25,10 +25,12 @@ from .copy_media_group import CopyMediaGroup
 from .copy_message import CopyMessage
 from .decline_suggested_post import DeclineSuggestedPost
 from .delete_chat_history import DeleteChatHistory
-from .delete_direct_messages_chat_topic_history import DeleteDirectMessagesChatTopicHistory
+from .delete_direct_messages_chat_topic_history import (
+    DeleteDirectMessagesChatTopicHistory,
+)
 from .delete_messages import DeleteMessages
-from .delete_participant_reactions import DeleteParticipantReactions
 from .delete_participant_reaction import DeleteParticipantReaction
+from .delete_participant_reactions import DeleteParticipantReactions
 from .delete_poll_option import DeletePollOption
 from .delete_scheduled_messages import DeleteScheduledMessages
 from .download_media import DownloadMedia
@@ -55,6 +57,8 @@ from .get_discussion_replies import GetDiscussionReplies
 from .get_discussion_replies_count import GetDiscussionRepliesCount
 from .get_main_web_app import GetMainWebApp
 from .get_media_group import GetMediaGroup
+from .get_message_reactions import GetMessageReactions
+from .get_message_read_participants import GetMessageReadParticipants
 from .get_messages import GetMessages
 from .get_poll_results import GetPollResults
 from .get_poll_stats import GetPollStats
@@ -69,11 +73,14 @@ from .open_web_app import OpenWebApp
 from .read_chat_history import ReadChatHistory
 from .read_mentions import ReadMentions
 from .read_reactions import ReadReactions
+from .report_messages import ReportMessages
+from .report_reaction import ReportReaction
 from .retract_vote import RetractVote
 from .search_global import SearchGlobal
 from .search_global_count import SearchGlobalCount
 from .search_messages import SearchMessages
 from .search_messages_count import SearchMessagesCount
+from .search_posts import SearchPosts
 from .send_animation import SendAnimation
 from .send_audio import SendAudio
 from .send_cached_media import SendCachedMedia
@@ -99,9 +106,13 @@ from .send_venue import SendVenue
 from .send_video import SendVideo
 from .send_video_note import SendVideoNote
 from .send_voice import SendVoice
+from .set_direct_messages_chat_topic_is_marked_as_unread import (
+    SetDirectMessagesChatTopicIsMarkedAsUnread,
+)
 from .stop_poll import StopPoll
 from .stream_media import StreamMedia
 from .summarize_text import SummarizeText
+from .transcribe_audio import TranscribeAudio
 from .translate_text import TranslateText
 from .view_messages import ViewMessages
 from .vote_poll import VotePoll
@@ -147,6 +158,8 @@ class Messages(
     GetDiscussionRepliesCount,
     GetMainWebApp,
     GetMediaGroup,
+    GetMessageReactions,
+    GetMessageReadParticipants,
     GetMessages,
     GetPollResults,
     GetPollStats,
@@ -161,11 +174,14 @@ class Messages(
     ReadChatHistory,
     ReadMentions,
     ReadReactions,
+    ReportMessages,
+    ReportReaction,
     RetractVote,
     SearchGlobal,
     SearchGlobalCount,
     SearchMessages,
     SearchMessagesCount,
+    SearchPosts,
     SendAnimation,
     SendAudio,
     SendCachedMedia,
@@ -191,11 +207,13 @@ class Messages(
     SendVideo,
     SendVideoNote,
     SendVoice,
+    SetDirectMessagesChatTopicIsMarkedAsUnread,
     StopPoll,
     StreamMedia,
     SummarizeText,
+    TranscribeAudio,
     TranslateText,
     ViewMessages,
-    VotePoll
+    VotePoll,
 ):
     pass

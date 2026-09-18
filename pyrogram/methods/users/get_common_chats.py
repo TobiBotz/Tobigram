@@ -16,19 +16,17 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, List
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types, utils
 
 
 class GetCommonChats:
     async def get_common_chats(
-        self: "pyrogram.Client",
-        user_id: Union[int, str],
-        limit: int = 0
-    ) -> List["types.Chat"]:
+        self: pyrogram.Client, user_id: int | str, limit: int = 0
+    ) -> list[types.Chat]:
         """Get the common chats you have with a user.
 
         .. include:: /_includes/usable-by/users.rst
@@ -58,7 +56,7 @@ class GetCommonChats:
 
         peer = await self.resolve_peer(user_id)
 
-        if isinstance(peer, raw.types.InputPeerUser):
+        if isinstance(peer, (raw.types.InputPeerUser, raw.types.InputPeerUserFromMessage)):
             total = limit or (1 << 31) - 1
             chats = types.List()
             max_id = 0
@@ -68,7 +66,7 @@ class GetCommonChats:
 
                 r = await self.invoke(
                     raw.functions.messages.GetCommonChats(
-                        user_id=peer,
+                        user_id=utils.get_input_user(peer),
                         max_id=max_id,
                         limit=batch,
                     )

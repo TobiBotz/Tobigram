@@ -15,7 +15,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
-from typing import Optional
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types
@@ -39,13 +40,8 @@ class GiftCollection(Object):
         icon (:obj:`~pyrogram.types.Sticker`, *optional*):
             Icon of the collection.
     """
-    def __init__(
-        self, *,
-        id: int,
-        name: str,
-        gift_count: int,
-        icon: Optional["types.Sticker"] = None
-    ):
+
+    def __init__(self, *, id: int, name: str, gift_count: int, icon: types.Sticker | None = None):
         super().__init__()
 
         self.id = id
@@ -55,9 +51,8 @@ class GiftCollection(Object):
 
     @staticmethod
     async def _parse(
-        client: "pyrogram.Client",
-        collection: "raw.types.StarGiftCollection"
-    ) -> "GiftCollection":
+        client: pyrogram.Client, collection: raw.types.StarGiftCollection
+    ) -> GiftCollection:
         sticker = None
 
         if collection.icon:
@@ -69,6 +64,5 @@ class GiftCollection(Object):
             id=collection.collection_id,
             name=collection.title,
             gift_count=collection.gifts_count,
-            icon=sticker
+            icon=sticker,
         )
-

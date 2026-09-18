@@ -16,13 +16,13 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import logging
 import re
-from typing import Union
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import utils
+from pyrogram import raw, utils
 from pyrogram.errors import PeerIdInvalid
 
 log = logging.getLogger(__name__)
@@ -30,9 +30,8 @@ log = logging.getLogger(__name__)
 
 class ResolvePeer:
     async def resolve_peer(
-        self: "pyrogram.Client",
-        peer_id: Union[int, str]
-    ) -> Union[raw.base.InputPeer, raw.base.InputUser, raw.base.InputChannel]:
+        self: pyrogram.Client, peer_id: int | str
+    ) -> raw.base.InputPeer | raw.base.InputUser | raw.base.InputChannel:
         """Get the InputPeer of a known peer id.
         Useful whenever an InputPeer type is required.
 
@@ -73,11 +72,7 @@ class ResolvePeer:
                     try:
                         return await self.storage.get_peer_by_username(peer_id)
                     except KeyError:
-                        await self.invoke(
-                            raw.functions.contacts.ResolveUsername(
-                                username=peer_id
-                            )
-                        )
+                        await self.invoke(raw.functions.contacts.ResolveUsername(username=peer_id))
 
                         return await self.storage.get_peer_by_username(peer_id)
                 else:
@@ -88,40 +83,91 @@ class ResolvePeer:
 
             peer_type = utils.get_peer_type(peer_id)
 
+            min_peer_ref = getattr(self, "_min_peer_messages", {}).get(peer_id)
+            if min_peer_ref is None and peer_type == "channel":
+                min_peer_ref = getattr(self, "_min_peer_messages", {}).get(
+                    utils.get_channel_id(peer_id)
+                )
+
+            if min_peer_ref is not None:
+                chat_id, msg_id = min_peer_ref
+                try:
+                    channel_peer = await self.resolve_peer(chat_id)
+                except Exception:
+                    pass
+                else:
+                    if peer_type == "user":
+                        return raw.types.InputPeerUserFromMessage(
+                            peer=channel_peer,
+                            msg_id=msg_id,
+                            user_id=peer_id,
+                        )
+                    elif peer_type == "channel":
+                        return raw.types.InputPeerChannelFromMessage(
+                            peer=channel_peer,
+                            msg_id=msg_id,
+                            channel_id=utils.get_channel_id(peer_id),
+                        )
+
             if peer_type == "user":
-                await self.fetch_peers(
+                try:
+                    await self.fetch_peers(
+                        await self.invoke(
+                            raw.functions.users.GetUsers(
+                                id=[raw.types.InputUser(user_id=peer_id, access_hash=0)]
+                            )
+                        )
+                    )
+                except Exception:
+                    pass
+            elif peer_type == "chat":
+                try:
+                    await self.invoke(raw.functions.messages.GetChats(id=[-peer_id]))
+                except Exception:
+                    pass
+            elif peer_type == "secret_chat":
+                raise PeerIdInvalid
+            else:
+                try:
                     await self.invoke(
-                        raw.functions.users.GetUsers(
+                        raw.functions.channels.GetChannels(
                             id=[
-                                raw.types.InputUser(
-                                    user_id=peer_id,
-                                    access_hash=0
+                                raw.types.InputChannel(
+                                    channel_id=utils.get_channel_id(peer_id), access_hash=0
                                 )
                             ]
                         )
                     )
-                )
-            elif peer_type == "chat":
-                await self.invoke(
-                    raw.functions.messages.GetChats(
-                        id=[-peer_id]
-                    )
-                )
-            elif peer_type == "secret_chat":
-                raise PeerIdInvalid
-            else:
-                await self.invoke(
-                    raw.functions.channels.GetChannels(
-                        id=[
-                            raw.types.InputChannel(
-                                channel_id=utils.get_channel_id(peer_id),
-                                access_hash=0
-                            )
-                        ]
-                    )
-                )
+                except Exception:
+                    pass
 
             try:
                 return await self.storage.get_peer_by_id(peer_id)
             except KeyError:
+                min_peer_ref = getattr(self, "_min_peer_messages", {}).get(peer_id)
+                if min_peer_ref is None and peer_type == "channel":
+                    min_peer_ref = getattr(self, "_min_peer_messages", {}).get(
+                        utils.get_channel_id(peer_id)
+                    )
+
+                if min_peer_ref is not None:
+                    chat_id, msg_id = min_peer_ref
+                    try:
+                        channel_peer = await self.resolve_peer(chat_id)
+                    except Exception:
+                        raise PeerIdInvalid from None
+
+                    if peer_type == "user":
+                        return raw.types.InputPeerUserFromMessage(
+                            peer=channel_peer,
+                            msg_id=msg_id,
+                            user_id=peer_id,
+                        )
+                    elif peer_type == "channel":
+                        return raw.types.InputPeerChannelFromMessage(
+                            peer=channel_peer,
+                            msg_id=msg_id,
+                            channel_id=utils.get_channel_id(peer_id),
+                        )
+
                 raise PeerIdInvalid

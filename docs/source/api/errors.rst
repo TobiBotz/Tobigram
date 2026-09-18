@@ -1,13 +1,13 @@
 Errors
 ======
 
-Every error wzgram raises lives in ``pyrogram.errors``. They fall into three families: RPC
+Every error pyrogram raises lives in ``pyrogram.errors``. They fall into three families: RPC
 errors that Telegram sent back, listener errors from :meth:`~pyrogram.Client.listen`, and
 low-level protocol errors from the MTProto session.
 
 .. code-block:: python
 
-    from wzgram.errors import FloodWait, RPCError
+    from pyrogram.errors import FloodWait, RPCError
 
     try:
         await app.send_message("me", "Hi")
@@ -38,7 +38,7 @@ HTTP-like status code, and below those, one class per specific error string:
     ├── InternalServerError (500)  Telegram's problem, retry
     └── ServiceUnavailable  (503)  Telegram is down or overloaded
 
-Catching a category catches every specific error under it, including ones wzgram does not
+Catching a category catches every specific error under it, including ones pyrogram does not
 know about yet.
 
 Each instance carries:
@@ -93,7 +93,7 @@ catch these; they show up in logs when a connection misbehaves.
 
 Two ordinary Python errors are also load-bearing here, and the difference is deliberate:
 
--   ``ConnectionResetError`` — the connection dropped while a request was in flight. wzgram
+-   ``ConnectionResetError`` — the connection dropped while a request was in flight. pyrogram
     re-sends it on the new connection.
 -   ``TimeoutError`` — the request really did time out. It is never used for a dropped
     connection, so "Request timed out" keeps meaning what it says.

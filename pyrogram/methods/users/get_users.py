@@ -16,19 +16,19 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 import asyncio
-from typing import Union, List, Iterable
+from collections.abc import Iterable
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types, utils
 
 
 class GetUsers:
     async def get_users(
-        self: "pyrogram.Client",
-        user_ids: Union[int, str, Iterable[Union[int, str]]]
-    ) -> Union["types.User", List["types.User"]]:
+        self: pyrogram.Client, user_ids: int | str | Iterable[int | str]
+    ) -> types.User | list[types.User]:
         """Get information about a user.
         You can retrieve up to 200 users at once.
 
@@ -61,19 +61,25 @@ class GetUsers:
         peers = await asyncio.gather(*[self.resolve_peer(i) for i in user_ids])
 
         for user_id, peer in zip(user_ids, peers):
-            if not isinstance(peer, (
-                raw.types.InputPeerUser, raw.types.InputPeerSelf, raw.types.InputPeerUserFromMessage,
-                raw.types.InputUser, raw.types.InputUserSelf, raw.types.InputUserFromMessage
-            )):
+            if not isinstance(
+                peer,
+                (
+                    raw.types.InputPeerUser,
+                    raw.types.InputPeerSelf,
+                    raw.types.InputPeerUserFromMessage,
+                    raw.types.InputUser,
+                    raw.types.InputUserSelf,
+                    raw.types.InputUserFromMessage,
+                ),
+            ):
                 raise ValueError(f'The user_id "{user_id}" doesn\'t belong to a user')
 
-        user_ids = peers
+        user_ids = [
+            utils.get_input_user(p) if isinstance(p, raw.types.InputPeerUserFromMessage) else p
+            for p in peers
+        ]
 
-        r = await self.invoke(
-            raw.functions.users.GetUsers(
-                id=user_ids
-            )
-        )
+        r = await self.invoke(raw.functions.users.GetUsers(id=user_ids))
 
         users = types.List()
 

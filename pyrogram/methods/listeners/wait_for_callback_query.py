@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+
+from __future__ import annotations
 
 import pyrogram
 from pyrogram import enums, types
@@ -27,11 +28,11 @@ from .listen import UNSET
 
 class WaitForCallbackQuery:
     async def wait_for_callback_query(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        filters: Optional[Filter] = None,
-        timeout: Optional[float] = UNSET
-    ) -> "types.CallbackQuery":
+        self: pyrogram.Client,
+        chat_id: int | str,
+        filters: Filter | None = None,
+        timeout: float | None = UNSET,
+    ) -> types.CallbackQuery:
         """Wait for the next callback query in a chat.
 
         Shortcut for :meth:`~pyrogram.Client.listen` with a callback query
@@ -66,5 +67,5 @@ class WaitForCallbackQuery:
             filters=filters,
             listener_type=enums.ListenerTypes.CALLBACK_QUERY,
             timeout=timeout,
-            chat_id=chat_id
+            chat_id=chat_id,
         )

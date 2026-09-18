@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types
@@ -24,9 +25,8 @@ from pyrogram import raw, types
 
 class DeleteContacts:
     async def delete_contacts(
-        self: "pyrogram.Client",
-        user_ids: Union[int, str, List[Union[int, str]]]
-    ) -> Union["types.User", List["types.User"], None]:
+        self: pyrogram.Client, user_ids: int | str | list[int | str]
+    ) -> types.User | list[types.User] | None:
         """Delete contacts from your Telegram address book.
 
         .. include:: /_includes/usable-by/users.rst
@@ -53,9 +53,7 @@ class DeleteContacts:
             user_ids = [user_ids]
 
         r = await self.invoke(
-            raw.functions.contacts.DeleteContacts(
-                id=[await self.resolve_peer(i) for i in user_ids]
-            )
+            raw.functions.contacts.DeleteContacts(id=[await self.resolve_peer(i) for i in user_ids])
         )
 
         if not r.updates:

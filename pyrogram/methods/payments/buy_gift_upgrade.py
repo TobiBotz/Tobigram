@@ -17,7 +17,8 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from typing import Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import raw, types
@@ -25,11 +26,8 @@ from pyrogram import raw, types
 
 class BuyGiftUpgrade:
     async def buy_gift_upgrade(
-        self: "pyrogram.Client",
-        owner_id: Union[int, str],
-        prepaid_upgrade_hash: str,
-        star_count: int
-    ) -> Optional["types.Message"]:
+        self: pyrogram.Client, owner_id: int | str, prepaid_upgrade_hash: str, star_count: int
+    ) -> types.Message | None:
         """Pays for upgrade of a regular gift that is owned by another user or channel chat.
 
         .. include:: /_includes/usable-by/users.rst
@@ -50,15 +48,10 @@ class BuyGiftUpgrade:
             ``bool``: On success, True is returned.
         """
         invoice = raw.types.InputInvoiceStarGiftPrepaidUpgrade(
-            peer=await self.resolve_peer(owner_id),
-            hash=prepaid_upgrade_hash
+            peer=await self.resolve_peer(owner_id), hash=prepaid_upgrade_hash
         )
 
-        form = await self.invoke(
-            raw.functions.payments.GetPaymentForm(
-                invoice=invoice
-            )
-        )
+        form = await self.invoke(raw.functions.payments.GetPaymentForm(invoice=invoice))
 
         if star_count < 0:
             raise ValueError("Invalid amount of Telegram Stars specified.")
@@ -67,11 +60,7 @@ class BuyGiftUpgrade:
             raise ValueError("Have not enough Telegram Stars.")
 
         await self.invoke(
-            raw.functions.payments.SendStarsForm(
-                form_id=form.form_id,
-                invoice=invoice
-            )
+            raw.functions.payments.SendStarsForm(form_id=form.form_id, invoice=invoice)
         )
 
         return True
-

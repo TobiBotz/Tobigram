@@ -16,7 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
+from __future__ import annotations
+
 import random
 
 from pyrogram import raw, types
@@ -57,18 +58,19 @@ class GiftedStars(Object):
         sticker (:obj:`~pyrogram.types.Sticker`):
             A sticker to be shown in the message.
     """
+
     def __init__(
         self,
         *,
-        gifter: Optional["types.User"] = None,
-        receiver: "types.User",
-        currency: Optional[str] = None,
-        amount: Optional[int] = None,
-        cryptocurrency: Optional[str] = None,
-        cryptocurrency_amount: Optional[int] = None,
-        star_count: Optional[int] = None,
-        transaction_id: Optional[str] = None,
-        sticker: Optional["types.Sticker"] = None,
+        gifter: types.User | None = None,
+        receiver: types.User,
+        currency: str | None = None,
+        amount: int | None = None,
+        cryptocurrency: str | None = None,
+        cryptocurrency_amount: int | None = None,
+        star_count: int | None = None,
+        transaction_id: str | None = None,
+        sticker: types.Sticker | None = None,
     ):
         super().__init__()
 
@@ -85,14 +87,13 @@ class GiftedStars(Object):
     @staticmethod
     async def _parse(
         client,
-        action: "raw.types.MessageActionGiftStars",
-        gifter: Optional["raw.base.User"] = None,
-        receiver: Optional["raw.base.User"] = None,
-    ) -> "GiftedStars":
+        action: raw.types.MessageActionGiftStars,
+        gifter: raw.base.User | None = None,
+        receiver: raw.base.User | None = None,
+    ) -> GiftedStars:
         raw_stickers = await client.invoke(
             raw.functions.messages.GetStickerSet(
-                stickerset=raw.types.InputStickerSetPremiumGifts(),
-                hash=0
+                stickerset=raw.types.InputStickerSetPremiumGifts(), hash=0
             )
         )
 
@@ -109,14 +110,10 @@ class GiftedStars(Object):
                 types.List(
                     [
                         await types.Sticker._parse(
-                            client,
-                            doc,
-                            {
-                                type(i): i for i in doc.attributes
-                            }
-                        ) for doc in raw_stickers.documents
+                            client, doc, {type(i): i for i in doc.attributes}
+                        )
+                        for doc in raw_stickers.documents
                     ]
                 )
-            )
+            ),
         )
-

@@ -16,18 +16,15 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+
+from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
-from pyrogram import types
+from pyrogram import raw, types
 
 
 class JoinChat:
-    async def join_chat(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str]
-    ) -> "types.Chat":
+    async def join_chat(self: pyrogram.Client, chat_id: int | str) -> types.Chat:
         """Join a group chat or channel.
 
         .. include:: /_includes/usable-by/users.rst
@@ -57,16 +54,10 @@ class JoinChat:
         match = self.INVITE_LINK_RE.match(str(chat_id))
 
         if match:
-            r = await self.invoke(
-                raw.functions.messages.ImportChatInvite(
-                    hash=match.group(1)
-                )
-            )
+            r = await self.invoke(raw.functions.messages.ImportChatInvite(hash=match.group(1)))
         else:
             r = await self.invoke(
-                raw.functions.channels.JoinChannel(
-                    channel=await self.resolve_peer(chat_id)
-                )
+                raw.functions.channels.JoinChannel(channel=await self.resolve_peer(chat_id))
             )
 
         if isinstance(r, raw.types.messages.ChatInviteJoinResultWebView):

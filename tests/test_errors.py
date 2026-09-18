@@ -100,7 +100,7 @@ class TestBadRequest:
         err = AboutTooLong(value="something")
         assert "400" in str(err)
         assert "ABOUT_TOO_LONG" in str(err)
-        assert "The provided about/bio text is too long" in str(err)
+        assert "About string too long." in str(err)
 
     def test_chat_admin_required_message(self):
         err = ChatAdminRequired()
@@ -135,7 +135,7 @@ class TestForbidden:
         msg = str(err)
         assert "403" in msg
         assert "CHAT_WRITE_FORBIDDEN" in msg
-        assert "You don't have rights to send messages" in msg
+        assert "You can't write in this chat." in msg
 
 
 class TestFlood:

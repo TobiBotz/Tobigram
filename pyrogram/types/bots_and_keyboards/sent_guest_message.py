@@ -16,6 +16,8 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from pyrogram import raw, utils
 
 from ..object import Object
@@ -40,7 +42,6 @@ class SentGuestMessage(Object):
 
     @staticmethod
     async def _parse(
-        inline_message_id: "raw.base.InputBotInlineMessageID",
-    ) -> "SentGuestMessage":
+        inline_message_id: raw.base.InputBotInlineMessageID,
+    ) -> SentGuestMessage:
         return SentGuestMessage(inline_message_id=utils.pack_inline_message_id(inline_message_id))
-

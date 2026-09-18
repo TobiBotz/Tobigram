@@ -1,40 +1,39 @@
+from __future__ import annotations
+
 from datetime import datetime
-from typing import Union, List, Optional
 
 import pyrogram
-from pyrogram import raw, utils
-from pyrogram import types
+from pyrogram import raw, types, utils
 
 
 class SendChecklist:
     async def send_checklist(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        checklist: "types.InputChecklist",
-        disable_notification: Optional[bool] = None,
-        protect_content: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        business_connection_id: Optional[str] = None,
-        paid_message_star_count: Optional[int] = None,
-        show_caption_above_media: Optional[bool] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        background: Optional[bool] = None,
-        clear_draft: Optional[bool] = None,
-        update_stickersets_order: Optional[bool] = None,
-        send_as: Optional[Union[int, str]] = None,
-        quick_reply_shortcut: Optional[int] = None,
-        reply_markup: Optional[Union[
-            "types.InlineKeyboardMarkup",
-            "types.ReplyKeyboardMarkup",
-            "types.ReplyKeyboardRemove",
-            "types.ForceReply"
-        ]] = None,
-    ) -> "types.Message":
+        self: pyrogram.Client,
+        chat_id: int | str,
+        checklist: types.InputChecklist,
+        disable_notification: bool | None = None,
+        protect_content: bool | None = None,
+        message_thread_id: int | None = None,
+        effect_id: int | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        business_connection_id: str | None = None,
+        paid_message_star_count: int | None = None,
+        show_caption_above_media: bool | None = None,
+        allow_paid_broadcast: bool | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        background: bool | None = None,
+        clear_draft: bool | None = None,
+        update_stickersets_order: bool | None = None,
+        send_as: int | str | None = None,
+        quick_reply_shortcut: int | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = None,
+    ) -> types.Message:
         """Send a checklist (todo list).
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -107,7 +106,7 @@ class SendChecklist:
         Example:
             .. code-block:: python
 
-                from wzgram.types import InputChecklist, InputChecklistTask
+                from pyrogram.types import InputChecklist, InputChecklistTask
 
                 checklist = InputChecklist(
                     title="Shopping List",
@@ -118,22 +117,21 @@ class SendChecklist:
                 )
                 await app.send_checklist(chat_id, checklist)
         """
-        title, entities = (await utils.parse_text_entities(
-            self, checklist.title, checklist.parse_mode, checklist.entities
-        )).values()
+        title, entities = (
+            await utils.parse_text_entities(
+                self, checklist.title, checklist.parse_mode, checklist.entities
+            )
+        ).values()
 
         r = await self.invoke(
             raw.functions.messages.SendMedia(
                 peer=await self.resolve_peer(chat_id),
                 media=raw.types.InputMediaTodo(
                     todo=raw.types.TodoList(
-                        title=raw.types.TextWithEntities(
-                            text=title,
-                            entities=entities or []
-                        ),
+                        title=raw.types.TextWithEntities(text=title, entities=entities or []),
                         list=[await task.write(self) for task in checklist.tasks],
                         others_can_append=checklist.others_can_add_tasks,
-                        others_can_complete=checklist.others_can_mark_tasks_as_done
+                        others_can_complete=checklist.others_can_mark_tasks_as_done,
                     )
                 ),
                 silent=disable_notification if disable_notification is not None else None,
@@ -147,30 +145,48 @@ class SendChecklist:
                 noforwards=protect_content,
                 effect=effect_id,
                 schedule_repeat_period=repeat_period,
-                allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
-                invert_media=show_caption_above_media if show_caption_above_media is not None else None,
-                allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
-                suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
+                allow_paid_stars=paid_message_star_count
+                if paid_message_star_count is not None
+                else None,
+                invert_media=show_caption_above_media
+                if show_caption_above_media is not None
+                else None,
+                allow_paid_floodskip=allow_paid_broadcast
+                if allow_paid_broadcast is not None
+                else None,
+                suggested_post=suggested_post_parameters.write()
+                if suggested_post_parameters
+                else None,
                 background=background,
                 clear_draft=clear_draft,
                 update_stickersets_order=update_stickersets_order,
                 send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(shortcut_id=quick_reply_shortcut) if quick_reply_shortcut is not None else None,
+                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(
+                    shortcut_id=quick_reply_shortcut
+                )
+                if quick_reply_shortcut is not None
+                else None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 entities=None,
                 message="",
             ),
             sleep_threshold=60,
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
+                    self,
+                    i.message,
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                 )

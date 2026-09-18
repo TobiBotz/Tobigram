@@ -82,8 +82,7 @@ def sanity_check(spec: dict):
 
     if methods < MIN_METHODS or types < MIN_TYPES:
         raise SystemExit(
-            f"scraped {methods} methods and {types} types, which is too few to be "
-            f"the whole page"
+            f"scraped {methods} methods and {types} types, which is too few to be the whole page"
         )
 
     if not SPEC_PATH.exists():
@@ -106,10 +105,13 @@ def write(spec: dict):
     current = load_spec()["version"] if SPEC_PATH.exists() else None
     SPEC_PATH.write_text(json.dumps(spec), encoding="utf-8")
 
-    print(f"  {spec['version']} ({spec['release_date']})"
-          f"{'' if current is None else f', was {current}'}")
-    print(f"  wrote {SPEC_PATH.relative_to(SPEC_PATH.parents[3])} "
-          f"({SPEC_PATH.stat().st_size} bytes)")
+    print(
+        f"  {spec['version']} ({spec['release_date']})"
+        f"{'' if current is None else f', was {current}'}"
+    )
+    print(
+        f"  wrote {SPEC_PATH.relative_to(SPEC_PATH.parents[3])} ({SPEC_PATH.stat().st_size} bytes)"
+    )
 
 
 def survey(coverage: Coverage) -> dict:
@@ -156,7 +158,11 @@ def survey(coverage: Coverage) -> dict:
 
 
 def dump(manifest: dict) -> str:
-    lines = [HEADER, f"version: {manifest['version']!r}", f"release_date: {manifest['release_date']!r}"]
+    lines = [
+        HEADER,
+        f"version: {manifest['version']!r}",
+        f"release_date: {manifest['release_date']!r}",
+    ]
 
     for kind in ("types", "methods"):
         entry = manifest[kind]

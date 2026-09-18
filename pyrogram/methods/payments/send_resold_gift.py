@@ -17,7 +17,8 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from typing import List, Optional, Union
+from __future__ import annotations
+
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
@@ -25,15 +26,15 @@ from pyrogram import enums, raw, types, utils
 
 class SendResoldGift:
     async def send_resold_gift(
-        self: "pyrogram.Client",
+        self: pyrogram.Client,
         gift_link: str,
-        new_owner_chat_id: Union[int, str],
-        price: "types.GiftResalePrice",
-        text: Optional[str] = None,
-        parse_mode: Optional["enums.ParseMode"] = None,
-        entities: Optional[List["types.MessageEntity"]] = None,
-        show_name: Optional[bool] = None,
-    ) -> Optional["types.Message"]:
+        new_owner_chat_id: int | str,
+        price: types.GiftResalePrice,
+        text: str | None = None,
+        parse_mode: enums.ParseMode | None = None,
+        entities: list[types.MessageEntity] | None = None,
+        show_name: bool | None = None,
+    ) -> types.Message | None:
         """Send an upgraded gift that is available for resale to another user or channel chat.
 
         .. note::
@@ -82,7 +83,7 @@ class SendResoldGift:
                 )
 
                 # Buy ton gift
-                from wzgram import utils
+                from pyrogram import utils
 
                 await app.send_resold_gift(
                     gift_link="https://t.me/nft/NekoHelmet-9215",
@@ -95,29 +96,25 @@ class SendResoldGift:
         match = self.UPGRADED_GIFT_RE.match(gift_link)
 
         if not match:
-            raise ValueError(
-                "Invalid gift link provided."
-            )
+            raise ValueError("Invalid gift link provided.")
 
         peer = await self.resolve_peer(new_owner_chat_id)
 
-        text, entities = (await utils.parse_text_entities(self, text, parse_mode, entities)).values()
+        text, entities = (
+            await utils.parse_text_entities(self, text, parse_mode, entities)
+        ).values()
 
         invoice = raw.types.InputInvoiceStarGiftResale(
             slug=match.group(1),
             to_id=peer,
             ton=isinstance(price, types.GiftResalePriceTon),
             show_name=show_name,
-            message=raw.types.TextWithEntities(
-                text=text, entities=entities or []
-            ) if text else None
+            message=raw.types.TextWithEntities(text=text, entities=entities or [])
+            if text
+            else None,
         )
 
-        form = await self.invoke(
-            raw.functions.payments.GetPaymentForm(
-                invoice=invoice
-            )
-        )
+        form = await self.invoke(raw.functions.payments.GetPaymentForm(invoice=invoice))
 
         if isinstance(price, types.GiftResalePriceTon):
             amount = price.toncoin_cent_count
@@ -128,21 +125,19 @@ class SendResoldGift:
             raise ValueError("Invalid price specified.")
 
         if form.invoice.prices[0].amount > amount:
-            raise ValueError("Have not enough {}".format(
-                "Toncoins" if isinstance(price, types.GiftResalePriceTon) else "Telegram Stars"
-            ))
+            raise ValueError(
+                "Have not enough {}".format(
+                    "Toncoins" if isinstance(price, types.GiftResalePriceTon) else "Telegram Stars"
+                )
+            )
 
         r = await self.invoke(
-            raw.functions.payments.SendStarsForm(
-                form_id=form.form_id,
-                invoice=invoice
-            )
+            raw.functions.payments.SendStarsForm(form_id=form.form_id, invoice=invoice)
         )
 
         messages = await utils.parse_messages(
             client=self,
-            messages=r.updates if isinstance(r, raw.types.payments.PaymentResult) else r
+            messages=r.updates if isinstance(r, raw.types.payments.PaymentResult) else r,
         )
 
         return messages[0] if messages else None
-

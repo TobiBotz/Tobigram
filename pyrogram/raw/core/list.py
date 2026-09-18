@@ -16,12 +16,12 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List as TList, Any
+from typing import Any
 
 from .tl_object import TLObject
 
 
-class List(TList[Any], TLObject):
+class List(list[Any], TLObject):
     def __bool__(self) -> bool:
         return list.__len__(self) != 0
 
