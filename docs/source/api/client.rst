@@ -1,5 +1,5 @@
-Client
-======
+Pyrogram Client
+===============
 
 :obj:`~pyrogram.Client` is the entry point of the library. One instance is one Telegram
 session: it owns the connection, the storage, the update dispatcher and every API method.

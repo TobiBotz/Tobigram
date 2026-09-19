@@ -1,13 +1,40 @@
-import re
-import time
-import json
-import socket
 import concurrent.futures
+import html as html_module
+from html.parser import HTMLParser
+import json
 from pathlib import Path
-from bs4 import BeautifulSoup
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util import Retry
+import re
+import socket
+import time
+import urllib.request
+
+try:
+    from bs4 import BeautifulSoup
+
+    HAS_BS4 = True
+except ImportError:
+    HAS_BS4 = False
+
+try:
+    import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util import Retry
+
+    HAS_REQUESTS = True
+except ImportError:
+    HAS_REQUESTS = False
+
+HOME = Path(__file__).resolve().parent
+ROOT = HOME
+while ROOT.parent != ROOT and not (ROOT / "pyproject.toml").exists():
+    ROOT = ROOT.parent
+
+CACHE_DIR = ROOT / "scratch" / "core_cache"
+INDEX_PATH = ROOT / "scratch" / "methods.html"
+OUT_PATH = HOME / "docs.json"
+
+for d in ("methods", "constructors", "types"):
+    (CACHE_DIR / d).mkdir(parents=True, exist_ok=True)
 
 # Force IPv4 to prevent Windows IPv6 DNS/connect delays
 orig_getaddrinfo = socket.getaddrinfo
@@ -19,45 +46,161 @@ def getaddrinfo_ipv4(*args, **kwargs):
 
 socket.getaddrinfo = getaddrinfo_ipv4
 
-CACHE_DIR = Path("scratch/core_cache")
-(CACHE_DIR / "methods").mkdir(parents=True, exist_ok=True)
-(CACHE_DIR / "constructors").mkdir(parents=True, exist_ok=True)
-(CACHE_DIR / "types").mkdir(parents=True, exist_ok=True)
-
 
 def camel(s: str) -> str:
     return "".join([i[0].upper() + i[1:] for i in s.split("_")])
 
 
-def get_session():
-    s = requests.Session()
-    retries = Retry(total=3, backoff_factor=0.3, status_forcelist=[500, 502, 503, 504])
-    adapter = HTTPAdapter(pool_connections=40, pool_maxsize=40, max_retries=retries)
-    s.mount("https://", adapter)
-    s.mount("http://", adapter)
-    s.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
-    return s
+if HAS_REQUESTS:
+
+    def get_session():
+        s = requests.Session()
+        retries = Retry(total=3, backoff_factor=0.3, status_forcelist=[500, 502, 503, 504])
+        adapter = HTTPAdapter(pool_connections=40, pool_maxsize=40, max_retries=retries)
+        s.mount("https://", adapter)
+        s.mount("http://", adapter)
+        s.headers.update({"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"})
+        return s
+
+    SESSION = get_session()
+
+    def fetch_url(url: str, cache_file: Path) -> str:
+        if cache_file.exists() and cache_file.stat().st_size > 0:
+            with open(cache_file, encoding="utf-8") as f:
+                return f.read()
+        try:
+            r = SESSION.get(url, timeout=12)
+            if r.status_code == 200:
+                text = r.text
+                with open(cache_file, "w", encoding="utf-8") as f:
+                    f.write(text)
+                return text
+            elif r.status_code == 404:
+                return ""
+        except Exception:
+            pass
+        return ""
+
+else:
+
+    def fetch_url(url: str, cache_file: Path) -> str:
+        if cache_file.exists() and cache_file.stat().st_size > 0:
+            with open(cache_file, encoding="utf-8") as f:
+                return f.read()
+        try:
+            req = urllib.request.Request(
+                url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"}
+            )
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                text = resp.read().decode("utf-8", errors="ignore")
+                with open(cache_file, "w", encoding="utf-8") as f:
+                    f.write(text)
+                return text
+        except Exception:
+            pass
+        return ""
 
 
-SESSION = get_session()
+class StdLibDocParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.in_dev = False
+        self.dev_depth = 0
+        self.first_p_done = False
+        self.in_first_p = False
+        self.p_buffer = []
+        self.in_table = False
+        self.in_tr = False
+        self.current_row = []
+        self.current_td = []
+        self.rows = []
+        self.usable_by = None
+        self.active_tags = []
 
+    def handle_starttag(self, tag, attrs):
+        attr_dict = dict(attrs)
+        tag_id = attr_dict.get("id", "")
+        tag_class = attr_dict.get("class", "")
 
-def fetch_url(url: str, cache_file: Path) -> str:
-    if cache_file.exists() and cache_file.stat().st_size > 0:
-        with open(cache_file, encoding="utf-8") as f:
-            return f.read()
-    try:
-        r = SESSION.get(url, timeout=12)
-        if r.status_code == 200:
-            text = r.text
-            with open(cache_file, "w", encoding="utf-8") as f:
-                f.write(text)
-            return text
-        elif r.status_code == 404:
-            return ""
-    except Exception:
-        pass
-    return ""
+        if tag_id == "dev_page_content":
+            self.in_dev = True
+            self.dev_depth = 1
+            return
+
+        if self.in_dev:
+            self.dev_depth += 1
+            if tag_id == "only-users-can-use-this-method":
+                self.usable_by = "users"
+            elif tag_id == "only-bots-can-use-this-method":
+                self.usable_by = "bots"
+            elif tag_id in ("both-users-and-bots-can-use-this-method", "bots-can-use-this-method"):
+                self.usable_by = "users-bots"
+
+            if tag == "p" and not self.first_p_done and not self.in_table:
+                if "clearfix" not in tag_class:
+                    self.in_first_p = True
+
+            if self.in_first_p:
+                if tag in ("code", "tt"):
+                    self.p_buffer.append(" ``")
+                elif tag == "a":
+                    href = attr_dict.get("href", "")
+                    if href.startswith("/"):
+                        href = "https://core.telegram.org" + href
+                    elif not href.startswith("http"):
+                        href = "https://core.telegram.org/" + href
+                    self.p_buffer.append(" `")
+                    self.active_tags.append(("a", href))
+                    return
+                elif tag in ("strong", "b"):
+                    self.p_buffer.append(" **")
+                elif tag in ("em", "i"):
+                    self.p_buffer.append(" *")
+
+            if tag == "table" and "table" in tag_class:
+                self.in_table = True
+            elif self.in_table and tag == "tr":
+                self.in_tr = True
+                self.current_row = []
+            elif self.in_tr and tag == "td":
+                self.current_td = []
+
+    def handle_endtag(self, tag):
+        if self.in_first_p:
+            if tag in ("code", "tt"):
+                self.p_buffer.append("`` ")
+            elif tag == "a":
+                if self.active_tags and self.active_tags[-1][0] == "a":
+                    _, href = self.active_tags.pop()
+                    self.p_buffer.append(f" <{href}>`_ ")
+            elif tag in ("strong", "b"):
+                self.p_buffer.append("** ")
+            elif tag in ("em", "i"):
+                self.p_buffer.append("* ")
+            elif tag == "p":
+                self.in_first_p = False
+                self.first_p_done = True
+
+        if self.in_table:
+            if tag == "td":
+                self.current_row.append("".join(self.current_td).strip())
+            elif tag == "tr":
+                if len(self.current_row) >= 3:
+                    self.rows.append(self.current_row)
+                self.in_tr = False
+            elif tag == "table":
+                self.in_table = False
+
+        if self.in_dev:
+            self.dev_depth -= 1
+            if self.dev_depth <= 0:
+                self.in_dev = False
+
+    def handle_data(self, data):
+        if self.in_first_p:
+            self.p_buffer.append(data)
+        if self.in_tr:
+            self.current_td.append(data)
 
 
 def html_to_rst(soup_or_elem) -> str:
@@ -108,55 +251,74 @@ def html_to_rst(soup_or_elem) -> str:
 def parse_doc_page(html: str):
     if not html:
         return "", {}, None
-    soup = BeautifulSoup(html, "html.parser")
-    dev = soup.find("div", id="dev_page_content")
-    if not dev:
-        return "", {}, None
 
-    # Description
-    desc = ""
-    for p in dev.find_all("p", recursive=False):
-        if p.find("div", class_="clearfix") or p.find("pre") or p.find("table"):
-            continue
-        rst_desc = html_to_rst(p)
-        if rst_desc:
-            desc = rst_desc
-            break
+    if HAS_BS4:
+        soup = BeautifulSoup(html, "html.parser")
+        dev = soup.find("div", id="dev_page_content")
+        if not dev:
+            return "", {}, None
 
-    # Parameters
-    params = {}
-    table = dev.find("table", class_="table")
-    if table:
-        tbody = table.find("tbody") or table
-        for tr in tbody.find_all("tr"):
-            tds = tr.find_all("td")
-            if len(tds) >= 3:
-                name = tds[0].get_text().strip()
-                p_desc = html_to_rst(tds[2])
-                params[name] = p_desc
-                if name == "self":
-                    params["is_self"] = p_desc
-                if name == "from":
-                    params["from_peer"] = p_desc
+        # Description
+        desc = ""
+        for p in dev.find_all("p", recursive=False):
+            if p.find("div", class_="clearfix") or p.find("pre") or p.find("table"):
+                continue
+            rst_desc = html_to_rst(p)
+            if rst_desc:
+                desc = rst_desc
+                break
 
-    usable_by = None
-    if dev.find(id="only-users-can-use-this-method"):
-        usable_by = "users"
-    elif dev.find(id="only-bots-can-use-this-method"):
-        usable_by = "bots"
-    elif dev.find(id="both-users-and-bots-can-use-this-method") or dev.find(
-        id="bots-can-use-this-method"
-    ):
-        usable_by = "users-bots"
+        # Parameters
+        params = {}
+        table = dev.find("table", class_="table")
+        if table:
+            tbody = table.find("tbody") or table
+            for tr in tbody.find_all("tr"):
+                tds = tr.find_all("td")
+                if len(tds) >= 3:
+                    name = tds[0].get_text().strip()
+                    p_desc = html_to_rst(tds[2])
+                    params[name] = p_desc
+                    if name == "self":
+                        params["is_self"] = p_desc
+                    if name == "from":
+                        params["from_peer"] = p_desc
 
-    return desc, params, usable_by
+        usable_by = None
+        if dev.find(id="only-users-can-use-this-method"):
+            usable_by = "users"
+        elif dev.find(id="only-bots-can-use-this-method"):
+            usable_by = "bots"
+        elif dev.find(id="both-users-and-bots-can-use-this-method") or dev.find(
+            id="bots-can-use-this-method"
+        ):
+            usable_by = "users-bots"
+
+        return desc, params, usable_by
+
+    else:
+        parser = StdLibDocParser()
+        parser.feed(html)
+        desc = "".join(parser.p_buffer)
+        desc = re.sub(r"[ \t]+", " ", desc).strip()
+        desc = re.sub(r"\s+([.,;:!?])", r"\1", desc)
+        params = {}
+        for row in parser.rows:
+            name = row[0].strip()
+            p_desc = re.sub(r"[ \t]+", " ", row[2]).strip()
+            params[name] = p_desc
+            if name == "self":
+                params["is_self"] = p_desc
+            if name == "from":
+                params["from_peer"] = p_desc
+        return desc, params, parser.usable_by
 
 
 def parse_schema_combinators():
     schema_paths = [
-        Path("compiler/api/source/auth_key.tl"),
-        Path("compiler/api/source/sys_msgs.tl"),
-        Path("compiler/api/source/main_api.tl"),
+        HOME / "source" / "auth_key.tl",
+        HOME / "source" / "sys_msgs.tl",
+        HOME / "source" / "main_api.tl",
     ]
     lines = []
     for sp in schema_paths:
@@ -201,10 +363,16 @@ def parse_schema_combinators():
 
 
 def load_methods_index():
-    index_path = Path("scratch/methods.html")
+    if not INDEX_PATH.exists() or INDEX_PATH.stat().st_size == 0:
+        try:
+            INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
+            fetch_url("https://core.telegram.org/methods", INDEX_PATH)
+        except Exception:
+            pass
+
     descriptions = {}
-    if index_path.exists():
-        with open(index_path, encoding="utf-8") as f:
+    if INDEX_PATH.exists() and INDEX_PATH.stat().st_size > 0:
+        with open(INDEX_PATH, encoding="utf-8") as f:
             html = f.read()
         rows = re.findall(
             r'<tr>\s*<td><a href="/method/([^"]+)">(.*?)</a></td>\s*<td>(.*?)</td>\s*</tr>', html
@@ -212,6 +380,7 @@ def load_methods_index():
         for tl_name, disp, desc in rows:
             clean_desc = re.sub(r"<.*?>", "", desc).strip()
             clean_desc = re.sub(r"\s+", " ", clean_desc)
+            clean_desc = html_module.unescape(clean_desc)
             ns, name = tl_name.split(".") if "." in tl_name else ("", tl_name)
             qualname = ".".join([ns, camel(name)]).lstrip(".")
             descriptions[qualname] = clean_desc
@@ -280,11 +449,10 @@ def main():
             elif cat == "type":
                 docs["type"][key] = {"desc": desc}
 
-    # Save to compiler/api/docs.json
-    out_path = Path("compiler/api/docs.json")
-    with open(out_path, "w", encoding="utf-8") as f:
+    # Save to docs.json
+    with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump(docs, f, indent=2, ensure_ascii=False)
-    print(f"Saved {out_path} successfully ({out_path.stat().st_size // 1024} KB).")
+    print(f"Saved {OUT_PATH} successfully ({OUT_PATH.stat().st_size // 1024} KB).")
 
     print(f"\nDone in {time.time() - t0:.1f}s!")
     print(
@@ -300,6 +468,10 @@ def main():
         f"Base types with descriptions: {sum(1 for v in docs['type'].values() if v.get('desc'))}/{len(docs['type'])}"
     )
 
+    return docs
+
+
+refresh = main
 
 if __name__ == "__main__":
     main()

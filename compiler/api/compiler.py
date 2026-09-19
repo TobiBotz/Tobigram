@@ -60,6 +60,58 @@ namespaces_to_types = {}
 namespaces_to_constructors = {}
 namespaces_to_functions = {}
 
+
+def load_or_generate_docs():
+    global docs
+    if isinstance(docs, dict) and docs.get("method"):
+        return docs
+
+    candidates = [
+        HOME_PATH / "docs.json",
+        Path(__file__).resolve().parent / "docs.json",
+        Path("docs.json"),
+    ]
+    for _p in candidates:
+        try:
+            if _p.exists() and _p.stat().st_size > 1000:
+                with open(_p, encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, dict) and data.get("method"):
+                    docs = data
+                    return docs
+        except Exception:
+            pass
+
+    # docs.json not found in repository -> automatically generate it
+    print("docs.json not found. Automatically generating docstrings from Telegram API docs...")
+    try:
+        try:
+            from . import refresh
+        except (ImportError, ValueError):
+            import refresh
+
+        generated_docs = refresh.main()
+        if isinstance(generated_docs, dict) and generated_docs.get("method"):
+            docs = generated_docs
+            return docs
+    except Exception as e:
+        print(f"Warning: Failed to automatically generate docs.json: {e}")
+
+    # Fallback recheck
+    for _p in candidates:
+        try:
+            if _p.exists() and _p.stat().st_size > 1000:
+                with open(_p, encoding="utf-8") as f:
+                    data = json.load(f)
+                if isinstance(data, dict) and data.get("method"):
+                    docs = data
+                    return docs
+        except Exception:
+            pass
+
+    return docs
+
+
 docs = {"type": {}, "constructor": {}, "method": {}}
 for _p in [
     HOME_PATH / "docs.json",
@@ -67,7 +119,7 @@ for _p in [
     Path("docs.json"),
 ]:
     try:
-        if _p.exists():
+        if _p.exists() and _p.stat().st_size > 1000:
             with open(_p, encoding="utf-8") as f:
                 docs = json.load(f)
             if docs.get("method"):
@@ -291,20 +343,7 @@ def write_package(path, notice, types, subpackages):
 
 def start(format: bool = False):
     global docs
-    if not docs.get("method"):
-        for _p in [
-            HOME_PATH / "docs.json",
-            Path("docs.json"),
-            Path(__file__).resolve().parent / "docs.json",
-        ]:
-            try:
-                if _p.exists():
-                    with open(_p, encoding="utf-8") as f:
-                        docs = json.load(f)
-                    if docs.get("method"):
-                        break
-            except Exception:
-                pass
+    docs = load_or_generate_docs()
 
     shutil.rmtree(DESTINATION_PATH / "types", ignore_errors=True)
     shutil.rmtree(DESTINATION_PATH / "functions", ignore_errors=True)

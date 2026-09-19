@@ -15,6 +15,7 @@ pyrogram/raw/types/
 pyrogram/raw/base/
 pyrogram/raw/all.py
 compiler/errors/errors.json
+compiler/api/docs.json
 
 # Documentation generated files
 docs/build/
