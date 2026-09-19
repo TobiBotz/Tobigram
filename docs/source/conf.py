@@ -47,12 +47,34 @@ exclude_patterns = [
 html_theme = "furo"
 html_title = "Tobigram"
 html_baseurl = "https://docs.tobigram.com/"
-html_logo = "../../assets/svg/tobigram-icon.svg"
-html_favicon = "../../assets/favicon.svg"
+html_logo = "_static/pyrogram.png"
+html_favicon = "_static/pyrogram-icon.png"
 html_show_sourcelink = False
 html_copy_source = False
 html_static_path = ["_static"]
+html_theme_options = {
+    "light_css_variables": {
+        "color-brand-primary": "#404040",
+        "color-brand-content": "#93774b",
+        "color-brand-visited": "#93774b",
+        "color-link": "#93774b",
+        "color-link--hover": "#bf431d",
+        "color-link--visited": "#93774b",
+        "color-highlighted-background": "#e4e0d7",
+    },
+    "dark_css_variables": {
+        "color-brand-primary": "#bfbcb9",
+        "color-brand-content": "#b7a280",
+        "color-brand-visited": "#b7a280",
+        "color-link": "#b7a280",
+        "color-link--hover": "#e85823",
+        "color-link--visited": "#b7a280",
+        "color-highlighted-background": "#323232",
+    },
+}
+
 html_css_files = [
+    "css/all.min.css",
     "css/custom.css",
 ]
 html_js_files = [

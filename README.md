@@ -1,9 +1,9 @@
 <p align="center">
     <a href="https://github.com/TobiBotz/Tobigram">
         <img
-            src="https://raw.githubusercontent.com/TobiBotz/Tobigram/dev/assets/png/tobigram-icon-128.png"
+            src="https://raw.githubusercontent.com/TobiBotz/Tobigram/dev/assets/pyrogram-logo.png"
             alt="Tobigram"
-            height="128"
+            width="128"
         />
     </a>
     <br />

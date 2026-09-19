@@ -127,7 +127,7 @@ botapi = "uv run python3 compiler/botapi/compiler.py"
 botapi-refresh = "uv run --extra botapi python3 compiler/botapi/refresh.py"
 errors = "uv run python3 compiler/errors/compiler.py"
 errors-refresh = "uv run python3 compiler/errors/refresh.py"
-docs = { shell = "uv run python3 compiler/docs/compiler.py && uv run sphinx-build -b dirhtml docs/source docs/build -j auto" }
+docs = { shell = "uv run python compiler/docs/compiler.py && uv run python -m sphinx.cmd.build -b dirhtml docs/source docs/build" }
 docs-archive = { shell = "cd docs/build && zip -r docs.zip html/" }
 build = "uv build"
 publish = "uv publish"
