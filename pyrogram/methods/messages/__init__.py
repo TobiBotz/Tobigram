@@ -50,7 +50,6 @@ from .forward_messages import ForwardMessages
 from .get_available_effects import GetAvailableEffects
 from .get_chat_history import GetChatHistory
 from .get_chat_history_count import GetChatHistoryCount
-from .get_custom_emoji_stickers import GetCustomEmojiStickers
 from .get_direct_messages_chat_topic_history import GetDirectMessagesChatTopicHistory
 from .get_discussion_message import GetDiscussionMessage
 from .get_discussion_replies import GetDiscussionReplies
@@ -64,7 +63,6 @@ from .get_poll_results import GetPollResults
 from .get_poll_stats import GetPollStats
 from .get_rich_message import GetRichMessage
 from .get_scheduled_messages import GetScheduledMessages
-from .get_stickers import GetStickers
 from .get_user_personal_chat_messages import GetUserPersonalChatMessages
 from .get_web_app_link_url import GetWebAppLinkUrl
 from .get_web_app_url import GetWebAppUrl
@@ -109,6 +107,7 @@ from .send_voice import SendVoice
 from .set_direct_messages_chat_topic_is_marked_as_unread import (
     SetDirectMessagesChatTopicIsMarkedAsUnread,
 )
+from .start_bot import StartBot
 from .stop_poll import StopPoll
 from .stream_media import StreamMedia
 from .summarize_text import SummarizeText
@@ -151,7 +150,6 @@ class Messages(
     GetAvailableEffects,
     GetChatHistory,
     GetChatHistoryCount,
-    GetCustomEmojiStickers,
     GetDirectMessagesChatTopicHistory,
     GetDiscussionMessage,
     GetDiscussionReplies,
@@ -165,7 +163,6 @@ class Messages(
     GetPollStats,
     GetRichMessage,
     GetScheduledMessages,
-    GetStickers,
     GetUserPersonalChatMessages,
     GetWebAppLinkUrl,
     GetWebAppUrl,
@@ -208,6 +205,7 @@ class Messages(
     SendVideoNote,
     SendVoice,
     SetDirectMessagesChatTopicIsMarkedAsUnread,
+    StartBot,
     StopPoll,
     StreamMedia,
     SummarizeText,

@@ -43,6 +43,7 @@ from .input_media_live_photo import InputMediaLivePhoto
 from .input_media_location import InputMediaLocation
 from .input_media_photo import InputMediaPhoto
 from .input_media_sticker import InputMediaSticker
+from .input_sticker import InputSticker
 from .input_media_venue import InputMediaVenue
 from .input_media_video import InputMediaVideo
 from .input_media_voice_note import InputMediaVoiceNote
@@ -129,6 +130,7 @@ __all__ = [
     "InputMediaVideo",
     "InputMediaVoiceNote",
     "InputMessageContent",
+    "InputSticker",
     "InputPhoneContact",
     "InputPollMedia",
     "InputPollOption",

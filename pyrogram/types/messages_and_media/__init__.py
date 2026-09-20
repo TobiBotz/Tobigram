@@ -192,6 +192,7 @@ from .star_amount import StarAmount
 from .stars_revenue_stats import StarsRevenueStats, StarsRevenueStatus
 from .stars_transaction import StarsTransaction
 from .sticker import Sticker
+from .sticker_set import StickerSet
 from .story import Story
 from .story_view import StoryView
 from .stripped_thumbnail import StrippedThumbnail
@@ -412,6 +413,7 @@ __all__ = [
     "StarsRevenueStatus",
     "StarsTransaction",
     "Sticker",
+    "StickerSet",
     "Story",
     "StoryView",
     "Str",
