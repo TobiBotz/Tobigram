@@ -408,8 +408,11 @@ class SendMediaGroup:
                                         h=i.height,
                                     ),
                                     raw.types.DocumentAttributeFilename(
-                                        file_name=i.file_name
-                                        or getattr(i.media, "name", "video.mp4")
+                                        file_name=utils.get_file_name(
+                                            i.media,
+                                            file_name=i.file_name or "",
+                                            fallback="video.mp4",
+                                        )
                                     ),
                                 ],
                             ),

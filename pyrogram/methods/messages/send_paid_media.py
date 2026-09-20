@@ -462,7 +462,7 @@ class SendPaidMedia:
                                         h=i.height,
                                     ),
                                     raw.types.DocumentAttributeFilename(
-                                        file_name=getattr(i.media, "name", "video.mp4")
+                                        file_name=utils.get_file_name(i.media, fallback="video.mp4")
                                     ),
                                 ],
                             ),

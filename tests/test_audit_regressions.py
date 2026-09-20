@@ -3340,3 +3340,27 @@ async def test_a_client_throttles_itself_only_when_it_was_asked_to():
         )
     finally:
         RateLimiter.acquire = original
+
+
+def test_upload_name_is_a_basename_not_a_local_path(tmp_path):
+    import io
+    import os
+
+    from pyrogram import utils
+
+    path = tmp_path / "holiday.jpg"
+    path.write_bytes(b"x")
+
+    with open(path, "rb") as fp:
+        name = utils.get_file_name(fp, fallback="file.jpg")
+
+    assert name == "holiday.jpg", f"an upload must not carry its local path, got {name!r}"
+    assert os.sep not in name and "/" not in name
+
+    assert utils.get_file_name(io.BytesIO(b"x"), fallback="file.jpg") == "file.jpg"
+
+    named = io.BytesIO(b"x")
+    named.name = "clip.mp4"
+    assert utils.get_file_name(named, file_name="", fallback="video.mp4") == "clip.mp4"
+    assert utils.get_file_name(named, file_name="pinned.mp4", fallback="video.mp4") == "pinned.mp4"
+    assert utils.get_file_name(str(path), fallback="video.mp4") == "holiday.jpg"
