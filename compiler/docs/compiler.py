@@ -336,9 +336,11 @@ def pyrogram_api():
         Contacts
             add_contact
             delete_contacts
+            get_birthdays
             get_blocked_message_senders
             get_contacts
             get_contacts_count
+            get_saved_contacts
             import_contacts
             search_contacts
             set_contact_note
@@ -400,6 +402,7 @@ def pyrogram_api():
             edit_ephemeral_message_caption
             edit_ephemeral_message_media
             edit_ephemeral_message_reply_markup
+            delete_fact_check
             delete_messages
             delete_participant_reaction
             delete_participant_reactions
@@ -416,6 +419,7 @@ def pyrogram_api():
             edit_message_media
             edit_message_reply_markup
             edit_message_text
+            emojify_text_with_ai
             fix_text_with_ai
             forward_media_group
             forward_messages
@@ -445,6 +449,7 @@ def pyrogram_api():
             read_reactions
             report_messages
             report_reaction
+            rephrase_text_with_ai
             retract_vote
             search_global
             search_global_count
@@ -556,25 +561,34 @@ def pyrogram_api():
         Stories
             can_post_stories
             copy_story
+            copy_story_album
+            create_story_album
             delete_stories
+            delete_story_album
             edit_story_caption
             edit_story_media
             edit_story_privacy
             enable_stealth_mode
+            export_story_link
             forward_story
             get_all_stories
             get_archived_stories
             get_chat_stories
             get_pinned_stories
             get_stories
+            get_story_album_stories
+            get_story_albums
             get_story_views
             hide_chat_stories
             pin_chat_stories
             read_chat_stories
+            reorder_story_albums
             report_story
             send_story
+            send_story_reaction
             show_chat_stories
             unpin_chat_stories
+            update_story_album
             view_stories
         """,
         users="""
@@ -764,6 +778,9 @@ def pyrogram_api():
             PhoneCallStarted
             PrivacyRule
             StoriesStealthMode
+            StoryAlbum
+            ContactBirthday
+            SavedPhoneContact
             UserRating
             AcceptedGiftTypes
             BotVerification

@@ -40,6 +40,7 @@ class CopyStory:
         allowed_users: list[int | str] | None = None,
         disallowed_users: list[int | str] | None = None,
         protect_content: bool | None = None,
+        albums: list[int] | None = None,
     ) -> types.Story:
         """Copy story.
 
@@ -92,6 +93,9 @@ class CopyStory:
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
                 List of special entities that appear in the new caption, which can be specified instead of *parse_mode*.
 
+            albums (List of ``int``, *optional*):
+                List of album IDs where the copied story will be added.
+
         Returns:
             :obj:`~pyrogram.types.Story`: On success, the copied story is returned.
 
@@ -114,4 +118,5 @@ class CopyStory:
             privacy=privacy,
             allowed_users=allowed_users,
             disallowed_users=disallowed_users,
+            albums=albums,
         )

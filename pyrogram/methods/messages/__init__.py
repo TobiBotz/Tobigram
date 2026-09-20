@@ -28,6 +28,7 @@ from .delete_chat_history import DeleteChatHistory
 from .delete_direct_messages_chat_topic_history import (
     DeleteDirectMessagesChatTopicHistory,
 )
+from .delete_fact_check import DeleteFactCheck
 from .delete_messages import DeleteMessages
 from .delete_participant_reaction import DeleteParticipantReaction
 from .delete_participant_reactions import DeleteParticipantReactions
@@ -44,10 +45,12 @@ from .edit_message_checklist import EditMessageChecklist
 from .edit_message_media import EditMessageMedia
 from .edit_message_reply_markup import EditMessageReplyMarkup
 from .edit_message_text import EditMessageText
+from .emojify_text_with_ai import EmojifyTextWithAI
 from .fix_text_with_ai import FixTextWithAI
 from .forward_media_group import ForwardMediaGroup
 from .forward_messages import ForwardMessages
 from .get_available_effects import GetAvailableEffects
+from .rephrase_text_with_ai import RephraseTextWithAI
 from .get_chat_history import GetChatHistory
 from .get_chat_history_count import GetChatHistoryCount
 from .get_direct_messages_chat_topic_history import GetDirectMessagesChatTopicHistory
@@ -128,6 +131,7 @@ class Messages(
     DeclineSuggestedPost,
     DeleteChatHistory,
     DeleteDirectMessagesChatTopicHistory,
+    DeleteFactCheck,
     DeleteMessages,
     DeleteParticipantReactions,
     DeleteParticipantReaction,
@@ -144,6 +148,7 @@ class Messages(
     EditMessageMedia,
     EditMessageReplyMarkup,
     EditMessageText,
+    EmojifyTextWithAI,
     FixTextWithAI,
     ForwardMediaGroup,
     ForwardMessages,
@@ -173,6 +178,7 @@ class Messages(
     ReadReactions,
     ReportMessages,
     ReportReaction,
+    RephraseTextWithAI,
     RetractVote,
     SearchGlobal,
     SearchGlobalCount,

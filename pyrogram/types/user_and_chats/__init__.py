@@ -66,6 +66,7 @@ from .community import Community
 from .community_chat_added import CommunityChatAdded
 from .community_chat_joined import CommunityChatJoined
 from .community_chat_removed import CommunityChatRemoved
+from .contact_birthday import ContactBirthday
 from .dialog import Dialog
 from .emoji_status import EmojiStatus
 from .failed_to_add_member import FailedToAddMember
@@ -80,7 +81,9 @@ from .phone_call_ended import PhoneCallEnded
 from .phone_call_started import PhoneCallStarted
 from .privacy_rule import PrivacyRule
 from .restriction import Restriction
+from .saved_phone_contact import SavedPhoneContact
 from .stories_stealth_mode import StoriesStealthMode
+from .story_album import StoryAlbum
 from .user import Link, User
 from .user_rating import UserRating
 from .username import Username
@@ -138,6 +141,7 @@ __all__ = [
     "CommunityChatAdded",
     "CommunityChatJoined",
     "CommunityChatRemoved",
+    "ContactBirthday",
     "Dialog",
     "EmojiStatus",
     "FailedToAddMember",
@@ -153,7 +157,9 @@ __all__ = [
     "PhoneCallStarted",
     "PrivacyRule",
     "Restriction",
+    "SavedPhoneContact",
     "StoriesStealthMode",
+    "StoryAlbum",
     "User",
     "UserRating",
     "Username",
