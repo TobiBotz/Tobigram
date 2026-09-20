@@ -422,7 +422,6 @@ def pyrogram_api():
             get_available_effects
             get_chat_history
             get_chat_history_count
-            get_custom_emoji_stickers
             get_direct_messages_chat_topic_history
             get_discussion_message
             get_discussion_replies
@@ -436,7 +435,6 @@ def pyrogram_api():
             get_poll_stats
             get_rich_message
             get_scheduled_messages
-            get_stickers
             get_user_personal_chat_messages
             get_web_app_link_url
             get_web_app_url
@@ -480,6 +478,7 @@ def pyrogram_api():
             send_video_note
             send_voice
             set_direct_messages_chat_topic_is_marked_as_unread
+            start_bot
             stop_poll
             stream_media
             summarize_text
@@ -593,6 +592,7 @@ def pyrogram_api():
             get_users
             report_profile_photo
             report_user
+            set_bot_profile_photo
             set_emoji_status
             set_personal_channel
             set_profile_photo
@@ -610,6 +610,26 @@ def pyrogram_api():
             stop_listening
             wait_for_callback_query
             wait_for_message
+        """,
+        stickers="""
+        Stickers
+            add_sticker_to_set
+            change_sticker
+            check_sticker_set_name
+            create_sticker_set
+            delete_sticker_set
+            get_custom_emoji_stickers
+            get_my_stickers
+            get_sticker_set
+            get_stickers
+            remove_sticker_from_set
+            rename_sticker_set
+            replace_sticker
+            save_sticker_set
+            set_sticker_position
+            set_sticker_set_thumb
+            suggest_sticker_set_name
+            unsave_sticker_set
         """,
         utilities="""
         Utilities
@@ -781,6 +801,7 @@ def pyrogram_api():
             Location
             Venue
             Sticker
+            StickerSet
             Game
             WebPage
             Poll
@@ -1085,6 +1106,7 @@ def pyrogram_api():
             InputMediaLivePhoto
             InputMediaLocation
             InputMediaSticker
+            InputSticker
             InputMediaVenue
             InputMessageContent
             InputPollMedia

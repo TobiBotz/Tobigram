@@ -33,6 +33,7 @@ from .password import Password
 from .payments import Payments
 from .phone import Phone
 from .premium import Premium
+from .stickers import Stickers
 from .stories import Stories
 from .users import Users
 from .utilities import Utilities
@@ -59,5 +60,6 @@ class Methods(
     Folders,
     Utilities,
     InviteLinks,
+    Stickers,
 ):
     pass
