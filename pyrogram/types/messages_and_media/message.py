@@ -9569,6 +9569,55 @@ class Message(Object, Update):
 
         return bool(r)
 
+    async def delete_fact_check(self) -> types.Message:
+        """Bound method *delete_fact_check* of :obj:`~pyrogram.types.Message`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            await client.delete_fact_check(
+                chat_id=message.chat.id,
+                message_id=message.id
+            )
+
+        Returns:
+            :obj:`~pyrogram.types.Message`: On success, the updated message is returned.
+        """
+        return await self._client.delete_fact_check(
+            chat_id=self.chat.id,
+            message_id=self.id,
+        )
+
+    async def edit_fact_check(
+        self,
+        text_with_entities: raw.types.TextWithEntities | None = None,
+    ) -> types.Message:
+        """Bound method *edit_fact_check* of :obj:`~pyrogram.types.Message`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            await client.edit_fact_check(
+                peer=message.chat.id,
+                msg_id=message.id,
+                text_with_entities=text_with_entities
+            )
+
+        Parameters:
+            text_with_entities (:obj:`~pyrogram.raw.types.TextWithEntities`, *optional*):
+                Fact-check content as TextWithEntities.
+
+        Returns:
+            :obj:`~pyrogram.types.Message`: On success, the updated message is returned.
+        """
+        return await self._client.edit_fact_check(
+            peer=self.chat.id,
+            msg_id=self.id,
+            text_with_entities=text_with_entities,
+        )
+
     async def click(
         self,
         x: int | str = 0,

@@ -495,7 +495,10 @@ class Story(Object, Update):
 
         entities = [
             e
-            for e in (types.MessageEntity._parse(client, entity, {}) for entity in story.entities)
+            for e in (
+                types.MessageEntity._parse(client, entity, {})
+                for entity in getattr(story, "entities", None) or []
+            )
             if e
         ]
 
@@ -533,7 +536,7 @@ class Story(Object, Update):
             media_areas=types.List(
                 [
                     await types.MediaArea._parse(client, area, chats)
-                    for area in getattr(story, "media_areas", [])
+                    for area in getattr(story, "media_areas", None) or []
                 ]
             )
             or None,
@@ -1763,6 +1766,7 @@ class Story(Object, Update):
         disallowed_users: list[int] | None = None,
         pinned: bool | None = None,
         protect_content: bool | None = None,
+        albums: list[int] | None = None,
     ) -> types.Story:
         """Bound method *copy* of :obj:`~pyrogram.types.Story`.
 
@@ -1826,6 +1830,9 @@ class Story(Object, Update):
             protect_content (``bool``, *optional*):
                 Protects the contents of the sent story from forwarding and saving.
 
+            albums (List of ``int``, *optional*):
+                List of album IDs where the copied story will be added.
+
         Returns:
             :obj:`~pyrogram.types.Story`: On success, the copied story is returned.
 
@@ -1852,6 +1859,7 @@ class Story(Object, Update):
             privacy=privacy,
             allowed_users=allowed_users,
             disallowed_users=disallowed_users,
+            albums=albums,
         )
 
     async def delete(self):
@@ -2015,14 +2023,14 @@ class Story(Object, Update):
             disallowed_users=disallowed_users,
         )
 
-    async def react(self, emoji: int | str | None = None) -> bool:
+    async def react(self, emoji: int | str | None = None, add_to_recent: bool = False) -> bool:
         """Bound method *react* of :obj:`~pyrogram.types.Story`.
 
         Use as a shortcut for:
 
         .. code-block:: python
 
-            await client.send_reaction(
+            await client.send_story_reaction(
                 chat_id=story.chat.id,
                 story_id=story.id,
                 emoji="🔥"
@@ -2038,13 +2046,22 @@ class Story(Object, Update):
                 Reaction emoji.
                 Pass None as emoji (default) to retract the reaction.
 
+            add_to_recent (``bool``, *optional*):
+                Pass True to add the chosen reaction to the recently used ones.
+                Defaults to False.
+
         Returns:
             ``bool``: On success, True is returned.
 
         Raises:
             RPCError: In case of a Telegram RPC error.
         """
-        return await self._client.send_reaction(chat_id=self.chat.id, story_id=self.id, emoji=emoji)
+        return await self._client.send_story_reaction(
+            chat_id=self.chat.id,
+            story_id=self.id,
+            emoji=emoji,
+            add_to_recent=add_to_recent,
+        )
 
     async def forward(
         self,
@@ -2279,4 +2296,24 @@ class Story(Object, Update):
             reason=reason,
             message=message,
             option=option,
+        )
+
+    async def export_link(self) -> str:
+        """Bound method *export_link* of :obj:`~pyrogram.types.Story`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            await client.export_story_link(
+                chat_id=story.chat.id,
+                story_id=story.id
+            )
+
+        Returns:
+            ``str``: On success, the exported story link is returned.
+        """
+        return await self._client.export_story_link(
+            chat_id=self.chat.id,
+            story_id=self.id,
         )

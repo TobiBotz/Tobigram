@@ -18,50 +18,68 @@
 
 from .can_post_stories import CanPostStories
 from .copy_story import CopyStory
+from .copy_story_album import CopyStoryAlbum
+from .create_story_album import CreateStoryAlbum
 from .delete_stories import DeleteStories
+from .delete_story_album import DeleteStoryAlbum
 from .edit_story_caption import EditStoryCaption
 from .edit_story_media import EditStoryMedia
 from .edit_story_privacy import EditStoryPrivacy
 from .enable_stealth_mode import EnableStealthMode
+from .export_story_link import ExportStoryLink
 from .forward_story import ForwardStory
 from .get_all_stories import GetAllStories
 from .get_archived_stories import GetArchivedStories
 from .get_chat_stories import GetChatStories
 from .get_pinned_stories import GetPinnedStories
 from .get_stories import GetStories
+from .get_story_album_stories import GetStoryAlbumStories
+from .get_story_albums import GetStoryAlbums
 from .get_story_views import GetStoryViews
 from .hide_chat_stories import HideChatStories
 from .pin_chat_stories import PinChatStories
 from .read_chat_stories import ReadChatStories
+from .reorder_story_albums import ReorderStoryAlbums
 from .report_story import ReportStory
 from .send_story import SendStory
+from .send_story_reaction import SendStoryReaction
 from .show_chat_stories import ShowChatStories
 from .unpin_chat_stories import UnpinChatStories
+from .update_story_album import UpdateStoryAlbum
 from .view_stories import ViewStories
 
 
 class Stories(
     CanPostStories,
     CopyStory,
+    CopyStoryAlbum,
+    CreateStoryAlbum,
     DeleteStories,
+    DeleteStoryAlbum,
     EditStoryCaption,
     EditStoryMedia,
     EditStoryPrivacy,
     EnableStealthMode,
+    ExportStoryLink,
     ForwardStory,
     GetAllStories,
     GetArchivedStories,
     GetChatStories,
     GetPinnedStories,
     GetStories,
+    GetStoryAlbumStories,
+    GetStoryAlbums,
     GetStoryViews,
     HideChatStories,
     PinChatStories,
     ReadChatStories,
+    ReorderStoryAlbums,
     ReportStory,
     SendStory,
+    SendStoryReaction,
     ShowChatStories,
     UnpinChatStories,
+    UpdateStoryAlbum,
     ViewStories,
 ):
     pass

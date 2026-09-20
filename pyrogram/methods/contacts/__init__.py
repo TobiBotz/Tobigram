@@ -18,9 +18,11 @@
 
 from .add_contact import AddContact
 from .delete_contacts import DeleteContacts
+from .get_birthdays import GetBirthdays
 from .get_blocked_message_senders import GetBlockedMessageSenders
 from .get_contacts import GetContacts
 from .get_contacts_count import GetContactsCount
+from .get_saved_contacts import GetSavedContacts
 from .import_contacts import ImportContacts
 from .search_contacts import SearchContacts
 from .set_contact_note import SetContactNote
@@ -29,9 +31,11 @@ from .set_contact_note import SetContactNote
 class Contacts(
     AddContact,
     DeleteContacts,
+    GetBirthdays,
     GetBlockedMessageSenders,
     GetContacts,
     GetContactsCount,
+    GetSavedContacts,
     ImportContacts,
     SearchContacts,
     SetContactNote,
