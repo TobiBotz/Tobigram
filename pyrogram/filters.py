@@ -873,6 +873,17 @@ paid_message = create(paid_message_filter)
 # endregion
 
 
+# region ephemeral_filter
+async def ephemeral_filter(_, __, m: Message):
+    return m.is_ephemeral
+
+
+ephemeral = create(ephemeral_filter)
+
+
+# endregion
+
+
 # region linked_channel_filter
 async def linked_channel_filter(_, __, m: Message):
     return bool(

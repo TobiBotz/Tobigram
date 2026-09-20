@@ -8,7 +8,7 @@ This project uses [uv](https://docs.astral.sh/uv/) for package management and [p
 
 ```bash
 git clone https://github.com/TobiBotz/Tobigram
-cd pyrogram
+cd Tobigram
 uv sync --frozen --extra dev
 uv run poe api
 ```
