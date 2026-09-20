@@ -63,6 +63,7 @@ Origin and direction
     ``filters.linked_channel``, "channel posts automatically forwarded to a discussion group"
     ``filters.business``, "messages arriving through a business connection"
     ``filters.paid_message``, "messages that cost Stars to send"
+    ``filters.ephemeral``, "ephemeral messages, which exist only for their receiver"
 
 Chat kind
 ---------

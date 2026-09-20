@@ -11,7 +11,7 @@ body:
           required: true
         - label: I have searched in the issue tracker for similar bug reports, including closed ones
           required: true
-        - label: I ran `pip install -U https://github.com/rjriajul/pyrogram/archive/dev.zip` and reproduced the issue using the latest development version
+        - label: I ran `pip install -U https://github.com/tobigram/pyrogram/archive/dev.zip` and reproduced the issue using the latest development version
           required: true
 
   - type: textarea

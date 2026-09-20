@@ -630,3 +630,15 @@ async def test_command_filter_no_match():
     f = filters.command("start")
     m = Message(id=1, text="/help")
     assert not await f(c, m)
+
+
+@pytest.mark.asyncio
+async def test_ephemeral_filter():
+    m = Message(id=1, text="hi", ephemeral_message_id=9)
+    assert await filters.ephemeral(c, m)
+
+
+@pytest.mark.asyncio
+async def test_ephemeral_filter_no_match():
+    m = Message(id=1, text="hi")
+    assert not await filters.ephemeral(c, m)
