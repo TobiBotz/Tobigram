@@ -6,10 +6,10 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "compiler" / "methods"))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-from compiler import parse_tl_functions
+from compiler.methods.compiler import parse_tl_functions
 
 PACKAGE = ROOT / "pyrogram"
 GENERATED = PACKAGE / "raw"

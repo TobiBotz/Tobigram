@@ -50,8 +50,12 @@ def get_unwrapped_botapi(cov: Coverage) -> list[dict]:
     """Find Bot API methods that have no high-level wrapper in pyrogram."""
     unwrapped = []
     spec_methods = cov.spec.get("methods", {})
+    botapi = cov.aliases.get("botapi") or {}
+    unsupported = botapi.get("method_unsupported") or {}
 
     for name, data in sorted(spec_methods.items()):
+        if name in unsupported:
+            continue
         symbol = cov.tobigram_method(name)
         desc = data.get("description")
         desc_str = desc[0] if isinstance(desc, list) and desc else (str(desc) if desc else "")

@@ -15,3 +15,8 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
+
+from compiler.methods.compiler import parse_tl_functions
+
+__all__ = ["parse_tl_functions"]
+

@@ -5,10 +5,10 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "compiler" / "botapi"))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-from coverage import (
+from compiler.botapi.coverage import (
     ENUM_REFERENCE_RE,
     Coverage,
     documented_params,

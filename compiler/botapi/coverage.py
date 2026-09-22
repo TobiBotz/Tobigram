@@ -33,8 +33,8 @@ TL_SOURCE = ROOT / "compiler" / "api" / "source" / "main_api.tl"
 METHODS_DIR = ROOT / "pyrogram" / "methods"
 CLIENT_PATH = ROOT / "pyrogram" / "client.py"
 
-sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "compiler" / "methods"))
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 IGNORED_PARAMS = {"self", "client", "args", "kwargs"}
 
@@ -346,7 +346,7 @@ def index_methods() -> dict[str, Symbol]:
 
 
 def tl_functions() -> dict[str, dict]:
-    from compiler import parse_tl_functions
+    from compiler.methods.compiler import parse_tl_functions
 
     return parse_tl_functions(TL_SOURCE)
 
