@@ -17,7 +17,17 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from .check_chat_folder_invite_link import CheckChatFolderInviteLink
+from .get_chatlist_updates import GetChatlistUpdates
+from .get_leave_chatlist_suggestions import GetLeaveChatlistSuggestions
+from .hide_chatlist_updates import HideChatlistUpdates
+from .join_chatlist_updates import JoinChatlistUpdates
 
 
-class Folders(CheckChatFolderInviteLink):
+class Folders(
+    CheckChatFolderInviteLink,
+    GetChatlistUpdates,
+    GetLeaveChatlistSuggestions,
+    HideChatlistUpdates,
+    JoinChatlistUpdates,
+):
     pass

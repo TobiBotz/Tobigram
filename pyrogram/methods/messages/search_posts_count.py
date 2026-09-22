@@ -16,7 +16,6 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
 
 import pyrogram
 from pyrogram import raw
@@ -24,9 +23,7 @@ from pyrogram import raw
 
 class SearchPostsCount:
     async def search_posts_count(
-        self: "pyrogram.Client",
-        hashtag: Optional[str] = None,
-        query: Optional[str] = None
+        self: "pyrogram.Client", hashtag: str | None = None, query: str | None = None
     ) -> int:
         """Get the number of public posts matching a hashtag or a text search.
 
@@ -62,7 +59,7 @@ class SearchPostsCount:
                 offset_rate=0,
                 offset_peer=raw.types.InputPeerEmpty(),
                 offset_id=0,
-                limit=1
+                limit=1,
             )
         )
 

@@ -72,9 +72,7 @@ async def test_a_voice_carries_its_waveform_and_ttl(tmp_path, no_text):
     voice = tmp_path / "v.ogg"
     voice.write_bytes(b"x")
 
-    await pyrogram.Client.send_voice(
-        client, 7, str(voice), waveform=b"\x01\x02", view_once=True
-    )
+    await pyrogram.Client.send_voice(client, 7, str(voice), waveform=b"\x01\x02", view_once=True)
 
     media = client.sent[0].media
 
@@ -108,9 +106,7 @@ async def test_a_sticker_carries_its_emoji_and_caption(tmp_path, monkeypatch):
     monkeypatch.setattr(utils, "parse_text_entities", parse_text_entities)
     monkeypatch.setattr(utils, "get_reply_to", get_reply_to)
 
-    await pyrogram.Client.send_sticker(
-        client, 7, str(sticker), emoji="🔥", caption="hi"
-    )
+    await pyrogram.Client.send_sticker(client, 7, str(sticker), emoji="🔥", caption="hi")
 
     query = client.sent[0]
 
@@ -130,9 +126,7 @@ async def test_history_boundaries_reach_the_request(monkeypatch):
 
     monkeypatch.setattr(utils, "parse_messages", parse_messages)
 
-    async for _ in pyrogram.Client.get_chat_history(
-        client, 7, min_id=10, max_id=20, reverse=True
-    ):
+    async for _ in pyrogram.Client.get_chat_history(client, 7, min_id=10, max_id=20, reverse=True):
         pass
 
     query = client.sent[0]
@@ -152,9 +146,7 @@ async def test_a_reversed_chunk_comes_back_oldest_first(monkeypatch):
 
     monkeypatch.setattr(utils, "parse_messages", parse_messages)
 
-    messages = await get_chat_history.get_chunk(
-        client=FakeClient(), chat_id=7, reverse=True
-    )
+    messages = await get_chat_history.get_chunk(client=FakeClient(), chat_id=7, reverse=True)
 
     assert [m.id for m in messages] == [1, 2, 3]
 
@@ -183,9 +175,7 @@ async def test_search_boundaries_reach_the_request(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_the_pinned_message_is_asked_for_by_its_own_type(monkeypatch):
-    client = FakeClient([raw.types.messages.Messages(
-        messages=[], chats=[], users=[], topics=[]
-    )])
+    client = FakeClient([raw.types.messages.Messages(messages=[], chats=[], users=[], topics=[])])
 
     async def parse_messages(client, messages, replies=1, business_connection_id=None):
         return types.List()
@@ -199,13 +189,9 @@ async def test_the_pinned_message_is_asked_for_by_its_own_type(monkeypatch):
 
 @pytest.mark.asyncio
 async def test_the_archive_is_a_folder_id(monkeypatch):
-    client = FakeClient([raw.types.messages.Dialogs(
-        dialogs=[], messages=[], chats=[], users=[]
-    )])
+    client = FakeClient([raw.types.messages.Dialogs(dialogs=[], messages=[], chats=[], users=[])])
 
-    async for _ in pyrogram.Client.get_dialogs(
-        client, exclude_pinned=True, from_archive=True
-    ):
+    async for _ in pyrogram.Client.get_dialogs(client, exclude_pinned=True, from_archive=True):
         pass
 
     query = client.sent[0]
@@ -272,9 +258,7 @@ async def test_a_recaptcha_token_wraps_the_query(monkeypatch):
     client.session = Session()
     client.rate_limiter = None
 
-    await pyrogram.Client.invoke(
-        client, raw.functions.help.GetConfig(), recaptcha_token="tok"
-    )
+    await pyrogram.Client.invoke(client, raw.functions.help.GetConfig(), recaptcha_token="tok")
 
     assert isinstance(client.session.query, raw.functions.InvokeWithReCaptcha)
     assert client.session.query.token == "tok"

@@ -31,9 +31,7 @@ class FakeClient:
 
 def posts(count=None, messages=()):
     if count is None:
-        return raw.types.messages.Messages(
-            messages=list(messages), chats=[], users=[], topics=[]
-        )
+        return raw.types.messages.Messages(messages=list(messages), chats=[], users=[], topics=[])
 
     return raw.types.messages.MessagesSlice(
         count=count, messages=list(messages), chats=[], users=[], topics=[]

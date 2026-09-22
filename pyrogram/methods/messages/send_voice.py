@@ -278,9 +278,7 @@ class SendVoice:
                         ttl_seconds=ttl_seconds,
                     )
                 elif re.match("^https?://", voice):
-                    media = raw.types.InputMediaDocumentExternal(
-                        url=voice, ttl_seconds=ttl_seconds
-                    )
+                    media = raw.types.InputMediaDocumentExternal(url=voice, ttl_seconds=ttl_seconds)
                 else:
                     media = utils.get_input_media_from_file_id(
                         voice, FileType.VOICE, ttl_seconds=ttl_seconds

@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from .add_bot_preview_media import AddBotPreviewMedia
 from .allow_bot_send_message import AllowBotSendMessage
 from .answer_callback_query import AnswerCallbackQuery
 from .answer_chat_join_request_query import AnswerChatJoinRequestQuery
@@ -24,11 +25,15 @@ from .answer_inline_query import AnswerInlineQuery
 from .answer_pre_checkout_query import AnswerPreCheckoutQuery
 from .answer_shipping_query import AnswerShippingQuery
 from .answer_web_app_query import AnswerWebAppQuery
+from .answer_webhook_json_query import AnswerWebhookJSONQuery
 from .can_bot_send_message import CanBotSendMessage
 from .check_bot_username import CheckBotUsername
+from .check_download_file_params import CheckDownloadFileParams
 from .create_bot import CreateBot
 from .create_invoice_link import CreateInvoiceLink
 from .delete_bot_commands import DeleteBotCommands
+from .delete_bot_preview_media import DeleteBotPreviewMedia
+from .edit_bot_preview_media import EditBotPreviewMedia
 from .edit_user_star_subscription import EditUserStarSubscription
 from .get_admined_bots import GetAdminedBots
 from .get_bot_commands import GetBotCommands
@@ -37,16 +42,26 @@ from .get_bot_info import GetBotInfo
 from .get_bot_info_description import GetBotInfoDescription
 from .get_bot_info_short_description import GetBotInfoShortDescription
 from .get_bot_name import GetBotName
+from .get_bot_preview_info import GetBotPreviewInfo
+from .get_bot_preview_medias import GetBotPreviewMedias
+from .get_bot_recommendations import GetBotRecommendations
 from .get_chat_menu_button import GetChatMenuButton
 from .get_game_high_scores import GetGameHighScores
 from .get_inline_bot_results import GetInlineBotResults
 from .get_managed_bot_access_settings import GetManagedBotAccessSettings
 from .get_managed_bot_token import GetManagedBotToken
 from .get_owned_bots import GetOwnedBots
+from .get_popular_app_bots import GetPopularAppBots
+from .get_requested_web_view_button import GetRequestedWebViewButton
+from .invoke_web_view_custom_method import InvokeWebViewCustomMethod
 from .refund_star_payment import RefundStarPayment
+from .reorder_bot_preview_medias import ReorderBotPreviewMedias
+from .reorder_bot_usernames import ReorderBotUsernames
 from .replace_managed_bot_token import ReplaceManagedBotToken
 from .request_callback_answer import RequestCallbackAnswer
+from .request_web_view_button import RequestWebViewButton
 from .send_chat_join_request_web_app import SendChatJoinRequestWebApp
+from .send_custom_request import SendCustomRequest
 from .send_game import SendGame
 from .send_inline_bot_result import SendInlineBotResult
 from .send_invoice import SendInvoice
@@ -58,9 +73,14 @@ from .set_bot_name import SetBotName
 from .set_chat_menu_button import SetChatMenuButton
 from .set_game_score import SetGameScore
 from .set_managed_bot_access_settings import SetManagedBotAccessSettings
+from .toggle_bot_username import ToggleBotUsername
+from .toggle_user_emoji_status_permission import ToggleUserEmojiStatusPermission
+from .update_star_ref_program import UpdateStarRefProgram
+from .update_user_emoji_status import UpdateUserEmojiStatus
 
 
 class Bots(
+    AddBotPreviewMedia,
     AllowBotSendMessage,
     AnswerCallbackQuery,
     AnswerChatJoinRequestQuery,
@@ -69,11 +89,15 @@ class Bots(
     AnswerPreCheckoutQuery,
     AnswerShippingQuery,
     AnswerWebAppQuery,
+    AnswerWebhookJSONQuery,
     CanBotSendMessage,
     CheckBotUsername,
+    CheckDownloadFileParams,
     CreateBot,
     CreateInvoiceLink,
     DeleteBotCommands,
+    DeleteBotPreviewMedia,
+    EditBotPreviewMedia,
     EditUserStarSubscription,
     GetAdminedBots,
     GetBotCommands,
@@ -82,16 +106,26 @@ class Bots(
     GetBotInfoDescription,
     GetBotInfoShortDescription,
     GetBotName,
+    GetBotPreviewInfo,
+    GetBotPreviewMedias,
+    GetBotRecommendations,
     GetChatMenuButton,
     GetGameHighScores,
     GetInlineBotResults,
     GetManagedBotAccessSettings,
     GetManagedBotToken,
     GetOwnedBots,
+    GetPopularAppBots,
+    GetRequestedWebViewButton,
+    InvokeWebViewCustomMethod,
     RefundStarPayment,
+    ReorderBotPreviewMedias,
+    ReorderBotUsernames,
     ReplaceManagedBotToken,
     RequestCallbackAnswer,
+    RequestWebViewButton,
     SendChatJoinRequestWebApp,
+    SendCustomRequest,
     SendGame,
     SendInlineBotResult,
     SendInvoice,
@@ -103,5 +137,9 @@ class Bots(
     SetChatMenuButton,
     SetGameScore,
     SetManagedBotAccessSettings,
+    ToggleBotUsername,
+    ToggleUserEmojiStatusPermission,
+    UpdateStarRefProgram,
+    UpdateUserEmojiStatus,
 ):
     pass

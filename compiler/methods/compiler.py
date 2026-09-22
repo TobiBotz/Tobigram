@@ -35,6 +35,8 @@ PARAM_RE = re.compile(r"([a-z_]+):([\w<>.]+\?)?([\w<>.]+)")
 
 def parse_tl_functions(tl_path: Path) -> dict[str, dict]:
     text = tl_path.read_text(encoding="utf-8")
+    if "---functions---" in text:
+        text = text.split("---functions---", 1)[1]
     functions = {}
     for match in COMBINATOR_RE.finditer(text):
         qualname, tl_id, args_str, return_type = match.groups()
@@ -69,6 +71,10 @@ def parse_tl_functions(tl_path: Path) -> dict[str, dict]:
 
         full_key = f"{namespace}.{short_name}" if namespace else short_name
         functions[full_key] = functions[qualname]
+
+        pascal_name = short_name[:1].upper() + short_name[1:]
+        pascal_key = f"{namespace}.{pascal_name}" if namespace else pascal_name
+        functions[pascal_key] = functions[qualname]
 
     return functions
 

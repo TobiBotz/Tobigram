@@ -17,17 +17,32 @@ FORWARDED = {
     "video": ("send_video", ["file_name", "protect_content", "view_once"]),
     "cached_media": (
         "send_cached_media",
-        ["has_spoiler", "show_caption_above_media", "effect_id", "schedule_date", "protect_content"],
+        [
+            "has_spoiler",
+            "show_caption_above_media",
+            "effect_id",
+            "schedule_date",
+            "protect_content",
+        ],
     ),
     "contact": ("send_contact", ["schedule_date", "protect_content", "suggested_post_parameters"]),
-    "location": ("send_location", ["schedule_date", "protect_content", "suggested_post_parameters"]),
+    "location": (
+        "send_location",
+        ["schedule_date", "protect_content", "suggested_post_parameters"],
+    ),
     "venue": ("send_venue", ["schedule_date", "protect_content", "suggested_post_parameters"]),
-    "media_group": ("send_media_group", ["schedule_date", "protect_content", "show_caption_above_media"]),
+    "media_group": (
+        "send_media_group",
+        ["schedule_date", "protect_content", "show_caption_above_media"],
+    ),
     "sticker": ("send_sticker", ["protect_content", "emoji", "caption", "caption_entities"]),
     "voice": ("send_voice", ["protect_content", "waveform", "view_once"]),
     "photo": ("send_photo", ["view_once"]),
     "video_note": ("send_video_note", ["view_once"]),
-    "live_photo": ("send_live_photo", ["has_spoiler", "schedule_date", "ephemeral_message_parameters"]),
+    "live_photo": (
+        "send_live_photo",
+        ["has_spoiler", "schedule_date", "ephemeral_message_parameters"],
+    ),
     "game": ("send_game", ["protect_content"]),
     "inline_bot_result": ("send_inline_bot_result", ["schedule_date"]),
 }

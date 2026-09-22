@@ -27,11 +27,14 @@ from .get_common_chats import GetCommonChats
 from .get_default_emoji_statuses import GetDefaultEmojiStatuses
 from .get_me import GetMe
 from .get_users import GetUsers
+from .get_requirements_to_contact import GetRequirementsToContact
+from .get_saved_music_by_id import GetSavedMusicByID
 from .report_profile_photo import ReportProfilePhoto
 from .report_user import ReportUser
 from .set_emoji_status import SetEmojiStatus
 from .set_personal_channel import SetPersonalChannel
 from .set_profile_photo import SetBotProfilePhoto, SetProfilePhoto
+from .set_secure_value_errors import SetSecureValueErrors
 from .set_username import SetUsername
 from .unblock_user import UnblockUser
 from .update_birthday import UpdateBirthday
@@ -50,6 +53,8 @@ class Users(
     GetCommonChats,
     GetDefaultEmojiStatuses,
     GetMe,
+    GetRequirementsToContact,
+    GetSavedMusicByID,
     GetUsers,
     ReportProfilePhoto,
     ReportUser,
@@ -57,6 +62,7 @@ class Users(
     SetEmojiStatus,
     SetPersonalChannel,
     SetProfilePhoto,
+    SetSecureValueErrors,
     SetUsername,
     UnblockUser,
     UpdateBirthday,
