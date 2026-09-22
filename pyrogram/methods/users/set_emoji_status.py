@@ -25,7 +25,9 @@ from pyrogram import raw, types
 
 class SetEmojiStatus:
     async def set_emoji_status(
-        self: pyrogram.Client, emoji_status: types.EmojiStatus | None = None
+        self: pyrogram.Client,
+        emoji_status: types.EmojiStatus | None = None,
+        chat_id: int | str | None = None,
     ) -> bool:
         """Set the emoji status.
 
@@ -34,6 +36,10 @@ class SetEmojiStatus:
         Parameters:
             emoji_status (:obj:`~pyrogram.types.EmojiStatus`, *optional*):
                 The emoji status to set. None to remove.
+
+            chat_id (``int`` | ``str``, *optional*):
+                Unique identifier (int) or username (str) of a channel to set the status of,
+                rather than your own account.
 
         Returns:
             ``bool``: On success, True is returned.
@@ -45,12 +51,14 @@ class SetEmojiStatus:
 
                 await app.set_emoji_status(types.EmojiStatus(custom_emoji_id=1234567890987654321))
         """
+        status = emoji_status.write() if emoji_status else raw.types.EmojiStatusEmpty()
+
         await self.invoke(
-            raw.functions.account.UpdateEmojiStatus(
-                emoji_status=(
-                    emoji_status.write() if emoji_status else raw.types.EmojiStatusEmpty()
-                )
+            raw.functions.channels.UpdateEmojiStatus(
+                channel=await self.resolve_peer(chat_id), emoji_status=status
             )
+            if chat_id is not None
+            else raw.functions.account.UpdateEmojiStatus(emoji_status=status)
         )
 
         return True

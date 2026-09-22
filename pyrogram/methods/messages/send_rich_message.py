@@ -43,7 +43,10 @@ class SendRichMessage:
     ) -> types.Message:
         """Send a rich formatted message.
 
-        .. include:: /_includes/usable-by/bots.rst
+        A user account must have Premium; Telegram answers
+        ``[400 RICH_MESSAGE_UNSUPPORTED]`` otherwise.
+
+        .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
             chat_id (``int`` | ``str``):
@@ -144,24 +147,9 @@ class SendRichMessage:
 
                 await app.send_rich_message(chat_id, "**Hello** __world__!")
         """
-        if isinstance(rich_text, (types.InputRichMessage, types.RichMessage)):
-            rich_message = rich_text.write()
-        elif isinstance(rich_text, raw.base.InputRichMessage):
-            rich_message = rich_text
-        else:
-            parse_mode = parse_mode or self.parse_mode
-            files = types.InputRichMessage(html="_", media=media).write_files() if media else None
-
-            if parse_mode == enums.ParseMode.HTML:
-                rich_message = raw.types.InputRichMessageHTML(
-                    html=rich_text,
-                    files=files,
-                )
-            else:
-                rich_message = raw.types.InputRichMessageMarkdown(
-                    markdown=rich_text,
-                    files=files,
-                )
+        rich_message = await utils.build_input_rich_message(
+            self, rich_text, parse_mode or self.parse_mode, media, chat_id
+        )
 
         r = await self.invoke(
             await as_ephemeral(

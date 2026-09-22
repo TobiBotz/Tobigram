@@ -20,6 +20,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import pyrogram
 from pyrogram import raw
 
 from ..object import Object
@@ -80,6 +81,9 @@ class InputRichMessage(Object):
         self.skip_entity_detection = skip_entity_detection
         self.blocks = blocks
         self.media = media
+        self._photos = []
+        self._documents = []
+        self._users = []
 
     @property
     def _media_list(self) -> list[InputRichMessageMedia]:
@@ -87,6 +91,33 @@ class InputRichMessage(Object):
             return []
 
         return list(self.media) if isinstance(self.media, (list, tuple)) else [self.media]
+
+    async def _upload(
+        self,
+        client: pyrogram.Client,
+        chat_id: int | str | None = None,
+    ):
+        from .input_rich_block import _collect_mentioned_user_ids, _walk_blocks
+
+        for media in self._media_list:
+            await media._upload(client, chat_id)
+
+        if not self.blocks:
+            return
+
+        self._photos = []
+        self._documents = []
+        self._users = []
+
+        for block in _walk_blocks(self.blocks):
+            await block._upload(client, chat_id, self._photos, self._documents)
+
+        for user_id in _collect_mentioned_user_ids(self.blocks):
+            peer = await client.resolve_peer(user_id)
+
+            self._users.append(
+                raw.types.InputUser(user_id=peer.user_id, access_hash=peer.access_hash)
+            )
 
     def write_files(self) -> list[raw.base.InputRichFile] | None:
         """Return the ``files`` vector html and markdown rich messages carry."""
@@ -110,7 +141,9 @@ class InputRichMessage(Object):
                 files=self.write_files(),
             )
         elif self.blocks:
-            photos, documents, users = [], [], []
+            photos = list(self._photos)
+            documents = list(self._documents)
+            users = list(self._users)
 
             for media in self._media_list:
                 entry_photos, entry_documents, entry_users = media.write()

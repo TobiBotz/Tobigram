@@ -126,13 +126,17 @@ class InputMediaLivePhoto(InputMedia):
                 ),
             )
 
+            video = raw.types.InputDocument(
+                id=uploaded_media.document.id,
+                access_hash=uploaded_media.document.access_hash,
+                file_reference=uploaded_media.document.file_reference,
+            )
+
             uploaded_photo = await client.invoke(
                 raw.functions.messages.UploadMedia(
                     peer=peer,
                     media=raw.types.InputMediaUploadedPhoto(
-                        video=await client.save_file(
-                            self.media, progress=progress, progress_args=progress_args
-                        ),
+                        video=video,
                         file=await client.save_file(
                             self.photo, progress=progress, progress_args=progress_args
                         ),
@@ -150,11 +154,7 @@ class InputMediaLivePhoto(InputMedia):
                 ),
                 live_photo=True,
                 spoiler=self.has_spoiler,
-                video=raw.types.InputDocument(
-                    id=uploaded_media.document.id,
-                    access_hash=uploaded_media.document.access_hash,
-                    file_reference=uploaded_media.document.file_reference,
-                ),
+                video=video,
             )
 
         return utils.get_input_media_from_file_id(

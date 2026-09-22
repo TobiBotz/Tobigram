@@ -3,7 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from pyrogram.connection.connection import Connection
+from pyrogram.connection.connection import Connection, transport_error
 from pyrogram.connection.transport.tcp.tcp import TCP
 from pyrogram.connection.transport.tcp.tcp_abridged import TCPAbridged
 from pyrogram.session.session import Session
@@ -181,3 +181,37 @@ async def test_the_message_boundary_is_reset_between_messages(quick_timeout):
 
     with pytest.raises(TimeoutError):
         await Connection.__dict__["recv"](conn)
+
+
+def padded_intermediate_frame(payload: bytes, padding: int) -> bytes:
+    body = payload + bytes(padding)
+    return len(body).to_bytes(4, "little") + body
+
+
+def make_padded_intermediate(reader):
+    from pyrogram.connection.transport.tcp.tcp_padded_intermediate import (
+        TCPPaddedIntermediate,
+    )
+
+    protocol = TCPPaddedIntermediate(False, None)
+    protocol.reader = reader
+    return protocol
+
+
+@pytest.mark.parametrize("padding", range(16))
+async def test_a_transport_error_survives_padded_intermediate_framing(padding, quick_timeout):
+    error = (-404).to_bytes(4, "little", signed=True)
+    protocol = make_padded_intermediate(ScriptedReader(padded_intermediate_frame(error, padding)))
+
+    packet = await protocol.recv()
+
+    assert packet == error
+    assert transport_error(packet) == "Server sent transport error: 404 (auth key not found)"
+
+
+@pytest.mark.parametrize("padding", range(16))
+async def test_padded_intermediate_still_strips_padding_off_a_message(padding, quick_timeout):
+    message = bytes(range(40))
+    protocol = make_padded_intermediate(ScriptedReader(padded_intermediate_frame(message, padding)))
+
+    assert await protocol.recv() == message

@@ -196,25 +196,9 @@ class SendMessage:
                 )
 
         if rich_text is not None:
-            if isinstance(rich_text, types.InputRichMessage):
-                rich_message = rich_text.write()
-            else:
-                files = (
-                    types.InputRichMessage(html="_", media=rich_text_media).write_files()
-                    if rich_text_media
-                    else None
-                )
-
-                if rich_text_parse_mode == enums.ParseMode.HTML:
-                    rich_message = raw.types.InputRichMessageHTML(
-                        html=rich_text,
-                        files=files,
-                    )
-                else:
-                    rich_message = raw.types.InputRichMessageMarkdown(
-                        markdown=rich_text,
-                        files=files,
-                    )
+            rich_message = await utils.build_input_rich_message(
+                self, rich_text, rich_text_parse_mode, rich_text_media, chat_id
+            )
             r = await self.invoke(
                 await as_ephemeral(
                     self,

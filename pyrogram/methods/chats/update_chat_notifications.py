@@ -33,6 +33,8 @@ class UpdateChatNotifications:
         mute: bool | None = None,
         mute_until: datetime | None = None,
         show_previews: bool | None = None,
+        stories_muted: bool | None = None,
+        stories_hide_sender: bool | None = None,
     ) -> bool:
         """Update the notification settings of a chat.
 
@@ -51,6 +53,12 @@ class UpdateChatNotifications:
 
             show_previews (``bool``, *optional*):
                 Pass True to show message previews in notifications, False to hide them.
+
+            stories_muted (``bool``, *optional*):
+                Pass True to mute the notifications for the stories of the chat.
+
+            stories_hide_sender (``bool``, *optional*):
+                Pass True to hide the name of the sender in story notifications.
 
         Returns:
             ``bool``: On success, True is returned.
@@ -76,7 +84,10 @@ class UpdateChatNotifications:
             raw.functions.account.UpdateNotifySettings(
                 peer=raw.types.InputNotifyPeer(peer=await self.resolve_peer(chat_id)),
                 settings=raw.types.InputPeerNotifySettings(
-                    show_previews=show_previews, mute_until=mute_until_ts
+                    show_previews=show_previews,
+                    mute_until=mute_until_ts,
+                    stories_muted=stories_muted,
+                    stories_hide_sender=stories_hide_sender,
                 ),
             )
         )

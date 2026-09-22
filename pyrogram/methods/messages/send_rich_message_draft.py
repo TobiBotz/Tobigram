@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import logging
+
 import pyrogram
-from pyrogram import raw, types
+from pyrogram import enums, raw, types, utils
+
+log = logging.getLogger(__name__)
 
 
 class SendRichMessageDraft:
@@ -9,10 +13,13 @@ class SendRichMessageDraft:
         self: pyrogram.Client,
         chat_id: int | str,
         draft_id: int,
-        rich_message: types.InputRichMessage,
+        rich_text: str | types.InputRichMessage | None = None,
+        rich_text_parse_mode: enums.ParseMode = enums.ParseMode.MARKDOWN,
+        rich_text_media: list[types.InputRichMessageMedia] | None = None,
         message_thread_id: int | None = None,
         can_stop: bool | None = None,
         keep_on_stop: bool | None = None,
+        rich_message: types.InputRichMessage | None = None,
     ) -> bool:
         """Send a rich message draft action, allowing bots to stream partial rich messages.
 
@@ -37,11 +44,24 @@ class SendRichMessageDraft:
                 A different identifier does not restart the draft, it adds a second concurrent draft,
                 and some clients collapse them into one.
 
-            rich_message (:obj:`~pyrogram.types.InputRichMessage`):
-                The partial rich message to stream.
+            rich_text (``str`` | :obj:`~pyrogram.types.InputRichMessage`, *optional*):
+                The partial rich message to stream, as Markdown or HTML text or as a
+                whole :obj:`~pyrogram.types.InputRichMessage`.
                 Use :obj:`~pyrogram.types.InputRichBlockThinking`, or the
                 ``<tg-thinking>Thinking...</tg-thinking>`` tag in *html* and *markdown*,
                 as a placeholder for content still being generated.
+
+            rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                Parse mode for *rich_text*. Defaults to Markdown.
+                Ignored when *rich_text* is an :obj:`~pyrogram.types.InputRichMessage`.
+
+            rich_text_media (List of :obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
+                Media *rich_text* refers to through ``tg://photo?id=``, ``tg://video?id=``
+                or ``tg://audio?id=`` links.
+                Ignored when *rich_text* is an :obj:`~pyrogram.types.InputRichMessage`.
+
+            rich_message (:obj:`~pyrogram.types.InputRichMessage`, *optional*):
+                Deprecated alias of *rich_text*.
 
             message_thread_id (``int``, *optional*):
                 Unique identifier for a forum topic thread.
@@ -80,12 +100,26 @@ class SendRichMessageDraft:
 
                 await app.send_rich_message(chat_id, text)
         """
+        if rich_message is not None:
+            log.warning(
+                "`rich_message` is deprecated and will be removed in future updates. "
+                "Use `rich_text` instead."
+            )
+
+            if rich_text is None:
+                rich_text = rich_message
+
+        if rich_text is None:
+            raise ValueError("rich_text must be given")
+
         return await self.invoke(
             raw.functions.messages.SetTyping(
                 peer=await self.resolve_peer(chat_id),
                 action=raw.types.InputSendMessageRichMessageDraftAction(
                     random_id=draft_id,
-                    rich_message=rich_message.write(),
+                    rich_message=await utils.build_input_rich_message(
+                        self, rich_text, rich_text_parse_mode, rich_text_media, chat_id
+                    ),
                     can_stop=can_stop,
                     keep_on_stop=keep_on_stop,
                 ),

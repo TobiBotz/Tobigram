@@ -23,7 +23,12 @@ from pyrogram import raw, types
 
 class CreateSupergroup:
     async def create_supergroup(
-        self: pyrogram.Client, title: str, description: str = ""
+        self: pyrogram.Client,
+        title: str,
+        description: str = "",
+        is_forum: bool | None = None,
+        message_auto_delete_time: int | None = None,
+        for_import: bool | None = None,
     ) -> types.Chat:
         """Create a new supergroup.
 
@@ -40,6 +45,15 @@ class CreateSupergroup:
             description (``str``, *optional*):
                 The supergroup description.
 
+            is_forum (``bool``, *optional*):
+                Pass True to create the supergroup with topics enabled.
+
+            message_auto_delete_time (``int``, *optional*):
+                Time after which messages are automatically deleted, in seconds.
+
+            for_import (``bool``, *optional*):
+                Pass True if the supergroup is created to import messages from another app.
+
         Returns:
             :obj:`~pyrogram.types.Chat`: On success, a chat object is returned.
 
@@ -49,7 +63,14 @@ class CreateSupergroup:
                 await app.create_supergroup("Supergroup Title", "Supergroup Description")
         """
         r = await self.invoke(
-            raw.functions.channels.CreateChannel(title=title, about=description, megagroup=True)
+            raw.functions.channels.CreateChannel(
+                title=title,
+                about=description,
+                megagroup=True,
+                forum=is_forum,
+                ttl_period=message_auto_delete_time,
+                for_import=for_import,
+            )
         )
 
         return types.Chat._parse_chat(self, r.chats[0])

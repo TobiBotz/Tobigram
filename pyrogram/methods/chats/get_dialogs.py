@@ -26,7 +26,10 @@ from pyrogram import raw, types, utils
 
 class GetDialogs:
     async def get_dialogs(
-        self: pyrogram.Client, limit: int = 0
+        self: pyrogram.Client,
+        limit: int = 0,
+        exclude_pinned: bool | None = None,
+        from_archive: bool | None = None,
     ) -> AsyncGenerator[types.Dialog, None] | None:
         """Get a user's dialogs sequentially.
 
@@ -36,6 +39,13 @@ class GetDialogs:
             limit (``int``, *optional*):
                 Limits the number of dialogs to be retrieved.
                 By default, no limit is applied and all dialogs are returned.
+
+            exclude_pinned (``bool``, *optional*):
+                Pass True to exclude the pinned dialogs.
+
+            from_archive (``bool``, *optional*):
+                Pass True to get the archived dialogs, False for the unarchived ones.
+                By default, dialogs from both lists are returned.
 
         Returns:
             ``Generator``: A generator yielding :obj:`~pyrogram.types.Dialog` objects.
@@ -63,6 +73,8 @@ class GetDialogs:
                     offset_peer=offset_peer,
                     limit=limit,
                     hash=0,
+                    exclude_pinned=exclude_pinned,
+                    folder_id=None if from_archive is None else 1 if from_archive else 0,
                 ),
                 sleep_threshold=60,
             )

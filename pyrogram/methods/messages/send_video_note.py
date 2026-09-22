@@ -39,6 +39,7 @@ class SendVideoNote:
         duration: int = 0,
         length: int = 1,
         thumb: str | BinaryIO | None = None,
+        view_once: bool | None = None,
         disable_notification: bool | None = None,
         reply_to_message_id: int | None = None,
         reply_to_chat_id: int | str | None = None,
@@ -71,7 +72,7 @@ class SendVideoNote:
         ephemeral_message_parameters: types.EphemeralMessageParameters | None = None,
         **kwargs,
     ) -> types.Message | None:
-        """Send video messages.
+        """Send video note files.
 
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -87,10 +88,9 @@ class SendVideoNote:
                 Pass a file_id as string to send a video note that exists on the Telegram servers,
                 pass a file path as string to upload a new video note that exists on your local machine, or
                 pass a binary file-like object with its attribute ".name" set for in-memory uploads.
-                Sending video notes by a URL is currently unsupported.
 
             duration (``int``, *optional*):
-                Duration of sent video in seconds.
+                Duration of the video in seconds.
 
             length (``int``, *optional*):
                 Video width and height.
@@ -100,6 +100,11 @@ class SendVideoNote:
                 The thumbnail should be in JPEG format and less than 200 KB in size.
                 A thumbnail's width and height should not exceed 320 pixels.
                 Thumbnails can't be reused and can be only uploaded as a new file.
+
+            view_once (``bool``, *optional*):
+                Pass True if the video note must be opened once and disappear afterwards.
+                Self-destructing media only works in private chats; a group or a
+                channel drops the timer.
 
             disable_notification (``bool``, *optional*):
                 Sends the message silently.
@@ -242,6 +247,8 @@ class SendVideoNote:
                     quote_entities=quote_entities,
                 )
 
+        ttl_seconds = (1 << 31) - 1 if view_once else None
+
         file = None
 
         try:
@@ -260,9 +267,12 @@ class SendVideoNote:
                                 round_message=True, duration=duration, w=length, h=length
                             )
                         ],
+                        ttl_seconds=ttl_seconds,
                     )
                 else:
-                    media = utils.get_input_media_from_file_id(video_note, FileType.VIDEO_NOTE)
+                    media = utils.get_input_media_from_file_id(
+                        video_note, FileType.VIDEO_NOTE, ttl_seconds=ttl_seconds
+                    )
             else:
                 thumb = await self.save_file(thumb)
                 file = await self.save_file(
@@ -280,6 +290,7 @@ class SendVideoNote:
                             round_message=True, duration=duration, w=length, h=length
                         )
                     ],
+                    ttl_seconds=ttl_seconds,
                 )
 
             while True:

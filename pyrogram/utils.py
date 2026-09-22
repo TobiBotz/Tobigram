@@ -706,6 +706,39 @@ def compute_password_check(
     return raw.types.InputCheckPasswordSRP(srp_id=srp_id, A=A_bytes, M1=M1_bytes)
 
 
+async def build_input_rich_message(
+    client: pyrogram.Client,
+    rich_text: str | types.InputRichMessage | types.RichMessage | raw.base.InputRichMessage,
+    parse_mode: enums.ParseMode | None = None,
+    media: list[types.InputRichMessageMedia] | None = None,
+    chat_id: int | str | None = None,
+) -> raw.base.InputRichMessage:
+    if isinstance(rich_text, raw.base.InputRichMessage):
+        return rich_text
+
+    if isinstance(rich_text, types.RichMessage):
+        return rich_text.to_input_rich_message()
+
+    if isinstance(rich_text, types.InputRichMessage):
+        await rich_text._upload(client, chat_id)
+
+        return rich_text.write()
+
+    if media:
+        rich_message = types.InputRichMessage(html="_", media=media)
+
+        await rich_message._upload(client, chat_id)
+
+        files = rich_message.write_files()
+    else:
+        files = None
+
+    if parse_mode == enums.ParseMode.HTML:
+        return raw.types.InputRichMessageHTML(html=rich_text, files=files)
+
+    return raw.types.InputRichMessageMarkdown(markdown=rich_text, files=files)
+
+
 async def parse_text_entities(
     client: pyrogram.Client,
     text: str,

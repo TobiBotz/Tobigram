@@ -24,7 +24,11 @@ from pyrogram import raw, types, utils
 
 
 class GetChat:
-    async def get_chat(self: pyrogram.Client, chat_id: int | str) -> types.Chat | types.ChatPreview:
+    async def get_chat(
+        self: pyrogram.Client,
+        chat_id: int | str,
+        force_full: bool = True,
+    ) -> types.Chat | types.ChatPreview:
         """Get up to date information about a chat.
 
         Information include current name of the user for one-on-one conversations, current username of a user, group or
@@ -37,6 +41,10 @@ class GetChat:
                 Unique identifier (int) or username (str) of the target chat.
                 Unique identifier for the target chat in form of a *t.me/joinchat/* link, identifier (int) or username
                 of the target channel/supergroup (in the format @username).
+
+            force_full (``bool``, *optional*):
+                Pass False to skip the full chat request and return what the chat list
+                already knows. Defaults to True.
 
         Returns:
             :obj:`~pyrogram.types.Chat` | :obj:`~pyrogram.types.ChatPreview`: On success, if you've already joined the chat, a chat object is returned,
@@ -69,16 +77,36 @@ class GetChat:
 
         peer = await self.resolve_peer(chat_id)
 
+        if force_full:
+            if isinstance(peer, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)):
+                r = await self.invoke(
+                    raw.functions.channels.GetFullChannel(channel=utils.get_input_channel(peer))
+                )
+            elif isinstance(
+                peer,
+                (raw.types.InputPeerUser, raw.types.InputPeerSelf, raw.types.InputPeerUserFromMessage),
+            ):
+                r = await self.invoke(raw.functions.users.GetFullUser(id=utils.get_input_user(peer)))
+            else:
+                r = await self.invoke(raw.functions.messages.GetFullChat(chat_id=peer.chat_id))
+
+            return await types.Chat._parse_full(self, r)
+
         if isinstance(peer, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)):
             r = await self.invoke(
-                raw.functions.channels.GetFullChannel(channel=utils.get_input_channel(peer))
+                raw.functions.channels.GetChannels(id=[utils.get_input_channel(peer)])
             )
         elif isinstance(
             peer,
             (raw.types.InputPeerUser, raw.types.InputPeerSelf, raw.types.InputPeerUserFromMessage),
         ):
-            r = await self.invoke(raw.functions.users.GetFullUser(id=utils.get_input_user(peer)))
+            r = await self.invoke(raw.functions.users.GetUsers(id=[utils.get_input_user(peer)]))
         else:
-            r = await self.invoke(raw.functions.messages.GetFullChat(chat_id=peer.chat_id))
+            r = await self.invoke(raw.functions.messages.GetChats(id=[peer.chat_id]))
 
-        return await types.Chat._parse_full(self, r)
+        return types.Chat._parse_chat(
+            self,
+            r.chats[0]
+            if isinstance(r, (raw.types.messages.Chats, raw.types.messages.ChatsSlice))
+            else r[0],
+        )

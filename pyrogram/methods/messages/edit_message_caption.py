@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 
 import pyrogram
 from pyrogram import enums, types
@@ -31,13 +32,15 @@ class EditMessageCaption:
         caption: str,
         parse_mode: enums.ParseMode | None = None,
         caption_entities: list[types.MessageEntity] | None = None,
-        rich_text: str | None = None,
+        rich_text: str | types.InputRichMessage | None = None,
         rich_text_parse_mode: enums.ParseMode = enums.ParseMode.MARKDOWN,
+        rich_text_media: list[types.InputRichMessageMedia] | None = None,
         reply_markup: types.InlineKeyboardMarkup | None = None,
         link_preview_options: types.LinkPreviewOptions | None = None,
         show_caption_above_media: bool | None = None,
         disable_web_page_preview: bool | None = None,
         business_connection_id: str | None = None,
+        schedule_date: datetime | None = None,
     ) -> types.Message:
         """Edit the caption of media messages.
 
@@ -69,6 +72,11 @@ class EditMessageCaption:
             rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 Parse mode for *rich_text*: :obj:`~pyrogram.enums.ParseMode.MARKDOWN` (default, supports GFM) or :obj:`~pyrogram.enums.ParseMode.HTML`.
 
+            rich_text_media (List of :obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
+                Media *rich_text* refers to through ``tg://photo?id=``, ``tg://video?id=``
+                or ``tg://audio?id=`` links.
+                Ignored when *rich_text* is an :obj:`~pyrogram.types.InputRichMessage`.
+
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
 
@@ -80,6 +88,9 @@ class EditMessageCaption:
 
             disable_web_page_preview (``bool``, *optional*):
                 Disables link previews for links in this message.
+
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                Date when the message will be automatically sent.
 
             business_connection_id (``str``, *optional*):
                 Unique identifier of the business connection on behalf of which the message will be edited.
@@ -100,9 +111,11 @@ class EditMessageCaption:
             entities=caption_entities,
             rich_text=rich_text,
             rich_text_parse_mode=rich_text_parse_mode,
+            rich_text_media=rich_text_media,
             reply_markup=reply_markup,
             link_preview_options=link_preview_options,
             show_caption_above_media=show_caption_above_media,
             disable_web_page_preview=disable_web_page_preview,
             business_connection_id=business_connection_id,
+            schedule_date=schedule_date,
         )

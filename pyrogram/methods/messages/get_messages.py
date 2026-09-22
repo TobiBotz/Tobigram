@@ -36,6 +36,7 @@ class GetMessages:
         chat_id: int | str,
         message_ids: int | Iterable[int] | None = None,
         reply_to_message_ids: int | Iterable[int] | None = None,
+        pinned: bool | None = None,
         replies: int = 1,
     ) -> types.Message | list[types.Message]:
         """Get one or more messages from a chat by using message identifiers.
@@ -58,6 +59,9 @@ class GetMessages:
                 Pass a single message identifier or an iterable of message ids (as integers) to get the content of
                 the previous message you replied to using this message.
                 If *message_ids* is set, this argument will be ignored.
+
+            pinned (``bool``, *optional*):
+                Pass True to get the last pinned message of the chat, ignoring *message_ids*.
 
             replies (``int``, *optional*):
                 The number of subsequent replies to get for each message.
@@ -89,24 +93,28 @@ class GetMessages:
         Raises:
             ValueError: In case of invalid arguments.
         """
-        ids, ids_type = (
-            (message_ids, raw.types.InputMessageID)
-            if message_ids
-            else (reply_to_message_ids, raw.types.InputMessageReplyTo)
-            if reply_to_message_ids
-            else (None, None)
-        )
-
-        if ids is None:
-            raise ValueError(
-                "No argument supplied. Either pass message_ids or reply_to_message_ids"
+        if pinned:
+            is_iterable = False
+            ids = [raw.types.InputMessagePinned()]
+        else:
+            ids, ids_type = (
+                (message_ids, raw.types.InputMessageID)
+                if message_ids
+                else (reply_to_message_ids, raw.types.InputMessageReplyTo)
+                if reply_to_message_ids
+                else (None, None)
             )
 
-        peer = await self.resolve_peer(chat_id)
+            if ids is None:
+                raise ValueError(
+                    "No argument supplied. Either pass message_ids or reply_to_message_ids"
+                )
 
-        is_iterable = not isinstance(ids, int)
-        ids = list(ids) if is_iterable else [ids]
-        ids = [ids_type(id=i) for i in ids]
+            is_iterable = not isinstance(ids, int)
+            ids = list(ids) if is_iterable else [ids]
+            ids = [ids_type(id=i) for i in ids]
+
+        peer = await self.resolve_peer(chat_id)
 
         if replies < 0:
             replies = (1 << 31) - 1

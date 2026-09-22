@@ -23,7 +23,11 @@ from pyrogram import utils
 
 
 class Restart:
-    async def restart(self: pyrogram.Client, block: bool = True):
+    async def restart(
+        self: pyrogram.Client,
+        block: bool = True,
+        clear_handlers: bool = False,
+    ):
         """Restart the Client.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -37,6 +41,10 @@ class Restart:
                 Blocks the code execution until the client has been restarted. It is useful with ``block=False`` in case
                 you want to restart the own client within an handler in order not to cause a deadlock.
                 Defaults to True.
+
+            clear_handlers (``bool``, *optional*):
+                Pass True to drop the registered handlers while restarting.
+                Defaults to False.
 
         Returns:
             :obj:`~pyrogram.Client`: The restarted client itself.
@@ -61,7 +69,7 @@ class Restart:
         """
 
         async def do_it():
-            await self.stop()
+            await self.stop(clear_handlers=clear_handlers)
             await self.start()
 
         if block:

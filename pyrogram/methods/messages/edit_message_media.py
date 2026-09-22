@@ -18,6 +18,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 import io
 import os
 import re
@@ -293,6 +294,8 @@ class EditMessageMedia:
         reply_markup: types.InlineKeyboardMarkup | None = None,
         file_name: str | None = None,
         business_connection_id: str | None = None,
+        show_caption_above_media: bool | None = None,
+        schedule_date: datetime | None = None,
     ) -> types.Message:
         """Edit animation, audio, document, photo or video messages.
 
@@ -319,6 +322,12 @@ class EditMessageMedia:
             file_name (``str``, *optional*):
                 File name of the media to be sent. Not applicable to photos.
                 Defaults to file's path basename.
+
+            show_caption_above_media (``bool``, *optional*):
+                Pass True, if the caption must be shown above the message media.
+
+            schedule_date (:py:obj:`~datetime.datetime`, *optional*):
+                Date when the message will be automatically sent.
 
             business_connection_id (``str``, *optional*):
                 Unique identifier of the business connection.
@@ -353,6 +362,8 @@ class EditMessageMedia:
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 message=message,
                 entities=entities,
+                invert_media=show_caption_above_media if show_caption_above_media is not None else None,
+                schedule_date=utils.datetime_to_timestamp(schedule_date),
             ),
             sleep_threshold=60,
             business_connection_id=business_connection_id,

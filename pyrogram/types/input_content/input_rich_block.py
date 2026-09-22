@@ -16,16 +16,16 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import annotations
+from typing import Optional, Union
 
-
-from pyrogram import raw, types
+import pyrogram
+from pyrogram import raw, types, utils
 from pyrogram.enums import BlockAlignment
 
 from ..object import Object
 
 
-def _to_rich_text(text: str | raw.base.RichText) -> raw.base.RichText:
+def _to_rich_text(text: Union[str, "raw.base.RichText"]) -> "raw.base.RichText":
     if isinstance(text, str):
         return raw.types.TextConcat(texts=[raw.types.TextPlain(text=text)])
 
@@ -41,13 +41,111 @@ def _to_rich_text(text: str | raw.base.RichText) -> raw.base.RichText:
 
 
 def _to_page_caption(
-    text: str | raw.base.RichText | None = None,
-    credit: str | raw.base.RichText | None = None,
-) -> raw.types.PageCaption:
+    text: Union[str, "raw.base.RichText"] | None = None,
+    credit: Union[str, "raw.base.RichText"] | None = None,
+) -> "raw.types.PageCaption":
     return raw.types.PageCaption(
         text=_to_rich_text(text or ""),
         credit=_to_rich_text(credit or ""),
     )
+
+
+async def _upload_media(
+    client: "pyrogram.Client",
+    chat_id: int | str | None,
+    media: Union[str, "types.InputMedia", "raw.base.InputPhoto", "raw.base.InputDocument"],
+    is_photo: bool,
+) -> Union["raw.base.InputPhoto", "raw.base.InputDocument"]:
+    if isinstance(media, (raw.types.InputPhoto, raw.types.InputDocument)):
+        return media
+
+    if isinstance(media, str):
+        media = utils.get_input_media_from_file_id(media)
+    elif isinstance(media, types.InputMedia):
+        media = await media.write(client=client, chat_id=chat_id)
+
+    if isinstance(media, (raw.types.InputMediaPhoto, raw.types.InputMediaDocument)):
+        return media.id
+
+    if not isinstance(media, raw.core.TLObject):
+        raise TypeError(
+            f"a rich block takes a file identifier or an InputMedia object, "
+            f"not {type(media).__name__}"
+        )
+
+    uploaded_media = await client.invoke(
+        raw.functions.messages.UploadMedia(
+            peer=(
+                await client.resolve_peer(chat_id)
+                if chat_id is not None
+                else raw.types.InputPeerSelf()
+            ),
+            media=media,
+        )
+    )
+
+    if is_photo:
+        return raw.types.InputPhoto(
+            id=uploaded_media.photo.id,
+            access_hash=uploaded_media.photo.access_hash,
+            file_reference=uploaded_media.photo.file_reference,
+        )
+
+    return raw.types.InputDocument(
+        id=uploaded_media.document.id,
+        access_hash=uploaded_media.document.access_hash,
+        file_reference=uploaded_media.document.file_reference,
+    )
+
+
+def _collect_mentioned_user_ids(blocks) -> list[int]:
+    user_ids = []
+    stack = []
+
+    for block in _walk_blocks(blocks):
+        for value in vars(block).values():
+            if isinstance(value, raw.core.TLObject):
+                stack.append(value)
+            elif isinstance(value, (list, tuple)):
+                stack.extend(item for item in value if isinstance(item, raw.core.TLObject))
+
+    while stack:
+        current = stack.pop()
+
+        if isinstance(current, raw.types.TextMentionName):
+            user_ids.append(current.user_id)
+
+        for slot in current.__slots__:
+            value = getattr(current, slot, None)
+
+            if isinstance(value, raw.core.TLObject):
+                stack.append(value)
+            elif isinstance(value, (list, tuple)):
+                stack.extend(item for item in value if isinstance(item, raw.core.TLObject))
+
+    return list(dict.fromkeys(user_ids))
+
+
+def _walk_blocks(blocks) -> list["InputRichBlock"]:
+    found = []
+    stack = list(blocks or ())
+
+    while stack:
+        current = stack.pop()
+
+        if isinstance(current, InputRichBlock):
+            found.append(current)
+
+        if not isinstance(current, Object):
+            continue
+
+        for value in vars(current).values():
+            if isinstance(value, Object):
+                stack.append(value)
+            elif isinstance(value, (list, tuple)):
+                stack.extend(item for item in value if isinstance(item, Object))
+
+    return found
 
 
 class InputRichBlock(Object):
@@ -61,8 +159,19 @@ class InputRichBlock(Object):
     def __init__(self):
         super().__init__()
 
-    def write(self) -> raw.base.PageBlock:
+        self._media_id = None
+
+    def write(self) -> "raw.base.PageBlock":
         raise NotImplementedError
+
+    async def _upload(
+        self,
+        client: "pyrogram.Client",
+        chat_id: int | str | None,
+        photos: list["raw.base.InputPhoto"],
+        documents: list["raw.base.InputDocument"],
+    ):
+        pass
 
 
 class InputRichBlockParagraph(InputRichBlock):
@@ -75,13 +184,13 @@ class InputRichBlockParagraph(InputRichBlock):
 
     def __init__(
         self,
-        text: str | raw.base.RichText,
+        text: Union[str, "raw.base.RichText"],
     ):
         super().__init__()
 
         self.text = text
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockParagraph(text=_to_rich_text(self.text))
 
 
@@ -99,7 +208,7 @@ class InputRichBlockSectionHeading(InputRichBlock):
 
     def __init__(
         self,
-        text: str | raw.base.RichText,
+        text: Union[str, "raw.base.RichText"],
         size: int,
     ):
         super().__init__()
@@ -107,7 +216,7 @@ class InputRichBlockSectionHeading(InputRichBlock):
         self.text = text
         self.size = size
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         mapping = {
             1: raw.types.PageBlockHeading1,
             2: raw.types.PageBlockHeading2,
@@ -135,7 +244,7 @@ class InputRichBlockPreformatted(InputRichBlock):
 
     def __init__(
         self,
-        text: str | raw.base.RichText,
+        text: Union[str, "raw.base.RichText"],
         language: str,
     ):
         super().__init__()
@@ -143,7 +252,7 @@ class InputRichBlockPreformatted(InputRichBlock):
         self.text = text
         self.language = language
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockPreformatted(
             text=_to_rich_text(self.text),
             language=self.language,
@@ -160,13 +269,13 @@ class InputRichBlockFooter(InputRichBlock):
 
     def __init__(
         self,
-        text: str | raw.base.RichText,
+        text: Union[str, "raw.base.RichText"],
     ):
         super().__init__()
 
         self.text = text
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockFooter(text=_to_rich_text(self.text))
 
 
@@ -179,12 +288,12 @@ class InputRichBlockDivider(InputRichBlock):
     def __init__(self):
         super().__init__()
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockDivider()
 
 
 class InputRichBlockMathematicalExpression(InputRichBlock):
-    """A mathematical expression block, corresponding to the HTML tag ``<math>``.
+    """A mathematical expression block, corresponding to the custom HTML tag ``<tg-math-block>``.
 
     Parameters:
         expression (``str``):
@@ -199,7 +308,7 @@ class InputRichBlockMathematicalExpression(InputRichBlock):
 
         self.expression = expression
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockMath(source=self.expression)
 
 
@@ -222,7 +331,7 @@ class InputRichBlockAnchor(InputRichBlock):
 
         self.name = name
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockAnchor(name=self.name)
 
 
@@ -250,7 +359,7 @@ class InputRichBlockListItem(Object):
     def __init__(
         self,
         blocks: list[InputRichBlock] | None = None,
-        text: str | raw.base.RichText | None = None,
+        text: Union[str, "raw.base.RichText"] | None = None,
         has_checkbox: bool | None = None,
         is_checked: bool | None = None,
     ):
@@ -261,7 +370,9 @@ class InputRichBlockListItem(Object):
         self.has_checkbox = has_checkbox
         self.is_checked = is_checked
 
-    def write(self, ordered: bool = False) -> raw.base.PageListItem | raw.base.PageListOrderedItem:
+    def write(
+        self, ordered: bool = False
+    ) -> Union["raw.base.PageListItem", "raw.base.PageListOrderedItem"]:
         if self.blocks:
             blocks = [b.write() for b in self.blocks]
 
@@ -307,7 +418,7 @@ class InputRichBlockList(InputRichBlock):
         self.items = items
         self.ordered = ordered
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         if self.ordered:
             return raw.types.PageBlockOrderedList(
                 items=[item.write(ordered=True) for item in self.items]
@@ -330,14 +441,14 @@ class InputRichBlockBlockQuotation(InputRichBlock):
     def __init__(
         self,
         blocks: list[InputRichBlock],
-        credit: str | raw.base.RichText | None = None,
+        credit: Union[str, "raw.base.RichText"] | None = None,
     ):
         super().__init__()
 
         self.blocks = blocks
         self.credit = credit
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockBlockquoteBlocks(
             blocks=[b.write() for b in self.blocks],
             caption=_to_rich_text(self.credit or ""),
@@ -346,7 +457,7 @@ class InputRichBlockBlockQuotation(InputRichBlock):
 
 class InputRichBlockExpandableBlockQuotation(InputRichBlock):
     """A block quotation, corresponding to the HTML tag ``<blockquote>`` with the
-    custom attribute ``collapsed``.
+    custom attribute ``expandable``.
 
     Parameters:
         text (``str`` | :obj:`~pyrogram.raw.base.RichText`):
@@ -359,15 +470,15 @@ class InputRichBlockExpandableBlockQuotation(InputRichBlock):
 
     def __init__(
         self,
-        text: str | raw.base.RichText,
-        credit: str | raw.base.RichText | None = None,
+        text: Union[str, "raw.base.RichText"],
+        credit: Union[str, "raw.base.RichText"] | None = None,
     ):
         super().__init__()
 
         self.text = text
         self.credit = credit
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockBlockquote(
             text=_to_rich_text(self.text),
             caption=_to_rich_text(self.credit or ""),
@@ -389,15 +500,15 @@ class InputRichBlockButtons(InputRichBlock):
 
     def __init__(
         self,
-        buttons: list[types.RichMessageButton],
-        align: BlockAlignment | None = None,
+        buttons: list["types.RichMessageButton"],
+        align: Optional["BlockAlignment"] = None,
     ):
         super().__init__()
 
         self.buttons = buttons
         self.align = align
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockButtonRow(
             buttons=[button.write() for button in self.buttons],
             align_left=self.align == BlockAlignment.LEFT or None,
@@ -410,9 +521,14 @@ class InputRichBlockDocument(InputRichBlock):
     """A block with a general file, corresponding to the custom HTML tag ``<tg-document>``.
 
     Parameters:
-        document_id (``int``):
+        document_id (``int``, *optional*):
             The ``id`` field from an :obj:`~pyrogram.raw.types.InputDocument` that
             represents the file.
+
+        document (``str`` | :obj:`~pyrogram.types.InputMediaDocument`, *optional*):
+            The document to send, as a file identifier of an already uploaded file, a local
+            path, an HTTP URL or an :obj:`~pyrogram.types.InputMediaDocument` object. Given
+            instead of *document_id*.
 
         caption (``str`` | :obj:`~pyrogram.raw.base.RichText`, *optional*):
             Caption of the block.
@@ -420,23 +536,44 @@ class InputRichBlockDocument(InputRichBlock):
 
     def __init__(
         self,
-        document_id: int,
-        caption: str | raw.base.RichText | None = None,
+        document_id: int | None = None,
+        document: Union[str, "types.InputMediaDocument"] | None = None,
+        caption: Union[str, "raw.base.RichText"] | None = None,
     ):
         super().__init__()
 
+        if document_id is None and document is None:
+            raise ValueError("You must pass either document_id or document")
+
         self.document_id = document_id
+        self.document = document
         self.caption = caption
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockDocument(
-            document_id=self.document_id,
+            document_id=self._media_id or self.document_id,
             caption=_to_page_caption(text=self.caption),
         )
 
+    async def _upload(
+        self,
+        client: "pyrogram.Client",
+        chat_id: int | str | None,
+        photos: list["raw.base.InputPhoto"],
+        documents: list["raw.base.InputDocument"],
+    ):
+        if self.document is None:
+            return
+
+        media = await _upload_media(client, chat_id, self.document, is_photo=False)
+
+        documents.append(media)
+
+        self._media_id = media.id
+
 
 class InputRichBlockPullQuotation(InputRichBlock):
-    """A pull quotation block, corresponding to the HTML tag ``<pullquote>``.
+    """A pull quotation block, corresponding to the HTML tag ``<aside>``.
 
     Parameters:
         text (``str`` | :obj:`~pyrogram.raw.base.RichText`):
@@ -449,15 +586,15 @@ class InputRichBlockPullQuotation(InputRichBlock):
 
     def __init__(
         self,
-        text: str | raw.base.RichText,
-        credit: str | raw.base.RichText | None = None,
+        text: Union[str, "raw.base.RichText"],
+        credit: Union[str, "raw.base.RichText"] | None = None,
     ):
         super().__init__()
 
         self.text = text
         self.credit = credit
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockPullquote(
             text=_to_rich_text(self.text),
             caption=_to_rich_text(self.credit or ""),
@@ -465,7 +602,7 @@ class InputRichBlockPullQuotation(InputRichBlock):
 
 
 class InputRichBlockCollage(InputRichBlock):
-    """A collage block, corresponding to the HTML tag ``<collage>``.
+    """A collage block, corresponding to the custom HTML tag ``<tg-collage>``.
 
     Displays a set of media blocks in a grid layout.
 
@@ -481,14 +618,14 @@ class InputRichBlockCollage(InputRichBlock):
     def __init__(
         self,
         items: list[InputRichBlock],
-        caption: str | raw.base.RichText | None = None,
+        caption: Union[str, "raw.base.RichText"] | None = None,
     ):
         super().__init__()
 
         self.items = items
         self.caption = caption
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockCollage(
             items=[item.write() for item in self.items],
             caption=_to_page_caption(text=self.caption),
@@ -496,7 +633,7 @@ class InputRichBlockCollage(InputRichBlock):
 
 
 class InputRichBlockSlideshow(InputRichBlock):
-    """A slideshow block, corresponding to the HTML tag ``<slideshow>``.
+    """A slideshow block, corresponding to the custom HTML tag ``<tg-slideshow>``.
 
     Displays a set of media blocks in a slideshow/carousel layout.
 
@@ -512,14 +649,14 @@ class InputRichBlockSlideshow(InputRichBlock):
     def __init__(
         self,
         items: list[InputRichBlock],
-        caption: str | raw.base.RichText | None = None,
+        caption: Union[str, "raw.base.RichText"] | None = None,
     ):
         super().__init__()
 
         self.items = items
         self.caption = caption
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockSlideshow(
             items=[item.write() for item in self.items],
             caption=_to_page_caption(text=self.caption),
@@ -548,8 +685,8 @@ class InputRichBlockTable(InputRichBlock):
 
     def __init__(
         self,
-        title: str | raw.base.RichText,
-        rows: list[list[InputRichBlockTableCell]],
+        title: Union[str, "raw.base.RichText"],
+        rows: list[list["InputRichBlockTableCell"]],
         bordered: bool | None = None,
         striped: bool | None = None,
         compact: bool | None = None,
@@ -562,7 +699,7 @@ class InputRichBlockTable(InputRichBlock):
         self.striped = striped
         self.compact = compact
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockTable(
             title=_to_rich_text(self.title),
             rows=[
@@ -605,7 +742,7 @@ class InputRichBlockTableCell(Object):
 
     def __init__(
         self,
-        text: str | raw.base.RichText,
+        text: Union[str, "raw.base.RichText"],
         header: bool | None = None,
         align_center: bool | None = None,
         align_right: bool | None = None,
@@ -625,7 +762,7 @@ class InputRichBlockTableCell(Object):
         self.colspan = colspan
         self.rowspan = rowspan
 
-    def write(self) -> raw.types.PageTableCell:
+    def write(self) -> "raw.types.PageTableCell":
         return raw.types.PageTableCell(
             text=_to_rich_text(self.text),
             header=self.header,
@@ -657,7 +794,7 @@ class InputRichBlockDetails(InputRichBlock):
 
     def __init__(
         self,
-        summary: str | raw.base.RichText,
+        summary: Union[str, "raw.base.RichText"],
         blocks: list[InputRichBlock],
         is_open: bool | None = None,
     ):
@@ -667,7 +804,7 @@ class InputRichBlockDetails(InputRichBlock):
         self.blocks = blocks
         self.is_open = is_open
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockDetails(
             title=_to_rich_text(self.summary),
             blocks=[b.write() for b in self.blocks],
@@ -676,7 +813,7 @@ class InputRichBlockDetails(InputRichBlock):
 
 
 class InputRichBlockMap(InputRichBlock):
-    """A map block, corresponding to the HTML tag ``<map>``.
+    """A map block, corresponding to the custom HTML tag ``<tg-map>``.
 
     Embeds a geographic map with a pin at the specified location.
 
@@ -699,11 +836,11 @@ class InputRichBlockMap(InputRichBlock):
 
     def __init__(
         self,
-        geo: raw.base.InputGeoPoint,
+        geo: "raw.base.InputGeoPoint",
         zoom: int,
         w: int,
         h: int,
-        caption: str | raw.base.RichText | None = None,
+        caption: Union[str, "raw.base.RichText"] | None = None,
     ):
         super().__init__()
 
@@ -713,7 +850,7 @@ class InputRichBlockMap(InputRichBlock):
         self.h = h
         self.caption = caption
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.InputPageBlockMap(
             geo=self.geo,
             zoom=self.zoom,
@@ -729,9 +866,14 @@ class InputRichBlockAnimation(InputRichBlock):
     Displays an animated file (GIF-like) in the message.
 
     Parameters:
-        video_id (``int``):
+        video_id (``int``, *optional*):
             The ``id`` field from an :obj:`~pyrogram.raw.types.InputDocument` that
             represents an animation. The document must have the ``animated`` flag set.
+
+        animation (``str`` | :obj:`~pyrogram.types.InputMediaAnimation`, *optional*):
+            The animation to send, as a file identifier of an already uploaded file, a local
+            path, an HTTP URL or an :obj:`~pyrogram.types.InputMediaAnimation` object. Given
+            instead of *video_id*.
 
         has_spoiler (``bool``, *optional*):
             Pass *True* to cover the media preview with a spoiler animation.
@@ -742,22 +884,43 @@ class InputRichBlockAnimation(InputRichBlock):
 
     def __init__(
         self,
-        video_id: int,
+        video_id: int | None = None,
+        animation: Union[str, "types.InputMediaAnimation"] | None = None,
         has_spoiler: bool | None = None,
-        caption: str | raw.base.RichText | None = None,
+        caption: Union[str, "raw.base.RichText"] | None = None,
     ):
         super().__init__()
 
+        if video_id is None and animation is None:
+            raise ValueError("You must pass either video_id or animation")
+
         self.video_id = video_id
+        self.animation = animation
         self.has_spoiler = has_spoiler
         self.caption = caption
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockVideo(
-            video_id=self.video_id,
+            video_id=self._media_id or self.video_id,
             caption=_to_page_caption(text=self.caption),
             spoiler=self.has_spoiler,
         )
+
+    async def _upload(
+        self,
+        client: "pyrogram.Client",
+        chat_id: int | str | None,
+        photos: list["raw.base.InputPhoto"],
+        documents: list["raw.base.InputDocument"],
+    ):
+        if self.animation is None:
+            return
+
+        media = await _upload_media(client, chat_id, self.animation, is_photo=False)
+
+        documents.append(media)
+
+        self._media_id = media.id
 
 
 class InputRichBlockAudio(InputRichBlock):
@@ -766,9 +929,14 @@ class InputRichBlockAudio(InputRichBlock):
     Displays an audio file (music) in the message.
 
     Parameters:
-        audio_id (``int``):
+        audio_id (``int``, *optional*):
             The ``id`` field from an :obj:`~pyrogram.raw.types.InputDocument` that
             represents an audio file.
+
+        audio (``str`` | :obj:`~pyrogram.types.InputMediaAudio`, *optional*):
+            The audio file to send, as a file identifier of an already uploaded file, a local
+            path, an HTTP URL or an :obj:`~pyrogram.types.InputMediaAudio` object. Given
+            instead of *audio_id*.
 
         caption (``str`` | :obj:`~pyrogram.raw.base.RichText`, *optional*):
             Caption of the block.
@@ -776,30 +944,56 @@ class InputRichBlockAudio(InputRichBlock):
 
     def __init__(
         self,
-        audio_id: int,
-        caption: str | raw.base.RichText | None = None,
+        audio_id: int | None = None,
+        audio: Union[str, "types.InputMediaAudio"] | None = None,
+        caption: Union[str, "raw.base.RichText"] | None = None,
     ):
         super().__init__()
 
+        if audio_id is None and audio is None:
+            raise ValueError("You must pass either audio_id or audio")
+
         self.audio_id = audio_id
+        self.audio = audio
         self.caption = caption
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockAudio(
-            audio_id=self.audio_id,
+            audio_id=self._media_id or self.audio_id,
             caption=_to_page_caption(text=self.caption),
         )
 
+    async def _upload(
+        self,
+        client: "pyrogram.Client",
+        chat_id: int | str | None,
+        photos: list["raw.base.InputPhoto"],
+        documents: list["raw.base.InputDocument"],
+    ):
+        if self.audio is None:
+            return
+
+        media = await _upload_media(client, chat_id, self.audio, is_photo=False)
+
+        documents.append(media)
+
+        self._media_id = media.id
+
 
 class InputRichBlockPhoto(InputRichBlock):
-    """A photo block, corresponding to the HTML tag ``<photo>``.
+    """A photo block, corresponding to the HTML tag ``<img>``.
 
     Displays a photo in the message.
 
     Parameters:
-        photo_id (``int``):
+        photo_id (``int``, *optional*):
             The ``id`` field from an :obj:`~pyrogram.raw.types.InputPhoto` that
             represents the photo.
+
+        photo (``str`` | :obj:`~pyrogram.types.InputMediaPhoto`, *optional*):
+            The photo to send, as a file identifier of an already uploaded file, a local
+            path, an HTTP URL or an :obj:`~pyrogram.types.InputMediaPhoto` object. Given
+            instead of *photo_id*.
 
         has_spoiler (``bool``, *optional*):
             Pass *True* to cover the photo with a spoiler animation.
@@ -817,28 +1011,49 @@ class InputRichBlockPhoto(InputRichBlock):
 
     def __init__(
         self,
-        photo_id: int,
+        photo_id: int | None = None,
+        photo: Union[str, "types.InputMediaPhoto"] | None = None,
         has_spoiler: bool | None = None,
         url: str | None = None,
         webpage_id: int | None = None,
-        caption: str | raw.base.RichText | None = None,
+        caption: Union[str, "raw.base.RichText"] | None = None,
     ):
         super().__init__()
 
+        if photo_id is None and photo is None:
+            raise ValueError("You must pass either photo_id or photo")
+
         self.photo_id = photo_id
+        self.photo = photo
         self.has_spoiler = has_spoiler
         self.url = url
         self.webpage_id = webpage_id
         self.caption = caption
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockPhoto(
-            photo_id=self.photo_id,
+            photo_id=self._media_id or self.photo_id,
             caption=_to_page_caption(text=self.caption),
             spoiler=self.has_spoiler,
             url=self.url,
             webpage_id=self.webpage_id,
         )
+
+    async def _upload(
+        self,
+        client: "pyrogram.Client",
+        chat_id: int | str | None,
+        photos: list["raw.base.InputPhoto"],
+        documents: list["raw.base.InputDocument"],
+    ):
+        if self.photo is None:
+            return
+
+        media = await _upload_media(client, chat_id, self.photo, is_photo=True)
+
+        photos.append(media)
+
+        self._media_id = media.id
 
 
 class InputRichBlockVideo(InputRichBlock):
@@ -847,9 +1062,14 @@ class InputRichBlockVideo(InputRichBlock):
     Displays a video in the message.
 
     Parameters:
-        video_id (``int``):
+        video_id (``int``, *optional*):
             The ``id`` field from an :obj:`~pyrogram.raw.types.InputDocument` that
             represents a video file.
+
+        video (``str`` | :obj:`~pyrogram.types.InputMediaVideo`, *optional*):
+            The video to send, as a file identifier of an already uploaded file, a local
+            path, an HTTP URL or an :obj:`~pyrogram.types.InputMediaVideo` object. Given
+            instead of *video_id*.
 
         has_spoiler (``bool``, *optional*):
             Pass *True* to cover the video with a spoiler animation.
@@ -866,28 +1086,49 @@ class InputRichBlockVideo(InputRichBlock):
 
     def __init__(
         self,
-        video_id: int,
+        video_id: int | None = None,
+        video: Union[str, "types.InputMediaVideo"] | None = None,
         has_spoiler: bool | None = None,
         autoplay: bool | None = None,
         loop: bool | None = None,
-        caption: str | raw.base.RichText | None = None,
+        caption: Union[str, "raw.base.RichText"] | None = None,
     ):
         super().__init__()
 
+        if video_id is None and video is None:
+            raise ValueError("You must pass either video_id or video")
+
         self.video_id = video_id
+        self.video = video
         self.has_spoiler = has_spoiler
         self.autoplay = autoplay
         self.loop = loop
         self.caption = caption
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockVideo(
-            video_id=self.video_id,
+            video_id=self._media_id or self.video_id,
             caption=_to_page_caption(text=self.caption),
             autoplay=self.autoplay,
             loop=self.loop,
             spoiler=self.has_spoiler,
         )
+
+    async def _upload(
+        self,
+        client: "pyrogram.Client",
+        chat_id: int | str | None,
+        photos: list["raw.base.InputPhoto"],
+        documents: list["raw.base.InputDocument"],
+    ):
+        if self.video is None:
+            return
+
+        media = await _upload_media(client, chat_id, self.video, is_photo=False)
+
+        documents.append(media)
+
+        self._media_id = media.id
 
 
 class InputRichBlockVoiceNote(InputRichBlock):
@@ -896,9 +1137,14 @@ class InputRichBlockVoiceNote(InputRichBlock):
     Displays a voice recording in the message.
 
     Parameters:
-        audio_id (``int``):
+        audio_id (``int``, *optional*):
             The ``id`` field from an :obj:`~pyrogram.raw.types.InputDocument` that
             represents a voice note (a document with the ``voice`` attribute set).
+
+        voice (``str`` | :obj:`~pyrogram.types.InputMediaVoiceNote`, *optional*):
+            The voice note to send, as a file identifier of an already uploaded file, a local
+            path, an HTTP URL or an :obj:`~pyrogram.types.InputMediaVoiceNote` object. Given
+            instead of *audio_id*.
 
         caption (``str`` | :obj:`~pyrogram.raw.base.RichText`, *optional*):
             Caption of the block.
@@ -906,19 +1152,40 @@ class InputRichBlockVoiceNote(InputRichBlock):
 
     def __init__(
         self,
-        audio_id: int,
-        caption: str | raw.base.RichText | None = None,
+        audio_id: int | None = None,
+        voice: Union[str, "types.InputMediaVoiceNote"] | None = None,
+        caption: Union[str, "raw.base.RichText"] | None = None,
     ):
         super().__init__()
 
+        if audio_id is None and voice is None:
+            raise ValueError("You must pass either audio_id or voice")
+
         self.audio_id = audio_id
+        self.voice = voice
         self.caption = caption
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockAudio(
-            audio_id=self.audio_id,
+            audio_id=self._media_id or self.audio_id,
             caption=_to_page_caption(text=self.caption),
         )
+
+    async def _upload(
+        self,
+        client: "pyrogram.Client",
+        chat_id: int | str | None,
+        photos: list["raw.base.InputPhoto"],
+        documents: list["raw.base.InputDocument"],
+    ):
+        if self.voice is None:
+            return
+
+        media = await _upload_media(client, chat_id, self.voice, is_photo=False)
+
+        documents.append(media)
+
+        self._media_id = media.id
 
 
 class InputRichBlockThinking(InputRichBlock):
@@ -936,11 +1203,11 @@ class InputRichBlockThinking(InputRichBlock):
 
     def __init__(
         self,
-        text: str | raw.base.RichText,
+        text: Union[str, "raw.base.RichText"],
     ):
         super().__init__()
 
         self.text = text
 
-    def write(self) -> raw.base.PageBlock:
+    def write(self) -> "raw.base.PageBlock":
         return raw.types.PageBlockThinking(text=_to_rich_text(self.text))
