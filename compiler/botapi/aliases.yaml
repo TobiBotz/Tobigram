@@ -36,6 +36,18 @@ botapi:
     getMyStarBalance: get_stars_balance
     getChatMemberCount: get_chat_members_count
     setChatAdministratorCustomTitle: set_administrator_title
+    getMyDefaultAdministratorRights: get_bot_default_privileges
+    setMyDefaultAdministratorRights: set_bot_default_privileges
+    getUserProfilePhotos: get_chat_photos
+    getChatAdministrators: get_chat_members
+    setMyProfilePhoto: set_bot_profile_photo
+    removeMyProfilePhoto: set_bot_profile_photo
+    getStarTransactions: get_stars_transactions
+    setMessageReaction: send_reaction
+    setUserEmojiStatus: set_emoji_status
+    deleteMessage: delete_messages
+    forwardMessage: forward_messages
+    getUserChatBoosts: get_boosts
 
   method_unsupported:
     getUpdates: long polling is a Bot API transport; MTProto pushes updates
