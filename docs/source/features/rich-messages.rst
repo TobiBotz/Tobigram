@@ -232,6 +232,9 @@ A rich message too large to travel inline is delivered with only its first block
         for block in message.rich_message.blocks:
             print(block)
 
+The fetch is a **user** method: a bot calling it gets ``[400 BOT_METHOD_INVALID]``, so a bot
+that sends a long rich message cannot read the rest of its own back.
+
 Rich text elsewhere
 -------------------
 

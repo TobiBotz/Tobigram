@@ -801,7 +801,12 @@ class Session:
                 await self._wait_started()
 
             if isinstance(
-                query, (raw.functions.InvokeWithoutUpdates, raw.functions.InvokeWithTakeout)
+                query,
+                (
+                    raw.functions.InvokeWithoutUpdates,
+                    raw.functions.InvokeWithTakeout,
+                    raw.functions.InvokeWithReCaptcha,
+                ),
             ):
                 inner_query = query.query
             else:

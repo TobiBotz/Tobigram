@@ -409,6 +409,7 @@ def test_kwargs_guard_on_all_send_methods():
         "send_audio",
         "send_document",
         "send_sticker",
+        "send_live_photo",
         "send_media_group",
     ]
 

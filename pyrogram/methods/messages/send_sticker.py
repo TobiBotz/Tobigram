@@ -25,7 +25,7 @@ from datetime import datetime
 from typing import BinaryIO
 
 import pyrogram
-from pyrogram import StopTransmission, raw, types, utils
+from pyrogram import StopTransmission, enums, raw, types, utils
 from pyrogram.errors import FilePartMissing
 from pyrogram.file_id import FileType
 
@@ -39,6 +39,10 @@ class SendSticker:
         sticker: str | BinaryIO,
         ttl_seconds: int | None = None,
         has_spoiler: bool | None = None,
+        emoji: str | None = None,
+        caption: str = "",
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
         disable_notification: bool | None = None,
         reply_to_message_id: int | None = None,
         reply_to_chat_id: int | str | None = None,
@@ -88,6 +92,21 @@ class SendSticker:
                 pass an HTTP URL as a string for Telegram to get a .webp sticker file from the Internet,
                 pass a file path as string to upload a new sticker that exists on your local machine, or
                 pass a binary file-like object with its attribute ".name" set for in-memory uploads.
+
+            emoji (``str``, *optional*):
+                Emoji the sticker stands for.
+                It is carried by the sticker document, so it applies to a sticker being
+                uploaded and is ignored for one that already exists on Telegram.
+
+            caption (``str``, *optional*):
+                Caption of the sticker, 0-1024 characters.
+
+            parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                By default, texts are parsed using both Markdown and HTML styles.
+                You can combine both syntaxes together.
+
+            caption_entities (List of :obj:`~pyrogram.types.MessageEntity`, *optional*):
+                List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
 
             disable_notification (``bool``, *optional*):
                 Sends the message silently.
@@ -252,7 +271,11 @@ class SendSticker:
                         ttl_seconds=ttl_seconds,
                         spoiler=has_spoiler,
                         attributes=[
-                            raw.types.DocumentAttributeFilename(file_name=os.path.basename(sticker))
+                            raw.types.DocumentAttributeFilename(file_name=os.path.basename(sticker)),
+                            raw.types.DocumentAttributeSticker(
+                                alt=emoji or "",
+                                stickerset=raw.types.InputStickerSetEmpty(),
+                            ),
                         ],
                     )
                 elif re.match("^https?://", sticker):
@@ -276,13 +299,19 @@ class SendSticker:
                     attributes=[
                         raw.types.DocumentAttributeFilename(
                             file_name=utils.get_file_name(sticker, fallback="sticker.webp")
-                        )
+                        ),
+                        raw.types.DocumentAttributeSticker(
+                            alt=emoji or "",
+                            stickerset=raw.types.InputStickerSetEmpty(),
+                        ),
                     ],
                 )
 
             while True:
                 try:
-                    text_params = {"message": ""}
+                    text_params = await utils.parse_text_entities(
+                        self, caption, parse_mode, caption_entities
+                    )
 
                     r = await self.invoke(
                         await as_ephemeral(

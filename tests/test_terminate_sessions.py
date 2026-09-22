@@ -157,7 +157,7 @@ class StoppingClient(Stop):
         self.disconnected = False
         self.loop = asyncio.get_event_loop()
 
-    async def terminate(self):
+    async def terminate(self, clear_handlers: bool = True):
         if not self.is_initialized:
             raise ConnectionError("Client is already terminated")
 

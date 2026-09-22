@@ -16,49 +16,55 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
+from collections.abc import Callable
 from datetime import datetime
-from typing import BinaryIO, Callable, List, Optional, Union
+from typing import BinaryIO
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
 
+from ..ephemeral.as_ephemeral import as_ephemeral
+
 
 class SendLivePhoto:
     async def send_live_photo(
-        self: "pyrogram.Client",
-        chat_id: Union[int, str],
-        live_photo: Union[str, BinaryIO],
-        photo: Union[str, BinaryIO],
+        self: pyrogram.Client,
+        chat_id: int | str,
+        live_photo: str | BinaryIO,
+        photo: str | BinaryIO,
         caption: str = "",
-        parse_mode: Optional["enums.ParseMode"] = None,
-        caption_entities: Optional[List["types.MessageEntity"]] = None,
-        has_spoiler: Optional[bool] = None,
+        parse_mode: enums.ParseMode | None = None,
+        caption_entities: list[types.MessageEntity] | None = None,
+        has_spoiler: bool | None = None,
         width: int = 0,
         height: int = 0,
-        disable_notification: Optional[bool] = None,
-        message_thread_id: Optional[int] = None,
-        direct_messages_topic_id: Optional[int] = None,
-        effect_id: Optional[int] = None,
-        show_caption_above_media: Optional[bool] = None,
-        reply_parameters: Optional["types.ReplyParameters"] = None,
-        schedule_date: Optional[datetime] = None,
-        repeat_period: Optional[int] = None,
-        protect_content: Optional[bool] = None,
-        business_connection_id: Optional[str] = None,
-        allow_paid_broadcast: Optional[bool] = None,
-        paid_message_star_count: Optional[int] = None,
-        suggested_post_parameters: Optional["types.SuggestedPostParameters"] = None,
-        reply_markup: Optional[
-            Union[
-                "types.InlineKeyboardMarkup",
-                "types.ReplyKeyboardMarkup",
-                "types.ReplyKeyboardRemove",
-                "types.ForceReply"
-            ]
-        ] = None,
-        progress: Optional[Callable] = None,
-        progress_args: tuple = ()
-    ) -> Optional["types.Message"]:
+        disable_notification: bool | None = None,
+        message_thread_id: int | None = None,
+        direct_messages_topic_id: int | None = None,
+        effect_id: int | None = None,
+        show_caption_above_media: bool | None = None,
+        reply_parameters: types.ReplyParameters | None = None,
+        schedule_date: datetime | None = None,
+        repeat_period: int | None = None,
+        protect_content: bool | None = None,
+        business_connection_id: str | None = None,
+        allow_paid_broadcast: bool | None = None,
+        paid_message_star_count: int | None = None,
+        suggested_post_parameters: types.SuggestedPostParameters | None = None,
+        reply_markup: (
+            types.InlineKeyboardMarkup
+            | types.ReplyKeyboardMarkup
+            | types.ReplyKeyboardRemove
+            | types.ForceReply
+            | None
+        ) = None,
+        ephemeral_message_parameters: types.EphemeralMessageParameters | None = None,
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+        **kwargs,
+    ) -> types.Message | None:
         """Send a live photo, a still image paired with the short video it was taken with.
 
         .. include:: /_includes/usable-by/users.rst
@@ -136,6 +142,9 @@ class SendLivePhoto:
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
 
+            ephemeral_message_parameters (:obj:`~pyrogram.types.EphemeralMessageParameters`, *optional*):
+                Parameters of the ephemeral message to send.
+
             progress (``Callable``, *optional*):
                 Pass a callback function to view the file transmission progress.
 
@@ -150,58 +159,79 @@ class SendLivePhoto:
 
                 await app.send_live_photo(chat_id, "clip.mp4", "still.jpg")
         """
+        if kwargs:
+            raise TypeError(f"Got unexpected keyword argument(s): {set(kwargs)}")
+
         media = await types.InputMediaLivePhoto(
             media=live_photo,
             photo=photo,
             caption=caption,
             parse_mode=parse_mode,
             caption_entities=caption_entities,
-            has_spoiler=has_spoiler
+            has_spoiler=has_spoiler,
         ).write(
             client=self,
             chat_id=chat_id,
             width=width,
             height=height,
             progress=progress,
-            progress_args=progress_args
+            progress_args=progress_args,
         )
 
         text_params = await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
 
         r = await self.invoke(
-            raw.functions.messages.SendMedia(
-                peer=await self.resolve_peer(chat_id),
-                media=media,
-                silent=disable_notification if disable_notification is not None else None,
-                reply_to=await utils.get_reply_to(
-                    self,
-                    reply_parameters,
-                    message_thread_id,
-                    direct_messages_topic_id=direct_messages_topic_id
+            await as_ephemeral(
+                self,
+                ephemeral_message_parameters,
+                raw.functions.messages.SendMedia(
+                    peer=await self.resolve_peer(chat_id),
+                    media=media,
+                    silent=disable_notification if disable_notification is not None else None,
+                    reply_to=await utils.get_reply_to(
+                        self,
+                        reply_parameters,
+                        message_thread_id,
+                        direct_messages_topic_id=direct_messages_topic_id,
+                    ),
+                    random_id=self.rnd_id(),
+                    schedule_date=utils.datetime_to_timestamp(schedule_date),
+                    noforwards=protect_content,
+                    effect=effect_id,
+                    invert_media=show_caption_above_media
+                    if show_caption_above_media is not None
+                    else None,
+                    schedule_repeat_period=repeat_period,
+                    allow_paid_floodskip=allow_paid_broadcast
+                    if allow_paid_broadcast is not None
+                    else None,
+                    allow_paid_stars=paid_message_star_count
+                    if paid_message_star_count is not None
+                    else None,
+                    suggested_post=suggested_post_parameters.write()
+                    if suggested_post_parameters
+                    else None,
+                    reply_markup=await reply_markup.write(self) if reply_markup else None,
+                    **text_params,
                 ),
-                random_id=self.rnd_id(),
-                schedule_date=utils.datetime_to_timestamp(schedule_date),
-                noforwards=protect_content,
-                effect=effect_id,
-                invert_media=show_caption_above_media if show_caption_above_media is not None else None,
-                schedule_repeat_period=repeat_period,
-                allow_paid_floodskip=allow_paid_broadcast if allow_paid_broadcast is not None else None,
-                allow_paid_stars=paid_message_star_count if paid_message_star_count is not None else None,
-                suggested_post=suggested_post_parameters.write() if suggested_post_parameters else None,
-                reply_markup=await reply_markup.write(self) if reply_markup else None,
-                **text_params
             ),
             sleep_threshold=60,
-            business_connection_id=business_connection_id
+            business_connection_id=business_connection_id,
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage,
-                              raw.types.UpdateNewChannelMessage,
-                              raw.types.UpdateNewScheduledMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateNewScheduledMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message,
+                    self,
+                    i.message,
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
+                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                 )

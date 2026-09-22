@@ -20,7 +20,8 @@ from __future__ import annotations
 
 import re
 
-from pyrogram import raw, utils
+import pyrogram
+from pyrogram import raw, types, utils
 
 from ..object import Object
 
@@ -67,7 +68,7 @@ class InputRichMessageMedia(Object):
     def __init__(
         self,
         id: str | None = None,
-        media: str | raw.base.InputPhoto | raw.base.InputDocument | None = None,
+        media: str | types.InputMedia | raw.base.InputPhoto | raw.base.InputDocument | None = None,
         photos: list[raw.base.InputPhoto] | None = None,
         documents: list[raw.base.InputDocument] | None = None,
         users: list[raw.base.InputUser] | None = None,
@@ -76,6 +77,7 @@ class InputRichMessageMedia(Object):
 
         self.id = id
         self.media = media
+        self._file = None
         self.photos = photos
         self.documents = documents
         self.users = users
@@ -112,6 +114,9 @@ class InputRichMessageMedia(Object):
                 f'Invalid media id "{self.id}": 1-64 characters of A-Z, a-z, 0-9, _ and - only'
             )
 
+        if self._file is not None:
+            return self._file
+
         media = self.media
 
         if isinstance(media, str):
@@ -128,5 +133,28 @@ class InputRichMessageMedia(Object):
 
         raise ValueError(
             "A rich message can only refer to media that already exists on Telegram. "
-            f'Pass a file identifier, an InputPhoto or an InputDocument, not "{type(media).__name__}"'
+            f'Pass a file identifier, an InputMedia object, an InputPhoto or an InputDocument, not "{type(media).__name__}"'
+        )
+
+    async def _upload(
+        self,
+        client: pyrogram.Client,
+        chat_id: int | str | None = None,
+    ):
+        if not isinstance(self.media, types.InputMedia):
+            return
+
+        from .input_rich_block import _upload_media
+
+        media = await _upload_media(
+            client,
+            chat_id,
+            self.media,
+            is_photo=isinstance(self.media, types.InputMediaPhoto),
+        )
+
+        self._file = (
+            raw.types.InputRichFilePhoto(id=self.id, photo=media)
+            if isinstance(media, raw.types.InputPhoto)
+            else raw.types.InputRichFileDocument(id=self.id, document=media)
         )

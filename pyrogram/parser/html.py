@@ -171,9 +171,7 @@ class HTML:
         self.client = client
 
     async def parse(self, text: str):
-        # Strip whitespaces from the beginning and the end, but preserve closing tags
-        text = re.sub(r"^\s*(<[\w<>=\s\"]*>)\s*", r"\1", text)
-        text = re.sub(r"\s*(</[\w</>]*>)\s*$", r"\1", text)
+        text = text.strip()
 
         parser = Parser(self.client)
         parser.feed(utils.add_surrogates(text))
@@ -199,12 +197,22 @@ class HTML:
 
             entities.append(entity)
 
-        # Remove zero-length entities
-        entities = list(filter(lambda x: x.length > 0, entities))
+        message = parser.text.rstrip()
+        limit = len(message)
+        kept = []
+
+        for entity in entities:
+            if entity.offset >= limit:
+                continue
+
+            entity.length = min(entity.length, limit - entity.offset)
+
+            if entity.length > 0:
+                kept.append(entity)
 
         return {
-            "message": utils.remove_surrogates(parser.text),
-            "entities": sorted(entities, key=lambda e: e.offset) or None,
+            "message": utils.remove_surrogates(message),
+            "entities": sorted(kept, key=lambda e: e.offset) or None,
         }
 
     @staticmethod

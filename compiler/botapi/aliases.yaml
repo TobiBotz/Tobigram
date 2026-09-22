@@ -357,10 +357,6 @@ botapi:
       inline_message_id: editing a message sent as an inline query result goes through edit_inline_media, which takes the inline_message_id
     editMessageReplyMarkup:
       inline_message_id: editing a message sent as an inline query result goes through edit_inline_reply_markup, which takes the inline_message_id
-    editEphemeralMessageText:
-      link_preview_options: >-
-        ephemeral.editMessage has no no_webpage field, so a link preview cannot be
-        turned off any more than send_ephemeral_message can turn one off
     unbanChatMember:
       only_if_banned: >-
         channels.editBanned has no such flag; MTProto clears the restrictions
@@ -369,10 +365,6 @@ botapi:
       star_count: >-
         payments.transferStarGift takes no fee argument; the cost is fixed by the
         gift itself
-    sendSticker:
-      emoji: >-
-        the emoji lives on the sticker document, so it cannot be overridden per
-        send
     sendPoll:
       question_entities: carried by question, which accepts a FormattedText holding the entities and parse mode
       question_parse_mode: carried by question, which accepts a FormattedText holding the entities and parse mode

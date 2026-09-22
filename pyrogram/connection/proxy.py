@@ -106,6 +106,11 @@ class WebProxy:
 
 Proxy = SOCKS4Proxy | SOCKS5Proxy | HTTPProxy | MTProxy | WebProxy
 
+Socks4Proxy = SOCKS4Proxy
+Socks5Proxy = SOCKS5Proxy
+HttpProxy = HTTPProxy
+MtProxy = MTProxy
+
 
 class ProxyAddress(NamedTuple):
     hostname: str
@@ -530,7 +535,7 @@ def _parse_proxy_dict(proxy: ProxyDict) -> Proxy:
 
 
 def normalize_proxy(proxy: str | ProxyDict | Proxy | None) -> Proxy | None:
-    if proxy is None:
+    if not proxy:
         return None
 
     if isinstance(proxy, _PROXY_TYPES):
@@ -544,15 +549,3 @@ def normalize_proxy(proxy: str | ProxyDict | Proxy | None) -> Proxy | None:
 
     msg = f"proxy must be a `str`, `dict`, or `Proxy`, got: `{proxy!r}`"
     raise TypeError(msg)
-
-
-# Backward-compatibility aliases
-Socks4Proxy = SOCKS4Proxy
-Socks5Proxy = SOCKS5Proxy
-HttpProxy = HTTPProxy
-MtProxy = MTProxy
-
-Socks4ProxyDict = SOCKS4ProxyDict
-Socks5ProxyDict = SOCKS5ProxyDict
-HttpProxyDict = HTTPProxyDict
-MtProxyDict = MTProxyDict

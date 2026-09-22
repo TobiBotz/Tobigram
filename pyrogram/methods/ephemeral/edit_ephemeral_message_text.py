@@ -15,14 +15,16 @@
 #
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
-
 from __future__ import annotations
 
+import logging
 
 import pyrogram
-from pyrogram import enums, types, utils
+from pyrogram import enums, raw, types, utils
 
 from .edit_ephemeral_message import edit_ephemeral
+
+log = logging.getLogger(__name__)
 
 
 class EditEphemeralMessageText:
@@ -34,7 +36,11 @@ class EditEphemeralMessageText:
         text: str | None = None,
         parse_mode: enums.ParseMode | None = None,
         entities: list[types.MessageEntity] | None = None,
+        rich_text: str | types.InputRichMessage | None = None,
+        rich_text_parse_mode: enums.ParseMode = enums.ParseMode.MARKDOWN,
+        rich_text_media: list[types.InputRichMessageMedia] | None = None,
         rich_message: types.InputRichMessage | None = None,
+        link_preview_options: types.LinkPreviewOptions | None = None,
         reply_markup: types.InlineKeyboardMarkup | None = None,
         welcome: bool | None = None,
     ) -> types.Message | None:
@@ -54,7 +60,7 @@ class EditEphemeralMessageText:
                 Identifier of the ephemeral message to edit.
 
             text (``str``, *optional*):
-                New text of the message. Required if *rich_message* is not given.
+                New text of the message. Required if *rich_text* is not given.
 
             parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
                 By default, texts are parsed using both Markdown and HTML styles.
@@ -64,11 +70,26 @@ class EditEphemeralMessageText:
                 List of special entities that appear in message text, which can be
                 specified instead of *parse_mode*.
 
+            rich_text (``str`` | :obj:`~pyrogram.types.InputRichMessage`, *optional*):
+                Rich content to send, as Markdown or HTML text or as a whole
+                :obj:`~pyrogram.types.InputRichMessage`.
+
+            rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                Parse mode for *rich_text*. Defaults to Markdown.
+                Ignored when *rich_text* is an :obj:`~pyrogram.types.InputRichMessage`.
+
+            rich_text_media (List of :obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
+                Media *rich_text* refers to through ``tg://photo?id=``, ``tg://video?id=``
+                or ``tg://audio?id=`` links.
+                Ignored when *rich_text* is an :obj:`~pyrogram.types.InputRichMessage`.
+
             rich_message (:obj:`~pyrogram.types.InputRichMessage`, *optional*):
-                New rich content of the message. Overrides *text*. Unlike the send
-                methods this takes the built object rather than a string, because a
-                rich message that has to be composed is composed once and edited many
-                times.
+                Deprecated alias of *rich_text*.
+
+            link_preview_options (:obj:`~pyrogram.types.LinkPreviewOptions`, *optional*):
+                Options used for link preview generation for the message.
+                ``ephemeral.editMessage`` has no flag to turn a preview off, so
+                *is_disabled* has no effect here.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An inline keyboard.
@@ -88,12 +109,23 @@ class EditEphemeralMessageText:
                 )
         """
         if rich_message is not None:
+            log.warning(
+                "`rich_message` is deprecated and will be removed in future updates. "
+                "Use `rich_text` instead."
+            )
+
+            if rich_text is None:
+                rich_text = rich_message
+
+        if rich_text is not None:
             return await edit_ephemeral(
                 self,
                 chat_id,
                 receiver_id,
                 message_id,
-                rich_message=rich_message.write(),
+                rich_message=await utils.build_input_rich_message(
+                    self, rich_text, rich_text_parse_mode, rich_text_media, chat_id
+                ),
                 reply_markup=reply_markup,
                 welcome=welcome,
             )
@@ -109,6 +141,14 @@ class EditEphemeralMessageText:
             message_id,
             message=message,
             entities=parsed_entities,
+            media=raw.types.InputMediaWebPage(
+                url=link_preview_options.url,
+                force_large_media=link_preview_options.prefer_large_media,
+                force_small_media=link_preview_options.prefer_small_media,
+                optional=True,
+            )
+            if link_preview_options is not None and link_preview_options.url
+            else None,
             reply_markup=reply_markup,
             welcome=welcome,
         )

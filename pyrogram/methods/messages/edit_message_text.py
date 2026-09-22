@@ -11,7 +11,7 @@ class EditMessageText:
         self: pyrogram.Client,
         chat_id: int | str,
         message_id: int,
-        text: str,
+        text: str | None = None,
         parse_mode: enums.ParseMode | None = None,
         entities: list[types.MessageEntity] | None = None,
         link_preview_options: types.LinkPreviewOptions | None = None,
@@ -95,6 +95,9 @@ class EditMessageText:
 
                 await app.edit_message_text(chat_id, message_id, "New text")
         """
+        if text is None and rich_text is None:
+            raise ValueError("Either text or rich_text must be given")
+
         if link_preview_options is None:
             link_preview_options = self.link_preview_options
 
@@ -117,20 +120,12 @@ class EditMessageText:
         )
 
         if rich_text is not None:
-            if isinstance(rich_text, types.InputRichMessage):
-                rich_msg = rich_text.write()
-            else:
-                files = (
-                    types.InputRichMessage(html="_", media=rich_text_media).write_files()
-                    if rich_text_media
-                    else None
-                )
-
-                if rich_text_parse_mode == enums.ParseMode.HTML:
-                    rich_msg = raw.types.InputRichMessageHTML(html=rich_text, files=files)
-                else:
-                    rich_msg = raw.types.InputRichMessageMarkdown(markdown=rich_text, files=files)
-            text_params = {"message": "", "rich_message": rich_msg}
+            text_params = {
+                "message": "",
+                "rich_message": await utils.build_input_rich_message(
+                    self, rich_text, rich_text_parse_mode, rich_text_media, chat_id
+                ),
+            }
         else:
             text_params = await utils.parse_text_entities(self, text, parse_mode, entities)
 

@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from pyrogram import raw, types
+from pyrogram import raw, types, utils
 
 PYROGRAM = Path(__file__).resolve().parents[1] / "pyrogram"
 
@@ -84,7 +84,9 @@ def test_block_vectors_merge_across_a_media_list():
 
 
 def _rich_message_constructions():
-    for path in sorted((PYROGRAM / "methods").rglob("*.py")):
+    paths = sorted((PYROGRAM / "methods").rglob("*.py")) + [PYROGRAM / "utils.py"]
+
+    for path in paths:
         tree = ast.parse(path.read_text(encoding="utf-8"))
 
         for node in ast.walk(tree):
@@ -186,3 +188,98 @@ def test_the_thinking_tag_reaches_the_wire_untouched(kwargs, expected, field):
         "the html and markdown forms are parsed by the server, so a tag the "
         "library rewrote or dropped could never render"
     )
+
+
+class UploadingClient:
+    def __init__(self):
+        self.uploaded = []
+
+    async def invoke(self, query, *args, **kwargs):
+        self.uploaded.append(query)
+
+        return raw.types.MessageMediaPhoto(
+            photo=raw.types.Photo(
+                id=111, access_hash=222, file_reference=b"fr", date=0, sizes=[], dc_id=2
+            )
+        )
+
+    async def resolve_peer(self, peer_id):
+        return raw.types.InputPeerUser(user_id=peer_id, access_hash=9)
+
+    async def save_file(self, *args, **kwargs):
+        return raw.types.InputFile(id=1, parts=1, name="x.png", md5_checksum="")
+
+
+@pytest.mark.asyncio
+async def test_a_block_uploads_the_photo_it_was_given():
+    client = UploadingClient()
+
+    message = types.InputRichMessage(
+        blocks=[types.InputRichBlockPhoto(photo=types.InputMediaPhoto("README.md"))]
+    )
+
+    written = await utils.build_input_rich_message(client, message, chat_id=5)
+
+    assert written.blocks[0].photo_id == 111
+    assert [p.id for p in written.photos] == [111]
+    assert written.documents is None
+
+
+@pytest.mark.asyncio
+async def test_a_block_mention_reaches_the_users_vector():
+    client = UploadingClient()
+
+    message = types.InputRichMessage(
+        blocks=[
+            types.InputRichBlockParagraph(
+                text=raw.types.TextMentionName(user_id=777, text=raw.types.TextPlain(text="hi"))
+            )
+        ]
+    )
+
+    written = await utils.build_input_rich_message(client, message)
+
+    assert [u.user_id for u in written.users] == [777]
+
+
+@pytest.mark.asyncio
+async def test_a_media_id_uploads_for_html_too():
+    client = UploadingClient()
+
+    message = types.InputRichMessage(
+        html='<img src="tg://photo?id=a">',
+        media=types.InputRichMessageMedia(id="a", media=types.InputMediaPhoto("README.md")),
+    )
+
+    written = await utils.build_input_rich_message(client, message)
+
+    assert isinstance(written.files[0], raw.types.InputRichFilePhoto)
+    assert written.files[0].photo.id == 111
+
+
+@pytest.mark.asyncio
+async def test_an_already_uploaded_block_photo_needs_no_round_trip():
+    client = UploadingClient()
+
+    message = types.InputRichMessage(
+        blocks=[types.InputRichBlockPhoto(photo_id=42)],
+        media=types.InputRichMessageMedia(photos=[photo(42)]),
+    )
+
+    written = await utils.build_input_rich_message(client, message)
+
+    assert client.uploaded == []
+    assert written.blocks[0].photo_id == 42
+
+
+def test_a_media_block_without_media_is_refused():
+    for block, kwargs in (
+        (types.InputRichBlockPhoto, {}),
+        (types.InputRichBlockVideo, {}),
+        (types.InputRichBlockAnimation, {}),
+        (types.InputRichBlockAudio, {}),
+        (types.InputRichBlockVoiceNote, {}),
+        (types.InputRichBlockDocument, {}),
+    ):
+        with pytest.raises(ValueError):
+            block(**kwargs)

@@ -41,6 +41,8 @@ class SendVoice:
         parse_mode: enums.ParseMode | None = None,
         caption_entities: list[types.MessageEntity] | None = None,
         duration: int = 0,
+        waveform: bytes | None = None,
+        view_once: bool | None = None,
         disable_notification: bool | None = None,
         reply_to_message_id: int | None = None,
         reply_to_chat_id: int | str | None = None,
@@ -103,6 +105,14 @@ class SendVoice:
 
             duration (``int``, *optional*):
                 Duration of the voice message in seconds.
+
+            waveform (``bytes``, *optional*):
+                The waveform of the voice note, as a 5-bit byte string.
+
+            view_once (``bool``, *optional*):
+                Pass True if the voice note must be opened once and disappear afterwards.
+                Self-destructing media only works in private chats; a group or a
+                channel drops the timer.
 
             disable_notification (``bool``, *optional*):
                 Sends the message silently.
@@ -247,6 +257,8 @@ class SendVoice:
                     quote_entities=quote_entities,
                 )
 
+        ttl_seconds = (1 << 31) - 1 if view_once else None
+
         file = None
 
         try:
@@ -259,19 +271,31 @@ class SendVoice:
                         mime_type=self.guess_mime_type(voice) or "audio/mpeg",
                         file=file,
                         attributes=[
-                            raw.types.DocumentAttributeAudio(voice=True, duration=duration)
+                            raw.types.DocumentAttributeAudio(
+                                voice=True, duration=duration, waveform=waveform
+                            )
                         ],
+                        ttl_seconds=ttl_seconds,
                     )
                 elif re.match("^https?://", voice):
-                    media = raw.types.InputMediaDocumentExternal(url=voice)
+                    media = raw.types.InputMediaDocumentExternal(
+                        url=voice, ttl_seconds=ttl_seconds
+                    )
                 else:
-                    media = utils.get_input_media_from_file_id(voice, FileType.VOICE)
+                    media = utils.get_input_media_from_file_id(
+                        voice, FileType.VOICE, ttl_seconds=ttl_seconds
+                    )
             else:
                 file = await self.save_file(voice, progress=progress, progress_args=progress_args)
                 media = raw.types.InputMediaUploadedDocument(
                     mime_type=self.guess_mime_type(utils.get_file_name(voice)) or "audio/mpeg",
                     file=file,
-                    attributes=[raw.types.DocumentAttributeAudio(voice=True, duration=duration)],
+                    attributes=[
+                        raw.types.DocumentAttributeAudio(
+                            voice=True, duration=duration, waveform=waveform
+                        )
+                    ],
+                    ttl_seconds=ttl_seconds,
                 )
 
             while True:

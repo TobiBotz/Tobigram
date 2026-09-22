@@ -35,7 +35,7 @@ class GetRichMessage:
         blocks and ``is_partial`` set on its :obj:`~pyrogram.types.RichMessage`; this fetches
         the whole of it.
 
-        .. include:: /_includes/usable-by/users-bots.rst
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             chat_id (``int`` | ``str``):

@@ -66,7 +66,7 @@ from pyrogram.storage import SQLiteStorage, Storage
 from pyrogram.types import LinkPreviewOptions, ListenerRegistry, TermsOfService, User
 from pyrogram.utils import ainput
 
-from .connection import Connection, Proxy, normalize_proxy
+from .connection import Connection, Proxy, ProxyDict, normalize_proxy
 from .connection.transport import TCP, TCPAbridged
 from .dispatcher import Dispatcher
 from .file_id import FileId, FileType, ThumbnailSource
@@ -507,7 +507,7 @@ class Client(Methods):
         self.system_lang_code = system_lang_code.lower()
 
         self.ipv6 = ipv6
-        self.proxy = normalize_proxy(proxy)
+        self.proxy = proxy
         self.test_mode = test_mode
         self.bot_token = bot_token
         self.session_string = session_string
@@ -627,6 +627,15 @@ class Client(Methods):
             self.loop = None
 
         self.__config: raw.types.Config = None
+        self._proxy: Proxy | None = None
+
+    @property
+    def proxy(self) -> Proxy | None:
+        return self._proxy
+
+    @proxy.setter
+    def proxy(self, value: str | ProxyDict | Proxy | None) -> None:
+        self._proxy = normalize_proxy(value)
 
     @property
     def read_ahead_slots(self) -> asyncio.Semaphore:

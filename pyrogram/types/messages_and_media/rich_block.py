@@ -706,7 +706,7 @@ class RichBlockBlockQuotation(RichBlock):
 
 class RichBlockExpandableBlockQuotation(RichBlock):
     """A block quotation, corresponding to the HTML tag ``<blockquote>`` with the
-    custom attribute ``collapsed``.
+    custom attribute ``expandable``.
 
     Parameters:
         text (:obj:`~pyrogram.types.RichText`):
@@ -1006,7 +1006,7 @@ class RichBlockAudio(RichBlock):
 
 
 class RichBlockPhoto(RichBlock):
-    """A block with a photo, corresponding to the HTML tag ``<photo>``.
+    """A block with a photo, corresponding to the HTML tag ``<img>``.
 
     Parameters:
         photo (:obj:`~pyrogram.types.Photo`):

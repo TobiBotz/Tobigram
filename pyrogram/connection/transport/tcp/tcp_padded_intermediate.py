@@ -30,6 +30,9 @@ log = logging.getLogger(__name__)
 
 
 def strip_padding(payload: bytes) -> bytes:
+    if len(payload) < 24:
+        return payload[:4]
+
     if len(payload) >= 20 and int.from_bytes(payload[:8], "little") == 0:
         return payload[: 20 + int.from_bytes(payload[16:20], "little")]
 

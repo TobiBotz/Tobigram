@@ -29,12 +29,15 @@ class EditInlineText:
     async def edit_inline_text(
         self: pyrogram.Client,
         inline_message_id: str,
-        text: str,
+        text: str | None = None,
         parse_mode: enums.ParseMode | None = None,
         entities: list[types.MessageEntity] | None = None,
         link_preview_options: types.LinkPreviewOptions | None = None,
         disable_web_page_preview: bool | None = None,
         show_caption_above_media: bool | None = None,
+        rich_text: str | types.InputRichMessage | None = None,
+        rich_text_parse_mode: enums.ParseMode = enums.ParseMode.MARKDOWN,
+        rich_text_media: list[types.InputRichMessageMedia] | None = None,
         reply_markup: types.InlineKeyboardMarkup | None = None,
         business_connection_id: str | None = None,
     ) -> bool:
@@ -69,6 +72,22 @@ class EditInlineText:
             show_caption_above_media (``bool``, *optional*):
                 Pass True, if the caption must be shown above the message media.
 
+            rich_text (``str`` | :obj:`~pyrogram.types.InputRichMessage`, *optional*):
+                New rich content of the message, as Markdown or HTML text or as a whole
+                :obj:`~pyrogram.types.InputRichMessage`. Replaces *text*.
+
+            rich_text_parse_mode (:obj:`~pyrogram.enums.ParseMode`, *optional*):
+                Parse mode for *rich_text*. Defaults to Markdown.
+                Ignored when *rich_text* is an :obj:`~pyrogram.types.InputRichMessage`.
+
+            rich_text_media (List of :obj:`~pyrogram.types.InputRichMessageMedia`, *optional*):
+                Media *rich_text* refers to through ``tg://photo?id=``, ``tg://video?id=``
+                or ``tg://audio?id=`` links.
+                Ignored when *rich_text* is an :obj:`~pyrogram.types.InputRichMessage`.
+
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
+                An InlineKeyboardMarkup object.
+
             business_connection_id (``str``, *optional*):
                 Unique identifier of the business connection.
 
@@ -88,6 +107,9 @@ class EditInlineText:
                     inline_message_id, message.text,
                     disable_web_page_preview=True)
         """
+
+        if text is None and rich_text is None:
+            raise ValueError("Either text or rich_text must be given")
 
         unpacked = utils.unpack_inline_message_id(inline_message_id)
         dc_id = unpacked.dc_id
@@ -110,6 +132,16 @@ class EditInlineText:
         if invert_media is None and show_caption_above_media is not None:
             invert_media = show_caption_above_media
 
+        if rich_text is not None:
+            text_params = {
+                "message": "",
+                "rich_message": await utils.build_input_rich_message(
+                    self, rich_text, rich_text_parse_mode, rich_text_media
+                ),
+            }
+        else:
+            text_params = await utils.parse_text_entities(self, text, parse_mode, entities)
+
         return await invoke_inline(
             self,
             dc_id,
@@ -126,7 +158,7 @@ class EditInlineText:
                 if link_preview_options is not None and link_preview_options.url
                 else None,
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
-                **await utils.parse_text_entities(self, text, parse_mode, entities),
+                **text_params,
             ),
             business_connection_id,
         )

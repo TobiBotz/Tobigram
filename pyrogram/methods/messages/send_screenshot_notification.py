@@ -25,7 +25,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw, types
+from pyrogram import raw, types, utils
 
 
 class SendScreenshotNotification:
@@ -33,6 +33,7 @@ class SendScreenshotNotification:
         self: pyrogram.Client,
         chat_id: int | str,
         reply_to_message_id: int = 0,
+        reply_parameters: types.ReplyParameters | None = None,
     ) -> types.Message:
         """Notify the other user that you took a screenshot.
 
@@ -45,6 +46,9 @@ class SendScreenshotNotification:
             chat_id (``int`` | ``str``):
                 Unique identifier (int) or username (str) of the target chat.
 
+            reply_parameters (:obj:`~pyrogram.types.ReplyParameters`, *optional*):
+                Describes the message the notification replies to.
+
 
 
         Returns:
@@ -56,12 +60,13 @@ class SendScreenshotNotification:
                 await app.send_screenshot_notification(chat_id, ...)
         """
 
+        if reply_parameters is None and reply_to_message_id:
+            reply_parameters = types.ReplyParameters(message_id=reply_to_message_id)
+
         r = await self.invoke(
             raw.functions.messages.SendScreenshotNotification(
                 peer=await self.resolve_peer(chat_id),
-                reply_to=raw.types.InputReplyToMessage(reply_to_msg_id=reply_to_message_id)
-                if reply_to_message_id
-                else None,
+                reply_to=await utils.get_reply_to(self, reply_parameters),
                 random_id=self.rnd_id(),
             )
         )

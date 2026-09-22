@@ -31,6 +31,7 @@ class BanChatMember:
         user_id: int | str,
         until_date: datetime = utils.zero_datetime(),
         revoke_messages: bool | None = None,
+        revoke_reactions: bool | None = None,
     ) -> types.Message | bool:
         """Ban a user from a group, a supergroup or a channel.
         In the case of supergroups and channels, the user will not be able to return to the group on their own using
@@ -58,7 +59,10 @@ class BanChatMember:
                 considered to be banned forever. Defaults to epoch (ban forever).
 
             revoke_messages (``bool``, *optional*):
-                Pass True to delete all the messages sent by the user in a basic group.
+                Pass True to delete all the messages sent by the user in the chat.
+
+            revoke_reactions (``bool``, *optional*):
+                Pass True to delete all the reactions the user left in the chat.
 
         Returns:
             :obj:`~pyrogram.types.Message` | ``bool``: On success, a service message will be returned (when applicable),
@@ -81,9 +85,10 @@ class BanChatMember:
         if isinstance(
             chat_peer, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)
         ):
+            channel = utils.get_input_channel(chat_peer)
             r = await self.invoke(
                 raw.functions.channels.EditBanned(
-                    channel=utils.get_input_channel(chat_peer),
+                    channel=channel,
                     participant=user_peer,
                     banned_rights=raw.types.ChatBannedRights(
                         until_date=utils.datetime_to_timestamp(until_date),
@@ -98,10 +103,26 @@ class BanChatMember:
                     ),
                 )
             )
+
+            if revoke_messages:
+                await self.invoke(
+                    raw.functions.channels.DeleteParticipantHistory(
+                        channel=channel,
+                        participant=user_peer,
+                    )
+                )
         else:
             r = await self.invoke(
                 raw.functions.messages.DeleteChatUser(
                     chat_id=chat_peer.chat_id, user_id=user_peer, revoke_history=revoke_messages
+                )
+            )
+
+        if revoke_reactions:
+            await self.invoke(
+                raw.functions.messages.DeleteParticipantReactions(
+                    peer=chat_peer,
+                    participant=user_peer,
                 )
             )
 

@@ -27,7 +27,11 @@ log = logging.getLogger(__name__)
 
 
 class Stop:
-    async def stop(self: pyrogram.Client, block: bool = True):
+    async def stop(
+        self: pyrogram.Client,
+        block: bool = True,
+        clear_handlers: bool = True,
+    ):
         """Stop the Client.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -39,6 +43,10 @@ class Stop:
             block (``bool``, *optional*):
                 Blocks the code execution until the client has been stopped. It is useful with ``block=False`` in case
                 you want to stop the own client *within* a handler in order not to cause a deadlock.
+                Defaults to True.
+
+            clear_handlers (``bool``, *optional*):
+                Pass False to keep the registered handlers, so a later start reuses them.
                 Defaults to True.
 
         Returns:
@@ -67,7 +75,7 @@ class Stop:
         async def do_it():
             if self.is_initialized:
                 try:
-                    await self.terminate()
+                    await self.terminate(clear_handlers=clear_handlers)
                 except Exception:
                     log.exception("Error while terminating client")
 

@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncGenerator
+from datetime import datetime
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
@@ -35,19 +36,24 @@ async def get_chunk(
     from_user: int | str | None = None,
     saved_peer_id: int | str | None = None,
     top_msg_id: int | None = None,
+    offset_id: int = 0,
+    min_date: datetime | None = None,
+    max_date: datetime | None = None,
+    min_id: int = 0,
+    max_id: int = 0,
 ) -> list[types.Message]:
     r = await client.invoke(
         raw.functions.messages.Search(
             peer=await client.resolve_peer(chat_id),
             q=query,
             filter=filter.value(),
-            min_date=0,
-            max_date=0,
-            offset_id=0,
+            min_date=utils.datetime_to_timestamp(min_date) or 0,
+            max_date=utils.datetime_to_timestamp(max_date) or 0,
+            offset_id=offset_id,
             add_offset=offset,
             limit=limit,
-            min_id=0,
-            max_id=0,
+            min_id=min_id,
+            max_id=max_id,
             from_id=(await client.resolve_peer(from_user) if from_user else None),
             saved_peer_id=(await client.resolve_peer(saved_peer_id) if saved_peer_id else None),
             top_msg_id=top_msg_id,
@@ -71,6 +77,11 @@ class SearchMessages:
         from_user: int | str | None = None,
         saved_peer_id: int | str | None = None,
         top_msg_id: int | None = None,
+        offset_id: int = 0,
+        min_date: datetime | None = None,
+        max_date: datetime | None = None,
+        min_id: int = 0,
+        max_id: int = 0,
     ) -> AsyncGenerator[types.Message, None] | None:
         """Search for text and media messages inside a specific chat.
 
@@ -95,22 +106,38 @@ class SearchMessages:
                 Defaults to 0.
 
             filter (:obj:`~pyrogram.enums.MessagesFilter`, *optional*):
-                Pass a filter in order to search for specific kind of messages only.
-                Defaults to any message (no filter).
+                Pass a filter in order to search for specific type of messages only.
+                Defaults to :obj:`~pyrogram.enums.MessagesFilter.EMPTY` (search all messages).
 
             limit (``int``, *optional*):
                 Limits the number of messages to be retrieved.
                 By default, no limit is applied and all messages are returned.
 
             from_user (``int`` | ``str``, *optional*):
-                Unique identifier (int) or username (str) of the target user you want to search for messages from.
+                Unique identifier (int) or username (str) of the target user you want to search messages from for
+                groups and supergroups.
 
             saved_peer_id (``int`` | ``str``, *optional*):
-                Unique identifier (int) or username (str) of the dialog inside your personal
-                cloud (Saved Messages) to act on, rather than the cloud as a whole.
+                Unique identifier (int) or username (str) of the target chat you want to search messages from for
+                your personal cloud (Saved Messages).
 
             top_msg_id (``int``, *optional*):
                 Unique identifier of the forum topic the action is broadcast to.
+
+            offset_id (``int``, *optional*):
+                Identifier of the first message to be returned.
+
+            min_date (:py:obj:`~datetime.datetime`, *optional*):
+                Pass a date to return only messages sent on or after that date.
+
+            max_date (:py:obj:`~datetime.datetime`, *optional*):
+                Pass a date to return only messages sent on or before that date.
+
+            min_id (``int``, *optional*):
+                Identifier of the oldest message to be returned.
+
+            max_id (``int``, *optional*):
+                Identifier of the newest message to be returned.
 
         Returns:
             ``Generator``: A generator yielding :obj:`~pyrogram.types.Message` objects.
@@ -118,15 +145,13 @@ class SearchMessages:
         Example:
             .. code-block:: python
 
-                from pyrogram import enums
-
-                # Search for text messages in chat. Get the last 120 results
-                async for message in app.search_messages(chat_id, query="hello", limit=120):
+                # Search for "hello" in chat
+                async for message in app.search_messages(chat_id, query="hello"):
                     print(message.text)
 
-                # Search for pinned messages in chat
-                async for message in app.search_messages(chat_id, filter=enums.MessagesFilter.PINNED):
-                    print(message.text)
+                # Search for recent photos in chat
+                async for message in app.search_messages(chat, filter=enums.MessagesFilter.PHOTO):
+                    print(message.photo)
 
                 # Search for messages containing "hello" sent by yourself in chat
                 async for message in app.search_messages(chat, "hello", from_user="me"):
@@ -148,6 +173,11 @@ class SearchMessages:
                 from_user=from_user,
                 saved_peer_id=saved_peer_id,
                 top_msg_id=top_msg_id,
+                offset_id=offset_id,
+                min_date=min_date,
+                max_date=max_date,
+                min_id=min_id,
+                max_id=max_id,
             )
 
             if not messages:
