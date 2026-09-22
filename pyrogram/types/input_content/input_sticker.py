@@ -20,7 +20,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, BinaryIO
 
-from pyrogram import raw
+from pyrogram import enums, raw
 from ..object import Object
 
 if TYPE_CHECKING:
@@ -31,7 +31,7 @@ class InputSticker(Object):
     """A sticker to be added to a sticker set.
 
     Parameters:
-        sticker (``str`` | ``BinaryIO`` | :obj:`~pyrogram.raw.base.InputDocument`):
+        sticker (``str`` | ``BinaryIO`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.raw.base.InputDocument`):
             Sticker file.
             Pass a file_id as string to use a file that exists on Telegram servers,
             pass a file path as string to upload a new file that exists on your local machine,
@@ -42,27 +42,52 @@ class InputSticker(Object):
             One or more emoji associated with the sticker.
             Defaults to "😀".
 
-        keywords (``str``, *optional*):
+        keywords (List of ``str`` | ``str``, *optional*):
             List of 0-20 search keywords for the sticker with total length of up to 64 characters,
-            separated by commas.
+            or comma-separated keywords string.
 
         mask_coords (:obj:`~pyrogram.types.MaskPosition` | :obj:`~pyrogram.raw.types.MaskCoords`, *optional*):
             Position where the mask should be placed on faces (for mask sticker sets only).
+
+        format (:obj:`~pyrogram.enums.StickerFormat`, *optional*):
+            Format of the sticker (static, animated, or video).
+
+        emoji_list (List of ``str``, *optional*):
+            List of 1-20 emoji associated with the sticker.
+
+        mask_position (:obj:`~pyrogram.types.MaskPosition`, *optional*):
+            Position where the mask should be placed on faces (alias for mask_coords).
     """
 
     def __init__(
         self,
         sticker: str | BinaryIO | types.Sticker | raw.base.InputDocument,
         emoji: str | None = None,
-        keywords: str | None = None,
+        keywords: list[str] | str | None = None,
         mask_coords: types.MaskPosition | raw.types.MaskCoords | None = None,
+        *,
+        format: enums.StickerFormat | None = None,
+        emoji_list: list[str] | str | None = None,
+        mask_position: types.MaskPosition | raw.types.MaskCoords | None = None,
     ) -> None:
         super().__init__()
 
-        if emoji is None and hasattr(sticker, "emoji") and getattr(sticker, "emoji"):
-            emoji = getattr(sticker, "emoji")
+        em = emoji_list if emoji_list is not None else emoji
+        if isinstance(em, list):
+            em = "".join(em)
+        elif em is None and hasattr(sticker, "emoji") and getattr(sticker, "emoji"):
+            em = getattr(sticker, "emoji")
+
+        kw = keywords
+        if isinstance(kw, list):
+            kw = ",".join(kw)
+
+        mc = mask_position if mask_position is not None else mask_coords
 
         self.sticker = sticker
-        self.emoji = emoji or "😀"
-        self.keywords = keywords
-        self.mask_coords = mask_coords
+        self.emoji = em or "😀"
+        self.emoji_list = [self.emoji] if em else ["😀"]
+        self.keywords = kw
+        self.mask_coords = mc
+        self.mask_position = mc
+        self.format = format

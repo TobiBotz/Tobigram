@@ -29,10 +29,12 @@ import pathlib
 import re
 import struct
 import warnings
+from collections import OrderedDict
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from getpass import getpass
 from io import BytesIO
+from typing import Any
 
 import pyrogram
 from pyrogram import enums, raw, types
@@ -1016,3 +1018,53 @@ def parse_report_reason(
         raise ValueError(f"Unknown report reason: {reason!r}")
 
     return target_cls()
+
+
+class Cache:
+    def __init__(self, capacity: int = 100):
+        if capacity <= 0:
+            raise ValueError("capacity must be greater than 0")
+
+        self.capacity = capacity
+        self._max_size = capacity
+        self._cache: OrderedDict[Any, Any] = OrderedDict()
+
+    def __len__(self) -> int:
+        return len(self._cache)
+
+    def __contains__(self, key: Any) -> bool:
+        return key in self._cache
+
+    def __bool__(self) -> bool:
+        return bool(self._cache)
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(capacity={self.capacity}, size={len(self)})"
+
+    def __getitem__(self, key: Any) -> Any:
+        value = self._cache.pop(key, None)
+        if value is not None:
+            self._cache[key] = value
+            return value
+        return None
+
+    def __setitem__(self, key: Any, value: Any) -> None:
+        if key in self._cache:
+            del self._cache[key]
+        self._cache[key] = value
+        if len(self._cache) > self.capacity:
+            self._cache.popitem(last=False)
+
+    def get(self, key: Any, default: Any = None) -> Any:
+        if key not in self._cache:
+            return default
+
+        self._cache.move_to_end(key)
+        return self._cache[key]
+
+    def set(self, key: Any, value: Any) -> None:
+        self._cache[key] = value
+        self._cache.move_to_end(key)
+
+        if len(self._cache) > self.capacity:
+            self._cache.popitem(last=False)

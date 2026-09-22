@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import pytest
 
 import pyrogram
-from pyrogram import raw, types
+from pyrogram import enums, raw, types, utils
 
 
 def make_raw_sticker_set(
@@ -62,6 +62,7 @@ class FakeStickersClient(pyrogram.Client):
         self.saved_files = []
         self.me = Mock(id=777, is_bot=True, username="mybot")
         self.fetch_stickers = False
+        self.sticker_set_name_cache = utils.Cache(250)
 
     async def invoke(self, query, **kwargs):
         self.sent_queries.append(query)
@@ -567,12 +568,31 @@ async def test_all_sticker_method_aliases(client):
     res = await client.replace_sticker_in_set(raw_doc, "new.webp", emoji="🌟")
     assert isinstance(res, types.StickerSet)
 
-    # set_sticker_emoji_list
-    res = await client.set_sticker_emoji_list(raw_doc, "🎉")
+    # set_sticker_emoji_list with list and str
+    res = await client.set_sticker_emoji_list(raw_doc, ["🎉", "🥳"])
     assert isinstance(res, types.StickerSet)
+    change_query = next(
+        q
+        for q in reversed(client.sent_queries)
+        if isinstance(q, raw.functions.stickers.ChangeSticker)
+    )
+    assert change_query.emoji == "🎉🥳"
 
-    # set_sticker_keywords
-    res = await client.set_sticker_keywords(raw_doc, "party")
+    # set_sticker_keywords with list and str
+    res = await client.set_sticker_keywords(raw_doc, ["party", "fun"])
+    assert isinstance(res, types.StickerSet)
+    change_query = next(
+        q
+        for q in reversed(client.sent_queries)
+        if isinstance(q, raw.functions.stickers.ChangeSticker)
+    )
+    assert change_query.keywords == "party,fun"
+
+    # set_sticker_mask_position
+    res = await client.set_sticker_mask_position(
+        raw_doc,
+        types.MaskPosition(point=enums.MaskPointType.FOREHEAD, x_shift=0.1, y_shift=0.2, scale=1.0),
+    )
     assert isinstance(res, types.StickerSet)
 
     # set_sticker_position_in_set
@@ -605,3 +625,20 @@ async def test_all_sticker_method_aliases(client):
     assert await client.add_recent_sticker(raw_doc) is True
     assert await client.remove_recent_sticker(raw_doc) is True
     assert await client.clear_recent_stickers() is True
+
+
+async def test_sticker_set_name_cache(client):
+    cache = utils.Cache(3)
+    cache.set((1, 100), "pack_one")
+    cache.set((2, 200), "pack_two")
+    assert cache.get((1, 100)) == "pack_one"
+    assert cache.get((3, 300)) is None
+    assert len(cache) == 2
+
+    # LRU eviction
+    cache.set((3, 300), "pack_three")
+    cache.set((4, 400), "pack_four")
+    assert len(cache) == 3
+    # pack_two was oldest accessed because pack_one was accessed right before
+    assert cache.get((2, 200)) is None
+    assert cache.get((1, 100)) == "pack_one"

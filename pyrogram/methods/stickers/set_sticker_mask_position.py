@@ -27,46 +27,48 @@ class SetStickerMaskPosition:
     async def set_sticker_mask_position(
         self: pyrogram.Client,
         sticker: str | types.Sticker | raw.base.InputDocument,
-        mask_coords: types.MaskPosition | raw.types.MaskCoords,
+        mask_position: types.MaskPosition | raw.types.MaskCoords | None = None,
     ) -> types.StickerSet:
-        """Set mask position for a mask sticker.
+        """Use this method to change the mask position of a mask sticker.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
             sticker (``str`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.raw.base.InputDocument`):
-                The sticker to update.
+                File identifier or document of the sticker.
 
-            mask_coords (:obj:`~pyrogram.types.MaskPosition` | :obj:`~pyrogram.raw.types.MaskCoords`):
-                Mask coordinates.
+            mask_position (:obj:`~pyrogram.types.MaskPosition` | :obj:`~pyrogram.raw.types.MaskCoords`, *optional*):
+                Position where the mask should be placed on faces.
+                Omit the parameter to remove the mask position.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the updated sticker set is returned.
+            :obj:`~pyrogram.types.StickerSet`: An updated sticker set is returned.
 
         Example:
             .. code-block:: python
 
                 await app.set_sticker_mask_position(sticker, mask_pos)
         """
-        doc = await resolve_sticker_doc(self, sticker)
+        pos = mask_position
+        raw_mask_coords = None
 
-        if isinstance(mask_coords, types.MaskPosition):
-            point_val = (
-                mask_coords.point.value
-                if hasattr(mask_coords.point, "value")
-                else int(mask_coords.point)
-            )
-            mask_coords = raw.types.MaskCoords(
+        if isinstance(pos, types.MaskPosition):
+            point_val = pos.point.value if hasattr(pos.point, "value") else int(pos.point)
+            raw_mask_coords = raw.types.MaskCoords(
                 n=point_val,
-                x=mask_coords.x_shift,
-                y=mask_coords.y_shift,
-                zoom=mask_coords.scale,
+                x=pos.x_shift,
+                y=pos.y_shift,
+                zoom=pos.scale,
             )
+        elif isinstance(pos, raw.types.MaskCoords):
+            raw_mask_coords = pos
+
+        doc = await resolve_sticker_doc(self, sticker)
 
         r = await self.invoke(
             raw.functions.stickers.ChangeSticker(
                 sticker=doc,
-                mask_coords=mask_coords,
+                mask_coords=raw_mask_coords,
             )
         )
 

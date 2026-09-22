@@ -27,33 +27,38 @@ class SetStickerEmojiList:
     async def set_sticker_emoji_list(
         self: pyrogram.Client,
         sticker: str | types.Sticker | raw.base.InputDocument,
-        emoji: str,
+        emoji_list: list[str] | str,
     ) -> types.StickerSet:
-        """Set associated emojis for a sticker.
+        """Use this method to change the list of emoji assigned to a regular or custom emoji sticker.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
             sticker (``str`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.raw.base.InputDocument`):
-                The sticker to update.
+                File identifier or document of the sticker.
 
-            emoji (``str``):
-                Associated emoji list string.
+            emoji_list (List of ``str`` | ``str``):
+                List of 1-20 emoji associated with the sticker or concatenated emoji string.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the updated sticker set is returned.
+            :obj:`~pyrogram.types.StickerSet`: An updated sticker set is returned.
 
         Example:
             .. code-block:: python
 
-                await app.set_sticker_emoji_list(sticker, "🎉🥳")
+                await app.set_sticker_emoji_list(sticker, ["🎉", "🥳"])
         """
+        if isinstance(emoji_list, list):
+            emoji_str = "".join(emoji_list)
+        else:
+            emoji_str = emoji_list or ""
+
         doc = await resolve_sticker_doc(self, sticker)
 
         r = await self.invoke(
             raw.functions.stickers.ChangeSticker(
                 sticker=doc,
-                emoji=emoji,
+                emoji=emoji_str,
             )
         )
 

@@ -76,6 +76,8 @@ from .session.internals import MsgId
 
 log = logging.getLogger(__name__)
 
+Cache = utils.Cache
+
 _handler_executor: ThreadPoolExecutor | None = None
 
 
@@ -316,6 +318,10 @@ class Client(Methods):
             Set the maximum size of the topic cache.
             Defaults to 1000.
 
+        max_sticker_set_name_cache_size (``int``, *optional*):
+            Set the maximum size of the sticker set name cache.
+            Defaults to 250.
+
         max_listeners (``int``, *optional*):
             Set the maximum number of concurrent listeners. The ceiling is shared
             by every client on the event loop, so fifteen clients do not get
@@ -436,6 +442,7 @@ class Client(Methods):
     MAX_CONCURRENT_TRANSMISSIONS = 16
     MAX_MESSAGE_CACHE_SIZE = 1000
     MAX_TOPIC_CACHE_SIZE = 1000
+    MAX_STICKER_SET_NAME_CACHE_SIZE = 250
     MAX_BUSINESS_CONNECTIONS = 512
     LISTENER_TIMEOUT = 300
     UNALLOWED_CLICK_ALERT_TEXT = "You are not expected to click this button."
@@ -475,6 +482,7 @@ class Client(Methods):
         max_concurrent_transmissions: int = MAX_CONCURRENT_TRANSMISSIONS,
         max_message_cache_size: int = MAX_MESSAGE_CACHE_SIZE,
         max_topic_cache_size: int = MAX_TOPIC_CACHE_SIZE,
+        max_sticker_set_name_cache_size: int = MAX_STICKER_SET_NAME_CACHE_SIZE,
         max_listeners: int | None = None,
         listener_timeout: float | None = LISTENER_TIMEOUT,
         unallowed_click_alert: bool = True,
@@ -531,6 +539,7 @@ class Client(Methods):
         self.unallowed_click_alert = unallowed_click_alert
         self.unallowed_click_alert_text = unallowed_click_alert_text
         self.max_topic_cache_size = max_topic_cache_size
+        self.max_sticker_set_name_cache_size = max_sticker_set_name_cache_size
         self.client_platform = client_platform
         self.link_preview_options = link_preview_options
         self.fetch_replies = fetch_replies
@@ -606,9 +615,10 @@ class Client(Methods):
 
         self.me: User | None = None
 
-        self.message_cache = Cache(self.max_message_cache_size)
-        self.topic_cache = Cache(self.max_topic_cache_size)
-        self._min_peer_messages = Cache(max(10000, self.max_message_cache_size * 2))
+        self.message_cache = utils.Cache(self.max_message_cache_size)
+        self.topic_cache = utils.Cache(self.max_topic_cache_size)
+        self.sticker_set_name_cache = utils.Cache(self.max_sticker_set_name_cache_size)
+        self._min_peer_messages = utils.Cache(max(10000, self.max_message_cache_size * 2))
 
         # Sometimes, for some reason, the server will stop sending updates and will only respond to pings.
         # This watchdog will invoke updates.GetState in order to wake up the server and enable it sending updates again
@@ -2374,28 +2384,3 @@ class Client(Methods):
 
     def guess_extension(self, mime_type: str) -> str | None:
         return self.mimetypes.guess_extension(mime_type)
-
-
-class Cache:
-    def __init__(self, capacity: int):
-        self.capacity = capacity
-        self.store: OrderedDict = OrderedDict()
-
-    def __getitem__(self, key):
-        value = self.store.pop(key, None)
-        if value is not None:
-            self.store[key] = value
-        return value
-
-    def get(self, key, default=None):
-        value = self.__getitem__(key)
-        return value if value is not None else default
-
-    def __setitem__(self, key, value):
-        if key in self.store:
-            del self.store[key]
-
-        self.store[key] = value
-
-        if len(self.store) > self.capacity:
-            self.store.popitem(last=False)
