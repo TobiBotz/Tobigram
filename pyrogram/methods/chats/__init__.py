@@ -20,6 +20,15 @@ from .add_chat_members import AddChatMembers
 from .archive_chats import ArchiveChats
 from .ban_chat_member import BanChatMember
 from .close_forum_topic import CloseForumTopic
+from .close_general_forum_topic import CloseGeneralForumTopic
+from .edit_general_forum_topic import EditGeneralForumTopic
+from .get_forum_topic_icon_stickers import GetForumTopicIconStickers
+from .hide_general_forum_topic import HideGeneralForumTopic
+from .reopen_forum_topic import ReopenForumTopic
+from .reopen_general_forum_topic import ReopenGeneralForumTopic
+from .unhide_general_forum_topic import UnhideGeneralForumTopic
+from .unpin_all_forum_topic_messages import UnpinAllForumTopicMessages
+from .unpin_all_general_forum_topic_messages import UnpinAllGeneralForumTopicMessages
 from .pin_forum_topic import PinForumTopic
 from .reorder_folders import ReorderFolders
 from .set_chat_accent_color import SetChatAccentColor
@@ -201,6 +210,15 @@ class Chats(
     ToggleViewForumAsMessages,
     UnarchiveChats,
     UnbanChatMember,
+    CloseGeneralForumTopic,
+    EditGeneralForumTopic,
+    GetForumTopicIconStickers,
+    HideGeneralForumTopic,
+    ReopenForumTopic,
+    ReopenGeneralForumTopic,
+    UnhideGeneralForumTopic,
+    UnpinAllForumTopicMessages,
+    UnpinAllGeneralForumTopicMessages,
     UnpinAllChatMessages,
     UnpinChatMessage,
     UpdateChannelColor,

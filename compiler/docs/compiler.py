@@ -256,6 +256,15 @@ def pyrogram_api():
             archive_chats
             ban_chat_member
             close_forum_topic
+            close_general_forum_topic
+            edit_general_forum_topic
+            get_forum_topic_icon_stickers
+            hide_general_forum_topic
+            reopen_forum_topic
+            reopen_general_forum_topic
+            unhide_general_forum_topic
+            unpin_all_forum_topic_messages
+            unpin_all_general_forum_topic_messages
             pin_forum_topic
             unpin_forum_topic
             create_channel
