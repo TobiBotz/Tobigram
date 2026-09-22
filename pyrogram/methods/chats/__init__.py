@@ -23,6 +23,7 @@ from .close_forum_topic import CloseForumTopic
 from .pin_forum_topic import PinForumTopic
 from .reorder_folders import ReorderFolders
 from .set_chat_accent_color import SetChatAccentColor
+from .set_upgraded_gift_colors import SetUpgradedGiftColors
 from .set_chat_direct_messages_group import SetChatDirectMessagesGroup
 from .set_chat_discussion_group import SetChatDiscussionGroup
 from .set_chat_member_tag import SetChatMemberTag
@@ -118,6 +119,7 @@ class Chats(
     PinForumTopic,
     ReorderFolders,
     SetChatAccentColor,
+    SetUpgradedGiftColors,
     SetChatDirectMessagesGroup,
     SetChatDiscussionGroup,
     SetChatMemberTag,
