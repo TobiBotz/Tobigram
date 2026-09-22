@@ -27,41 +27,48 @@ from pyrogram import raw, types, utils
 class SearchPosts:
     async def search_posts(
         self: pyrogram.Client,
-        query: str = "",
-        hashtag: str = "",
+        hashtag: str | None = None,
+        query: str | None = None,
         limit: int = 0,
-    ) -> AsyncGenerator[types.Message, None] | None:
-        """Search for posts in public channels globally.
+    ) -> AsyncGenerator[types.Message, None]:
+        """Search public posts by hashtag or by text.
+
+        If you want to get the posts count only, see :meth:`~pyrogram.Client.search_posts_count`.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            query (``str``, *optional*):
-                Text query string to search for. Defaults to "" (empty string).
-
             hashtag (``str``, *optional*):
-                Hashtag to search for. Defaults to "" (empty string).
+                Hashtag to search for, with or without the leading ``#``.
+
+            query (``str``, *optional*):
+                Text to search for instead of a hashtag.
+                Searching by text requires a Premium account; Telegram answers
+                ``[403 PREMIUM_ACCOUNT_REQUIRED]`` otherwise.
 
             limit (``int``, *optional*):
                 Limits the number of posts to be retrieved.
-                By default, no limit is applied and all matching posts are returned.
+                By default, no limit is applied and all posts are returned.
 
         Returns:
             ``Generator``: A generator yielding :obj:`~pyrogram.types.Message` objects.
 
+        Raises:
+            ValueError: In case neither *hashtag* nor *query* is given.
+
         Example:
             .. code-block:: python
-
-                # Search for posts mentioning "telegram"
-                async for post in app.search_posts(query="telegram", limit=50):
-                    print(post.chat.title, post.text)
 
                 # Search for posts with a hashtag
                 async for post in app.search_posts(hashtag="news", limit=20):
                     print(post.chat.title, post.text)
+
+                # Search for posts mentioning "telegram" (Premium only)
+                async for post in app.search_posts(query="telegram", limit=50):
+                    print(post.chat.title, post.text)
         """
-        if not query and not hashtag:
-            raise ValueError("You must pass either query or hashtag to search posts.")
+        if hashtag is None and query is None:
+            raise ValueError("You must pass either hashtag or query")
 
         current = 0
         total = abs(limit) or (1 << 31) - 1
@@ -74,8 +81,8 @@ class SearchPosts:
         while True:
             r = await self.invoke(
                 raw.functions.channels.SearchPosts(
-                    hashtag=hashtag or None,
-                    query=query or None,
+                    hashtag=hashtag.lstrip("#") if hashtag is not None else None,
+                    query=query,
                     offset_rate=offset_rate,
                     offset_peer=offset_peer,
                     offset_id=offset_id,

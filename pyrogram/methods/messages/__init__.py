@@ -82,6 +82,7 @@ from .search_global_count import SearchGlobalCount
 from .search_messages import SearchMessages
 from .search_messages_count import SearchMessagesCount
 from .search_posts import SearchPosts
+from .search_posts_count import SearchPostsCount
 from .send_animation import SendAnimation
 from .send_audio import SendAudio
 from .send_cached_media import SendCachedMedia
@@ -97,6 +98,8 @@ from .send_message_draft import SendMessageDraft
 from .send_paid_media import SendPaidMedia
 from .send_photo import SendPhoto
 from .send_poll import SendPoll
+from .send_live_photo import SendLivePhoto
+from .send_paid_reaction import SendPaidReaction
 from .send_reaction import SendReaction
 from .send_rich_message import SendRichMessage
 from .send_rich_message_draft import SendRichMessageDraft
@@ -185,6 +188,7 @@ class Messages(
     SearchMessages,
     SearchMessagesCount,
     SearchPosts,
+    SearchPostsCount,
     SendAnimation,
     SendAudio,
     SendCachedMedia,
@@ -200,6 +204,8 @@ class Messages(
     SendPaidMedia,
     SendPhoto,
     SendPoll,
+    SendLivePhoto,
+    SendPaidReaction,
     SendReaction,
     SendRichMessage,
     SendRichMessageDraft,

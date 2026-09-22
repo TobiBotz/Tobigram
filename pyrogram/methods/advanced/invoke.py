@@ -39,6 +39,7 @@ NO_UPDATES_QUERY_NAMES = frozenset(
         "channels.GetChannels",
         "channels.GetGroupsForDiscussion",
         "channels.GetParticipants",
+        "channels.SearchPosts",
         "channels.ReadHistory",
         "channels.ReadMessageContents",
         "contacts.GetContacts",
