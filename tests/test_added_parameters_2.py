@@ -16,7 +16,7 @@ from test_added_parameters import FakeClient, VIEW_ONCE_TTL, no_text  # noqa: F4
 
 
 @pytest.mark.asyncio
-async def test_a_video_is_view_once_too(tmp_path, no_text):
+async def test_a_video_is_view_once_too(tmp_path, no_text):  # noqa: F811
     client = FakeClient()
     video = tmp_path / "v.mp4"
     video.write_bytes(b"x")
@@ -101,10 +101,16 @@ def test_a_raw_update_decorator_carries_its_filters():
 
 @pytest.mark.asyncio
 async def test_a_contact_note_is_sent_as_formatted_text(monkeypatch):
-    client = FakeClient([raw.types.contacts.ImportedContacts(
-        imported=[], popular_invites=[], retry_contacts=[],
-        users=[raw.types.UserEmpty(id=7)]
-    )])
+    client = FakeClient(
+        [
+            raw.types.contacts.ImportedContacts(
+                imported=[],
+                popular_invites=[],
+                retry_contacts=[],
+                users=[raw.types.UserEmpty(id=7)],
+            )
+        ]
+    )
 
     async def write(self, client):
         return raw.types.TextWithEntities(text=self.text, entities=[])
@@ -130,9 +136,9 @@ async def test_a_public_profile_photo_is_the_fallback_one(tmp_path):
 
 @pytest.mark.asyncio
 async def test_a_supergroup_can_be_born_a_forum(monkeypatch):
-    client = FakeClient([raw.types.Updates(
-        updates=[], users=[], chats=[raw.types.ChatEmpty(id=1)], date=0, seq=0
-    )])
+    client = FakeClient(
+        [raw.types.Updates(updates=[], users=[], chats=[raw.types.ChatEmpty(id=1)], date=0, seq=0)]
+    )
 
     monkeypatch.setattr(types.Chat, "_parse_chat", lambda *a: None)
 
@@ -184,8 +190,12 @@ async def test_edited_media_carries_the_schedule_and_the_caption_side(tmp_path):
     client.parser = Parser()
 
     await pyrogram.Client.edit_message_media(
-        client, 7, 1, types.InputMediaPhoto(str(photo)),
-        schedule_date=when, show_caption_above_media=True
+        client,
+        7,
+        1,
+        types.InputMediaPhoto(str(photo)),
+        schedule_date=when,
+        show_caption_above_media=True,
     )
 
     query = client.sent[-1]
@@ -200,9 +210,7 @@ async def test_a_screenshot_notification_can_reply_through_parameters(monkeypatc
     client = FakeClient()
 
     async def get_reply_to(client, reply_parameters, *args, **kwargs):
-        return raw.types.InputReplyToMessage(
-            reply_to_msg_id=reply_parameters.message_id
-        )
+        return raw.types.InputReplyToMessage(reply_to_msg_id=reply_parameters.message_id)
 
     monkeypatch.setattr(utils, "get_reply_to", get_reply_to)
 
@@ -223,10 +231,14 @@ async def test_an_ephemeral_edit_can_point_at_a_link_preview(monkeypatch):
     monkeypatch.setattr(utils, "parse_text_entities", parse_text_entities)
 
     await pyrogram.Client.edit_ephemeral_message_text(
-        client, 7, 8, 9, "hi",
+        client,
+        7,
+        8,
+        9,
+        "hi",
         link_preview_options=types.LinkPreviewOptions(
             url="https://example.com", prefer_large_media=True
-        )
+        ),
     )
 
     media = client.sent[0].media
@@ -244,8 +256,14 @@ async def test_a_block_document_lands_in_the_document_vector():
 
             return raw.types.MessageMediaDocument(
                 document=raw.types.Document(
-                    id=222, access_hash=1, file_reference=b"fr", date=0,
-                    mime_type="application/pdf", size=1, dc_id=2, attributes=[]
+                    id=222,
+                    access_hash=1,
+                    file_reference=b"fr",
+                    date=0,
+                    mime_type="application/pdf",
+                    size=1,
+                    dc_id=2,
+                    attributes=[],
                 )
             )
 
@@ -284,15 +302,12 @@ async def test_a_login_code_carries_the_recaptcha_token(monkeypatch):
             seen["token"] = kwargs.get("recaptcha_token")
 
             return raw.types.auth.SentCode(
-                type=raw.types.auth.SentCodeTypeApp(length=5),
-                phone_code_hash="h"
+                type=raw.types.auth.SentCodeTypeApp(length=5), phone_code_hash="h"
             )
 
     monkeypatch.setattr(types.SentCode, "_parse", staticmethod(lambda r: r))
 
-    await pyrogram.Client.send_phone_number_code(
-        Client(), "+100", recaptcha_token="tok"
-    )
+    await pyrogram.Client.send_phone_number_code(Client(), "+100", recaptcha_token="tok")
 
     assert seen["token"] == "tok"
 
@@ -314,8 +329,14 @@ async def test_every_document_block_uploads_what_it_was_given(block, field, kwar
 
             return raw.types.MessageMediaDocument(
                 document=raw.types.Document(
-                    id=333, access_hash=1, file_reference=b"fr", date=0,
-                    mime_type="video/mp4", size=1, dc_id=2, attributes=[]
+                    id=333,
+                    access_hash=1,
+                    file_reference=b"fr",
+                    date=0,
+                    mime_type="video/mp4",
+                    size=1,
+                    dc_id=2,
+                    attributes=[],
                 )
             )
 
@@ -325,9 +346,7 @@ async def test_every_document_block_uploads_what_it_was_given(block, field, kwar
     client = Uploading()
 
     message = types.InputRichMessage(
-        blocks=[
-            getattr(types, block)(**{kwarg: types.InputMediaDocument("README.md")})
-        ]
+        blocks=[getattr(types, block)(**{kwarg: types.InputMediaDocument("README.md")})]
     )
 
     written = await utils.build_input_rich_message(client, message)

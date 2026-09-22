@@ -20,11 +20,13 @@
 from .approve_all_chat_join_requests import ApproveAllChatJoinRequests
 from .approve_chat_join_request import ApproveChatJoinRequest
 from .create_chat_invite_link import CreateChatInviteLink
+from .create_chat_subscription_invite_link import CreateChatSubscriptionInviteLink
 from .decline_all_chat_join_requests import DeclineAllChatJoinRequests
 from .decline_chat_join_request import DeclineChatJoinRequest
 from .delete_chat_admin_invite_links import DeleteChatAdminInviteLinks
 from .delete_chat_invite_link import DeleteChatInviteLink
 from .edit_chat_invite_link import EditChatInviteLink
+from .edit_chat_subscription_invite_link import EditChatSubscriptionInviteLink
 from .export_chat_invite_link import ExportChatInviteLink
 from .get_chat_admin_invite_links import GetChatAdminInviteLinks
 from .get_chat_admin_invite_links_count import GetChatAdminInviteLinksCount
@@ -40,7 +42,9 @@ class InviteLinks(
     RevokeChatInviteLink,
     DeleteChatInviteLink,
     EditChatInviteLink,
+    EditChatSubscriptionInviteLink,
     CreateChatInviteLink,
+    CreateChatSubscriptionInviteLink,
     GetChatInviteLinkJoiners,
     GetChatInviteLinkJoinersCount,
     GetChatAdminInviteLinks,

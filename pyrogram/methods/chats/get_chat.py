@@ -78,15 +78,23 @@ class GetChat:
         peer = await self.resolve_peer(chat_id)
 
         if force_full:
-            if isinstance(peer, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)):
+            if isinstance(
+                peer, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)
+            ):
                 r = await self.invoke(
                     raw.functions.channels.GetFullChannel(channel=utils.get_input_channel(peer))
                 )
             elif isinstance(
                 peer,
-                (raw.types.InputPeerUser, raw.types.InputPeerSelf, raw.types.InputPeerUserFromMessage),
+                (
+                    raw.types.InputPeerUser,
+                    raw.types.InputPeerSelf,
+                    raw.types.InputPeerUserFromMessage,
+                ),
             ):
-                r = await self.invoke(raw.functions.users.GetFullUser(id=utils.get_input_user(peer)))
+                r = await self.invoke(
+                    raw.functions.users.GetFullUser(id=utils.get_input_user(peer))
+                )
             else:
                 r = await self.invoke(raw.functions.messages.GetFullChat(chat_id=peer.chat_id))
 

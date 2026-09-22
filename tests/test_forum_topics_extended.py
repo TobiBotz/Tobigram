@@ -10,7 +10,9 @@ from pyrogram import raw, types
 @pytest.fixture
 def client():
     app = pyrogram.Client("test", api_id=12345, api_hash="0123456789abcdef0123456789abcdef")
-    app.resolve_peer = AsyncMock(return_value=raw.types.InputPeerChannel(channel_id=100, access_hash=200))
+    app.resolve_peer = AsyncMock(
+        return_value=raw.types.InputPeerChannel(channel_id=100, access_hash=200)
+    )
     app.invoke = AsyncMock(return_value=True)
     return app
 
@@ -105,7 +107,17 @@ async def test_get_forum_topic_icon_stickers(client):
         title="Icons",
         short_name="icons",
         count=1,
-        stickers=[types.Sticker(file_id="abc", file_unique_id="xyz", type=pyrogram.enums.StickerType.CUSTOM_EMOJI, width=512, height=512, is_animated=False, is_video=False)],
+        stickers=[
+            types.Sticker(
+                file_id="abc",
+                file_unique_id="xyz",
+                type=pyrogram.enums.StickerType.CUSTOM_EMOJI,
+                width=512,
+                height=512,
+                is_animated=False,
+                is_video=False,
+            )
+        ],
     )
     with patch.object(types.StickerSet, "_parse", new=AsyncMock(return_value=fake_sticker_set)):
         stickers = await client.get_forum_topic_icon_stickers()

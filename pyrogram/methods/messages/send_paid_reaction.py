@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, Union
+from typing import Optional
 
 import pyrogram
 from pyrogram import enums, raw
@@ -25,11 +25,11 @@ from pyrogram import enums, raw
 class SendPaidReaction:
     async def send_paid_reaction(
         self: "pyrogram.Client",
-        chat_id: Union[int, str],
+        chat_id: int | str,
         message_id: int,
         amount: int,
         privacy: Optional["enums.PaidReactionPrivacy"] = None,
-        send_as: Optional[Union[int, str]] = None
+        send_as: int | str | None = None,
     ) -> bool:
         """Send a paid reaction to a message, spending Telegram Stars.
 
@@ -87,7 +87,7 @@ class SendPaidReaction:
                 msg_id=message_id,
                 count=amount,
                 random_id=self.rnd_id(),
-                private=private
+                private=private,
             )
         )
 

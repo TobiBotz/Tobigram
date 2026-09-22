@@ -362,7 +362,9 @@ class EditMessageMedia:
                 reply_markup=await reply_markup.write(self) if reply_markup else None,
                 message=message,
                 entities=entities,
-                invert_media=show_caption_above_media if show_caption_above_media is not None else None,
+                invert_media=show_caption_above_media
+                if show_caption_above_media is not None
+                else None,
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
             ),
             sleep_threshold=60,

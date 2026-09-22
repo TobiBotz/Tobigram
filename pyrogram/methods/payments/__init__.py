@@ -62,6 +62,35 @@ from .show_gift import ShowGift
 from .suggest_birthday import SuggestBirthday
 from .transfer_gift import TransferGift
 from .upgrade_gift import UpgradeGift
+from .get_stars_subscriptions import GetStarsSubscriptions
+from .get_stars_topup_options import GetStarsTopupOptions
+from .get_stars_gift_options import GetStarsGiftOptions
+from .get_stars_transactions_by_id import GetStarsTransactionsByID
+from .get_stars_revenue_withdrawal_url import GetStarsRevenueWithdrawalUrl
+from .get_stars_revenue_ads_account_url import GetStarsRevenueAdsAccountUrl
+from .get_saved_star_gift import GetSavedStarGift
+from .check_can_send_gift import CheckCanSendGift
+from .get_star_gift_withdrawal_url import GetStarGiftWithdrawalUrl
+from .get_star_gift_active_auctions import GetStarGiftActiveAuctions
+from .get_star_gift_auction_acquired_gifts import GetStarGiftAuctionAcquiredGifts
+from .toggle_chat_star_gift_notifications import ToggleChatStarGiftNotifications
+from .get_giveaway_info import GetGiveawayInfo
+from .get_stars_giveaway_options import GetStarsGiveawayOptions
+from .launch_prepaid_giveaway import LaunchPrepaidGiveaway
+from .get_premium_gift_code_options import GetPremiumGiftCodeOptions
+from .connect_star_ref_bot import ConnectStarRefBot
+from .edit_connected_star_ref_bot import EditConnectedStarRefBot
+from .get_connected_star_ref_bot import GetConnectedStarRefBot
+from .get_connected_star_ref_bots import GetConnectedStarRefBots
+from .get_suggested_star_ref_bots import GetSuggestedStarRefBots
+from .get_payment_receipt import GetPaymentReceipt
+from .get_saved_info import GetSavedInfo
+from .clear_saved_info import ClearSavedInfo
+from .validate_requested_info import ValidateRequestedInfo
+from .get_bank_card_data import GetBankCardData
+from .can_purchase_store import CanPurchaseStore
+from .assign_app_store_transaction import AssignAppStoreTransaction
+from .assign_play_market_transaction import AssignPlayMarketTransaction
 
 
 class Payments(
@@ -111,5 +140,34 @@ class Payments(
     SuggestBirthday,
     TransferGift,
     UpgradeGift,
+    GetStarsSubscriptions,
+    GetStarsTopupOptions,
+    GetStarsGiftOptions,
+    GetStarsTransactionsByID,
+    GetStarsRevenueWithdrawalUrl,
+    GetStarsRevenueAdsAccountUrl,
+    GetSavedStarGift,
+    CheckCanSendGift,
+    GetStarGiftWithdrawalUrl,
+    GetStarGiftActiveAuctions,
+    GetStarGiftAuctionAcquiredGifts,
+    ToggleChatStarGiftNotifications,
+    GetGiveawayInfo,
+    GetStarsGiveawayOptions,
+    LaunchPrepaidGiveaway,
+    GetPremiumGiftCodeOptions,
+    ConnectStarRefBot,
+    EditConnectedStarRefBot,
+    GetConnectedStarRefBot,
+    GetConnectedStarRefBots,
+    GetSuggestedStarRefBots,
+    GetPaymentReceipt,
+    GetSavedInfo,
+    ClearSavedInfo,
+    ValidateRequestedInfo,
+    GetBankCardData,
+    CanPurchaseStore,
+    AssignAppStoreTransaction,
+    AssignPlayMarketTransaction,
 ):
     pass

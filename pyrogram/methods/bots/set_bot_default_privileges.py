@@ -60,12 +60,6 @@ class SetBotDefaultPrivileges:
                 )
         """
 
-        function = (
-            raw.functions.bots.SetBotBroadcastDefaultAdminRights
-            if for_channels
-            else raw.functions.bots.SetBotGroupDefaultAdminRights
-        )
-
         admin_rights = (
             raw.types.ChatAdminRights(
                 change_info=privileges.can_change_info,
@@ -92,4 +86,11 @@ class SetBotDefaultPrivileges:
             else raw.types.ChatAdminRights()
         )
 
-        return await self.invoke(function(admin_rights=admin_rights))
+        if for_channels:
+            return await self.invoke(
+                raw.functions.bots.SetBotBroadcastDefaultAdminRights(admin_rights=admin_rights)
+            )
+
+        return await self.invoke(
+            raw.functions.bots.SetBotGroupDefaultAdminRights(admin_rights=admin_rights)
+        )

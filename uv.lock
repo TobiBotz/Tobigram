@@ -1529,7 +1529,7 @@ provides-extras = ["botapi", "dev", "docs", "fast", "mongo", "redis"]
 [package.metadata.requires-dev]
 dev = [
     { name = "pytest-xdist", specifier = ">=3.8.0" },
-    { name = "ruff", specifier = ">=0.9.0" },
+    { name = "ruff", specifier = ">=0.16.0" },
 ]
 
 [[package]]

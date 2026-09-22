@@ -18,42 +18,88 @@
 
 from __future__ import annotations
 
+from .add_favorite_sticker import AddFavoriteSticker
+from .add_recent_sticker import AddRecentSticker
 from .add_sticker_to_set import AddStickerToSet
 from .change_sticker import ChangeSticker
+from .change_sticker_set import ChangeStickerSet
 from .check_sticker_set_name import CheckStickerSetName
+from .clear_recent_stickers import ClearRecentStickers
+from .create_new_sticker_set import CreateNewStickerSet
 from .create_sticker_set import CreateStickerSet
+from .delete_sticker_from_set import DeleteStickerFromSet
 from .delete_sticker_set import DeleteStickerSet
 from .get_custom_emoji_stickers import GetCustomEmojiStickers
+from .get_favorite_stickers import GetFavoriteStickers
 from .get_my_stickers import GetMyStickers
+from .get_owned_sticker_sets import GetOwnedStickerSets
+from .get_recent_stickers import GetRecentStickers
 from .get_sticker_set import GetStickerSet
 from .get_stickers import GetStickers
+from .get_suggested_sticker_set_name import GetSuggestedStickerSetName
+from .remove_favorite_sticker import RemoveFavoriteSticker
+from .remove_recent_sticker import RemoveRecentSticker
 from .remove_sticker_from_set import RemoveStickerFromSet
-from .rename_sticker_set import RenameStickerSet
+from .reorder_installed_sticker_sets import ReorderInstalledStickerSets
 from .replace_sticker import ReplaceSticker
+from .replace_sticker_in_set import ReplaceStickerInSet
 from .save_sticker_set import SaveStickerSet
+from .search_sticker_sets import SearchStickerSets
+from .search_stickers import SearchStickers
+from .set_custom_emoji_sticker_set_thumbnail import SetCustomEmojiStickerSetThumbnail
+from .set_sticker_emoji_list import SetStickerEmojiList
+from .set_sticker_keywords import SetStickerKeywords
+from .set_sticker_mask_position import SetStickerMaskPosition
 from .set_sticker_position import SetStickerPosition
+from .set_sticker_position_in_set import SetStickerPositionInSet
 from .set_sticker_set_thumb import SetStickerSetThumb
+from .set_sticker_set_thumbnail import SetStickerSetThumbnail
+from .set_sticker_set_title import SetStickerSetTitle
 from .suggest_sticker_set_name import SuggestStickerSetName
 from .unsave_sticker_set import UnsaveStickerSet
+from .upload_sticker_file import UploadStickerFile
 
 
 class Stickers(
+    AddFavoriteSticker,
+    AddRecentSticker,
     AddStickerToSet,
     ChangeSticker,
+    ChangeStickerSet,
     CheckStickerSetName,
+    ClearRecentStickers,
+    CreateNewStickerSet,
     CreateStickerSet,
+    DeleteStickerFromSet,
     DeleteStickerSet,
     GetCustomEmojiStickers,
+    GetFavoriteStickers,
     GetMyStickers,
+    GetOwnedStickerSets,
+    GetRecentStickers,
     GetStickerSet,
     GetStickers,
+    GetSuggestedStickerSetName,
+    RemoveFavoriteSticker,
+    RemoveRecentSticker,
     RemoveStickerFromSet,
-    RenameStickerSet,
+    ReorderInstalledStickerSets,
     ReplaceSticker,
+    ReplaceStickerInSet,
     SaveStickerSet,
+    SearchStickerSets,
+    SearchStickers,
+    SetCustomEmojiStickerSetThumbnail,
+    SetStickerEmojiList,
+    SetStickerKeywords,
+    SetStickerMaskPosition,
     SetStickerPosition,
+    SetStickerPositionInSet,
     SetStickerSetThumb,
+    SetStickerSetThumbnail,
+    SetStickerSetTitle,
     SuggestStickerSetName,
     UnsaveStickerSet,
+    UploadStickerFile,
 ):
     pass

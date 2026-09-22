@@ -16,7 +16,6 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional
 
 import pyrogram
 from pyrogram import raw
@@ -24,9 +23,7 @@ from pyrogram import raw
 
 class SetUpgradedGiftColors:
     async def set_upgraded_gift_colors(
-        self: "pyrogram.Client",
-        upgraded_gift_colors_id: int,
-        for_profile: Optional[bool] = None
+        self: "pyrogram.Client", upgraded_gift_colors_id: int, for_profile: bool | None = None
     ) -> bool:
         """Take the colors of an upgraded gift you own as your account colors.
 
@@ -57,9 +54,7 @@ class SetUpgradedGiftColors:
         r = await self.invoke(
             raw.functions.account.UpdateColor(
                 for_profile=for_profile,
-                color=raw.types.InputPeerColorCollectible(
-                    collectible_id=upgraded_gift_colors_id
-                )
+                color=raw.types.InputPeerColorCollectible(collectible_id=upgraded_gift_colors_id),
             )
         )
 

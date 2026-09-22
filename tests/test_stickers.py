@@ -229,8 +229,8 @@ async def test_delete_sticker_set(client):
     assert delete_query.stickerset.short_name == "mypack_by_bot"
 
 
-async def test_rename_sticker_set(client):
-    sticker_set = await client.rename_sticker_set("mypack_by_bot", "Updated Title")
+async def test_set_sticker_set_title(client):
+    sticker_set = await client.set_sticker_set_title("mypack_by_bot", "Updated Title")
 
     assert isinstance(sticker_set, types.StickerSet)
     rename_query = next(
@@ -548,3 +548,60 @@ async def test_save_and_unsave_sticker_set(client):
         if isinstance(q, raw.functions.messages.UninstallStickerSet)
     )
     assert unsave_query.stickerset.short_name == "animals"
+
+
+async def test_all_sticker_method_aliases(client):
+    raw_doc = raw.types.InputDocument(id=101, access_hash=202, file_reference=b"ref")
+
+    # create_new_sticker_set
+    res = await client.create_new_sticker_set(
+        user_id="me", title="New Pack", short_name="new_pack_by_bot", stickers=["sticker.webp"]
+    )
+    assert isinstance(res, types.StickerSet)
+
+    # delete_sticker_from_set
+    res = await client.delete_sticker_from_set(raw_doc)
+    assert isinstance(res, types.StickerSet)
+
+    # replace_sticker_in_set
+    res = await client.replace_sticker_in_set(raw_doc, "new.webp", emoji="🌟")
+    assert isinstance(res, types.StickerSet)
+
+    # set_sticker_emoji_list
+    res = await client.set_sticker_emoji_list(raw_doc, "🎉")
+    assert isinstance(res, types.StickerSet)
+
+    # set_sticker_keywords
+    res = await client.set_sticker_keywords(raw_doc, "party")
+    assert isinstance(res, types.StickerSet)
+
+    # set_sticker_position_in_set
+    res = await client.set_sticker_position_in_set(raw_doc, 1)
+    assert isinstance(res, types.StickerSet)
+
+    # set_sticker_set_thumbnail
+    res = await client.set_sticker_set_thumbnail("mypack_by_bot", thumb="thumb.webp")
+    assert isinstance(res, types.StickerSet)
+
+    # set_custom_emoji_sticker_set_thumbnail
+    res = await client.set_custom_emoji_sticker_set_thumbnail("mypack_by_bot", 12345)
+    assert isinstance(res, types.StickerSet)
+
+    # get_suggested_sticker_set_name
+    suggested = await client.get_suggested_sticker_set_name("Cool Cats")
+    assert suggested == "cool cats_suggested"
+
+    # get_owned_sticker_sets
+    owned = []
+    async for s in client.get_owned_sticker_sets():
+        owned.append(s)
+    assert len(owned) == 1
+
+    # add_favorite_sticker & remove_favorite_sticker
+    assert await client.add_favorite_sticker(raw_doc) is True
+    assert await client.remove_favorite_sticker(raw_doc) is True
+
+    # add_recent_sticker & remove_recent_sticker & clear_recent_stickers
+    assert await client.add_recent_sticker(raw_doc) is True
+    assert await client.remove_recent_sticker(raw_doc) is True
+    assert await client.clear_recent_stickers() is True

@@ -47,6 +47,15 @@ from .show_chat_stories import ShowChatStories
 from .unpin_chat_stories import UnpinChatStories
 from .update_story_album import UpdateStoryAlbum
 from .view_stories import ViewStories
+from .get_stories_views import GetStoriesViews
+from .get_story_reactions_list import GetStoryReactionsList
+from .get_chats_to_send_stories import GetChatsToSendStories
+from .search_stories import SearchStories
+from .start_live_story import StartLiveStory
+from .toggle_stories_pinned_to_top import ToggleStoriesPinnedToTop
+from .toggle_all_stories_hidden import ToggleAllStoriesHidden
+from .get_all_read_peer_stories import GetAllReadPeerStories
+from .get_peer_max_story_ids import GetPeerMaxStoryIDs
 
 
 class Stories(
@@ -81,5 +90,14 @@ class Stories(
     UnpinChatStories,
     UpdateStoryAlbum,
     ViewStories,
+    GetStoriesViews,
+    GetStoryReactionsList,
+    GetChatsToSendStories,
+    SearchStories,
+    StartLiveStory,
+    ToggleStoriesPinnedToTop,
+    ToggleAllStoriesHidden,
+    GetAllReadPeerStories,
+    GetPeerMaxStoryIDs,
 ):
     pass

@@ -41,8 +41,7 @@ class RecoverGaps:
     MAX_STALE_TIMESTAMP_RETRIES = 3
 
     async def recover_gaps(
-        self: pyrogram.Client,
-        ids: int | Iterable[int] | None = None
+        self: pyrogram.Client, ids: int | Iterable[int] | None = None
     ) -> tuple[int, int]:
         """Restores updates for the time while the client was offline.
 

@@ -44,6 +44,32 @@ Utilities
 
     {utilities}
 
+Help
+----
+
+.. autosummary::
+    :nosignatures:
+
+    {help}
+
+.. toctree::
+    :hidden:
+
+    {help}
+
+Language Pack
+-------------
+
+.. autosummary::
+    :nosignatures:
+
+    {langpack}
+
+.. toctree::
+    :hidden:
+
+    {langpack}
+
 .. currentmodule:: pyrogram
 
 .. autosummary::
@@ -61,7 +87,7 @@ Utilities
 .. currentmodule:: pyrogram.Client
 
 Account
---------
+-------
 
 .. autosummary::
     :nosignatures:
@@ -86,6 +112,32 @@ Messages
 
     {messages}
 
+Ephemeral
+---------
+
+.. autosummary::
+    :nosignatures:
+
+    {ephemeral}
+
+.. toctree::
+    :hidden:
+
+    {ephemeral}
+
+AI Compose
+----------
+
+.. autosummary::
+    :nosignatures:
+
+    {aicompose}
+
+.. toctree::
+    :hidden:
+
+    {aicompose}
+
 Chats
 -----
 
@@ -98,6 +150,19 @@ Chats
     :hidden:
 
     {chats}
+
+Communities
+-----------
+
+.. autosummary::
+    :nosignatures:
+
+    {communities}
+
+.. toctree::
+    :hidden:
+
+    {communities}
 
 Users
 -----
@@ -178,7 +243,7 @@ Bots
     {bots}
 
 Business
----------
+--------
 
 .. autosummary::
     :nosignatures:
@@ -191,7 +256,7 @@ Business
     {business}
 
 Payments
----------
+--------
 
 .. autosummary::
     :nosignatures:
@@ -204,7 +269,7 @@ Payments
     {payments}
 
 Stories
---------
+-------
 
 .. autosummary::
     :nosignatures:
@@ -215,9 +280,35 @@ Stories
     :hidden:
 
     {stories}
+
+Stickers
+--------
+
+.. autosummary::
+    :nosignatures:
+
+    {stickers}
+
+.. toctree::
+    :hidden:
+
+    {stickers}
+
+SMS Jobs
+--------
+
+.. autosummary::
+    :nosignatures:
+
+    {smsjobs}
+
+.. toctree::
+    :hidden:
+
+    {smsjobs}
 
 Phone
-------
+-----
 
 .. autosummary::
     :nosignatures:
@@ -229,8 +320,21 @@ Phone
 
     {phone}
 
+Stats
+-----
+
+.. autosummary::
+    :nosignatures:
+
+    {stats}
+
+.. toctree::
+    :hidden:
+
+    {stats}
+
 Premium
---------
+-------
 
 .. autosummary::
     :nosignatures:
@@ -243,7 +347,7 @@ Premium
     {premium}
 
 Decorators
------------
+----------
 
 .. autosummary::
     :nosignatures:
@@ -256,7 +360,7 @@ Decorators
     {decorators}
 
 Authorization
---------------
+-------------
 
 .. autosummary::
     :nosignatures:

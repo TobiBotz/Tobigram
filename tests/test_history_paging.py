@@ -25,19 +25,15 @@ class HistoryServer:
         ordered = self.ids
 
         if query.offset_id:
-            cursor = next(
-                (i for i, id in enumerate(ordered) if id < query.offset_id),
-                len(ordered)
-            )
+            cursor = next((i for i, id in enumerate(ordered) if id < query.offset_id), len(ordered))
         else:
             cursor = 0
 
         start = max(0, cursor + query.add_offset)
-        window = ordered[start:start + query.limit]
+        window = ordered[start : start + query.limit]
 
         return [
-            id for id in window
-            if id > query.min_id and (not query.max_id or id < query.max_id)
+            id for id in window if id > query.min_id and (not query.max_id or id < query.max_id)
         ]
 
     async def resolve_peer(self, peer_id):
@@ -83,13 +79,15 @@ async def test_a_reversed_history_crosses_page_boundaries(parsed):
 @pytest.mark.asyncio
 async def test_the_boundaries_are_inclusive_both_ways(parsed):
     forward = [
-        m.id async for m in pyrogram.Client.get_chat_history(
+        m.id
+        async for m in pyrogram.Client.get_chat_history(
             HistoryServer(range(1, 11)), 7, min_id=4, max_id=7, reverse=True
         )
     ]
 
     backward = [
-        m.id async for m in pyrogram.Client.get_chat_history(
+        m.id
+        async for m in pyrogram.Client.get_chat_history(
             HistoryServer(range(1, 11)), 7, min_id=4, max_id=7
         )
     ]
@@ -102,10 +100,6 @@ async def test_the_boundaries_are_inclusive_both_ways(parsed):
 async def test_a_limit_cuts_a_reversed_walk_short(parsed):
     server = HistoryServer(range(1, 11))
 
-    seen = [
-        m.id async for m in pyrogram.Client.get_chat_history(
-            server, 7, limit=4, reverse=True
-        )
-    ]
+    seen = [m.id async for m in pyrogram.Client.get_chat_history(server, 7, limit=4, reverse=True)]
 
     assert seen == [1, 2, 3, 4]

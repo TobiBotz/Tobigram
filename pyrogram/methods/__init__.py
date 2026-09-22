@@ -22,6 +22,7 @@ from .auth import Auth
 from .bots import Bots
 from .business import Business
 from .chats import Chats
+
 from .contacts import Contacts
 from .decorators import Decorators
 from .ephemeral import Ephemeral
@@ -37,15 +38,23 @@ from .stickers import Stickers
 from .stories import Stories
 from .users import Users
 from .utilities import Utilities
+from .communities import Communities
+from .aicompose import AICompose
+from .stats import Stats
+from .langpack import Langpack
+from .smsjobs import Smsjobs
+from .help import Help
 
 
 class Methods(
     Account,
     Advanced,
+    AICompose,
     Auth,
     Business,
     Bots,
     Contacts,
+    Communities,
     Ephemeral,
     Password,
     Payments,
@@ -61,5 +70,9 @@ class Methods(
     Utilities,
     InviteLinks,
     Stickers,
+    Stats,
+    Langpack,
+    Smsjobs,
+    Help,
 ):
     pass

@@ -271,7 +271,9 @@ class SendSticker:
                         ttl_seconds=ttl_seconds,
                         spoiler=has_spoiler,
                         attributes=[
-                            raw.types.DocumentAttributeFilename(file_name=os.path.basename(sticker)),
+                            raw.types.DocumentAttributeFilename(
+                                file_name=os.path.basename(sticker)
+                            ),
                             raw.types.DocumentAttributeSticker(
                                 alt=emoji or "",
                                 stickerset=raw.types.InputStickerSetEmpty(),

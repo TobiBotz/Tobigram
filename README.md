@@ -42,6 +42,12 @@
             alt="License"
         />
     </a>
+    <a href="https://github.com/TobiBotz/Tobigram/actions/workflows/python.yml">
+        <img
+            src="https://github.com/TobiBotz/Tobigram/actions/workflows/python.yml/badge.svg?branch=dev"
+            alt="CI Status"
+        />
+    </a>
 </p>
 
 

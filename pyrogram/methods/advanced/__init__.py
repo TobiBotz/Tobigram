@@ -16,11 +16,36 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from .get_collectible_info import GetCollectibleInfo
+from .get_file_hashes import GetFileHashes
+from .get_web_file import GetWebFile
+from .init_connection import InitConnection
 from .invoke import Invoke
+from .invoke_after_msg import InvokeAfterMsg
+from .invoke_after_msgs import InvokeAfterMsgs
+from .invoke_with_apns_secret import InvokeWithApnsSecret
+from .invoke_with_google_play_integrity import InvokeWithGooglePlayIntegrity
+from .invoke_with_layer import InvokeWithLayer
+from .invoke_with_messages_range import InvokeWithMessagesRange
 from .recover_gaps import RecoverGaps
 from .resolve_peer import ResolvePeer
 from .save_file import SaveFile
 
 
-class Advanced(Invoke, RecoverGaps, ResolvePeer, SaveFile):
+class Advanced(
+    GetCollectibleInfo,
+    GetFileHashes,
+    GetWebFile,
+    InitConnection,
+    Invoke,
+    InvokeAfterMsg,
+    InvokeAfterMsgs,
+    InvokeWithApnsSecret,
+    InvokeWithGooglePlayIntegrity,
+    InvokeWithLayer,
+    InvokeWithMessagesRange,
+    RecoverGaps,
+    ResolvePeer,
+    SaveFile,
+):
     pass
