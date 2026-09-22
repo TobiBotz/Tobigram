@@ -62,3 +62,12 @@ class MaskPosition(Object):
             y_shift=coords.y,
             scale=coords.zoom,
         )
+
+    def write(self) -> raw.types.MaskCoords:
+        point_val = self.point.value if hasattr(self.point, "value") else int(self.point)
+        return raw.types.MaskCoords(
+            n=point_val,
+            x=self.x_shift,
+            y=self.y_shift,
+            zoom=self.scale,
+        )

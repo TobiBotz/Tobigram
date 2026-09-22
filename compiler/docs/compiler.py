@@ -1339,6 +1339,7 @@ def pyrogram_api():
             EphemeralMessageParameters
             ExternalReplyInfo
             FactCheck
+            File
             FormattedText
             ForumTopic
             ForumTopicClosed
@@ -1731,6 +1732,7 @@ def pyrogram_api():
             ReplyColor
             ReportReason
             SentCodeType
+            StickerFormat
             StickerType
             StoriesPrivacyRules
             SuggestedPostRefundReason

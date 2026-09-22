@@ -27,33 +27,38 @@ class SetStickerKeywords:
     async def set_sticker_keywords(
         self: pyrogram.Client,
         sticker: str | types.Sticker | raw.base.InputDocument,
-        keywords: str,
+        keywords: list[str] | str | None = None,
     ) -> types.StickerSet:
-        """Set search keywords for a sticker.
+        """Use this method to change search keywords assigned to a regular or custom emoji sticker.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
             sticker (``str`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.raw.base.InputDocument`):
-                The sticker to update.
+                File identifier or document of the sticker.
 
-            keywords (``str``):
-                Keywords separated by commas.
+            keywords (List of ``str`` | ``str``, *optional*):
+                List of 0-20 search keywords for the sticker or comma-separated keywords string.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the updated sticker set is returned.
+            :obj:`~pyrogram.types.StickerSet`: An updated sticker set is returned.
 
         Example:
             .. code-block:: python
 
-                await app.set_sticker_keywords(sticker, "party, celebrate")
+                await app.set_sticker_keywords(sticker, ["party", "celebrate"])
         """
+        if isinstance(keywords, list):
+            keywords_str = ",".join(keywords)
+        else:
+            keywords_str = keywords or ""
+
         doc = await resolve_sticker_doc(self, sticker)
 
         r = await self.invoke(
             raw.functions.stickers.ChangeSticker(
                 sticker=doc,
-                keywords=keywords,
+                keywords=keywords_str,
             )
         )
 

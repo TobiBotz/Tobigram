@@ -131,6 +131,15 @@ class StickerSet(Object):
         if getattr(raw_set, "thumbs", None):
             thumbnail = types.Thumbnail._parse(client, raw_set.thumbs)
 
+        cache = getattr(client, "sticker_set_name_cache", None)
+        if (
+            cache is not None
+            and getattr(raw_set, "id", None)
+            and getattr(raw_set, "access_hash", None)
+            and getattr(raw_set, "short_name", None)
+        ):
+            cache.set((raw_set.id, raw_set.access_hash), raw_set.short_name)
+
         return cls(
             client=client,
             id=raw_set.id,
