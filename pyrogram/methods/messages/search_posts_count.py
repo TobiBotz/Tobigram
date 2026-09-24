@@ -47,7 +47,7 @@ class SearchPostsCount:
         Example:
             .. code-block:: python
 
-                count = await app.search_posts_count("wzgram")
+                count = await app.search_posts_count("pyrogram")
         """
         if hashtag is None and query is None:
             raise ValueError("You must pass either hashtag or query")

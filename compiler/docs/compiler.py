@@ -652,7 +652,6 @@ def pyrogram_api():
         messages="""
         Messages
             add_checklist_tasks
-            add_favorite_sticker
             add_poll_option
             add_to_gifs
             approve_suggested_post
@@ -660,7 +659,6 @@ def pyrogram_api():
             check_search_posts_flood
             clear_all_drafts
             clear_recent_reactions
-            clear_recent_stickers
             click_sponsored_message
             compose_text_with_ai
             copy_media_group
@@ -710,7 +708,6 @@ def pyrogram_api():
             get_discussion_replies_count
             get_emoji_stickers
             get_custom_emoji_stickers
-            get_favorite_stickers
             get_featured_emoji_stickers
             get_featured_stickers
             get_stickers
@@ -729,7 +726,6 @@ def pyrogram_api():
             get_quick_replies
             get_quick_reply_messages
             get_recent_reactions
-            get_recent_stickers
             get_rich_message
             get_saved_gifs
             get_saved_history
@@ -760,7 +756,6 @@ def pyrogram_api():
             reorder_pinned_dialogs
             reorder_quick_replies
             reorder_sticker_sets
-            remove_favorite_sticker
             rephrase_text_with_ai
             report_messages
             report_reaction
@@ -855,8 +850,6 @@ def pyrogram_api():
             search_custom_emoji
             search_emoji_sticker_sets
             search_sent_media
-            search_sticker_sets
-            search_stickers
             accept_url_auth
             check_url_auth_match_code
             decline_url_auth
@@ -892,8 +885,6 @@ def pyrogram_api():
             discard_encryption
             init_history_import
             read_encrypted_history
-            received_messages
-            received_queue
             report_encrypted_spam
             request_encryption
             send_encrypted

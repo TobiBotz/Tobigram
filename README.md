@@ -20,32 +20,63 @@
     <br />
     <a href="https://pypi.org/project/tobigram/">
         <img
-            src="https://img.shields.io/pypi/v/Tobigram"
+            src="https://img.shields.io/pypi/v/Tobigram?style=flat-square&color=3775A9&logo=pypi&logoColor=white"
             alt="PyPI package version"
         />
     </a>
     <a href="https://pypi.org/project/tobigram/">
         <img
-            src="https://img.shields.io/pypi/dm/Tobigram"
+            src="https://img.shields.io/pypi/dm/Tobigram?style=flat-square&color=8A2BE2"
             alt="Downloads"
         />
     </a>
     <a href="https://pypi.org/project/tobigram/">
         <img
-            src="https://img.shields.io/pypi/pyversions/Tobigram"
+            src="https://img.shields.io/pypi/pyversions/Tobigram?style=flat-square&color=3776AB&logo=python&logoColor=white"
             alt="Python versions"
+        />
+    </a>
+    <a href="https://docs.tobigram.com">
+        <img
+            src="https://img.shields.io/badge/docs-docs.tobigram.com-007EC6?style=flat-square&logo=readthedocs&logoColor=white"
+            alt="Documentation"
+        />
+    </a>
+    <a href="https://github.com/astral-sh/ruff">
+        <img
+            src="https://img.shields.io/badge/code%20style-ruff-000000.svg?style=flat-square"
+            alt="Code style: Ruff"
+        />
+    </a>
+    <a href="https://core.telegram.org/schema">
+        <img
+            src="https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2FTobiBotz%2FTobigram%2Fdev%2Fcompiler%2Fapi%2Fsource%2Fmain_api.tl&search=%2F%2F%20LAYER%20(%5Cd%2B)&replace=Layer%20%241&label=MTProto&color=2CA5E0&style=flat-square&logo=telegram&logoColor=white"
+            alt="MTProto Layer"
         />
     </a>
     <a href="https://github.com/TobiBotz/Tobigram/blob/dev/COPYING.lesser">
         <img
-            src="https://img.shields.io/github/license/TobiBotz/Tobigram"
+            src="https://img.shields.io/github/license/TobiBotz/Tobigram?style=flat-square&color=2bbc8a"
             alt="License"
         />
     </a>
     <a href="https://github.com/TobiBotz/Tobigram/actions/workflows/python.yml">
         <img
-            src="https://github.com/TobiBotz/Tobigram/actions/workflows/python.yml/badge.svg?branch=dev"
+            src="https://img.shields.io/github/actions/workflow/status/TobiBotz/Tobigram/python.yml?branch=dev&style=flat-square&logo=github&logoColor=white"
             alt="CI Status"
+        />
+    </a>
+    <br />
+    <a href="https://t.me/TobigramNews">
+        <img
+            src="https://img.shields.io/badge/Telegram-Channel-2CA5E0?style=flat-square&logo=telegram&logoColor=white"
+            alt="Telegram Channel"
+        />
+    </a>
+    <a href="https://t.me/TobigramChat">
+        <img
+            src="https://img.shields.io/badge/Telegram-Chat-2CA5E0?style=flat-square&logo=telegram&logoColor=white"
+            alt="Telegram Chat"
         />
     </a>
 </p>
@@ -122,5 +153,5 @@ pip install tobigram[fast]     # uvloop for better performance
 
 - **[Dan](https://github.com/delivrance)** The original creator of [Pyrogram](https://github.com/pyrogram/pyrogram).
 - **[Kurimuzon Akuma](https://github.com/KurimuzonAkuma)** Creator and maintainer of [Kurigram](https://github.com/kurigram-org/kurigram).
-- **[Riajul](https://github.com/rjriajul)** Creator of [Wzgram](https://github.com/rjriajul/wzgram) and author of [WarpCrypto](https://github.com/TobiBotz/WarpCrypto).
+- **[Riajul](https://github.com/rjriajul)** Creator of [wzgram](https://github.com/rjriajul/wzgram) and author of [WarpCrypto](https://github.com/TobiBotz/WarpCrypto).
 

@@ -105,3 +105,53 @@ def test_the_categories_were_actually_read():
         "almost nothing was parsed out of the categories dicts, so these checks "
         "would pass whatever is missing"
     )
+
+
+def test_no_duplicate_entries_in_compiler():
+    from collections import Counter
+
+    entries = re.findall(r"^\s{12}(\w+)$", COMPILER.read_text(encoding="utf-8"), re.MULTILINE)
+    counts = Counter(entries)
+    duplicates = {k: v for k, v in counts.items() if v > 1}
+    assert not duplicates, f"Found duplicate entries in compiler/docs/compiler.py: {duplicates}"
+
+
+def test_documented_client_methods_exist():
+    method_categories = [
+        "account",
+        "advanced",
+        "auth",
+        "bots",
+        "business",
+        "chats",
+        "communities",
+        "contacts",
+        "ephemeral",
+        "folders",
+        "help",
+        "invite_links",
+        "langpack",
+        "listeners",
+        "messages",
+        "password",
+        "payments",
+        "phone",
+        "premium",
+        "smsjobs",
+        "stats",
+        "stickers",
+        "stories",
+        "updates",
+        "users",
+        "utilities",
+    ]
+    compiler_text = COMPILER.read_text(encoding="utf-8")
+    for cat in method_categories:
+        m = re.search(rf"{cat}=\"\"\"(.*?)\"\"\"", compiler_text, re.DOTALL)
+        if m:
+            lines = [l.strip() for l in m.group(1).strip().splitlines()][1:]
+            for fn in lines:
+                if fn:
+                    assert hasattr(pyrogram.Client, fn), (
+                        f"Documented method '{fn}' in category '{cat}' does not exist on Client"
+                    )

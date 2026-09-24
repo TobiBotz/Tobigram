@@ -24,7 +24,14 @@ from .get_business_account_star_balance import GetBusinessAccountStarBalance
 from .get_business_chat_links import GetBusinessChatLinks
 from .get_business_connection import GetBusinessConnection
 from .get_connected_bots import GetConnectedBots
+from .read_business_message import ReadBusinessMessage
+from .remove_business_account_profile_photo import RemoveBusinessAccountProfilePhoto
 from .resolve_business_chat_link import ResolveBusinessChatLink
+from .set_business_account_bio import SetBusinessAccountBio
+from .set_business_account_gift_settings import SetBusinessAccountGiftSettings
+from .set_business_account_name import SetBusinessAccountName
+from .set_business_account_profile_photo import SetBusinessAccountProfilePhoto
+from .set_business_account_username import SetBusinessAccountUsername
 from .transfer_business_account_stars import TransferBusinessAccountStars
 from .update_business_away_message import UpdateBusinessAwayMessage
 from .update_business_greeting_message import UpdateBusinessGreetingMessage
@@ -34,20 +41,27 @@ from .update_business_work_hours import UpdateBusinessWorkHours
 
 
 class Business(
+    CreateBusinessChatLink,
+    DeleteBusinessChatLink,
     DeleteBusinessMessages,
     GetBusinessAccountGifts,
     GetBusinessAccountStarBalance,
-    GetBusinessConnection,
-    TransferBusinessAccountStars,
-    UpdateBusinessWorkHours,
-    UpdateBusinessLocation,
-    UpdateBusinessGreetingMessage,
-    UpdateBusinessAwayMessage,
-    UpdateBusinessIntro,
-    CreateBusinessChatLink,
-    DeleteBusinessChatLink,
-    ResolveBusinessChatLink,
     GetBusinessChatLinks,
+    GetBusinessConnection,
     GetConnectedBots,
+    ReadBusinessMessage,
+    RemoveBusinessAccountProfilePhoto,
+    ResolveBusinessChatLink,
+    SetBusinessAccountBio,
+    SetBusinessAccountGiftSettings,
+    SetBusinessAccountName,
+    SetBusinessAccountProfilePhoto,
+    SetBusinessAccountUsername,
+    TransferBusinessAccountStars,
+    UpdateBusinessAwayMessage,
+    UpdateBusinessGreetingMessage,
+    UpdateBusinessIntro,
+    UpdateBusinessLocation,
+    UpdateBusinessWorkHours,
 ):
     pass

@@ -48,7 +48,7 @@ class AddStickerToSet:
         Example:
             .. code-block:: python
 
-                from wzgram import enums, types
+                from pyrogram import enums, types
 
                 await app.add_sticker_to_set(
                     "me",
