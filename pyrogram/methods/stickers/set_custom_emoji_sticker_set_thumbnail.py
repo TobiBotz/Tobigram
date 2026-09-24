@@ -20,41 +20,31 @@ from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types
-from .resolve import resolve_stickerset
 
 
 class SetCustomEmojiStickerSetThumbnail:
     async def set_custom_emoji_sticker_set_thumbnail(
-        self: pyrogram.Client,
-        short_name: str | types.StickerSet | raw.base.InputStickerSet,
-        custom_emoji_id: int | str | None = None,
+        self: pyrogram.Client, name: str, custom_emoji_id: str = ""
     ) -> types.StickerSet:
-        """Set thumbnail for a custom emoji sticker set.
+        """Set the thumbnail of a custom emoji sticker set.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            short_name (``str`` | :obj:`~pyrogram.types.StickerSet`):
-                Short name or StickerSet object of the sticker set.
+            name (``str``):
+                Name of the sticker set.
 
-            custom_emoji_id (``int`` | ``str``, *optional*):
-                Custom emoji document ID to use as thumbnail.
+            custom_emoji_id (``str``, *optional*):
+                Custom emoji identifier of a sticker from the sticker set.
+                Pass an empty string to use the first sticker as the thumbnail.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the updated sticker set is returned.
-
-        Example:
-            .. code-block:: python
-
-                await app.set_custom_emoji_sticker_set_thumbnail("my_pack", "123456")
+            :obj:`~pyrogram.types.StickerSet`: The updated sticker set is returned.
         """
-        stickerset = resolve_stickerset(short_name)
-        emoji_id = int(custom_emoji_id) if custom_emoji_id is not None else None
-
         r = await self.invoke(
             raw.functions.stickers.SetStickerSetThumb(
-                stickerset=stickerset,
-                thumb_document_id=emoji_id,
+                stickerset=raw.types.InputStickerSetShortName(short_name=name),
+                thumb_document_id=int(custom_emoji_id) if custom_emoji_id else 0,
             )
         )
 

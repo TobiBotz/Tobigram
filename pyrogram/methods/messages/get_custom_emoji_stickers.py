@@ -18,45 +18,41 @@
 
 from __future__ import annotations
 
-import logging
-
 import pyrogram
 from pyrogram import raw, types
 
-log = logging.getLogger(__name__)
 
+class GetCustomEmojiStickers:
+    async def get_custom_emoji_stickers(
+        self: pyrogram.Client,
+        custom_emoji_ids: list[int | str],
+    ) -> list[types.Sticker]:
+        """Get information about custom emoji stickers by their identifiers.
 
-class GetStickers:
-    async def get_stickers(self: pyrogram.Client, short_name: str) -> list[types.Sticker]:
-        """Get all stickers from set by short name.
-
-        .. include:: /_includes/usable-by/users.rst
+        .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            short_name (``str``):
-                Short name of the sticker set, serves as the unique identifier for the sticker set.
+            custom_emoji_ids (List of ``int`` | ``str``):
+                List of custom emoji identifiers.
 
         Returns:
-            List of :obj:`~pyrogram.types.Sticker`: A list of stickers is returned.
+            List of :obj:`~pyrogram.types.Sticker`: A list of custom emoji stickers.
 
         Example:
             .. code-block:: python
 
-                # Get all stickers by short name
-                await app.get_stickers("short_name")
-
-        Raises:
-            ValueError: In case of invalid arguments.
+                stickers = await app.get_custom_emoji_stickers([543210987654321])
         """
-        sticker_set = await self.invoke(
-            raw.functions.messages.GetStickerSet(
-                stickerset=raw.types.InputStickerSetShortName(short_name=short_name), hash=0
+        r = await self.invoke(
+            raw.functions.messages.GetCustomEmojiDocuments(
+                document_id=[int(i) for i in custom_emoji_ids]
             )
         )
 
         return types.List(
             [
                 await types.Sticker._parse(self, doc, {type(a): a for a in doc.attributes})
-                for doc in sticker_set.documents
+                for doc in r
+                if isinstance(doc, raw.types.Document)
             ]
         )

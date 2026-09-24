@@ -18,47 +18,36 @@
 
 from __future__ import annotations
 
+
 import pyrogram
-from pyrogram import raw, types
-from .resolve import resolve_sticker_doc
+from pyrogram import raw, types, utils
+from pyrogram.file_id import FileType
 
 
 class SetStickerEmojiList:
     async def set_sticker_emoji_list(
-        self: pyrogram.Client,
-        sticker: str | types.Sticker | raw.base.InputDocument,
-        emoji_list: list[str] | str,
+        self: pyrogram.Client, sticker: str, emoji_list: list[str]
     ) -> types.StickerSet:
-        """Use this method to change the list of emoji assigned to a regular or custom emoji sticker.
+        """Change the list of emoji assigned to a regular or custom emoji sticker.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            sticker (``str`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.raw.base.InputDocument`):
-                File identifier or document of the sticker.
+            sticker (``str``):
+                File identifier of the sticker.
 
-            emoji_list (List of ``str`` | ``str``):
-                List of 1-20 emoji associated with the sticker or concatenated emoji string.
+            emoji_list (List of ``str``):
+                List of 1-20 emoji associated with the sticker.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: An updated sticker set is returned.
-
-        Example:
-            .. code-block:: python
-
-                await app.set_sticker_emoji_list(sticker, ["🎉", "🥳"])
+            :obj:`~pyrogram.types.StickerSet`: The updated sticker set is returned.
         """
-        if isinstance(emoji_list, list):
-            emoji_str = "".join(emoji_list)
-        else:
-            emoji_str = emoji_list or ""
-
-        doc = await resolve_sticker_doc(self, sticker)
-
         r = await self.invoke(
             raw.functions.stickers.ChangeSticker(
-                sticker=doc,
-                emoji=emoji_str,
+                sticker=utils.get_input_media_from_file_id(
+                    file_id=sticker, expected_file_type=FileType.STICKER
+                ).id,
+                emoji="".join(emoji_list),
             )
         )
 

@@ -50,6 +50,8 @@ from .fix_text_with_ai import FixTextWithAI
 from .forward_media_group import ForwardMediaGroup
 from .forward_messages import ForwardMessages
 from .get_available_effects import GetAvailableEffects
+from .get_custom_emoji_stickers import GetCustomEmojiStickers
+from .get_stickers import GetStickers
 from .rephrase_text_with_ai import RephraseTextWithAI
 from .get_chat_history import GetChatHistory
 from .get_chat_history_count import GetChatHistoryCount
@@ -156,6 +158,8 @@ class Messages(
     ForwardMediaGroup,
     ForwardMessages,
     GetAvailableEffects,
+    GetCustomEmojiStickers,
+    GetStickers,
     GetChatHistory,
     GetChatHistoryCount,
     GetDirectMessagesChatTopicHistory,

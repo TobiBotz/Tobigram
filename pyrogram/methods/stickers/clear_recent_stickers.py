@@ -18,29 +18,25 @@
 
 from __future__ import annotations
 
+
 import pyrogram
 from pyrogram import raw
 
 
 class ClearRecentStickers:
-    async def clear_recent_stickers(
-        self: pyrogram.Client,
-        attached: bool | None = None,
-    ) -> bool:
-        """Clear recent stickers.
+    async def clear_recent_stickers(self: pyrogram.Client, is_attached: bool | None = None) -> bool:
+        """Clear the list of recently used stickers.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            attached (``bool``, *optional*):
-                Pass True to clear attached stickers.
+            is_attached (``bool``, *optional*):
+                Pass True to target the list of stickers recently attached to photo or video files.
+                Pass False to target the list of recently sent stickers.
 
         Returns:
-            ``bool``: True on success.
-
-        Example:
-            .. code-block:: python
-
-                await app.clear_recent_stickers()
+            ``bool``: True, on success.
         """
-        return await self.invoke(raw.functions.messages.ClearRecentStickers(attached=attached))
+        r = await self.invoke(raw.functions.messages.ClearRecentStickers(attached=is_attached))
+
+        return bool(r)

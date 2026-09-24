@@ -20,39 +20,29 @@ from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types
-from .resolve import resolve_stickerset
 
 
 class GetStickerSet:
-    async def get_sticker_set(
-        self: pyrogram.Client,
-        short_name: str | types.StickerSet | raw.base.InputStickerSet,
-    ) -> types.StickerSet:
-        """Get information about a sticker set, including all its stickers.
+    async def get_sticker_set(self: pyrogram.Client, name: str) -> types.StickerSet:
+        """Get a sticker set by its name.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            short_name (``str`` | :obj:`~pyrogram.types.StickerSet`):
-                Short name or StickerSet object of the sticker set.
+            name (``str``):
+                Name of the sticker set.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the sticker set is returned.
+            :obj:`~pyrogram.types.StickerSet`: The sticker set is returned.
 
         Example:
             .. code-block:: python
 
-                # Get a sticker set by short name
-                sticker_set = await app.get_sticker_set("Animals")
-                print(sticker_set.title)
-                print(len(sticker_set.stickers))
+                await app.get_sticker_set("animals")
         """
-        stickerset = resolve_stickerset(short_name)
-
         r = await self.invoke(
             raw.functions.messages.GetStickerSet(
-                stickerset=stickerset,
-                hash=0,
+                stickerset=raw.types.InputStickerSetShortName(short_name=name), hash=0
             )
         )
 

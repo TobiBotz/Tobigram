@@ -26,50 +26,51 @@ from pyrogram import raw, types
 
 class GetOwnedStickerSets:
     async def get_owned_sticker_sets(
-        self: pyrogram.Client,
-        limit: int = 0,
-        offset_id: int = 0,
+        self: pyrogram.Client, limit: int = 0, offset_sticker_set_id: int = 0
     ) -> AsyncGenerator[types.StickerSet, None]:
-        """Get your owned sticker sets.
+        """Get the sticker sets owned by the current user.
 
-        .. include:: /_includes/usable-by/users-bots.rst
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             limit (``int``, *optional*):
                 Limits the number of sticker sets to be retrieved.
-                By default, no limit is applied and all sticker sets are returned.
+                By default, no limit is applied and all sets are returned.
 
-            offset_id (``int``, *optional*):
-                Offset ID for pagination.
+            offset_sticker_set_id (``int``, *optional*):
+                Identifier of the sticker set from which to return owned sticker sets.
 
         Returns:
-            ``AsyncGenerator``: Yields :obj:`~pyrogram.types.StickerSet` objects.
+            ``Generator``: A generator yielding :obj:`~pyrogram.types.StickerSet` objects.
 
         Example:
             .. code-block:: python
 
                 async for sticker_set in app.get_owned_sticker_sets():
-                    print(sticker_set.title)
+                    print(sticker_set)
         """
-        current = 0
+        seen = set()
         total = limit or (1 << 31) - 1
+        limit = min(100, total)
 
         while True:
             r = await self.invoke(
-                raw.functions.messages.GetMyStickers(
-                    offset_id=offset_id,
-                    limit=min(total - current, 100),
-                )
+                raw.functions.messages.GetMyStickers(offset_id=offset_sticker_set_id, limit=limit)
             )
 
-            if not r.sets:
-                break
+            new_sets = [covered.set for covered in r.sets if covered.set.id not in seen]
 
-            for set_covered in r.sets:
-                yield await types.StickerSet._parse(self, set_covered)
+            if not new_sets:
+                return
 
-                current += 1
-                if current >= total:
+            for raw_set in new_sets:
+                seen.add(raw_set.id)
+                offset_sticker_set_id = raw_set.id
+
+                yield await types.StickerSet._parse(self, raw_set)
+
+                if len(seen) >= total:
                     return
 
-            offset_id = r.sets[-1].set.id
+            if len(r.sets) < limit or len(seen) >= r.count:
+                return

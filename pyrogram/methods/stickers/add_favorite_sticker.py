@@ -19,37 +19,41 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw, types
-from .resolve import resolve_sticker_doc
+from pyrogram import raw, utils
+from pyrogram.file_id import FileType
 
 
 class AddFavoriteSticker:
     async def add_favorite_sticker(
         self: pyrogram.Client,
-        sticker: str | types.Sticker | types.Message | raw.base.InputDocument,
+        sticker: str,
     ) -> bool:
-        """Add a sticker to favourites.
+        """Add a sticker to the list of favorite stickers.
+        The sticker is added to the top of the list; if it was already in the list, it is moved there.
+        Emoji stickers can't be added to favorite stickers.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            sticker (``str`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.types.Message` | :obj:`~pyrogram.raw.base.InputDocument`):
-                The sticker to add to favourites.
+            sticker (``str``):
+                File identifier of the sticker.
 
         Returns:
-            ``bool``: True on success.
+            ``bool``: True, on success.
 
         Example:
             .. code-block:: python
 
-                await app.add_favorite_sticker(sticker)
+                await app.add_favorite_sticker(sticker_file_id)
         """
-        if isinstance(sticker, types.Message) and sticker.sticker:
-            sticker = sticker.sticker
-
-        doc = (
-            await resolve_sticker_doc(self, sticker)
-            if not isinstance(sticker, raw.base.InputDocument)
-            else sticker
+        r = await self.invoke(
+            raw.functions.messages.FaveSticker(
+                id=utils.get_input_media_from_file_id(
+                    file_id=sticker,
+                    expected_file_type=FileType.STICKER,
+                ).id,
+                unfave=False,
+            )
         )
-        return await self.invoke(raw.functions.messages.FaveSticker(id=doc, unfave=False))
+
+        return bool(r)

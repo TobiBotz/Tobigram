@@ -51,17 +51,7 @@ botapi:
     postStory: send_story
     deleteStory: delete_stories
     editStory: edit_story_media
-    repostStory: forward_story
-    createNewStickerSet: create_sticker_set
-    deleteStickerFromSet: remove_sticker_from_set
-    replaceStickerInSet: replace_sticker
-    setStickerEmojiList: change_sticker
-    setStickerKeywords: change_sticker
-    setStickerMaskPosition: change_sticker
-    setStickerPositionInSet: set_sticker_position
-    setStickerSetThumbnail: set_sticker_set_thumb
-    setCustomEmojiStickerSetThumbnail: set_sticker_set_thumb
-    setStickerSetTitle: rename_sticker_set
+
 
   method_unsupported:
     getUpdates: long polling is a Bot API transport; MTProto pushes updates

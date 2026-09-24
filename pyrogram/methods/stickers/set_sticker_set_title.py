@@ -20,41 +20,34 @@ from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types
-from .resolve import resolve_stickerset
 
 
 class SetStickerSetTitle:
     async def set_sticker_set_title(
-        self: pyrogram.Client,
-        short_name: str | types.StickerSet | raw.base.InputStickerSet,
-        title: str,
+        self: pyrogram.Client, name: str, title: str
     ) -> types.StickerSet:
-        """Set the title of an existing sticker set created by you or your bot.
+        """Set the title of a sticker set.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            short_name (``str`` | :obj:`~pyrogram.types.StickerSet`):
-                Short name or StickerSet object of the sticker set to rename.
+            name (``str``):
+                Name of the sticker set.
 
             title (``str``):
-                New title for the sticker set, 1-64 characters.
+                Sticker set title, 1-64 characters.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the updated sticker set is returned.
+            :obj:`~pyrogram.types.StickerSet`: The updated sticker set is returned.
 
         Example:
             .. code-block:: python
 
-                # Set title of a sticker set
-                await app.set_sticker_set_title("mypack_by_bot", "New Title")
+                await app.set_sticker_set_title("my_sticker_set", "New title")
         """
-        stickerset = resolve_stickerset(short_name)
-
         r = await self.invoke(
             raw.functions.stickers.RenameStickerSet(
-                stickerset=stickerset,
-                title=title,
+                stickerset=raw.types.InputStickerSetShortName(short_name=name), title=title
             )
         )
 

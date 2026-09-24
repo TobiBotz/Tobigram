@@ -18,84 +18,52 @@
 
 from __future__ import annotations
 
-from typing import BinaryIO
 
 import pyrogram
 from pyrogram import raw, types
-from .resolve import resolve_sticker_item, resolve_stickerset
 
 
 class AddStickerToSet:
     async def add_sticker_to_set(
-        self: pyrogram.Client,
-        short_name: str | types.StickerSet | raw.base.InputStickerSet,
-        sticker: types.InputSticker | types.Sticker | str | BinaryIO | raw.base.InputDocument,
-        *,
-        emoji: str | None = None,
-        keywords: str | None = None,
-        mask_coords: raw.types.MaskCoords | None = None,
+        self: pyrogram.Client, user_id: int | str, name: str, sticker: types.InputSticker
     ) -> types.StickerSet:
-        """Add a sticker to an existing sticker set created by you or your bot.
+        """Add a new sticker to a sticker set.
+        Emoji sticker sets can have up to 200 stickers; other sticker sets can have up to 120 stickers.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            short_name (``str`` | :obj:`~pyrogram.types.StickerSet`):
-                Short name or StickerSet object of the target sticker set.
+            user_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the sticker set owner.
 
-            sticker (:obj:`~pyrogram.types.InputSticker` | ``str`` | ``BinaryIO`` | :obj:`~pyrogram.raw.base.InputDocument`):
-                The sticker to add. Can be an :obj:`~pyrogram.types.InputSticker` object,
-                a file path string, a binary file-like object, or a file ID.
+            name (``str``):
+                Name of the sticker set.
 
-            emoji (``str``, *optional*):
-                Associated emoji for the sticker.
-                Ignored if ``sticker`` is an :obj:`~pyrogram.types.InputSticker`.
-                Defaults to "😀".
-
-            keywords (``str``, *optional*):
-                Keywords separated by commas.
-                Ignored if ``sticker`` is an :obj:`~pyrogram.types.InputSticker`.
-
-            mask_coords (:obj:`~pyrogram.raw.types.MaskCoords`, *optional*):
-                Mask coordinates for mask stickers.
-                Ignored if ``sticker`` is an :obj:`~pyrogram.types.InputSticker`.
+            sticker (:obj:`~pyrogram.types.InputSticker`):
+                Sticker to be added to the set.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the updated sticker set is returned.
+            :obj:`~pyrogram.types.StickerSet`: The updated sticker set is returned.
 
         Example:
             .. code-block:: python
 
-                # Add a sticker with emoji
-                await app.add_sticker_to_set(
-                    short_name="mypack_by_bot",
-                    sticker="sticker3.webp",
-                    emoji="🚀"
-                )
+                from wzgram import enums, types
 
-                # Add an InputSticker
                 await app.add_sticker_to_set(
-                    short_name="mypack_by_bot",
-                    sticker=types.InputSticker("sticker3.webp", emoji="🚀", keywords="rocket, space")
+                    "me",
+                    "my_sticker_set",
+                    types.InputSticker(
+                        sticker="sticker.png",
+                        format=enums.StickerFormat.STATIC,
+                        emoji_list=["👍"]
+                    )
                 )
         """
-        stickerset = resolve_stickerset(short_name)
-
-        if isinstance(sticker, types.InputSticker):
-            item = await resolve_sticker_item(self, sticker)
-        else:
-            input_stk = types.InputSticker(
-                sticker=sticker,
-                emoji=emoji,
-                keywords=keywords,
-                mask_coords=mask_coords,
-            )
-            item = await resolve_sticker_item(self, input_stk)
-
         r = await self.invoke(
             raw.functions.stickers.AddStickerToSet(
-                stickerset=stickerset,
-                sticker=item,
+                stickerset=raw.types.InputStickerSetShortName(short_name=name),
+                sticker=await sticker.write(self, user_id),
             )
         )
 

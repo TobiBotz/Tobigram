@@ -16,78 +16,147 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import annotations
+import asyncio
+import io
+import os
+import re
+import urllib.request
+from typing import BinaryIO, Optional
+from collections.abc import Callable
 
-from typing import TYPE_CHECKING, BinaryIO
-
-from pyrogram import enums, raw
+import pyrogram
+from pyrogram import enums, raw, types, utils
+from pyrogram.file_id import FileType
 from ..object import Object
 
-if TYPE_CHECKING:
-    from pyrogram import types
+MAX_DOWNLOAD_SIZE = 10 * 1024 * 1024
 
 
 class InputSticker(Object):
     """A sticker to be added to a sticker set.
 
     Parameters:
-        sticker (``str`` | ``BinaryIO`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.raw.base.InputDocument`):
-            Sticker file.
-            Pass a file_id as string to use a file that exists on Telegram servers,
-            pass a file path as string to upload a new file that exists on your local machine,
-            pass a binary file-like object with its attribute ".name" set for in-memory uploads, or
-            pass a raw :obj:`~pyrogram.raw.base.InputDocument`.
+        sticker (``str`` | ``BinaryIO``):
+            The added sticker.
+            Pass a file_id as string to use a file that exists on the Telegram servers,
+            pass an HTTP URL as string to download the file and upload it,
+            pass a file path as string to upload a new file that exists on your local machine or
+            pass a binary file-like object with its attribute ".name" set for in-memory uploads.
 
-        emoji (``str``, *optional*):
-            One or more emoji associated with the sticker.
-            Defaults to "😀".
+        format (:obj:`~pyrogram.enums.StickerFormat`):
+            Format of the added sticker.
 
-        keywords (List of ``str`` | ``str``, *optional*):
-            List of 0-20 search keywords for the sticker with total length of up to 64 characters,
-            or comma-separated keywords string.
-
-        mask_coords (:obj:`~pyrogram.types.MaskPosition` | :obj:`~pyrogram.raw.types.MaskCoords`, *optional*):
-            Position where the mask should be placed on faces (for mask sticker sets only).
-
-        format (:obj:`~pyrogram.enums.StickerFormat`, *optional*):
-            Format of the sticker (static, animated, or video).
-
-        emoji_list (List of ``str``, *optional*):
+        emoji_list (List of ``str``):
             List of 1-20 emoji associated with the sticker.
 
         mask_position (:obj:`~pyrogram.types.MaskPosition`, *optional*):
-            Position where the mask should be placed on faces (alias for mask_coords).
+            Position where the mask should be placed on faces.
+            For mask stickers only.
+
+        keywords (List of ``str``, *optional*):
+            List of 0-20 search keywords for the sticker with total length of up to 64 characters.
+            For regular and custom emoji stickers only.
     """
 
     def __init__(
         self,
-        sticker: str | BinaryIO | types.Sticker | raw.base.InputDocument,
-        emoji: str | None = None,
-        keywords: list[str] | str | None = None,
-        mask_coords: types.MaskPosition | raw.types.MaskCoords | None = None,
-        *,
-        format: enums.StickerFormat | None = None,
-        emoji_list: list[str] | str | None = None,
-        mask_position: types.MaskPosition | raw.types.MaskCoords | None = None,
-    ) -> None:
+        sticker: str | BinaryIO,
+        format: "enums.StickerFormat",
+        emoji_list: list[str],
+        mask_position: Optional["types.MaskPosition"] = None,
+        keywords: list[str] | None = None,
+    ):
         super().__init__()
 
-        em = emoji_list if emoji_list is not None else emoji
-        if isinstance(em, list):
-            em = "".join(em)
-        elif em is None and hasattr(sticker, "emoji") and getattr(sticker, "emoji"):
-            em = getattr(sticker, "emoji")
-
-        kw = keywords
-        if isinstance(kw, list):
-            kw = ",".join(kw)
-
-        mc = mask_position if mask_position is not None else mask_coords
-
         self.sticker = sticker
-        self.emoji = em or "😀"
-        self.emoji_list = [self.emoji] if em else ["😀"]
-        self.keywords = kw
-        self.mask_coords = mc
-        self.mask_position = mc
         self.format = format
+        self.emoji_list = emoji_list
+        self.mask_position = mask_position
+        self.keywords = keywords
+
+    async def _upload(
+        self,
+        client: "pyrogram.Client",
+        chat_id: int | str | None = None,
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+    ) -> "raw.types.Document":
+        if self.format == enums.StickerFormat.ANIMATED:
+            file_name, mime_type = "sticker.tgs", "application/x-tgsticker"
+        elif self.format == enums.StickerFormat.VIDEO:
+            file_name, mime_type = "sticker.webm", "video/webm"
+        else:
+            file_name, mime_type = "sticker.png", "image/png"
+
+        sticker = self.sticker
+
+        if self._is_url():
+            sticker = io.BytesIO(await asyncio.to_thread(self._download, sticker))
+            sticker.name = file_name
+
+        r = await client.invoke(
+            raw.functions.messages.UploadMedia(
+                peer=await client.resolve_peer(chat_id)
+                if chat_id is not None
+                else raw.types.InputPeerSelf(),
+                media=raw.types.InputMediaUploadedDocument(
+                    mime_type=mime_type,
+                    file=await client.save_file(
+                        sticker, progress=progress, progress_args=progress_args
+                    ),
+                    attributes=[
+                        raw.types.DocumentAttributeFilename(file_name=file_name),
+                        raw.types.DocumentAttributeSticker(
+                            alt="".join(self.emoji_list),
+                            stickerset=raw.types.InputStickerSetEmpty(),
+                            mask=self.mask_position is not None,
+                            mask_coords=self.mask_position.write() if self.mask_position else None,
+                        ),
+                    ],
+                ),
+            )
+        )
+
+        return r.document
+
+    def _is_url(self) -> bool:
+        return isinstance(self.sticker, str) and re.match("^https?://", self.sticker) is not None
+
+    @staticmethod
+    def _download(url: str) -> bytes:
+        request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+
+        with urllib.request.urlopen(request, timeout=30) as response:
+            data = response.read(MAX_DOWNLOAD_SIZE + 1)
+
+        if len(data) > MAX_DOWNLOAD_SIZE:
+            raise ValueError(f"The sticker at {url} is larger than {MAX_DOWNLOAD_SIZE} bytes")
+
+        return data
+
+    def _is_upload(self) -> bool:
+        return not isinstance(self.sticker, str) or self._is_url() or os.path.isfile(self.sticker)
+
+    async def write(
+        self,
+        client: "pyrogram.Client",
+        chat_id: int | str | None = None,
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+    ) -> "raw.types.InputStickerSetItem":
+        if self._is_upload():
+            document = await self._upload(client, chat_id, progress, progress_args)
+            input_document = raw.types.InputDocument(
+                id=document.id,
+                access_hash=document.access_hash,
+                file_reference=document.file_reference,
+            )
+        else:
+            input_document = utils.get_input_media_from_file_id(self.sticker, FileType.STICKER).id
+
+        return raw.types.InputStickerSetItem(
+            document=input_document,
+            emoji="".join(self.emoji_list),
+            mask_coords=self.mask_position.write() if self.mask_position else None,
+            keywords=",".join(self.keywords) if self.keywords else None,
+        )

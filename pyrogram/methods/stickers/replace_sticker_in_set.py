@@ -18,68 +18,42 @@
 
 from __future__ import annotations
 
-from typing import BinaryIO
 
 import pyrogram
-from pyrogram import raw, types
-from .resolve import resolve_sticker_doc, resolve_sticker_item
+from pyrogram import raw, types, utils
+from pyrogram.file_id import FileType
 
 
 class ReplaceStickerInSet:
     async def replace_sticker_in_set(
         self: pyrogram.Client,
-        sticker: str | types.Sticker | raw.base.InputDocument,
-        new_sticker: types.InputSticker | str | BinaryIO | raw.base.InputDocument,
-        *,
-        emoji: str | None = None,
-        keywords: str | None = None,
-        mask_coords: raw.types.MaskCoords | None = None,
+        user_id: int | str,
+        old_sticker: str,
+        sticker: types.InputSticker,
     ) -> types.StickerSet:
-        """Replace a sticker in a sticker set.
+        """Replace an existing sticker in a sticker set with a new one.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            sticker (``str`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.raw.base.InputDocument`):
-                Old sticker to replace.
+            user_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the sticker set owner.
 
-            new_sticker (:obj:`~pyrogram.types.InputSticker` | ``str`` | ``BinaryIO`` | :obj:`~pyrogram.raw.base.InputDocument`):
-                New sticker to replace with.
+            old_sticker (``str``):
+                File identifier of the replaced sticker.
 
-            emoji (``str``, *optional*):
-                Emoji associated with new sticker.
-
-            keywords (``str``, *optional*):
-                Keywords separated by commas.
-
-            mask_coords (:obj:`~pyrogram.raw.types.MaskCoords`, *optional*):
-                Mask coordinates.
+            sticker (:obj:`~pyrogram.types.InputSticker`):
+                The new sticker.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the updated sticker set is returned.
-
-        Example:
-            .. code-block:: python
-
-                await app.replace_sticker_in_set(old_sticker, "new_sticker.webp")
+            :obj:`~pyrogram.types.StickerSet`: The updated sticker set is returned.
         """
-        old_doc = await resolve_sticker_doc(self, sticker)
-
-        if isinstance(new_sticker, types.InputSticker):
-            item = await resolve_sticker_item(self, new_sticker)
-        else:
-            input_stk = types.InputSticker(
-                sticker=new_sticker,
-                emoji=emoji,
-                keywords=keywords,
-                mask_coords=mask_coords,
-            )
-            item = await resolve_sticker_item(self, input_stk)
-
         r = await self.invoke(
             raw.functions.stickers.ReplaceSticker(
-                sticker=old_doc,
-                new_sticker=item,
+                sticker=utils.get_input_media_from_file_id(
+                    file_id=old_sticker, expected_file_type=FileType.STICKER
+                ).id,
+                new_sticker=await sticker.write(self, user_id),
             )
         )
 

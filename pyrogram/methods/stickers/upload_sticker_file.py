@@ -21,7 +21,8 @@ from __future__ import annotations
 from typing import BinaryIO
 
 import pyrogram
-from pyrogram import raw, types
+from pyrogram import enums, types
+from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
 
 
 class UploadStickerFile:
@@ -29,75 +30,40 @@ class UploadStickerFile:
         self: pyrogram.Client,
         user_id: int | str,
         sticker: str | BinaryIO,
-        sticker_format: str = "static",
-    ) -> types.Document:
-        """Upload a file with a sticker for later use in :meth:`~Client.create_sticker_set`.
+        sticker_format: enums.StickerFormat,
+    ) -> types.File:
+        """Upload a file with a sticker for later use in :meth:`~pyrogram.Client.create_new_sticker_set`,
+        :meth:`~pyrogram.Client.add_sticker_to_set` and :meth:`~pyrogram.Client.replace_sticker_in_set`.
 
-        Returns the uploaded file as a :obj:`~pyrogram.types.Document`.
-
-        .. include:: /_includes/usable-by/bots.rst
+        .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
             user_id (``int`` | ``str``):
-                User identifier of the sticker file owner.
+                Unique identifier (int) or username (str) of the sticker set owner.
 
             sticker (``str`` | ``BinaryIO``):
-                A file path (str) or a file-like object (BinaryIO) of the sticker to upload.
-                For static stickers use .WEBP or .PNG; for animated use .TGS;
-                for video use .WEBM.
+                File path, HTTP URL or binary file-like object of the sticker, which must fit in a 512x512 square.
 
-            sticker_format (``str``, *optional*):
-                Format of the sticker: ``"static"``, ``"animated"``, or ``"video"``.
-                Defaults to ``"static"``.
+            sticker_format (:obj:`~pyrogram.enums.StickerFormat`):
+                Format of the sticker.
 
         Returns:
-            :obj:`~pyrogram.types.Document`: The uploaded sticker file as a Document.
-
-        Example:
-            .. code-block:: python
-
-                doc = await app.upload_sticker_file(user_id, "sticker.webp")
-                print(doc.file_id)
+            :obj:`~pyrogram.types.File`: The uploaded file is returned.
         """
-        if isinstance(sticker, str):
-            with open(sticker, "rb") as f:
-                file = await self.save_file(f)
-        else:
-            file = await self.save_file(sticker)
+        document = await types.InputSticker(
+            sticker=sticker, format=sticker_format, emoji_list=[]
+        )._upload(self, user_id)
 
-        # Determine the MIME type and attributes based on format
-        if sticker_format == "animated":
-            mime_type = "application/x-tgsticker"
-            attributes = [raw.types.DocumentAttributeFilename(file_name="sticker.tgs")]
-        elif sticker_format == "video":
-            mime_type = "video/webm"
-            attributes = [
-                raw.types.DocumentAttributeFilename(file_name="sticker.webm"),
-                raw.types.DocumentAttributeVideo(
-                    duration=0,
-                    w=512,
-                    h=512,
-                    nosound=True,
-                ),
-            ]
-        else:
-            mime_type = "image/webp"
-            attributes = [raw.types.DocumentAttributeFilename(file_name="sticker.webp")]
-
-        r = await self.invoke(
-            raw.functions.messages.UploadMedia(
-                peer=await self.resolve_peer(user_id),
-                media=raw.types.InputMediaUploadedDocument(
-                    file=file,
-                    mime_type=mime_type,
-                    attributes=attributes,
-                    stickers=None,
-                    nosound_video=None,
-                    force_file=None,
-                    ttl_seconds=None,
-                    spoiler=None,
-                ),
-            )
+        return types.File(
+            file_id=FileId(
+                file_type=FileType.STICKER,
+                dc_id=document.dc_id,
+                media_id=document.id,
+                access_hash=document.access_hash,
+                file_reference=document.file_reference,
+            ).encode(),
+            file_unique_id=FileUniqueId(
+                file_unique_type=FileUniqueType.DOCUMENT, media_id=document.id
+            ).encode(),
+            file_size=document.size,
         )
-
-        return types.Document._parse(self, r.document, None, None)

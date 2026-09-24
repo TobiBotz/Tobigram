@@ -19,43 +19,45 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw, types
-from .resolve import resolve_sticker_doc
+from pyrogram import raw, utils
+from pyrogram.file_id import FileType
 
 
 class RemoveRecentSticker:
     async def remove_recent_sticker(
         self: pyrogram.Client,
-        sticker: str | types.Sticker | types.Message | raw.base.InputDocument,
-        attached: bool | None = None,
+        sticker: str,
+        is_attached: bool | None = None,
     ) -> bool:
-        """Remove a sticker from recent stickers.
+        """Remove a sticker from the list of recently used stickers.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            sticker (``str`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.types.Message` | :obj:`~pyrogram.raw.base.InputDocument`):
-                The sticker to remove.
+            sticker (``str``):
+                File identifier of the sticker.
 
-            attached (``bool``, *optional*):
-                Pass True to remove an attached sticker.
+            is_attached (``bool``, *optional*):
+                Pass True to target the list of stickers recently attached to photo or video files.
+                Pass False to target the list of recently sent stickers.
 
         Returns:
-            ``bool``: True on success.
+            ``bool``: True, on success.
 
         Example:
             .. code-block:: python
 
-                await app.remove_recent_sticker(sticker)
+                await app.remove_recent_sticker(sticker_file_id)
         """
-        if isinstance(sticker, types.Message) and sticker.sticker:
-            sticker = sticker.sticker
+        r = await self.invoke(
+            raw.functions.messages.SaveRecentSticker(
+                id=utils.get_input_media_from_file_id(
+                    file_id=sticker,
+                    expected_file_type=FileType.STICKER,
+                ).id,
+                unsave=True,
+                attached=is_attached,
+            )
+        )
 
-        doc = (
-            await resolve_sticker_doc(self, sticker)
-            if not isinstance(sticker, raw.base.InputDocument)
-            else sticker
-        )
-        return await self.invoke(
-            raw.functions.messages.SaveRecentSticker(id=doc, unsave=True, attached=attached)
-        )
+        return bool(r)

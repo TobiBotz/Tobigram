@@ -18,48 +18,35 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 
 import pyrogram
-from pyrogram import raw, types
-from .resolve import resolve_stickerset
+from pyrogram import enums, raw
 
 
 class ReorderInstalledStickerSets:
     async def reorder_installed_sticker_sets(
-        self: pyrogram.Client,
-        order: Iterable[str | types.StickerSet | raw.base.InputStickerSet],
-        masks: bool = False,
-        emojis: bool = False,
+        self: pyrogram.Client, sticker_type: enums.StickerType, sticker_set_ids: list[int]
     ) -> bool:
-        """Reorder installed sticker sets.
+        """Change the order of installed sticker sets.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            order (Iterable of ``str`` | :obj:`~pyrogram.types.StickerSet`):
-                List of short names or StickerSet objects in new order.
+            sticker_type (:obj:`~pyrogram.enums.StickerType`):
+                Type of the sticker sets to reorder.
 
-            masks (``bool``, *optional*):
-                Pass True to reorder mask sticker sets.
-
-            emojis (``bool``, *optional*):
-                Pass True to reorder custom emoji sticker sets.
+            sticker_set_ids (List of ``int``):
+                Identifiers of installed sticker sets in the new order.
 
         Returns:
-            ``bool``: True on success.
-
-        Example:
-            .. code-block:: python
-
-                await app.reorder_installed_sticker_sets(["pack1", "pack2"])
+            ``bool``: True, on success.
         """
-        order_sets = [resolve_stickerset(s) for s in order]
-
-        return await self.invoke(
+        r = await self.invoke(
             raw.functions.messages.ReorderStickerSets(
-                order=order_sets,
-                masks=masks or None,
-                emojis=emojis or None,
+                order=sticker_set_ids,
+                masks=sticker_type == enums.StickerType.MASK,
+                emojis=sticker_type == enums.StickerType.CUSTOM_EMOJI,
             )
         )
+
+        return bool(r)

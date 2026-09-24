@@ -18,70 +18,49 @@
 
 from __future__ import annotations
 
+
 import pyrogram
-from pyrogram import raw, types
-from .resolve import resolve_sticker_doc
+from pyrogram import raw
 
 
 class ChangeStickerSet:
     async def change_sticker_set(
-        self: pyrogram.Client,
-        sticker: str | types.Sticker | raw.base.InputDocument,
-        *,
-        emoji: str | None = None,
-        keywords: str | None = None,
-        mask_coords: types.MaskPosition | raw.types.MaskCoords | None = None,
-    ) -> types.StickerSet:
-        """Update the emoji list, search keywords, or mask coordinates of an existing sticker.
+        self: pyrogram.Client, name: str, is_installed: bool, is_archived: bool | None = None
+    ) -> bool:
+        """Install, uninstall, archive or unarchive a sticker set.
 
-        .. include:: /_includes/usable-by/users-bots.rst
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            sticker (``str`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.raw.base.InputDocument`):
-                The sticker to update.
+            name (``str``):
+                Name of the sticker set.
 
-            emoji (``str``, *optional*):
-                If set, updates the emoji list associated with the sticker.
+            is_installed (``bool``):
+                Pass True to install the sticker set, False to uninstall it.
 
-            keywords (``str``, *optional*):
-                If set, updates the sticker search keywords.
-
-            mask_coords (:obj:`~pyrogram.types.MaskPosition` | :obj:`~pyrogram.raw.types.MaskCoords`, *optional*):
-                If set, updates the mask coordinates for mask stickers.
+            is_archived (``bool``, *optional*):
+                Pass True to archive the installed sticker set.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the updated sticker set is returned.
+            ``bool``: True, on success.
 
         Example:
             .. code-block:: python
 
-                await app.change_sticker_set(
-                    sticker=message.sticker,
-                    emoji="🎉🥳",
-                )
+                await app.change_sticker_set("animals", is_installed=True)
         """
-        doc = await resolve_sticker_doc(self, sticker)
-
-        if isinstance(mask_coords, types.MaskPosition):
-            point_val = (
-                mask_coords.point.value
-                if hasattr(mask_coords.point, "value")
-                else int(mask_coords.point)
+        if is_installed:
+            r = await self.invoke(
+                raw.functions.messages.InstallStickerSet(
+                    stickerset=raw.types.InputStickerSetShortName(short_name=name),
+                    archived=bool(is_archived),
+                )
             )
-            mask_coords = raw.types.MaskCoords(
-                n=point_val,
-                x=mask_coords.x_shift,
-                y=mask_coords.y_shift,
-                zoom=mask_coords.scale,
+        else:
+            r = await self.invoke(
+                raw.functions.messages.UninstallStickerSet(
+                    stickerset=raw.types.InputStickerSetShortName(short_name=name)
+                )
             )
 
-        r = await self.invoke(
-            raw.functions.stickers.ChangeSticker(
-                sticker=doc,
-                emoji=emoji,
-                keywords=keywords,
-                mask_coords=mask_coords,
-            )
-        )
-
-        return await types.StickerSet._parse(self, r)
+        return bool(r)
