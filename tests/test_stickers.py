@@ -1,13 +1,15 @@
 import io
 import sys
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import pyrogram
-from pyrogram import enums, raw, types
+from pyrogram import enums, raw, types, utils
+from pyrogram.errors import StickersetInvalid
 from pyrogram.types.input_content import input_sticker
 
 
@@ -113,3 +115,128 @@ def test_a_download_over_the_cap_is_refused(monkeypatch):
     monkeypatch.setattr(input_sticker.urllib.request, "urlopen", lambda *a, **k: Response(b"1234"))
 
     assert types.InputSticker._download("https://example.com/s.png") == b"1234"
+
+
+@pytest.mark.asyncio
+async def test_get_sticker_set_name_with_sync_cache():
+    types.Sticker.cache.clear()
+
+    mock_client = MagicMock()
+    mock_client.sticker_set_name_cache = utils.Cache(10)
+    mock_client.invoke = AsyncMock(
+        return_value=raw.types.messages.StickerSet(
+            set=raw_set(12345, "sync_pack"),
+            packs=[],
+            keywords=[],
+            documents=[],
+        )
+    )
+
+    # First call: cache miss, invokes client.invoke
+    name = await types.Sticker._get_sticker_set_name(mock_client, (12345, 1))
+    assert name == "sync_pack"
+    assert mock_client.invoke.await_count == 1
+    assert mock_client.sticker_set_name_cache.get((12345, 1)) == "sync_pack"
+    assert types.Sticker.cache.get((12345, 1)) == "sync_pack"
+
+    # Second call: cache hit in client.sticker_set_name_cache & Sticker.cache
+    name2 = await types.Sticker._get_sticker_set_name(mock_client, (12345, 1))
+    assert name2 == "sync_pack"
+    assert mock_client.invoke.await_count == 1
+
+    # Clear Sticker.cache to ensure it also reads from client.sticker_set_name_cache directly
+    types.Sticker.cache.clear()
+    name3 = await types.Sticker._get_sticker_set_name(mock_client, (12345, 1))
+    assert name3 == "sync_pack"
+    assert mock_client.invoke.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_get_sticker_set_name_with_async_cache():
+    types.Sticker.cache.clear()
+
+    async_store = {}
+
+    class AsyncCache:
+        async def get(self, key):
+            return async_store.get(key)
+
+        async def set(self, key, value):
+            async_store[key] = value
+
+    mock_client = MagicMock()
+    mock_client.sticker_set_name_cache = AsyncCache()
+    mock_client.invoke = AsyncMock(
+        return_value=raw.types.messages.StickerSet(
+            set=raw_set(54321, "async_pack"),
+            packs=[],
+            keywords=[],
+            documents=[],
+        )
+    )
+
+    # Cache miss
+    name = await types.Sticker._get_sticker_set_name(mock_client, (54321, 1))
+    assert name == "async_pack"
+    assert async_store[(54321, 1)] == "async_pack"
+    assert mock_client.invoke.await_count == 1
+
+    # Cache hit
+    types.Sticker.cache.clear()
+    name2 = await types.Sticker._get_sticker_set_name(mock_client, (54321, 1))
+    assert name2 == "async_pack"
+    assert mock_client.invoke.await_count == 1
+
+
+@pytest.mark.asyncio
+async def test_get_sticker_set_name_invalid_set():
+    types.Sticker.cache.clear()
+    mock_client = MagicMock()
+    mock_client.sticker_set_name_cache = utils.Cache(10)
+    mock_client.invoke = AsyncMock(side_effect=StickersetInvalid())
+
+    name = await types.Sticker._get_sticker_set_name(mock_client, (99999, 1))
+    assert name is None
+
+
+@pytest.mark.asyncio
+async def test_sticker_parse_with_cache_miss():
+    types.Sticker.cache.clear()
+    mock_client = MagicMock()
+    mock_client.fetch_stickers = True
+    mock_client.sticker_set_name_cache = utils.Cache(10)
+    mock_client.invoke = AsyncMock(
+        return_value=raw.types.messages.StickerSet(
+            set=raw_set(777, "parse_pack"),
+            packs=[],
+            keywords=[],
+            documents=[],
+        )
+    )
+
+    doc = raw.types.Document(
+        id=10101,
+        access_hash=20202,
+        file_reference=b"ref",
+        date=1700000000,
+        mime_type="image/webp",
+        size=1024,
+        dc_id=1,
+        attributes=[
+            raw.types.DocumentAttributeSticker(
+                alt="😊",
+                stickerset=raw.types.InputStickerSetID(id=777, access_hash=1),
+            ),
+            raw.types.DocumentAttributeImageSize(w=512, h=512),
+        ],
+    )
+
+    sticker = await types.Sticker._parse(
+        mock_client,
+        doc,
+        {type(a): a for a in doc.attributes},
+    )
+
+    assert sticker.set_name == "parse_pack"
+    assert sticker.emoji == "😊"
+    assert mock_client.sticker_set_name_cache.get((777, 1)) == "parse_pack"

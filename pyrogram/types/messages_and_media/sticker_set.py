@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+import inspect
 from typing import Union
 
 import pyrogram
@@ -126,6 +127,12 @@ class StickerSet(Object):
             sticker_type = enums.StickerType.REGULAR
 
         types.Sticker.cache[(_set.id, _set.access_hash)] = _set.short_name
+
+        cache = getattr(client, "sticker_set_name_cache", None)
+        if cache is not None:
+            res = cache.set((_set.id, _set.access_hash), _set.short_name)
+            if inspect.isawaitable(res):
+                await res
 
         stickers = None
         thumbs = None
