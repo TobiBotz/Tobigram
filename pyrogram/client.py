@@ -50,9 +50,12 @@ from pyrogram.errors import (
     AuthTokenExpired,
     BadRequest,
     CDNFileHashMismatch,
+    ChannelInvalid,
     ChannelPrivate,
+    PeerIdInvalid,
     PersistentTimestampInvalid,
     PersistentTimestampOutdated,
+    RPCError,
     SessionPasswordNeeded,
     Unauthorized,
     VolumeLocNotFound,
@@ -1256,10 +1259,17 @@ class Client(Methods):
                             )
                         except (
                             ChannelPrivate,
+                            ChannelInvalid,
+                            PeerIdInvalid,
                             PersistentTimestampOutdated,
                             PersistentTimestampInvalid,
+                            KeyError,
                         ):
                             pass
+                        except RPCError as e:
+                            log.debug(
+                                "GetChannelDifference failed for channel %s: %s", channel_id, e
+                            )
                         else:
                             if not isinstance(diff, raw.types.updates.ChannelDifferenceEmpty):
                                 users.update({u.id: u for u in diff.users})

@@ -249,3 +249,51 @@ async def test_get_chat_with_min_channel():
     assert isinstance(call_arg.channel, raw.types.InputChannelFromMessage)
     assert call_arg.channel.channel_id == 5555
     assert call_arg.channel.msg_id == 20
+
+
+@pytest.mark.asyncio
+async def test_handle_updates_min_channel_peer_id_invalid():
+    client = Client("test_min", in_memory=True)
+    client.is_connected = True
+    client.dispatcher = AsyncMock()
+    client.storage = AsyncMock()
+    client.resolve_peer = AsyncMock(
+        return_value=raw.types.InputChannel(channel_id=1234, access_hash=5678)
+    )
+    client.invoke = AsyncMock(side_effect=PeerIdInvalid())
+
+    min_user = raw.types.User(id=2001, min=True)
+    min_msg = raw.types.Message(
+        id=1,
+        peer_id=raw.types.PeerChannel(channel_id=1234),
+        date=1700000000,
+        message="Hello min",
+    )
+    update = raw.types.UpdateNewChannelMessage(
+        message=min_msg,
+        pts=10,
+        pts_count=1,
+    )
+    updates = raw.types.Updates(
+        updates=[update],
+        users=[min_user],
+        chats=[],
+        date=1700000000,
+        seq=0,
+    )
+
+    # Must not raise PeerIdInvalid
+    await client.handle_updates(updates)
+    client.dispatcher.enqueue_update.assert_awaited_once()
+
+
+@pytest.mark.asyncio
+async def test_run_update_catches_unhandled_exception():
+    from pyrogram.session import Session
+
+    client = Client("dummy", in_memory=True)
+    session = Session(client, dc_id=2, auth_key=b"1" * 256, test_mode=False)
+    session.client.handle_updates = AsyncMock(side_effect=ValueError("Boom"))
+
+    # Must catch and not raise exception
+    await session._run_update(raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0))

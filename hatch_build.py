@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -8,6 +9,11 @@ from hatchling.builders.hooks.plugin.interface import BuildHookInterface
 class CustomBuildHook(BuildHookInterface):
     def initialize(self, version, build_data):
         root = Path(self.root)
+
+        # Skip running heavy compilers if raw API files already exist
+        if os.environ.get("PYROGRAM_COMPILE") != "1" and (root / "pyrogram/raw/all.py").exists():
+            return
+
         compilers = [
             "compiler/api/compiler.py",
             "compiler/errors/compiler.py",
