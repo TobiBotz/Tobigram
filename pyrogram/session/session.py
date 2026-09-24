@@ -597,7 +597,12 @@ class Session:
 
     async def _run_update(self, body):
         async with self._update_semaphore:
-            await self.client.handle_updates(body)
+            try:
+                await self.client.handle_updates(body)
+            except asyncio.CancelledError:
+                pass
+            except Exception:
+                log.exception("Error handling updates")
 
     async def _handle_packet_wrapper(self, packet):
         task = asyncio.current_task()

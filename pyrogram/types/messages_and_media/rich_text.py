@@ -19,11 +19,30 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 
 import pyrogram
 from pyrogram import raw, types, utils
 
 from ..object import Object
+
+
+def _extract_plain_text(content: Any) -> str:
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, (list, tuple)):
+        return "".join(_extract_plain_text(item) for item in content)
+    if hasattr(content, "text"):
+        return _extract_plain_text(content.text)
+    if hasattr(content, "button") and hasattr(content.button, "text"):
+        return _extract_plain_text(content.button.text)
+    if hasattr(content, "alternative_text") and content.alternative_text:
+        return str(content.alternative_text)
+    if hasattr(content, "expression") and content.expression:
+        return str(content.expression)
+    return str(content) if not isinstance(content, RichText) else ""
 
 
 class RichText(Object):
@@ -65,6 +84,13 @@ class RichText(Object):
 
     def __init__(self):
         super().__init__()
+
+    def to_plain_text(self) -> str:
+        """Return the plain text representation of this rich text."""
+        return _extract_plain_text(self)
+
+    def __str__(self) -> str:
+        return self.to_plain_text()
 
     @staticmethod
     async def _parse(
@@ -159,9 +185,10 @@ class RichText(Object):
             return RichTextUrl(text=content, url=rich_text.url)
 
         if isinstance(rich_text, raw.types.TextAutoUrl):
+            content = await RichText._parse(client, rich_text.text)
             return RichTextUrl(
-                text=await RichText._parse(client, rich_text.text),
-                url=await RichText._parse(client, rich_text.text),
+                text=content,
+                url=_extract_plain_text(content),
             )
 
         if isinstance(rich_text, raw.types.TextEmail):
@@ -170,9 +197,10 @@ class RichText(Object):
             )
 
         if isinstance(rich_text, raw.types.TextAutoEmail):
+            content = await RichText._parse(client, rich_text.text)
             return RichTextEmailAddress(
-                text=await RichText._parse(client, rich_text.text),
-                email_address=await RichText._parse(client, rich_text.text),
+                text=content,
+                email_address=_extract_plain_text(content),
             )
 
         if isinstance(rich_text, raw.types.TextPhone):
@@ -181,15 +209,17 @@ class RichText(Object):
             )
 
         if isinstance(rich_text, raw.types.TextAutoPhone):
+            content = await RichText._parse(client, rich_text.text)
             return RichTextPhoneNumber(
-                text=await RichText._parse(client, rich_text.text),
-                phone_number=await RichText._parse(client, rich_text.text),
+                text=content,
+                phone_number=_extract_plain_text(content),
             )
 
         if isinstance(rich_text, raw.types.TextBankCard):
+            content = await RichText._parse(client, rich_text.text)
             return RichTextBankCardNumber(
-                text=await RichText._parse(client, rich_text.text),
-                bank_card_number=await RichText._parse(client, rich_text.text),
+                text=content,
+                bank_card_number=_extract_plain_text(content),
             )
 
         if isinstance(rich_text, raw.types.TextMention):
@@ -197,7 +227,7 @@ class RichText(Object):
 
             return RichTextMention(
                 text=content,
-                username=content.lstrip("@"),
+                username=_extract_plain_text(content).lstrip("@"),
             )
 
         if isinstance(rich_text, raw.types.TextHashtag):
@@ -205,7 +235,7 @@ class RichText(Object):
 
             return RichTextHashtag(
                 text=content,
-                hashtag=content.lstrip("#"),
+                hashtag=_extract_plain_text(content).lstrip("#"),
             )
 
         if isinstance(rich_text, raw.types.TextCashtag):
@@ -213,7 +243,7 @@ class RichText(Object):
 
             return RichTextCashtag(
                 text=content,
-                cashtag=content.lstrip("$"),
+                cashtag=_extract_plain_text(content).lstrip("$"),
             )
 
         if isinstance(rich_text, raw.types.TextBotCommand):
@@ -221,7 +251,7 @@ class RichText(Object):
 
             return RichTextBotCommand(
                 text=content,
-                bot_command=content.lstrip("/"),
+                bot_command=_extract_plain_text(content).lstrip("/"),
             )
 
         if isinstance(rich_text, raw.types.TextAnchor):

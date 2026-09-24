@@ -1,5 +1,5 @@
 [build-system]
-requires = ["hatchling", "pyyaml", "jinja2"]
+requires = ["hatchling", "pyyaml", "jinja2", "editables"]
 build-backend = "hatchling.build"
 
 [project]
@@ -102,6 +102,16 @@ allow-direct-references = true
 path = "hatch_build.py"
 
 [tool.hatch.build.targets.sdist]
+ignore-vcs = true
+include = [
+    "pyrogram",
+    "compiler",
+    "README.md",
+    "COPYING",
+    "COPYING.lesser",
+    "pyproject.toml",
+    "hatch_build.py",
+]
 exclude = [
     ".github/",
     "docs/",

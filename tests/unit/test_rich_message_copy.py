@@ -86,3 +86,69 @@ async def test_rich_message_copy():
         real_client, chat_id=789, from_chat_id=456, message_id=123, reply_markup=reply_markup
     )
     assert mock_client.send_rich_message.call_count == 2
+
+
+@pytest.mark.asyncio
+async def test_rich_text_nested_formatting_and_strip():
+    mock_client = MagicMock()
+
+    # 1. Mention containing Bold text (reproduction of user's issue)
+    raw_mention = raw.types.TextMention(
+        text=raw.types.TextBold(text=raw.types.TextPlain(text="@durov"))
+    )
+    parsed_mention = await types.RichText._parse(mock_client, raw_mention)
+    assert isinstance(parsed_mention, types.RichTextMention)
+    assert isinstance(parsed_mention.text, types.RichTextBold)
+    assert parsed_mention.username == "durov"
+    assert parsed_mention.to_plain_text() == "@durov"
+    assert str(parsed_mention) == "@durov"
+
+    # 2. Hashtag containing Italic text
+    raw_hashtag = raw.types.TextHashtag(
+        text=raw.types.TextItalic(text=raw.types.TextPlain(text="#telegram"))
+    )
+    parsed_hashtag = await types.RichText._parse(mock_client, raw_hashtag)
+    assert isinstance(parsed_hashtag, types.RichTextHashtag)
+    assert isinstance(parsed_hashtag.text, types.RichTextItalic)
+    assert parsed_hashtag.hashtag == "telegram"
+    assert parsed_hashtag.to_plain_text() == "#telegram"
+
+    # 3. Cashtag containing Underline text
+    raw_cashtag = raw.types.TextCashtag(
+        text=raw.types.TextUnderline(text=raw.types.TextPlain(text="$TON"))
+    )
+    parsed_cashtag = await types.RichText._parse(mock_client, raw_cashtag)
+    assert isinstance(parsed_cashtag, types.RichTextCashtag)
+    assert isinstance(parsed_cashtag.text, types.RichTextUnderline)
+    assert parsed_cashtag.cashtag == "TON"
+
+    # 4. BotCommand containing Code text
+    raw_command = raw.types.TextBotCommand(
+        text=raw.types.TextFixed(text=raw.types.TextPlain(text="/start"))
+    )
+    parsed_command = await types.RichText._parse(mock_client, raw_command)
+    assert isinstance(parsed_command, types.RichTextBotCommand)
+    assert isinstance(parsed_command.text, types.RichTextCode)
+    assert parsed_command.bot_command == "start"
+
+    # 5. TextAutoUrl containing Bold text
+    raw_auto_url = raw.types.TextAutoUrl(
+        text=raw.types.TextBold(text=raw.types.TextPlain(text="https://telegram.org"))
+    )
+    parsed_url = await types.RichText._parse(mock_client, raw_auto_url)
+    assert isinstance(parsed_url, types.RichTextUrl)
+    assert isinstance(parsed_url.text, types.RichTextBold)
+    assert parsed_url.url == "https://telegram.org"
+
+    # 6. Concat mention: ["@", Bold("coolbot")]
+    raw_concat_mention = raw.types.TextMention(
+        text=raw.types.TextConcat(
+            texts=[
+                raw.types.TextPlain(text="@"),
+                raw.types.TextBold(text=raw.types.TextPlain(text="coolbot")),
+            ]
+        )
+    )
+    parsed_concat = await types.RichText._parse(mock_client, raw_concat_mention)
+    assert isinstance(parsed_concat, types.RichTextMention)
+    assert parsed_concat.username == "coolbot"
