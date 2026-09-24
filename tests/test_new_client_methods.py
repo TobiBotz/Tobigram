@@ -82,12 +82,12 @@ async def test_a_paid_reaction_as_a_chat_needs_that_chat():
 async def test_searching_posts_counts_without_fetching_them():
     client = FakeClient([posts(count=42)])
 
-    assert await pyrogram.Client.search_posts_count(client, "#wzgram") == 42
+    assert await pyrogram.Client.search_posts_count(client, "#pyrogram") == 42
 
     query = client.sent[0]
 
     assert isinstance(query, raw.functions.channels.SearchPosts)
-    assert query.hashtag == "wzgram"
+    assert query.hashtag == "pyrogram"
     assert query.limit == 1
 
 
@@ -95,8 +95,8 @@ async def test_searching_posts_counts_without_fetching_them():
 async def test_counting_posts_falls_back_to_the_messages_it_got():
     client = FakeClient([posts(messages=[])])
 
-    assert await pyrogram.Client.search_posts_count(client, query="wzgram") == 0
-    assert client.sent[0].query == "wzgram"
+    assert await pyrogram.Client.search_posts_count(client, query="pyrogram") == 0
+    assert client.sent[0].query == "pyrogram"
 
 
 @pytest.mark.asyncio
@@ -124,7 +124,7 @@ async def test_a_post_search_stops_at_the_limit(monkeypatch):
     monkeypatch.setattr(utils, "parse_messages", parse_messages)
 
     client = FakeClient([posts(messages=made), posts(messages=made)])
-    seen = [m async for m in pyrogram.Client.search_posts(client, "wzgram", limit=2)]
+    seen = [m async for m in pyrogram.Client.search_posts(client, "pyrogram", limit=2)]
 
     assert [m.id for m in seen] == [1, 2]
     assert len(client.sent) == 1

@@ -44,7 +44,7 @@ class SearchStickerSets:
         Example:
             .. code-block:: python
 
-                from wzgram import enums
+                from pyrogram import enums
 
                 await app.search_sticker_sets(enums.StickerType.REGULAR, "cats")
         """

@@ -64,7 +64,7 @@ class SearchStickers:
         Example:
             .. code-block:: python
 
-                from wzgram import enums
+                from pyrogram import enums
 
                 async for sticker in app.search_stickers(enums.StickerType.REGULAR, ["👍"]):
                     print(sticker)

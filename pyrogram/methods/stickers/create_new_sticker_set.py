@@ -66,7 +66,7 @@ class CreateNewStickerSet:
         Example:
             .. code-block:: python
 
-                from wzgram import enums, types
+                from pyrogram import enums, types
 
                 await app.create_new_sticker_set(
                     "me",
