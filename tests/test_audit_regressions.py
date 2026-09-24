@@ -1456,6 +1456,50 @@ async def test_a_monoforum_message_still_asks_for_its_direct_messages_topic():
     )
 
 
+async def test_message_parse_survives_forum_topic_rpc_error():
+    from unittest.mock import AsyncMock, Mock
+    from pyrogram import raw, types
+    from pyrogram.errors import PeerIdInvalid
+
+    client = Mock()
+    client.me = Mock(id=7, is_bot=False, is_premium=False)
+    client.message_cache = {}
+    client.topic_cache = pyrogram.client.Cache(8)
+    client.parse_mode = None
+    client.fetch_topics = True
+    client.get_forum_topics_by_id = AsyncMock(side_effect=PeerIdInvalid())
+
+    channel = raw.types.Channel(
+        id=200,
+        title="Forum",
+        photo=raw.types.ChatPhotoEmpty(),
+        date=0,
+        access_hash=1,
+        usernames=[],
+        restriction_reason=[],
+        forum=True,
+        broadcast=False,
+        megagroup=True,
+    )
+
+    message = raw.types.Message(
+        id=1,
+        peer_id=raw.types.PeerChannel(channel_id=200),
+        from_id=raw.types.PeerUser(user_id=7),
+        date=1700000000,
+        restriction_reason=[],
+        entities=[],
+        message="forum msg",
+    )
+
+    users = {
+        7: raw.types.User(id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1)
+    }
+
+    parsed = await types.Message._parse(client, message, users, {200: channel})
+    assert parsed.topic is None
+
+
 async def test_a_saved_channel_message_does_not_read_a_user_id_off_a_channel():
     """``saved_peer_id`` in Saved Messages is whoever sent the message originally,
     and that can be a channel, which carries no ``user_id`` to read.
