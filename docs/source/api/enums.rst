@@ -15,21 +15,25 @@ Report Reason
 
 .. autoclass:: pyrogram.enums.ReportReason
     :members:
+    :no-index:
 
 Chat Type
 ---------
 
 .. autoclass:: pyrogram.enums.ChatType
     :members:
+    :no-index:
 
 Chat Member Status
 ------------------
 
 .. autoclass:: pyrogram.enums.ChatMemberStatus
     :members:
+    :no-index:
 
 Parse Mode
 ----------
 
 .. autoclass:: pyrogram.enums.ParseMode
     :members:
+    :no-index:

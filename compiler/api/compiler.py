@@ -277,7 +277,9 @@ def indent_desc(desc: str, indent: str = "    ") -> str:
 
     first, *rest = lines
 
-    return first + "\n" + "\n".join((indent + line if line.strip() else "") for line in rest)
+    return (
+        first + "\n" + "\n".join((indent + line.lstrip() if line.strip() else "") for line in rest)
+    )
 
 
 # noinspection PyShadowingBuiltins
