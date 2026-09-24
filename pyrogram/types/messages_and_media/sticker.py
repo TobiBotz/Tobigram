@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import inspect
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
@@ -154,8 +155,11 @@ class Sticker(Object):
             cache = getattr(client, "sticker_set_name_cache", None)
 
             if cache is not None:
-                name = await cache.get((set_id, set_access_hash))
+                name = cache.get((set_id, set_access_hash))
+                if inspect.isawaitable(name):
+                    name = await name
                 if name is not None:
+                    Sticker.cache[(set_id, set_access_hash)] = name
                     return name
 
             name = (
@@ -171,8 +175,14 @@ class Sticker(Object):
 
             Sticker.cache[(set_id, set_access_hash)] = name
 
+            if len(Sticker.cache) > 250:
+                for _ in range(50):
+                    Sticker.cache.pop(next(iter(Sticker.cache)), None)
+
             if cache is not None:
-                await cache.set((set_id, set_access_hash), name)
+                res = cache.set((set_id, set_access_hash), name)
+                if inspect.isawaitable(res):
+                    await res
 
             return name
         except StickersetInvalid:
