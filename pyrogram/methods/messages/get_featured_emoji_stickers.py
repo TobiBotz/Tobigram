@@ -33,7 +33,7 @@ class GetFeaturedEmojiStickers:
 
         Parameters:
             hash (``int``, *optional*):
-                Hash for caching, for more info click :here:`here`.
+                Hash for caching, for more info click `here <https://core.telegram.org/api/offsets#hash-generation>`_.
 
         Returns:
             :obj:`~pyrogram.raw.base.messages.FeaturedStickers`: The featured emoji sticker sets.
