@@ -36,6 +36,7 @@ from pyrogram.errors import (
     ChatAdminRequired,
     MessageIdsEmpty,
     PeerIdInvalid,
+    RPCError,
 )
 from pyrogram.parser import Parser, utils as parser_utils
 
@@ -2006,7 +2007,7 @@ class Message(Object, Update):
                         client.topic_cache[(parsed_message.chat.id, parsed_message.topic.id)] = (
                             parsed_message.topic
                         )
-                except (ChannelPrivate, ChannelForumMissing):
+                except (ChannelPrivate, ChannelForumMissing, RPCError, KeyError):
                     pass
 
         if chat.is_direct_messages and message.saved_peer_id:
@@ -2029,7 +2030,7 @@ class Message(Object, Update):
                         client.topic_cache[(parsed_message.chat.id, parsed_message.topic.id)] = (
                             parsed_message.topic
                         )
-                except (ChannelPrivate, ChatAdminRequired):
+                except (ChannelPrivate, ChatAdminRequired, RPCError, KeyError):
                     pass
 
         if not parsed_message.poll:  # Do not cache poll messages
