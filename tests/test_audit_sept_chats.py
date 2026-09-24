@@ -31,7 +31,7 @@ def _chat_full(participants, users):
 
 
 async def test_an_expired_custom_emoji_id_is_skipped_not_crashed():
-    from pyrogram.methods.stickers.get_custom_emoji_stickers import (
+    from pyrogram.methods.messages.get_custom_emoji_stickers import (
         GetCustomEmojiStickers,
     )
 

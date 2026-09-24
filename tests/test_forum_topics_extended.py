@@ -103,10 +103,9 @@ async def test_unpin_all_general_forum_topic_messages(client):
 async def test_get_forum_topic_icon_stickers(client):
     fake_sticker_set = types.StickerSet(
         id=1,
-        access_hash=2,
+        name="icons",
         title="Icons",
-        short_name="icons",
-        count=1,
+        sticker_type=pyrogram.enums.StickerType.CUSTOM_EMOJI,
         stickers=[
             types.Sticker(
                 file_id="abc",

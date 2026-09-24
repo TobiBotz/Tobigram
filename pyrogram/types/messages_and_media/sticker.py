@@ -93,6 +93,8 @@ class Sticker(Object):
             The raw sticker.
     """
 
+    cache: dict = {}
+
     def __init__(
         self,
         *,
@@ -146,6 +148,9 @@ class Sticker(Object):
             set_id = input_sticker_set_id[0]
             set_access_hash = input_sticker_set_id[1]
 
+            if (set_id, set_access_hash) in Sticker.cache:
+                return Sticker.cache[(set_id, set_access_hash)]
+
             cache = getattr(client, "sticker_set_name_cache", None)
 
             if cache is not None:
@@ -163,6 +168,8 @@ class Sticker(Object):
                     )
                 )
             ).set.short_name
+
+            Sticker.cache[(set_id, set_access_hash)] = name
 
             if cache is not None:
                 await cache.set((set_id, set_access_hash), name)

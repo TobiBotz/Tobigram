@@ -16,145 +16,156 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from __future__ import annotations
+from typing import Union
 
 import pyrogram
-from pyrogram import raw, types
+from pyrogram import enums, raw, types
+
 from ..object import Object
 
 
 class StickerSet(Object):
-    """A sticker set.
+    """This object represents a sticker set.
 
     Parameters:
         id (``int``):
-            Identifier of the sticker set.
+            Unique identifier for this sticker set.
 
-        access_hash (``int``):
-            Access hash of the sticker set.
+        name (``str``):
+            Short name of the sticker set, used in t.me/addstickers/ links.
 
         title (``str``):
             Title of the sticker set.
 
-        short_name (``str``):
-            Short name of the sticker set.
+        sticker_type (:obj:`~pyrogram.enums.StickerType`):
+            Type of stickers in the set.
 
-        count (``int``):
-            Total number of stickers in this sticker set.
+        stickers (List of :obj:`~pyrogram.types.Sticker`, *optional*):
+            List of all set stickers.
 
-        stickers (List of :obj:`~pyrogram.types.Sticker`):
-            List of stickers in this sticker set.
+        thumbs (List of :obj:`~pyrogram.types.Thumbnail`, *optional*):
+            Sticker set thumbnail in the .WEBP, .TGS, or .WEBM format.
 
-        is_animated (``bool``):
-            True, if the sticker set is animated (TGS format).
+        is_owned (``bool``, *optional*):
+            True, if the user is the owner of the sticker set.
 
-        is_video (``bool``):
-            True, if the sticker set is video (WebM format).
+        is_installed (``bool``, *optional*):
+            True, if the sticker set is installed.
 
-        is_emojis (``bool``):
-            True, if this is a custom emoji sticker set.
+        is_archived (``bool``, *optional*):
+            True, if the sticker set has been archived.
 
-        is_masks (``bool``):
-            True, if this is a mask sticker set.
+        is_official (``bool``, *optional*):
+            True, if the sticker set is official.
 
-        is_archived (``bool``):
-            True, if this sticker set has been archived.
+        is_allowed_as_chat_emoji_status (``bool``, *optional*):
+            True, if the sticker set is allowed to be used as chat emoji status.
 
-        is_official (``bool``):
-            True, if this sticker set is official (created by Telegram).
+        needs_repainting (``bool``, *optional*):
+            True, if the sticker set needs to be repainted.
 
-        thumbnail (:obj:`~pyrogram.types.Thumbnail`, *optional*):
-            Sticker set thumbnail, if any.
+        raw (:obj:`~pyrogram.raw.base.StickerSet` | :obj:`~pyrogram.raw.base.messages.StickerSet`, *optional*):
+            The raw object.
     """
 
     def __init__(
         self,
         *,
-        client: pyrogram.Client | None = None,
         id: int,
-        access_hash: int,
+        name: str,
         title: str,
-        short_name: str,
-        count: int,
-        stickers: list[types.Sticker] | None = None,
-        is_animated: bool = False,
-        is_video: bool = False,
-        is_emojis: bool = False,
-        is_masks: bool = False,
-        is_archived: bool = False,
-        is_official: bool = False,
-        thumbnail: types.Thumbnail | None = None,
-    ) -> None:
-        super().__init__(client)
+        sticker_type: "enums.StickerType",
+        stickers: list["types.Sticker"] | None = None,
+        thumbs: list["types.Thumbnail"] | None = None,
+        is_owned: bool | None = None,
+        is_installed: bool | None = None,
+        is_archived: bool | None = None,
+        is_official: bool | None = None,
+        is_allowed_as_chat_emoji_status: bool | None = None,
+        needs_repainting: bool | None = None,
+        raw: Union["raw.types.StickerSet", "raw.types.messages.StickerSet"] | None = None,
+    ):
+        super().__init__()
 
         self.id = id
-        self.access_hash = access_hash
+        self.name = name
         self.title = title
-        self.short_name = short_name
-        self.count = count
-        self.stickers = stickers or []
-        self.is_animated = is_animated
-        self.is_video = is_video
-        self.is_emojis = is_emojis
-        self.is_masks = is_masks
+        self.sticker_type = sticker_type
+        self.stickers = stickers
+        self.thumbs = thumbs
+        self.is_owned = is_owned
+        self.is_installed = is_installed
         self.is_archived = is_archived
         self.is_official = is_official
-        self.thumbnail = thumbnail
+        self.is_allowed_as_chat_emoji_status = is_allowed_as_chat_emoji_status
+        self.needs_repainting = needs_repainting
+        self.raw = raw
 
-    @classmethod
+    @property
+    def link(self) -> str:
+        return f"https://t.me/addstickers/{self.name}"
+
+    @staticmethod
     async def _parse(
-        cls,
-        client: pyrogram.Client,
-        sticker_set: raw.base.messages.StickerSet,
-    ) -> StickerSet:
-        if isinstance(sticker_set, raw.types.messages.StickerSetNotModified):
-            return None
+        client: "pyrogram.Client",
+        sticker_set: Union["raw.types.StickerSet", "raw.types.messages.StickerSet"],
+    ) -> "StickerSet":
+        documents = None
 
-        raw_set = sticker_set.set
-        documents = getattr(sticker_set, "documents", None)
-        if documents is None:
-            if hasattr(sticker_set, "covers"):
-                documents = sticker_set.covers
-            elif hasattr(sticker_set, "cover"):
-                documents = [sticker_set.cover]
-            else:
-                documents = []
+        if isinstance(sticker_set, raw.types.messages.StickerSet):
+            documents = sticker_set.documents
+            _set = sticker_set.set
+        else:
+            _set = sticker_set
 
-        stickers = types.List(
-            [
-                await types.Sticker._parse(client, doc, {type(a): a for a in doc.attributes})
-                for doc in documents
-            ]
-        )
+        if _set.masks:
+            sticker_type = enums.StickerType.MASK
+        elif _set.emojis:
+            sticker_type = enums.StickerType.CUSTOM_EMOJI
+        else:
+            sticker_type = enums.StickerType.REGULAR
 
-        thumbnail = None
-        if getattr(raw_set, "thumbs", None):
-            thumbnail = types.Thumbnail._parse(client, raw_set.thumbs)
+        types.Sticker.cache[(_set.id, _set.access_hash)] = _set.short_name
 
-        cache = getattr(client, "sticker_set_name_cache", None)
-        if (
-            cache is not None
-            and getattr(raw_set, "id", None)
-            and getattr(raw_set, "access_hash", None)
-            and getattr(raw_set, "short_name", None)
-        ):
-            cache.set((raw_set.id, raw_set.access_hash), raw_set.short_name)
+        stickers = None
+        thumbs = None
 
-        return cls(
-            client=client,
-            id=raw_set.id,
-            access_hash=raw_set.access_hash,
-            title=raw_set.title,
-            short_name=raw_set.short_name,
-            count=getattr(raw_set, "count", len(stickers)),
+        if documents is not None:
+            stickers = types.List(
+                [
+                    await types.Sticker._parse(client, doc, {type(a): a for a in doc.attributes})
+                    for doc in documents
+                ]
+            )
+
+            thumb = next((d for d in documents if d.id == _set.thumb_document_id), None)
+
+            if thumb is None and _set.thumb_document_id:
+                r = await client.invoke(
+                    raw.functions.messages.GetCustomEmojiDocuments(
+                        document_id=[_set.thumb_document_id]
+                    )
+                )
+                thumb = r[0] if r else None
+
+            if thumb is None and documents:
+                thumb = documents[0]
+
+            if thumb is not None:
+                thumbs = types.Thumbnail._parse(client, thumb)
+
+        return StickerSet(
+            id=_set.id,
+            name=_set.short_name,
+            title=_set.title,
+            sticker_type=sticker_type,
             stickers=stickers,
-            is_animated=getattr(raw_set, "animated", False)
-            or any(getattr(s, "is_animated", False) for s in stickers),
-            is_video=getattr(raw_set, "videos", False)
-            or any(getattr(s, "is_video", False) for s in stickers),
-            is_emojis=getattr(raw_set, "emojis", False),
-            is_masks=getattr(raw_set, "masks", False),
-            is_archived=getattr(raw_set, "archived", False),
-            is_official=getattr(raw_set, "official", False),
-            thumbnail=thumbnail,
+            thumbs=thumbs,
+            is_owned=_set.creator,
+            is_installed=bool(_set.installed_date),
+            is_archived=_set.archived,
+            is_official=_set.official,
+            is_allowed_as_chat_emoji_status=_set.channel_emoji_status,
+            needs_repainting=_set.text_color,
+            raw=sticker_set,
         )

@@ -18,38 +18,39 @@
 
 from __future__ import annotations
 
+
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, types
 
 
 class GetRecentStickers:
     async def get_recent_stickers(
-        self: pyrogram.Client,
-        attached: bool = False,
-        hash: int = 0,
-    ) -> raw.base.messages.RecentStickers:
-        """Get recent stickers.
+        self: pyrogram.Client, is_attached: bool | None = None
+    ) -> list[types.Sticker]:
+        """Get the list of recently used stickers.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            attached (``bool``, *optional*):
-                Pass True to get attached stickers.
-
-            hash (``int``, *optional*):
-                Hash for caching.
+            is_attached (``bool``, *optional*):
+                Pass True to target the list of stickers recently attached to photo or video files.
+                Pass False to target the list of recently sent stickers.
 
         Returns:
-            :obj:`~pyrogram.raw.base.messages.RecentStickers`: The recent stickers object.
+            List of :obj:`~pyrogram.types.Sticker`: On success, a list of sticker objects is returned.
 
         Example:
             .. code-block:: python
 
-                recent = await app.get_recent_stickers()
+                await app.get_recent_stickers()
         """
-        return await self.invoke(
-            raw.functions.messages.GetRecentStickers(
-                attached=attached or None,
-                hash=hash,
-            )
+        r = await self.invoke(
+            raw.functions.messages.GetRecentStickers(hash=0, attached=is_attached)
+        )
+
+        return types.List(
+            [
+                await types.Sticker._parse(self, sticker, {type(a): a for a in sticker.attributes})
+                for sticker in r.stickers
+            ]
         )

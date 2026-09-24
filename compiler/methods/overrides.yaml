@@ -346,11 +346,12 @@ send_reaction:
 # ── Stickers ──────────────────────────────────────────────────────
 
 get_stickers:
-  category: stickers
+  category: messages
   usable_by: users
   response_pattern: single
   skip_if_exists: true
   raw_function: messages.getStickerSet
+
 
 # ── Forwarding ────────────────────────────────────────────────────
 

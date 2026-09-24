@@ -18,47 +18,37 @@
 
 from __future__ import annotations
 
+
 import pyrogram
-from pyrogram import raw, types
-from .resolve import resolve_sticker_doc
+from pyrogram import raw, types, utils
+from pyrogram.file_id import FileType
 
 
 class SetStickerKeywords:
     async def set_sticker_keywords(
-        self: pyrogram.Client,
-        sticker: str | types.Sticker | raw.base.InputDocument,
-        keywords: list[str] | str | None = None,
+        self: pyrogram.Client, sticker: str, keywords: list[str] | None = None
     ) -> types.StickerSet:
-        """Use this method to change search keywords assigned to a regular or custom emoji sticker.
+        """Change the search keywords assigned to a regular or custom emoji sticker.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            sticker (``str`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.raw.base.InputDocument`):
-                File identifier or document of the sticker.
+            sticker (``str``):
+                File identifier of the sticker.
 
-            keywords (List of ``str`` | ``str``, *optional*):
-                List of 0-20 search keywords for the sticker or comma-separated keywords string.
+            keywords (List of ``str``, *optional*):
+                List of 0-20 search keywords for the sticker with total length of up to 64 characters.
+                Omit to remove the keywords.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: An updated sticker set is returned.
-
-        Example:
-            .. code-block:: python
-
-                await app.set_sticker_keywords(sticker, ["party", "celebrate"])
+            :obj:`~pyrogram.types.StickerSet`: The updated sticker set is returned.
         """
-        if isinstance(keywords, list):
-            keywords_str = ",".join(keywords)
-        else:
-            keywords_str = keywords or ""
-
-        doc = await resolve_sticker_doc(self, sticker)
-
         r = await self.invoke(
             raw.functions.stickers.ChangeSticker(
-                sticker=doc,
-                keywords=keywords_str,
+                sticker=utils.get_input_media_from_file_id(
+                    file_id=sticker, expected_file_type=FileType.STICKER
+                ).id,
+                keywords=",".join(keywords) if keywords else "",
             )
         )
 

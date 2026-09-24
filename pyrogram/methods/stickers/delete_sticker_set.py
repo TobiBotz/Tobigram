@@ -19,38 +19,31 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw, types
-from .resolve import resolve_stickerset
+from pyrogram import raw
 
 
 class DeleteStickerSet:
-    async def delete_sticker_set(
-        self: pyrogram.Client,
-        short_name: str | types.StickerSet | raw.base.InputStickerSet,
-    ) -> bool:
-        """Delete a sticker set created by you or your bot.
+    async def delete_sticker_set(self: pyrogram.Client, name: str) -> bool:
+        """Delete a sticker set.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            short_name (``str`` | :obj:`~pyrogram.types.StickerSet`):
-                Short name or StickerSet object of the sticker set to delete.
+            name (``str``):
+                Name of the sticker set.
 
         Returns:
-            ``bool``: True on success.
+            ``bool``: True, on success.
 
         Example:
             .. code-block:: python
 
-                # Delete a sticker set
-                await app.delete_sticker_set("mypack_by_bot")
+                await app.delete_sticker_set("my_sticker_set")
         """
-        stickerset = resolve_stickerset(short_name)
-
-        return bool(
-            await self.invoke(
-                raw.functions.stickers.DeleteStickerSet(
-                    stickerset=stickerset,
-                )
+        r = await self.invoke(
+            raw.functions.stickers.DeleteStickerSet(
+                stickerset=raw.types.InputStickerSetShortName(short_name=name)
             )
         )
+
+        return bool(r)

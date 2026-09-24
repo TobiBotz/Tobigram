@@ -20,47 +20,33 @@ from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types
-from .resolve import resolve_sticker_doc
 
 
-class SetStickerPosition:
-    async def set_sticker_position(
+class GetStickers:
+    async def get_stickers(
         self: pyrogram.Client,
-        sticker: str | types.Sticker | raw.base.InputDocument,
-        position: int,
+        short_name: str,
     ) -> types.StickerSet:
-        """Change the position of a sticker in the sticker set to which it belongs.
-
-        The sticker set must have been created by the current user or bot.
+        """Get sticker set by short name.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            sticker (``str`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.raw.base.InputDocument`):
-                The sticker whose position should be changed. Pass a file_id as string,
-                a :obj:`~pyrogram.types.Sticker` object, or a raw :obj:`~pyrogram.raw.base.InputDocument`.
-
-            position (``int``):
-                The new 0-based position of the sticker.
+            short_name (``str``):
+                The short name of the sticker set.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the updated sticker set is returned.
+            :obj:`~pyrogram.types.StickerSet`: The sticker set.
 
         Example:
             .. code-block:: python
 
-                # Move a sticker to the first position
-                await app.set_sticker_position(
-                    sticker=message.sticker,
-                    position=0
-                )
+                stickers = await app.get_stickers("Animals")
         """
-        doc = await resolve_sticker_doc(self, sticker)
-
         r = await self.invoke(
-            raw.functions.stickers.ChangeStickerPosition(
-                sticker=doc,
-                position=position,
+            raw.functions.messages.GetStickerSet(
+                stickerset=raw.types.InputStickerSetShortName(short_name=short_name),
+                hash=0,
             )
         )
 

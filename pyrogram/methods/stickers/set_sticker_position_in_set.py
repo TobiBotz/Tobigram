@@ -19,40 +19,33 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw, types
-from .resolve import resolve_sticker_doc
+from pyrogram import raw, types, utils
+from pyrogram.file_id import FileType
 
 
 class SetStickerPositionInSet:
     async def set_sticker_position_in_set(
-        self: pyrogram.Client,
-        sticker: str | types.Sticker | raw.base.InputDocument,
-        position: int,
+        self: pyrogram.Client, sticker: str, position: int
     ) -> types.StickerSet:
-        """Move a sticker to a new position in its set.
+        """Move a sticker in a sticker set to a specific position.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            sticker (``str`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.raw.base.InputDocument`):
-                The sticker to move.
+            sticker (``str``):
+                File identifier of the sticker.
 
             position (``int``):
-                New 0-indexed position.
+                New sticker position in the set, zero-based.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the updated sticker set is returned.
-
-        Example:
-            .. code-block:: python
-
-                await app.set_sticker_position_in_set(sticker, 0)
+            :obj:`~pyrogram.types.StickerSet`: The updated sticker set is returned.
         """
-        doc = await resolve_sticker_doc(self, sticker)
-
         r = await self.invoke(
             raw.functions.stickers.ChangeStickerPosition(
-                sticker=doc,
+                sticker=utils.get_input_media_from_file_id(
+                    file_id=sticker, expected_file_type=FileType.STICKER
+                ).id,
                 position=position,
             )
         )

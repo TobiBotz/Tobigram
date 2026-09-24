@@ -23,30 +23,23 @@ from pyrogram import raw
 
 
 class GetSuggestedStickerSetName:
-    async def get_suggested_sticker_set_name(
-        self: pyrogram.Client,
-        title: str,
-    ) -> str:
-        """Get a suggested short name for a sticker set based on its title.
+    async def get_suggested_sticker_set_name(self: pyrogram.Client, title: str) -> str:
+        """Get a suggested name for a new sticker set with a given title.
 
-        .. include:: /_includes/usable-by/users-bots.rst
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             title (``str``):
-                Sticker set title.
+                Sticker set title, 1-64 characters.
 
         Returns:
-            ``str``: Suggested short name.
+            ``str``: The suggested name is returned.
 
         Example:
             .. code-block:: python
 
-                short_name = await app.get_suggested_sticker_set_name("My Pack")
+                await app.get_suggested_sticker_set_name("My Sticker Set")
         """
-        r = await self.invoke(
-            raw.functions.stickers.SuggestShortName(
-                title=title,
-            )
-        )
+        r = await self.invoke(raw.functions.stickers.SuggestShortName(title=title))
 
         return r.short_name

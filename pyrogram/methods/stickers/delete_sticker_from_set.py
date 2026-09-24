@@ -19,36 +19,28 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw, types
-from .resolve import resolve_sticker_doc
+from pyrogram import raw, types, utils
+from pyrogram.file_id import FileType
 
 
 class DeleteStickerFromSet:
-    async def delete_sticker_from_set(
-        self: pyrogram.Client,
-        sticker: str | types.Sticker | raw.base.InputDocument,
-    ) -> types.StickerSet:
-        """Delete a sticker from a set created by you or your bot.
+    async def delete_sticker_from_set(self: pyrogram.Client, sticker: str) -> types.StickerSet:
+        """Delete a sticker from a sticker set.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            sticker (``str`` | :obj:`~pyrogram.types.Sticker` | :obj:`~pyrogram.raw.base.InputDocument`):
-                The sticker to delete.
+            sticker (``str``):
+                File identifier of the sticker.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the updated sticker set is returned.
-
-        Example:
-            .. code-block:: python
-
-                await app.delete_sticker_from_set(sticker)
+            :obj:`~pyrogram.types.StickerSet`: The updated sticker set is returned.
         """
-        doc = await resolve_sticker_doc(self, sticker)
-
         r = await self.invoke(
             raw.functions.stickers.RemoveStickerFromSet(
-                sticker=doc,
+                sticker=utils.get_input_media_from_file_id(
+                    file_id=sticker, expected_file_type=FileType.STICKER
+                ).id
             )
         )
 

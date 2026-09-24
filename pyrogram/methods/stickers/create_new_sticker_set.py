@@ -18,27 +18,20 @@
 
 from __future__ import annotations
 
-from typing import BinaryIO
 
 import pyrogram
-from pyrogram import raw, types
-from .resolve import resolve_sticker_item, resolve_thumb_doc
+from pyrogram import enums, raw, types
 
 
 class CreateNewStickerSet:
     async def create_new_sticker_set(
         self: pyrogram.Client,
         user_id: int | str,
+        name: str,
         title: str,
-        short_name: str,
-        stickers: list[types.InputSticker | str | BinaryIO | raw.base.InputDocument],
-        *,
-        default_emoji: str = "😀",
-        masks: bool = False,
-        emojis: bool = False,
-        text_color: bool = False,
-        thumb: str | BinaryIO | raw.base.InputDocument | None = None,
-        software: str | None = None,
+        stickers: list[types.InputSticker],
+        sticker_type: enums.StickerType = enums.StickerType.REGULAR,
+        needs_repainting: bool | None = None,
     ) -> types.StickerSet:
         """Create a new sticker set.
 
@@ -46,67 +39,57 @@ class CreateNewStickerSet:
 
         Parameters:
             user_id (``int`` | ``str``):
-                User identifier or username of the sticker set owner.
+                Unique identifier (int) or username (str) of the sticker set owner.
+
+            name (``str``):
+                Short name of the sticker set, to be used in t.me/addstickers/ URLs (e.g., *animals*).
+                Can contain only English letters, digits and underscores.
+                Must end with *"_by_<bot_username>"* for bots, 1-64 characters.
 
             title (``str``):
                 Sticker set title, 1-64 characters.
 
-            short_name (``str``):
-                Short name of sticker set.
+            stickers (List of :obj:`~pyrogram.types.InputSticker`):
+                List of stickers to be added to the set, up to 200 stickers.
 
-            stickers (List of :obj:`~pyrogram.types.InputSticker` | ``str`` | ``BinaryIO``):
-                List of stickers to add to the sticker set.
+            sticker_type (:obj:`~pyrogram.enums.StickerType`, *optional*):
+                Type of stickers in the set.
+                By default, a regular sticker set is created.
 
-            default_emoji (``str``, *optional*):
-                Default emoji to use if a sticker is passed without an associated emoji.
-
-            masks (``bool``, *optional*):
-                Pass True if this is a mask sticker set.
-
-            emojis (``bool``, *optional*):
-                Pass True if this is a custom emoji sticker set.
-
-            text_color (``bool``, *optional*):
-                Whether the color of TGS custom emojis should change to text color.
-
-            thumb (``str`` | ``BinaryIO`` | :obj:`~pyrogram.raw.base.InputDocument`, *optional*):
-                Thumbnail for the sticker set.
-
-            software (``str``, *optional*):
-                Name of the software used to create the stickers.
+            needs_repainting (``bool``, *optional*):
+                Pass True if stickers in the set must be repainted to the color of text when used in messages.
+                For custom emoji sticker sets only.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the created sticker set is returned.
+            :obj:`~pyrogram.types.StickerSet`: The created sticker set is returned.
 
         Example:
             .. code-block:: python
 
+                from wzgram import enums, types
+
                 await app.create_new_sticker_set(
-                    user_id="me",
-                    title="My Pack",
-                    short_name="mypack_by_bot",
-                    stickers=[types.InputSticker("sticker1.webp", emoji="😀")]
+                    "me",
+                    "my_sticker_set",
+                    "My stickers",
+                    stickers=[
+                        types.InputSticker(
+                            sticker="sticker.png",
+                            format=enums.StickerFormat.STATIC,
+                            emoji_list=["👍"]
+                        )
+                    ]
                 )
         """
-        peer = await self.resolve_peer(user_id)
-
-        sticker_items = [
-            await resolve_sticker_item(self, item, default_emoji=default_emoji) for item in stickers
-        ]
-
-        thumb_doc = await resolve_thumb_doc(self, thumb)
-
         r = await self.invoke(
             raw.functions.stickers.CreateStickerSet(
-                user_id=peer,
+                user_id=await self.resolve_peer(user_id),
                 title=title,
-                short_name=short_name,
-                stickers=sticker_items,
-                masks=masks or None,
-                emojis=emojis or None,
-                text_color=text_color or None,
-                thumb=thumb_doc,
-                software=software,
+                short_name=name,
+                stickers=[await sticker.write(self, user_id) for sticker in stickers],
+                masks=sticker_type == enums.StickerType.MASK,
+                emojis=sticker_type == enums.StickerType.CUSTOM_EMOJI,
+                text_color=needs_repainting,
             )
         )
 

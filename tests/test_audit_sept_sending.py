@@ -8,6 +8,7 @@ from pyrogram.methods.messages.get_scheduled_messages import GetScheduledMessage
 from pyrogram.methods.messages.send_media_group import SendMediaGroup
 from pyrogram.methods.messages.send_message import SendMessage
 from pyrogram.methods.messages.send_venue import SendVenue
+from pyrogram.file_id import FileId, FileType
 from pyrogram.methods.stickers.add_favorite_sticker import AddFavoriteSticker
 from pyrogram.methods.stickers.remove_favorite_sticker import RemoveFavoriteSticker
 from pyrogram.parser.markdown import Markdown
@@ -231,15 +232,17 @@ async def test_deleting_scheduled_messages_reports_the_servers_answer():
 
 
 async def test_fave_and_favorite_stickers():
-    doc = raw.types.InputDocument(id=1, access_hash=2, file_reference=b"")
+    file_id = FileId(
+        file_type=FileType.STICKER, dc_id=1, media_id=1, access_hash=2, file_reference=b""
+    ).encode()
     client = _Client(reply=True)
 
     # Test add_favorite_sticker
-    assert await client.add_favorite_sticker(doc) is True
+    assert await client.add_favorite_sticker(file_id) is True
     assert isinstance(client.sent[-1], raw.functions.messages.FaveSticker)
     assert client.sent[-1].unfave is False
 
     # Test remove_favorite_sticker
-    assert await client.remove_favorite_sticker(doc) is True
+    assert await client.remove_favorite_sticker(file_id) is True
     assert isinstance(client.sent[-1], raw.functions.messages.FaveSticker)
     assert client.sent[-1].unfave is True

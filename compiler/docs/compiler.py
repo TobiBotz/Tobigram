@@ -709,9 +709,11 @@ def pyrogram_api():
             get_discussion_replies
             get_discussion_replies_count
             get_emoji_stickers
+            get_custom_emoji_stickers
             get_favorite_stickers
             get_featured_emoji_stickers
             get_featured_stickers
+            get_stickers
             get_main_web_app
             get_mask_stickers
             get_media_group
@@ -1026,42 +1028,29 @@ def pyrogram_api():
             add_favorite_sticker
             add_recent_sticker
             add_sticker_to_set
-            change_sticker
             change_sticker_set
-            check_sticker_set_name
             clear_recent_stickers
             create_new_sticker_set
-            create_sticker_set
             delete_sticker_from_set
             delete_sticker_set
-            get_custom_emoji_stickers
             get_favorite_stickers
-            get_my_stickers
             get_owned_sticker_sets
             get_recent_stickers
             get_sticker_set
-            get_stickers
             get_suggested_sticker_set_name
             remove_favorite_sticker
             remove_recent_sticker
-            remove_sticker_from_set
             reorder_installed_sticker_sets
-            replace_sticker
             replace_sticker_in_set
-            save_sticker_set
             search_sticker_sets
             search_stickers
             set_custom_emoji_sticker_set_thumbnail
             set_sticker_emoji_list
             set_sticker_keywords
             set_sticker_mask_position
-            set_sticker_position
             set_sticker_position_in_set
-            set_sticker_set_thumb
             set_sticker_set_thumbnail
             set_sticker_set_title
-            suggest_sticker_set_name
-            unsave_sticker_set
             upload_sticker_file
         """,
         stories="""

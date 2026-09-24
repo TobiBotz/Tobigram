@@ -18,43 +18,47 @@
 
 from __future__ import annotations
 
+
 import pyrogram
-from pyrogram import raw
+from pyrogram import enums, raw, types
 
 
 class SearchStickerSets:
     async def search_sticker_sets(
-        self: pyrogram.Client,
-        query: str,
-        exclude_featured: bool = False,
-        hash: int = 0,
-    ) -> raw.base.messages.FoundStickerSets:
-        """Search for sticker sets.
+        self: pyrogram.Client, sticker_type: enums.StickerType, query: str
+    ) -> list[types.StickerSet]:
+        """Search for sticker sets by looking for the query in their title and name.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
+            sticker_type (:obj:`~pyrogram.enums.StickerType`):
+                Type of the sticker sets to return.
+
             query (``str``):
-                Query string.
-
-            exclude_featured (``bool``, *optional*):
-                Pass True to exclude featured sticker sets.
-
-            hash (``int``, *optional*):
-                Hash for caching.
+                Query to search for.
 
         Returns:
-            :obj:`~pyrogram.raw.base.messages.FoundStickerSets`: Found sticker sets object.
+            List of :obj:`~pyrogram.types.StickerSet`: The sticker sets that match the query are returned.
 
         Example:
             .. code-block:: python
 
-                sets = await app.search_sticker_sets("cats")
+                from wzgram import enums
+
+                await app.search_sticker_sets(enums.StickerType.REGULAR, "cats")
         """
-        return await self.invoke(
-            raw.functions.messages.SearchStickerSets(
-                q=query,
-                exclude_featured=exclude_featured or None,
-                hash=hash,
-            )
-        )
+        if sticker_type == enums.StickerType.CUSTOM_EMOJI:
+            r = await self.invoke(raw.functions.messages.SearchEmojiStickerSets(q=query, hash=0))
+        else:
+            r = await self.invoke(raw.functions.messages.SearchStickerSets(q=query, hash=0))
+
+        sticker_sets = types.List()
+
+        for covered in getattr(r, "sets", []):
+            sticker_set = await types.StickerSet._parse(self, covered.set)
+
+            if sticker_set.sticker_type == sticker_type:
+                sticker_sets.append(sticker_set)
+
+        return sticker_sets

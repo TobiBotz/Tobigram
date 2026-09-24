@@ -21,42 +21,51 @@ from __future__ import annotations
 from typing import BinaryIO
 
 import pyrogram
-from pyrogram import raw, types
-from .resolve import resolve_stickerset, resolve_thumb_doc
+from pyrogram import enums, raw, types
 
 
 class SetStickerSetThumbnail:
     async def set_sticker_set_thumbnail(
         self: pyrogram.Client,
-        short_name: str | types.StickerSet | raw.base.InputStickerSet,
-        thumb: str | BinaryIO | raw.base.InputDocument | None = None,
+        user_id: int | str,
+        name: str,
+        format: enums.StickerFormat,
+        thumbnail: str | BinaryIO | None = None,
     ) -> types.StickerSet:
-        """Set thumbnail for a sticker set.
+        """Set the thumbnail of a regular or mask sticker set.
+        The format of the thumbnail file must match the format of the stickers in the set.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-            short_name (``str`` | :obj:`~pyrogram.types.StickerSet`):
-                Short name or StickerSet object.
+            user_id (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the sticker set owner.
 
-            thumb (``str`` | ``BinaryIO`` | :obj:`~pyrogram.raw.base.InputDocument`, *optional*):
-                Thumbnail image.
+            name (``str``):
+                Name of the sticker set.
+
+            format (:obj:`~pyrogram.enums.StickerFormat`):
+                Format of the thumbnail.
+
+            thumbnail (``str`` | ``BinaryIO``, *optional*):
+                File path, HTTP URL, file_id or binary file-like object of the thumbnail.
+                Omit to remove the thumbnail.
 
         Returns:
-            :obj:`~pyrogram.types.StickerSet`: On success, the updated sticker set is returned.
-
-        Example:
-            .. code-block:: python
-
-                await app.set_sticker_set_thumbnail("mypack", thumb="thumb.webp")
+            :obj:`~pyrogram.types.StickerSet`: The updated sticker set is returned.
         """
-        stickerset = resolve_stickerset(short_name)
-        thumb_doc = await resolve_thumb_doc(self, thumb)
+        thumb = None
+
+        if thumbnail is not None:
+            thumb = (
+                await types.InputSticker(sticker=thumbnail, format=format, emoji_list=[]).write(
+                    self, user_id
+                )
+            ).document
 
         r = await self.invoke(
             raw.functions.stickers.SetStickerSetThumb(
-                stickerset=stickerset,
-                thumb=thumb_doc,
+                stickerset=raw.types.InputStickerSetShortName(short_name=name), thumb=thumb
             )
         )
 

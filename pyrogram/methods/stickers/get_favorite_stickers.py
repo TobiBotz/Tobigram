@@ -18,29 +18,30 @@
 
 from __future__ import annotations
 
+
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, types
 
 
 class GetFavoriteStickers:
-    async def get_favorite_stickers(
-        self: pyrogram.Client,
-        hash: int = 0,
-    ) -> raw.base.messages.FavedStickers:
-        """Get the list of favourite stickers.
+    async def get_favorite_stickers(self: pyrogram.Client) -> list[types.Sticker]:
+        """Get the list of favorite stickers.
 
         .. include:: /_includes/usable-by/users.rst
 
-        Parameters:
-            hash (``int``, *optional*):
-                Hash for caching.
-
         Returns:
-            :obj:`~pyrogram.raw.base.messages.FavedStickers`: The faved stickers object.
+            List of :obj:`~pyrogram.types.Sticker`: On success, a list of sticker objects is returned.
 
         Example:
             .. code-block:: python
 
-                faved = await app.get_favorite_stickers()
+                await app.get_favorite_stickers()
         """
-        return await self.invoke(raw.functions.messages.GetFavedStickers(hash=hash))
+        r = await self.invoke(raw.functions.messages.GetFavedStickers(hash=0))
+
+        return types.List(
+            [
+                await types.Sticker._parse(self, sticker, {type(a): a for a in sticker.attributes})
+                for sticker in r.stickers
+            ]
+        )
