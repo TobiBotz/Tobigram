@@ -18,11 +18,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
+    from collections.abc import Iterable
 
 
 class ForwardMessages:
@@ -32,7 +35,7 @@ class ForwardMessages:
         from_chat_id: int | str,
         message_ids: int | Iterable[int],
         disable_notification: bool | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
         protect_content: bool | None = None,
         message_thread_id: int | None = None,
         hide_sender_name: bool | None = None,

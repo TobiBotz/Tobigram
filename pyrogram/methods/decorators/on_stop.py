@@ -18,9 +18,12 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 
 import pyrogram
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class OnStop:

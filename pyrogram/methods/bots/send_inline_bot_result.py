@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class SendInlineBotResult:
@@ -36,7 +39,7 @@ class SendInlineBotResult:
         background: bool | None = None,
         clear_draft: bool | None = None,
         hide_via: bool | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
         send_as: int | str | None = None,
         quick_reply_shortcut: int | None = None,
         paid_message_star_count: int | None = None,

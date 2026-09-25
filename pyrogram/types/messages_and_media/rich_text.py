@@ -18,13 +18,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import pyrogram
 from pyrogram import raw, types, utils
 
 from ..object import Object
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 def _extract_plain_text(content: Any) -> str:

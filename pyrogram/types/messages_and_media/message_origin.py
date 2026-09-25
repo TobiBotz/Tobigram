@@ -17,12 +17,15 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
 
 from ..object import Object
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class MessageOrigin(Object):

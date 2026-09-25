@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import enums, types
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class EditMessageCaption:
@@ -35,12 +38,12 @@ class EditMessageCaption:
         rich_text: str | types.InputRichMessage | None = None,
         rich_text_parse_mode: enums.ParseMode = enums.ParseMode.MARKDOWN,
         rich_text_media: list[types.InputRichMessageMedia] | None = None,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         link_preview_options: types.LinkPreviewOptions | None = None,
         show_caption_above_media: bool | None = None,
         disable_web_page_preview: bool | None = None,
         business_connection_id: str | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
     ) -> types.Message:
         """Edit the caption of media messages.
 
@@ -79,6 +82,7 @@ class EditMessageCaption:
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
             link_preview_options (:obj:`~pyrogram.types.LinkPreviewOptions`, *optional*):
                 Link preview options.

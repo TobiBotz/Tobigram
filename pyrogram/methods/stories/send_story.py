@@ -19,13 +19,15 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Callable
-from typing import BinaryIO
+from typing import BinaryIO, TYPE_CHECKING
 
 import pyrogram
 from pyrogram import StopTransmission, enums, raw, types, utils
 from pyrogram.errors import FilePartMissing
 from pyrogram.file_id import FileId
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class SendStory:

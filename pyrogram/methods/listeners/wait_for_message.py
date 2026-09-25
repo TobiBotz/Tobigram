@@ -21,9 +21,12 @@ from __future__ import annotations
 
 import pyrogram
 from pyrogram import enums, types
-from pyrogram.filters import Filter
 
 from .listen import UNSET
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram.filters import Filter
 
 
 class WaitForMessage:

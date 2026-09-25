@@ -19,10 +19,13 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Iterable
 
 import pyrogram
 from pyrogram import raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 class GetUsers:

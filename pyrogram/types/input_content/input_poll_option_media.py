@@ -20,10 +20,10 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, BinaryIO
 
-from ..messages_and_media import MessageEntity
 from .input_media import InputMedia
 
 if TYPE_CHECKING:
+    from ..messages_and_media import MessageEntity
     from pyrogram import raw
 
 

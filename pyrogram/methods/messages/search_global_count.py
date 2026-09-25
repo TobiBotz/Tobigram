@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import enums, raw
+from pyrogram import enums, raw, utils
 
 
 class SearchGlobalCount:
@@ -80,7 +80,9 @@ class SearchGlobalCount:
                 groups_only=groups_only if groups_only is not None else None,
                 users_only=users_only if users_only is not None else None,
                 folder_id=folder_id,
-                community=await self.resolve_peer(community) if community is not None else None,
+                community=utils.get_input_channel(await self.resolve_peer(community))
+                if community is not None
+                else None,
             )
         )
 

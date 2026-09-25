@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
 
 
 class BanCommunityParticipant:
@@ -60,7 +60,7 @@ class BanCommunityParticipant:
 
         return await self.invoke(
             raw.functions.communities.ToggleParticipantBanned(
-                community=comm_peer,
+                community=utils.get_input_channel(comm_peer),
                 participant=user_peer,
                 unban=unban,
             )

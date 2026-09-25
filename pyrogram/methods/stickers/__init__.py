@@ -20,6 +20,7 @@ from .add_favorite_sticker import AddFavoriteSticker
 from .add_recent_sticker import AddRecentSticker
 from .add_sticker_to_set import AddStickerToSet
 from .change_sticker_set import ChangeStickerSet
+from .check_sticker_set_short_name import CheckStickerSetShortName
 from .clear_recent_stickers import ClearRecentStickers
 from .create_new_sticker_set import CreateNewStickerSet
 from .delete_sticker_from_set import DeleteStickerFromSet
@@ -50,6 +51,7 @@ class Stickers(
     AddRecentSticker,
     AddStickerToSet,
     ChangeStickerSet,
+    CheckStickerSetShortName,
     ClearRecentStickers,
     CreateNewStickerSet,
     DeleteStickerFromSet,

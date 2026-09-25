@@ -19,11 +19,13 @@
 from __future__ import annotations
 
 
-import pyrogram
-from pyrogram import types
-
 from ..messages.edit_message_media import resolve_input_media
 from .edit_ephemeral_message import edit_ephemeral
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram import types
+    import pyrogram
 
 
 class EditEphemeralMessageMedia:
@@ -33,7 +35,7 @@ class EditEphemeralMessageMedia:
         receiver_id: int | str,
         message_id: int,
         media: types.InputMedia,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         welcome: bool | None = None,
     ) -> types.Message | None:
         """Edit the media of an ephemeral message.
@@ -56,6 +58,7 @@ class EditEphemeralMessageMedia:
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An inline keyboard.
+                Pass None to remove the existing reply markup.
 
             welcome (``bool``, *optional*):
                 Pass True when editing a stored welcome message rather than one that was

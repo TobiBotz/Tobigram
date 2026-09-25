@@ -76,7 +76,8 @@ fast = [
     "uvloop<=0.22.1; sys_platform == 'darwin' or sys_platform == 'linux'",
 ]
 mongo = [
-    "motor>=3.5",
+    "motor>=3.7.1",
+    "pymongo>=4.17.0",
 ]
 redis = [
     "redis>=5.0",
@@ -204,6 +205,7 @@ select = [
     "RUF013", # PEP 484 implicit Optional checks
     "SLOT",   # Flake8-slots (immutable subclasses missing __slots__)
     "T10",    # Debugger statements (breakpoint(), pdb)
+    "TC",     # Flake8-type-checking (move type-only imports into TYPE_CHECKING blocks)
     "UP",     # Pyupgrade (modern Python 3.10+ syntax)
     "W",      # Pycodestyle warnings
     "YTT",    # Python version check bugs (Python 3.10+)

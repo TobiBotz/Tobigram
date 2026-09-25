@@ -65,6 +65,5 @@ class GetArchivedStickers:
                 emojis=emojis,
                 offset_id=offset_id,
                 limit=limit,
-                hash=hash,
             )
         )

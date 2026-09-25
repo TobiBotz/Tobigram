@@ -1826,3 +1826,106 @@ def test_an_entity_offset_still_indexes_the_text_that_entity_marks() -> None:
     text = MessageStr("😀 bold").init([entity])
 
     assert text[entity.offset : entity.offset + entity.length] == "bold"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "ids",
+    [
+        {"foursquare_id": "x"},
+        {"foursquare_type": "x"},
+        {"google_place_id": "x"},
+        {"google_place_type": "x"},
+    ],
+)
+async def test_a_venue_with_half_an_identifier_pair_still_serializes(ids) -> None:
+    media = await types.InputMediaVenue(
+        latitude=1.0, longitude=2.0, title="t", address="a", **ids
+    ).write()
+
+    assert media.write()
+
+
+_EMPTY_CAPTION = raw.types.PageCaption(
+    text=raw.types.TextEmpty(),
+    credit=raw.types.TextEmpty(),
+)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "block",
+    [
+        pytest.param(
+            raw.types.PageBlockVideo(
+                video_id=1,
+                caption=_EMPTY_CAPTION,
+            ),
+            id="video",
+        ),
+        pytest.param(
+            raw.types.PageBlockDocument(
+                document_id=1,
+                caption=_EMPTY_CAPTION,
+            ),
+            id="document",
+        ),
+        pytest.param(
+            raw.types.PageBlockAudio(
+                audio_id=1,
+                caption=_EMPTY_CAPTION,
+            ),
+            id="audio",
+        ),
+    ],
+)
+@pytest.mark.parametrize(
+    "documents",
+    [
+        pytest.param({}, id="absent"),
+        pytest.param({1: raw.types.DocumentEmpty(id=1)}, id="empty"),
+    ],
+)
+async def test_a_media_block_without_a_usable_document_is_unsupported(
+    block: raw.base.PageBlock,
+    *,
+    documents: dict[int, raw.base.Document],
+) -> None:
+    parsed = await types.RichBlock._parse(None, block, {}, documents, {}, {})
+    assert type(parsed) is types.RichBlockUnsupported
+
+
+@pytest.mark.asyncio
+async def test_a_media_block_inside_a_list_item_still_finds_its_document() -> None:
+    document = raw.types.Document(
+        id=555,
+        access_hash=666,
+        file_reference=b"ref",
+        date=0,
+        mime_type="application/pdf",
+        size=10,
+        dc_id=2,
+        attributes=[raw.types.DocumentAttributeFilename(file_name="a.pdf")],
+    )
+
+    parsed = await types.RichBlock._parse(
+        None,
+        raw.types.PageBlockList(
+            items=[
+                raw.types.PageListItemBlocks(
+                    blocks=[
+                        raw.types.PageBlockDocument(
+                            document_id=555,
+                            caption=_EMPTY_CAPTION,
+                        )
+                    ]
+                )
+            ]
+        ),
+        {},
+        {555: document},
+        {},
+        {},
+    )
+
+    assert parsed.items[0].blocks[0].document.file_name == "a.pdf"

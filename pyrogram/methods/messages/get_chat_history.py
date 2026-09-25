@@ -18,11 +18,14 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
+    from collections.abc import AsyncGenerator
 
 
 async def get_chunk(
@@ -32,7 +35,7 @@ async def get_chunk(
     limit: int = 0,
     offset: int = 0,
     from_message_id: int = 0,
-    from_date: datetime = utils.zero_datetime(),
+    from_date: datetime | timedelta = utils.zero_datetime(),
     min_id: int = 0,
     max_id: int = 0,
     reverse: bool = False,
@@ -66,7 +69,7 @@ class GetChatHistory:
         limit: int = 0,
         offset: int = 0,
         offset_id: int = 0,
-        offset_date: datetime = utils.zero_datetime(),
+        offset_date: datetime | timedelta = utils.zero_datetime(),
         min_id: int = 0,
         max_id: int = 0,
         reverse: bool = False,

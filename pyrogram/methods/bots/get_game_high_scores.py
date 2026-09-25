@@ -22,6 +22,8 @@ from __future__ import annotations
 import pyrogram
 from pyrogram import raw, types, utils
 
+from pyrogram.methods.messages.inline_session import invoke_inline
+
 
 class GetGameHighScores:
     async def get_game_high_scores(
@@ -66,13 +68,23 @@ class GetGameHighScores:
         """
 
         if inline_message_id is not None:
-            r = await self.invoke(
+            unpacked = utils.unpack_inline_message_id(inline_message_id)
+            dc_id = unpacked.dc_id
+
+            r = await invoke_inline(
+                self,
+                dc_id,
                 raw.functions.messages.GetInlineGameHighScores(
-                    id=utils.unpack_inline_message_id(inline_message_id),
+                    id=unpacked,
                     user_id=await self.resolve_peer(user_id),
-                )
+                ),
             )
         else:
+            if chat_id is None or message_id is None:
+                raise ValueError(
+                    "Either (chat_id, message_id) or inline_message_id must be provided"
+                )
+
             r = await self.invoke(
                 raw.functions.messages.GetGameHighScores(
                     peer=await self.resolve_peer(chat_id),

@@ -656,6 +656,9 @@ class TestEditEphemeralMessage:
         client = AsyncMock()
         client.invoke.return_value = Mock(updates=[], users=[], chats=[])
         client.parser.parse = AsyncMock(return_value={"message": text or None, "entities": None})
+        client.resolve_peer.side_effect = lambda x: raw.types.InputPeerUser(
+            user_id=int(x) if isinstance(x, int) or str(x).isdigit() else 1, access_hash=0
+        )
 
         return client
 
@@ -725,6 +728,9 @@ class TestEditEphemeralMessage:
             updates=[raw.types.UpdateEditEphemeralMessage(message=message)],
             users=[_raw_user(1), _raw_user(2)],
             chats=[],
+        )
+        client.resolve_peer.side_effect = lambda x: raw.types.InputPeerUser(
+            user_id=int(x) if isinstance(x, int) or str(x).isdigit() else 1, access_hash=0
         )
 
         parsed = await edit_ephemeral(client, 1, 2, 11, message="edited")

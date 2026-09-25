@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 
 import pyrogram
 from pyrogram import types
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 class CopyMessages:
@@ -35,6 +38,11 @@ class CopyMessages:
         disable_notification: bool | None = None,
         protect_content: bool | None = None,
         remove_caption: bool | None = None,
+        reply_markup: types.InlineKeyboardMarkup
+        | types.ReplyKeyboardMarkup
+        | types.ReplyKeyboardRemove
+        | types.ForceReply
+        | None = object,
     ) -> list[types.Message]:
         """Copy messages of any kind in bulk without a forward link.
 
@@ -70,6 +78,12 @@ class CopyMessages:
             remove_caption (``bool``, *optional*):
                 Pass True to copy messages without their captions.
 
+            reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
+                Additional interface options. An object for an inline keyboard, custom reply keyboard,
+                instructions to remove reply keyboard or to force a reply from the user.
+                If not specified, the original reply markup is kept.
+                Pass None to remove the reply markup.
+
         Returns:
             List of :obj:`~pyrogram.types.Message`: A list of the copied messages.
 
@@ -98,6 +112,7 @@ class CopyMessages:
                 protect_content=protect_content,
                 caption="" if remove_caption else None,
                 direct_messages_topic_id=direct_messages_topic_id,
+                reply_markup=reply_markup,
             )
             copied.append(sent)
 

@@ -18,12 +18,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, types, utils
 
 from ..ephemeral.as_ephemeral import as_ephemeral
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class SendVenue:
@@ -39,7 +42,7 @@ class SendVenue:
         disable_notification: bool | None = None,
         reply_to_message_id: int | None = None,
         reply_to_chat_id: int | str | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
         protect_content: bool | None = None,
         reply_parameters: types.ReplyParameters | None = None,
         message_thread_id: int | None = None,
@@ -216,8 +219,8 @@ class SendVenue:
                         title=title,
                         address=address,
                         provider="foursquare" if foursquare_id or foursquare_type else "",
-                        venue_id=foursquare_id,
-                        venue_type=foursquare_type,
+                        venue_id=foursquare_id or "",
+                        venue_type=foursquare_type or "",
                     ),
                     message="",
                     silent=disable_notification if disable_notification is not None else None,

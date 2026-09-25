@@ -32,6 +32,7 @@ class _Client(
     parse_mode = enums.ParseMode.MARKDOWN
     link_preview_options = None
     me = None
+    send_cached_media = AsyncMock()
 
     def __init__(self, reply=None):
         self.sent = []
@@ -158,6 +159,30 @@ async def test_a_venue_with_a_foursquare_id_names_its_provider():
     await client.send_venue("me", 0.0, 0.0, "t", "a")
 
     assert [q.media.provider for q in client.sent] == ["foursquare", ""]
+    assert client.sent[1].media.venue_id == ""
+    assert client.sent[1].media.venue_type == ""
+    assert client.sent[1].write()
+
+
+async def test_copying_a_venue_without_foursquare_id_serializes_cleanly():
+    client = _Client()
+    msg = types.Message(
+        id=1,
+        chat=types.Chat(id=1, type=enums.ChatType.PRIVATE),
+        media=enums.MessageMediaType.VENUE,
+        venue=types.Venue(
+            location=types.Location(latitude=1.0, longitude=2.0),
+            title="T",
+            address="A",
+            foursquare_id=None,
+            foursquare_type=None,
+        ),
+        client=client,
+    )
+    await msg.copy("me")
+    assert client.sent[-1].media.venue_id == ""
+    assert client.sent[-1].media.venue_type == ""
+    assert client.sent[-1].write()
 
 
 async def test_a_markdown_code_fence_drops_its_own_newlines():

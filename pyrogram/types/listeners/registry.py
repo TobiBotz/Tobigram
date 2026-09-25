@@ -30,7 +30,10 @@ import pyrogram
 from pyrogram.errors import ListenerLimitReached, ListenerStopped, ListenerTimeout
 
 from .identifier import Identifier
-from .listener import Listener
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .listener import Listener
 
 log = logging.getLogger(__name__)
 

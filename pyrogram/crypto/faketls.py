@@ -31,10 +31,12 @@ https://github.com/tdlib/td/blob/d1085f9cebc5a62379991ae1652673954f229c1f/td/mtp
 import hashlib
 import hmac
 import secrets
-from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Final, NamedTuple
+from typing import Final, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 # GREASE values are drawn once per greeting and referenced by index, because the
 #  same value has to appear in more than one extension.
@@ -440,7 +442,8 @@ class _HelloWriter:
         self._write(_end_scope())
 
 
-class FakeTlsHello(NamedTuple):
+@dataclass(frozen=True)
+class FakeTlsHello:
     record: bytes  # the ClientHello TLS record, ready to go on the wire
     random: bytes  # its random field, which the server's reply is checked against
 

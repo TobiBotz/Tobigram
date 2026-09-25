@@ -18,14 +18,17 @@
 
 from __future__ import annotations
 
-import pyrogram
 from pyrogram.handlers import (
     ConnectHandler,
     DisconnectHandler,
     StartHandler,
     StopHandler,
 )
-from pyrogram.handlers.handler import Handler
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram.handlers.handler import Handler
+    import pyrogram
 
 LIFECYCLE_HANDLERS = {
     ConnectHandler: "connect_handler",

@@ -23,7 +23,6 @@ import bisect
 import logging
 import os
 import time
-from concurrent.futures import ThreadPoolExecutor
 from hashlib import sha1
 from io import BytesIO
 import struct
@@ -49,6 +48,10 @@ from pyrogram.raw.all import layer
 from pyrogram.raw.core import FutureSalts, Message, MsgContainer, TLObject
 
 from .internals import MsgFactory, MsgId
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from concurrent.futures import ThreadPoolExecutor
 
 log = logging.getLogger(__name__)
 

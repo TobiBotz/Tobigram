@@ -21,6 +21,8 @@ from __future__ import annotations
 import pyrogram
 from pyrogram import raw, types, utils
 
+from .inline_session import invoke_inline
+
 
 class EditMessageLiveLocation:
     async def edit_message_live_location(
@@ -34,7 +36,7 @@ class EditMessageLiveLocation:
         horizontal_accuracy: float | None = None,
         heading: int | None = None,
         proximity_alert_radius: int | None = None,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         business_connection_id: str | None = None,
     ) -> types.Message | bool:
         """Edit a live location message.
@@ -78,6 +80,7 @@ class EditMessageLiveLocation:
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
             business_connection_id (``str``, *optional*):
                 Unique identifier of the business connection.
@@ -93,6 +96,11 @@ class EditMessageLiveLocation:
                 await app.edit_message_live_location(chat_id, message_id, latitude=37.7, longitude=-122.4)
         """
         if inline_message_id is None:
+            if chat_id is None or message_id is None:
+                raise ValueError(
+                    "Either (chat_id, message_id) or inline_message_id must be provided"
+                )
+
             peer = await self.resolve_peer(chat_id)
             r = await self.invoke(
                 raw.functions.messages.EditMessage(
@@ -113,7 +121,9 @@ class EditMessageLiveLocation:
                         period=live_period,
                         proximity_notification_radius=proximity_alert_radius,
                     ),
-                    reply_markup=await reply_markup.write(self) if reply_markup else None,
+                    reply_markup=await utils.write_edit_reply_markup(
+                        self, reply_markup=reply_markup
+                    ),
                 ),
                 business_connection_id=business_connection_id,
             )
@@ -127,9 +137,14 @@ class EditMessageLiveLocation:
 
             return True
         else:
-            await self.invoke(
+            unpacked = utils.unpack_inline_message_id(inline_message_id)
+            dc_id = unpacked.dc_id
+
+            return await invoke_inline(
+                self,
+                dc_id,
                 raw.functions.messages.EditInlineBotMessage(
-                    id=utils.decode_inline_message_id(inline_message_id),
+                    id=unpacked,
                     media=raw.types.InputMediaGeoLive(
                         geo_point=raw.types.InputGeoPoint(
                             lat=latitude,
@@ -145,7 +160,9 @@ class EditMessageLiveLocation:
                         period=live_period,
                         proximity_notification_radius=proximity_alert_radius,
                     ),
-                    reply_markup=await reply_markup.write(self) if reply_markup else None,
-                )
+                    reply_markup=await utils.write_edit_reply_markup(
+                        self, reply_markup=reply_markup
+                    ),
+                ),
+                business_connection_id,
             )
-            return True

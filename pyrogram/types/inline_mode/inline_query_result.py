@@ -20,10 +20,13 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-import pyrogram
-from pyrogram import types
 
 from ..object import Object
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram import types
+    import pyrogram
 
 
 class InlineQueryResult(Object):

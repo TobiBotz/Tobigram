@@ -27,7 +27,10 @@ from pyrogram.utils import btoi, compute_password_check, compute_password_hash, 
 
 class ChangeCloudPassword:
     async def change_cloud_password(
-        self: pyrogram.Client, current_password: str, new_password: str, new_hint: str = ""
+        self: pyrogram.Client,
+        current_password: str,
+        new_password: str,
+        new_hint: str | None = None,
     ) -> bool:
         """Change your Two-Step Verification password (Cloud Password) with a new one.
 
@@ -42,6 +45,8 @@ class ChangeCloudPassword:
 
             new_hint (``str``, *optional*):
                 A new password hint.
+                Pass ``None`` or omit it to keep the hint the account already has.
+                Pass an empty string to remove the hint.
 
         Returns:
             ``bool``: True on success.
@@ -52,11 +57,14 @@ class ChangeCloudPassword:
         Example:
             .. code-block:: python
 
-                # Change password only
+                # Change password only (keeps existing hint)
                 await app.change_cloud_password("current_password", "new_password")
 
                 # Change password and hint
                 await app.change_cloud_password("current_password", "new_password", new_hint="hint")
+
+                # Change password and remove hint
+                await app.change_cloud_password("current_password", "new_password", new_hint="")
         """
         r = await self.invoke(raw.functions.account.GetPassword())
 
@@ -66,6 +74,9 @@ class ChangeCloudPassword:
         r.new_algo.salt1 += os.urandom(32)
         new_hash = btoi(compute_password_hash(r.new_algo, new_password))
         new_hash = itob(pow(r.new_algo.g, new_hash, btoi(r.new_algo.p)))
+
+        if new_hint is None:
+            new_hint = r.hint or ""
 
         await self.invoke(
             raw.functions.account.UpdatePasswordSettings(

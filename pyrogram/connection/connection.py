@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from concurrent.futures import ThreadPoolExecutor
 
 from pyrogram import utils
 from pyrogram.crypto.executor import get_crypto_executor
@@ -28,6 +27,10 @@ from pyrogram.crypto.executor import get_crypto_executor
 from ..session.internals import get_dc_address
 from .proxy import Proxy, normalize_proxy, uses_random_padding
 from .transport import TCP, TCPAbridged, TCPIntermediatePadded
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from concurrent.futures import ThreadPoolExecutor
 
 log = logging.getLogger(__name__)
 

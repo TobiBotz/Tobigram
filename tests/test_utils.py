@@ -140,3 +140,23 @@ class TestGetChannelId:
 
     def test_zero(self):
         assert get_channel_id(0) == ZERO_CHANNEL_ID
+
+
+class TestPeerTuples:
+    def test_user_peer_tuple(self):
+        from pyrogram import raw, utils
+
+        u = raw.types.PeerUser(user_id=123)
+        assert isinstance(u, utils.PEERS_WITH_A_USER_ID)
+
+    def test_chat_peer_tuple(self):
+        from pyrogram import raw, utils
+
+        c = raw.types.PeerChat(chat_id=123)
+        assert isinstance(c, utils.PEERS_WITH_A_CHAT_ID)
+
+    def test_channel_peer_tuple(self):
+        from pyrogram import raw, utils
+
+        ch = raw.types.PeerChannel(channel_id=123)
+        assert isinstance(ch, utils.PEERS_WITH_A_CHANNEL_ID)

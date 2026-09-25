@@ -19,10 +19,13 @@
 from __future__ import annotations
 
 import logging
-from collections.abc import AsyncIterator
 
 import pyrogram
 from pyrogram import raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
 
 log = logging.getLogger(__name__)
 

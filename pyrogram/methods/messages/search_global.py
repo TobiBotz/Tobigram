@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator
 
 
 class SearchGlobal:
@@ -117,7 +120,7 @@ class SearchGlobal:
                         groups_only=groups_only if groups_only is not None else None,
                         users_only=users_only if users_only is not None else None,
                         folder_id=folder_id,
-                        community=await self.resolve_peer(community)
+                        community=utils.get_input_channel(await self.resolve_peer(community))
                         if community is not None
                         else None,
                     ),

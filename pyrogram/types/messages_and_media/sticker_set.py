@@ -116,6 +116,20 @@ class StickerSet(Object):
         if isinstance(sticker_set, raw.types.messages.StickerSet):
             documents = sticker_set.documents
             _set = sticker_set.set
+        elif isinstance(
+            sticker_set,
+            (
+                raw.types.StickerSetCovered,
+                raw.types.StickerSetMultiCovered,
+                raw.types.StickerSetFullCovered,
+            ),
+        ):
+            documents = (
+                getattr(sticker_set, "documents", None)
+                or getattr(sticker_set, "covers", None)
+                or ([sticker_set.cover] if getattr(sticker_set, "cover", None) else None)
+            )
+            _set = sticker_set.set
         else:
             _set = sticker_set
 
@@ -138,14 +152,24 @@ class StickerSet(Object):
         thumbs = None
 
         if documents is not None:
-            stickers = types.List(
-                [
-                    await types.Sticker._parse(client, doc, {type(a): a for a in doc.attributes})
-                    for doc in documents
-                ]
-            )
+            parsed_stickers = []
+            for doc in documents:
+                if isinstance(doc, raw.types.Document):
+                    s = await types.Sticker._parse(
+                        client, doc, {type(a): a for a in doc.attributes}
+                    )
+                    if s is not None:
+                        parsed_stickers.append(s)
+            stickers = types.List(parsed_stickers)
 
-            thumb = next((d for d in documents if d.id == _set.thumb_document_id), None)
+            thumb = next(
+                (
+                    d
+                    for d in documents
+                    if isinstance(d, raw.types.Document) and d.id == _set.thumb_document_id
+                ),
+                None,
+            )
 
             if thumb is None and _set.thumb_document_id:
                 r = await client.invoke(
@@ -156,7 +180,9 @@ class StickerSet(Object):
                 thumb = r[0] if r else None
 
             if thumb is None and documents:
-                thumb = documents[0]
+                first_doc = next((d for d in documents if isinstance(d, raw.types.Document)), None)
+                if first_doc is not None:
+                    thumb = first_doc
 
             if thumb is not None:
                 thumbs = types.Thumbnail._parse(client, thumb)

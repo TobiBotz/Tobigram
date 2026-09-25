@@ -82,7 +82,11 @@ class InputTextMessageContent(InputMessageContent):
         if self.link_preview_options is None:
             self.link_preview_options = client.link_preview_options
 
-        if self.link_preview_options and self.link_preview_options.url:
+        if (
+            self.link_preview_options
+            and self.link_preview_options.url
+            and not self.link_preview_options.is_disabled
+        ):
             return raw.types.InputBotInlineMessageMediaWebPage(
                 invert_media=self.link_preview_options.show_above_text,
                 force_large_media=self.link_preview_options.prefer_large_media,

@@ -206,3 +206,140 @@ async def test_build_input_rich_message_picks_the_constructor_by_parse_mode():
         await utils.build_input_rich_message(client, types.InputRichMessage(html="<p>x</p>")),
         raw.types.InputRichMessageHTML,
     )
+
+
+@pytest.mark.asyncio
+async def test_send_rich_message_forwards_business_connection_id():
+    import pyrogram
+
+    invoked = {}
+
+    class FakeSendClient(pyrogram.Client):
+        def __init__(self):
+            super().__init__("test", api_id=123, api_hash="0123456789abcdef0123456789abcdef")
+
+        async def resolve_peer(self, peer_id):
+            return raw.types.InputPeerChannel(channel_id=1001, access_hash=123)
+
+        async def invoke(self, query, **kwargs):
+            invoked["query"] = query
+            invoked["kwargs"] = kwargs
+            return raw.types.Updates(updates=[], users=[], chats=[], date=1700000000, seq=1)
+
+    client = FakeSendClient()
+    await client.send_rich_message(
+        chat_id=1001,
+        rich_text="# title",
+        business_connection_id="biz_123",
+    )
+
+    assert invoked["kwargs"].get("business_connection_id") == "biz_123"
+
+
+@pytest.mark.asyncio
+async def test_translate_rich_message():
+    import pyrogram
+
+    invoked = {}
+
+    class FakeTranslateClient(pyrogram.Client):
+        def __init__(self):
+            super().__init__("test", api_id=123, api_hash="0123456789abcdef0123456789abcdef")
+
+        async def resolve_peer(self, peer_id):
+            return raw.types.InputPeerChannel(channel_id=1001, access_hash=123)
+
+        async def invoke(self, query, **kwargs):
+            invoked["query"] = query
+            return raw.types.messages.TranslatedRichMessage(
+                result=[
+                    raw.types.RichMessage(
+                        blocks=[
+                            raw.types.PageBlockParagraph(text=raw.types.TextPlain(text="hello"))
+                        ],
+                        photos=[],
+                        documents=[],
+                    )
+                ],
+            )
+
+    client = FakeTranslateClient()
+    res = await client.translate_rich_message(
+        chat_id=1001,
+        message_id=42,
+        to_lang="es",
+        text="**hello**",
+    )
+    assert isinstance(res, types.RichMessage)
+    assert len(res.blocks) == 1
+    assert isinstance(invoked["query"], raw.functions.messages.TranslateRichMessage)
+    assert invoked["query"].id == [42]
+    assert invoked["query"].to_lang == "es"
+    assert isinstance(invoked["query"].text[0], raw.types.InputRichMessageMarkdown)
+
+
+@pytest.mark.asyncio
+async def test_compose_rich_message_with_ai():
+    import pyrogram
+
+    invoked = {}
+
+    class FakeAIClient(pyrogram.Client):
+        def __init__(self):
+            super().__init__("test", api_id=123, api_hash="0123456789abcdef0123456789abcdef")
+
+        async def invoke(self, query, **kwargs):
+            invoked["query"] = query
+            return raw.types.messages.ComposedRichMessageWithAI(
+                result=raw.types.RichMessage(
+                    blocks=[
+                        raw.types.PageBlockParagraph(text=raw.types.TextPlain(text="composed"))
+                    ],
+                    photos=[],
+                    documents=[],
+                ),
+            )
+
+    client = FakeAIClient()
+    res = await client.compose_rich_message_with_ai(
+        text="# Title",
+        tone="formal",
+        proofread=True,
+    )
+    assert isinstance(res, types.RichMessage)
+    assert len(res.blocks) == 1
+    assert isinstance(invoked["query"], raw.functions.messages.ComposeRichMessageWithAI)
+    assert isinstance(invoked["query"].tone, raw.types.InputAiComposeToneDefault)
+    assert invoked["query"].tone.tone == "formal"
+    assert isinstance(invoked["query"].text, raw.types.InputRichMessageMarkdown)
+
+
+@pytest.mark.asyncio
+async def test_message_translate_rich():
+    import pyrogram
+
+    invoked = {}
+
+    class FakeClient(pyrogram.Client):
+        lang_code = "es"
+
+        def __init__(self):
+            super().__init__("test", api_id=123, api_hash="0123456789abcdef0123456789abcdef")
+
+        async def translate_rich_message(self, chat_id, message_id, to_lang, tone=None):
+            invoked["chat_id"] = chat_id
+            invoked["message_id"] = message_id
+            invoked["to_lang"] = to_lang
+            invoked["tone"] = tone
+            return types.RichMessage(blocks=[])
+
+    client = FakeClient()
+    client.lang_code = "es"
+    msg = types.Message(id=99, chat=types.Chat(id=1001, type=enums.ChatType.PRIVATE), client=client)
+    res = await msg.translate_rich(tone="funny")
+
+    assert isinstance(res, types.RichMessage)
+    assert invoked["chat_id"] == 1001
+    assert invoked["message_id"] == 99
+    assert invoked["to_lang"] == "es"
+    assert invoked["tone"] == "funny"

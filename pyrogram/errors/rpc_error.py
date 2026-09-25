@@ -22,10 +22,13 @@ import logging
 import re
 from importlib import import_module
 
-from pyrogram import raw
-from pyrogram.raw.core import TLObject
 
 from .exceptions.all import exceptions
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram.raw.core import TLObject
+    from pyrogram import raw
 
 log = logging.getLogger(__name__)
 

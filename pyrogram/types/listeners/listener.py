@@ -19,12 +19,14 @@
 
 from __future__ import annotations
 
-import asyncio
-from collections.abc import Callable
 
-import pyrogram
+from typing import TYPE_CHECKING
 
-from .identifier import Identifier
+if TYPE_CHECKING:
+    from .identifier import Identifier
+    import pyrogram
+    from collections.abc import Callable
+    import asyncio
 
 UNSET = object()
 

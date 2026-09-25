@@ -19,10 +19,13 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 log = logging.getLogger(__name__)
 
@@ -34,8 +37,8 @@ class DeleteChatHistory:
         max_id: int = 0,
         revoke: bool | None = None,
         just_clear=None,
-        min_date: datetime | None = None,
-        max_date: datetime | None = None,
+        min_date: datetime | timedelta | None = None,
+        max_date: datetime | timedelta | None = None,
     ) -> int:
         """Delete the history of a chat.
 

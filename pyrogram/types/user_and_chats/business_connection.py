@@ -18,12 +18,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 from pyrogram import raw, types, utils
 
 from ..object import Object
 from ..update import Update
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class BusinessConnection(Object, Update):

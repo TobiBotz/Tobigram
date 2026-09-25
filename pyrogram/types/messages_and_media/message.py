@@ -20,12 +20,9 @@ from __future__ import annotations
 
 import contextlib
 import logging
-from collections.abc import AsyncGenerator, Callable
-from datetime import datetime
 from functools import partial
 from itertools import groupby
-from re import Match
-from typing import BinaryIO, SupportsIndex
+from typing import BinaryIO, Literal, SupportsIndex, TYPE_CHECKING, overload
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
@@ -43,6 +40,12 @@ from pyrogram.parser import Parser, utils as parser_utils
 from ..listeners.listener import UNSET
 from ..object import Object
 from ..update import Update
+
+if TYPE_CHECKING:
+    from io import BytesIO
+    from re import Match
+    from datetime import datetime
+    from collections.abc import AsyncGenerator, Callable
 
 log = logging.getLogger(__name__)
 
@@ -9329,7 +9332,7 @@ class Message(Object, Update):
         rich_text_parse_mode: enums.ParseMode = enums.ParseMode.MARKDOWN,
         rich_text_media: list[types.InputRichMessageMedia] | None = None,
         rich_message: types.InputRichMessage | None = None,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         welcome: bool | None = None,
     ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.edit_ephemeral_message_text` will automatically fill method attributes:
@@ -9372,6 +9375,7 @@ class Message(Object, Update):
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
             welcome (``bool``, *optional*):
                 Pass True when editing a stored welcome message rather than one that was delivered once.
@@ -9406,7 +9410,7 @@ class Message(Object, Update):
         parse_mode: enums.ParseMode | None = None,
         caption_entities: list[types.MessageEntity] | None = None,
         show_caption_above_media: bool | None = None,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         welcome: bool | None = None,
     ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.edit_ephemeral_message_caption` will automatically fill method attributes:
@@ -9436,6 +9440,7 @@ class Message(Object, Update):
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
             welcome (``bool``, *optional*):
                 Pass True when editing a stored welcome message rather than one that was delivered once.
@@ -9462,7 +9467,7 @@ class Message(Object, Update):
     async def edit_ephemeral_media(
         self,
         media: types.InputMedia,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         welcome: bool | None = None,
     ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.edit_ephemeral_message_media` will automatically fill method attributes:
@@ -9484,6 +9489,7 @@ class Message(Object, Update):
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
             welcome (``bool``, *optional*):
                 Pass True when editing a stored welcome message rather than one that was delivered once.
@@ -9506,7 +9512,7 @@ class Message(Object, Update):
 
     async def edit_ephemeral_reply_markup(
         self,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         welcome: bool | None = None,
     ) -> Message | None:
         """Shortcut for method :obj:`~pyrogram.Client.edit_ephemeral_message_reply_markup` will automatically fill method attributes:
@@ -9526,7 +9532,7 @@ class Message(Object, Update):
 
         Parameters:
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
-                An InlineKeyboardMarkup object. Pass nothing to remove the current one.
+                An InlineKeyboardMarkup object. Pass None to remove the current one.
 
             welcome (``bool``, *optional*):
                 Pass True when editing a stored welcome message rather than one that was delivered once.
@@ -9694,7 +9700,7 @@ class Message(Object, Update):
         rich_text: str | types.InputRichMessage | None = None,
         rich_text_parse_mode: enums.ParseMode = enums.ParseMode.MARKDOWN,
         rich_text_media: list[types.InputRichMessageMedia] | None = None,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         show_caption_above_media: bool | None = None,
         disable_web_page_preview: bool | None = None,
     ) -> Message:
@@ -9738,6 +9744,7 @@ class Message(Object, Update):
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
         Returns:
             On success, the edited :obj:`~pyrogram.types.Message` is returned.
@@ -9768,7 +9775,7 @@ class Message(Object, Update):
         caption: str,
         parse_mode: enums.ParseMode | None = None,
         caption_entities: list[types.MessageEntity] | None = None,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         show_caption_above_media: bool | None = None,
     ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.edit_message_caption` will automatically fill method attributes:
@@ -9794,6 +9801,7 @@ class Message(Object, Update):
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
         Returns:
             On success, the edited :obj:`~pyrogram.types.Message` is returned.
@@ -9813,7 +9821,9 @@ class Message(Object, Update):
         )
 
     async def edit_media(
-        self, media: types.InputMedia, reply_markup: types.InlineKeyboardMarkup | None = None
+        self,
+        media: types.InputMedia,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
     ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.edit_message_media` will automatically fill method attributes:
 
@@ -9832,6 +9842,7 @@ class Message(Object, Update):
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
         Returns:
             On success, the edited :obj:`~pyrogram.types.Message` is returned.
@@ -9850,7 +9861,7 @@ class Message(Object, Update):
     async def edit_checklist(
         self,
         checklist: types.InputChecklist,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
     ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.edit_message_checklist` will automatically fill method attributes:
 
@@ -9864,6 +9875,7 @@ class Message(Object, Update):
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
         Returns:
             On success, the edited :obj:`~pyrogram.types.Message` is returned.
@@ -9880,7 +9892,7 @@ class Message(Object, Update):
         )
 
     async def edit_reply_markup(
-        self, reply_markup: types.InlineKeyboardMarkup | None = None
+        self, reply_markup: types.InlineKeyboardMarkup | type[object] | None = object
     ) -> Message:
         """Shortcut for method :obj:`~pyrogram.Client.edit_message_reply_markup` will automatically fill method attributes:
 
@@ -9890,6 +9902,7 @@ class Message(Object, Update):
         Parameters:
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
         Returns:
             On success, if edited message is sent by the bot, the edited
@@ -10390,8 +10403,8 @@ class Message(Object, Update):
                     longitude=self.venue.location.longitude,
                     title=self.venue.title,
                     address=self.venue.address,
-                    foursquare_id=self.venue.foursquare_id,
-                    foursquare_type=self.venue.foursquare_type,
+                    foursquare_id=self.venue.foursquare_id or "",
+                    foursquare_type=self.venue.foursquare_type or "",
                     disable_notification=disable_notification,
                     message_thread_id=message_thread_id,
                     reply_parameters=reply_parameters,
@@ -10842,6 +10855,48 @@ class Message(Object, Update):
 
         return await self._client.retract_vote(chat_id=self.chat.id, message_id=self.id)
 
+    @overload
+    async def download(
+        self,
+        file_name: str = "",
+        in_memory: Literal[False] = False,
+        block: Literal[True] = True,
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+    ) -> str | list[str] | None: ...
+
+    @overload
+    async def download(
+        self,
+        file_name: str = "",
+        in_memory: Literal[True] = True,
+        block: Literal[True] = True,
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+    ) -> BytesIO | list[BytesIO] | None: ...
+
+    @overload
+    async def download(
+        self,
+        file_name: str = "",
+        *,
+        in_memory: bool = False,
+        block: Literal[False],
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+    ) -> None: ...
+
+    @overload
+    async def download(
+        self,
+        file_name: str,
+        in_memory: bool,
+        block: Literal[False],
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+    ) -> None: ...
+
+    @overload
     async def download(
         self,
         file_name: str = "",
@@ -10849,7 +10904,16 @@ class Message(Object, Update):
         block: bool = True,
         progress: Callable | None = None,
         progress_args: tuple = (),
-    ) -> str:
+    ) -> str | BytesIO | list[str] | list[BytesIO] | None: ...
+
+    async def download(
+        self,
+        file_name: str = "",
+        in_memory: bool = False,
+        block: bool = True,
+        progress: Callable | None = None,
+        progress_args: tuple = (),
+    ) -> str | BytesIO | list[str] | list[BytesIO] | None:
         """Shortcut for method :obj:`~pyrogram.Client.download_media` will automatically fill method attributes:
 
         * message
@@ -10893,7 +10957,11 @@ class Message(Object, Update):
                 You can either keep ``*args`` or add every single extra argument in your function signature.
 
         Returns:
-            On success, the absolute path of the downloaded file as string is returned, None otherwise.
+            ``str`` | ``BytesIO`` | ``list[str]`` | ``list[BytesIO]`` | ``None``: On success, the absolute path of the
+            downloaded file is returned. In case ``in_memory=True``, a binary file-like object with its attribute
+            ".name" set is returned. If the message contains multiple media (purchased paid media), a list of paths or
+            binary file-like objects is returned. In case the download failed or was deliberately stopped with
+            :meth:`~pyrogram.Client.stop_transmission`, None is returned.
 
         Raises:
             RPCError: In case of a Telegram RPC error.
@@ -11084,6 +11152,44 @@ class Message(Object, Update):
 
         return await self._client.summarize_text(
             peer=self.chat.id, id=self.id, to_lang=translate_to_language_code
+        )
+
+    async def translate_rich(
+        self,
+        to_lang: str | None = None,
+        tone: str | None = None,
+    ) -> types.RichMessage | None:
+        """Bound method *translate_rich* of :obj:`~pyrogram.types.Message`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            await client.translate_rich_message(
+                chat_id=message.chat.id,
+                message_id=message.id,
+                to_lang=to_lang,
+                tone=tone,
+            )
+
+        Parameters:
+            to_lang (``str``, *optional*):
+                Target language code. Defaults to the client's language code or "en".
+
+            tone (``str``, *optional*):
+                Translation tone/style.
+
+        Returns:
+            :obj:`~pyrogram.types.RichMessage`: The translated rich message.
+        """
+        if to_lang is None:
+            to_lang = getattr(self._client, "lang_code", "en") or "en"
+
+        return await self._client.translate_rich_message(
+            chat_id=self.chat.id,
+            message_id=self.id,
+            to_lang=to_lang,
+            tone=tone,
         )
 
     async def wait_for_click(self, user_id=None, timeout=UNSET, filters=None, alert=True):

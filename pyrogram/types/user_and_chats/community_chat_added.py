@@ -57,5 +57,5 @@ class CommunityChatAdded(Object):
 
         return CommunityChatAdded(
             community_id=action.community_id,
-            community=types.Chat._parse_channel_chat(client, chats.get(action.community_id)),
+            community=types.Chat._parse_chat(client, chats.get(action.community_id)),
         )

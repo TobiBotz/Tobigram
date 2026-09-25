@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 MUTE_FOREVER = 2147483647
 
@@ -31,7 +34,7 @@ class UpdateChatNotifications:
         self: pyrogram.Client,
         chat_id: int | str,
         mute: bool | None = None,
-        mute_until: datetime | None = None,
+        mute_until: datetime | timedelta | None = None,
         show_previews: bool | None = None,
         stories_muted: bool | None = None,
         stories_hide_sender: bool | None = None,
@@ -47,9 +50,10 @@ class UpdateChatNotifications:
             mute (``bool``, *optional*):
                 Pass True to mute the chat, False to unmute it.
 
-            mute_until (:py:obj:`~datetime.datetime`, *optional*):
-                Date when the chat will be unmuted. Defaults to forever.
-                Only used when *mute* is True.
+            mute_until (:py:obj:`~datetime.datetime` | :py:obj:`~datetime.timedelta`, *optional*):
+                Date until which the chat stays muted.
+                Defaults to forever when mute is True, and to the epoch (not muted) otherwise.
+                A :py:obj:`~datetime.timedelta` is counted from now.
 
             show_previews (``bool``, *optional*):
                 Pass True to show message previews in notifications, False to hide them.

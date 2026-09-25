@@ -18,12 +18,15 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, utils
 
 from ..object import Object
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class EmojiStatus(Object):
@@ -67,7 +70,7 @@ class EmojiStatus(Object):
         client: pyrogram.Client | None = None,
         custom_emoji_id: str | None = None,
         gift_id: int | None = None,
-        until_date: datetime | None = None,
+        until_date: datetime | timedelta | None = None,
         title: str | None = None,
         name: str | None = None,
         pattern_custom_emoji_id: str | None = None,

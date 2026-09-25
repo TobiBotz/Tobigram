@@ -24,8 +24,11 @@ import logging
 import pyrogram
 from pyrogram import enums, types, utils
 from pyrogram.errors import ListenerStopped
-from pyrogram.filters import Filter
 from pyrogram.types.listeners.listener import UNSET
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram.filters import Filter
 
 log = logging.getLogger(__name__)
 

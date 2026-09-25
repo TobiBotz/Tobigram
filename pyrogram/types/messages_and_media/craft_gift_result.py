@@ -18,9 +18,12 @@
 
 from __future__ import annotations
 
-from pyrogram import types
 
 from ..object import Object
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram import types
 
 
 class CraftGiftResult(Object):

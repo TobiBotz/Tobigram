@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
 
 from ..ephemeral.as_ephemeral import as_ephemeral
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class SendMessage:
@@ -22,7 +25,7 @@ class SendMessage:
         effect_id: int | None = None,
         show_caption_above_media: bool | None = None,
         reply_parameters: types.ReplyParameters | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
         repeat_period: int | None = None,
         protect_content: bool | None = None,
         business_connection_id: str | None = None,
@@ -316,7 +319,7 @@ class SendMessage:
                 else None,
             }
 
-            if link_preview_options is not None and link_preview_options.url:
+            if link_preview_options is not None and link_preview_options.url and not no_webpage:
                 request = await as_ephemeral(
                     self,
                     ephemeral_message_parameters,

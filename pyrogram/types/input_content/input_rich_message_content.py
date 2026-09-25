@@ -38,14 +38,26 @@ class InputRichMessageContent(InputMessageContent):
 
     def __init__(
         self,
-        rich_message: types.InputRichMessage,
+        rich_message: types.InputRichMessage | types.RichMessage | raw.base.InputRichMessage,
     ):
         super().__init__()
 
         self.rich_message = rich_message
 
     async def write(self, client: pyrogram.Client, reply_markup):
+        if isinstance(self.rich_message, types.RichMessage):
+            raw_msg = self.rich_message.to_input_rich_message()
+        elif isinstance(self.rich_message, types.InputRichMessage):
+            await self.rich_message._upload(client)
+            raw_msg = self.rich_message.write()
+        elif isinstance(self.rich_message, raw.base.InputRichMessage):
+            raw_msg = self.rich_message
+        else:
+            raise TypeError(
+                f"Expected InputRichMessage or RichMessage, got {type(self.rich_message).__name__}"
+            )
+
         return raw.types.InputBotInlineMessageRichMessage(
-            rich_message=self.rich_message.write(),
+            rich_message=raw_msg,
             reply_markup=await reply_markup.write(client) if reply_markup else None,
         )

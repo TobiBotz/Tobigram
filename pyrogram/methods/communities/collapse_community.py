@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
 
 
 class CollapseCommunity:
@@ -51,7 +51,7 @@ class CollapseCommunity:
 
         return await self.invoke(
             raw.functions.communities.ToggleCommunityCollapsedInDialogs(
-                community=comm_peer,
+                community=utils.get_input_channel(comm_peer),
                 collapsed=collapsed,
             )
         )

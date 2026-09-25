@@ -18,12 +18,15 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from binascii import crc32
 from struct import pack, unpack
 
 from .tcp import TCP
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import asyncio
 
 log = logging.getLogger(__name__)
 

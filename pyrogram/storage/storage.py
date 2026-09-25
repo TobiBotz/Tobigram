@@ -23,7 +23,10 @@ import struct
 import zlib
 from abc import ABC, abstractmethod
 
-from pyrogram import raw
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram import raw
 
 log = logging.getLogger(__name__)
 

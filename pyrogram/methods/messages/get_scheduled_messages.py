@@ -18,11 +18,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Iterable
 import logging
 
 import pyrogram
 from pyrogram import raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 log = logging.getLogger(__name__)
 

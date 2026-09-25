@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
 
 
 class ToggleAllCommunityLinkRequests:
@@ -55,7 +55,7 @@ class ToggleAllCommunityLinkRequests:
 
         return await self.invoke(
             raw.functions.communities.ToggleAllPeerLinkRequestApproval(
-                community=comm_peer,
+                community=utils.get_input_channel(comm_peer),
                 reject=reject,
             )
         )

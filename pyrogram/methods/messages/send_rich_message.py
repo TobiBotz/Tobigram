@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
 
 from ..ephemeral.as_ephemeral import as_ephemeral
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class SendRichMessage:

@@ -24,8 +24,7 @@ import logging
 import os
 import socket
 import time
-from concurrent.futures import ThreadPoolExecutor
-from typing import ClassVar, Final, NamedTuple
+from typing import ClassVar, Final, NamedTuple, TYPE_CHECKING
 
 from python_socks import ProxyType
 from python_socks.async_.asyncio import Proxy as SocksProxy
@@ -52,6 +51,9 @@ from .faketls_records import (
     FakeTlsRecords,
 )
 from .web_proxy_carrier import WebCarrierError, WebProxyCarrier
+
+if TYPE_CHECKING:
+    from concurrent.futures import ThreadPoolExecutor
 
 log = logging.getLogger(__name__)
 

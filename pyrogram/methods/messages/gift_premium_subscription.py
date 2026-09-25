@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
 
 
 class GiftPremiumSubscription:
@@ -67,31 +67,28 @@ class GiftPremiumSubscription:
                 # Gift 3-month Premium to a user for 1000 Stars
                 await app.gift_premium_subscription(user_id, month_count=3, star_count=1000)
         """
-        peer = await self.resolve_peer(user_id)
+        parsed_text = None
+        if text is not None:
+            text_result = await utils.parse_text_entities(
+                self, text, text_parse_mode, text_entities
+            )
+            parsed_text = raw.types.TextWithEntities(
+                text=text_result["message"],
+                entities=text_result.get("entities") or [],
+            )
+
+        invoice = raw.types.InputInvoicePremiumGiftStars(
+            user_id=utils.get_input_user(await self.resolve_peer(user_id)),
+            months=month_count,
+            message=parsed_text,
+        )
+
+        form = await self.invoke(raw.functions.payments.GetPaymentForm(invoice=invoice))
 
         await self.invoke(
             raw.functions.payments.SendStarsForm(
-                form_id=0,
-                invoice=raw.types.InputInvoicePremiumGiftCode(
-                    purpose=raw.types.InputStorePaymentPremiumGiftCode(
-                        users=[peer],
-                        currency="XTR",
-                        amount=star_count,
-                        months=month_count,
-                        message=raw.types.TextWithEntities(
-                            text=text or "",
-                            entities=[],
-                        )
-                        if text is not None
-                        else None,
-                    ),
-                    option=raw.types.PremiumGiftCodeOption(
-                        users=1,
-                        months=month_count,
-                        currency="XTR",
-                        amount=star_count,
-                    ),
-                ),
+                form_id=form.form_id,
+                invoice=invoice,
             )
         )
 

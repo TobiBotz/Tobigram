@@ -23,9 +23,12 @@ import logging
 
 log = logging.getLogger(__name__)
 
-import pyrogram
 
 from .idle import idle
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pyrogram
 
 
 async def compose(clients: list[pyrogram.Client], sequential: bool = False):

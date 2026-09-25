@@ -18,11 +18,14 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 from pyrogram import raw, types, utils
 
 from ..object import Object
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class SuggestedPostParameters(Object):
@@ -42,7 +45,7 @@ class SuggestedPostParameters(Object):
         self,
         *,
         price: types.SuggestedPostPrice | None = None,
-        send_date: datetime | None = None,
+        send_date: datetime | timedelta | None = None,
     ):
         super().__init__()
 

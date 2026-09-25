@@ -27,15 +27,17 @@ import logging
 import math
 import os
 import time
-from collections.abc import Callable
 from hashlib import md5
-from typing import BinaryIO
+from typing import BinaryIO, TYPE_CHECKING
 
 import pyrogram
 from pyrogram import StopTransmission, raw, utils
 from pyrogram.errors import RPCError
 from pyrogram.methods.rate_limiter import TokenBucket
 from pyrogram.session import Session
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 log = logging.getLogger(__name__)
 

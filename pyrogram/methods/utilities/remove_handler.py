@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-import pyrogram
-from pyrogram.handlers.handler import Handler
 
 from .add_handler import LIFECYCLE_HANDLERS
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram.handlers.handler import Handler
+    import pyrogram
 
 
 class RemoveHandler:

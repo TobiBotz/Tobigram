@@ -19,11 +19,13 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
-from typing import BinaryIO
+from typing import BinaryIO, TYPE_CHECKING
 
 import pyrogram
 from pyrogram import enums, types
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 log = logging.getLogger(__name__)
 
@@ -45,7 +47,7 @@ class CopyMessage:
         reply_to_chat_id: int | str | None = None,
         quote_text: str | None = None,
         quote_entities: list[types.MessageEntity] | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
         protect_content: bool | None = None,
         has_spoiler: bool | None = None,
         show_caption_above_media: bool | None = None,
@@ -56,7 +58,7 @@ class CopyMessage:
         | types.ReplyKeyboardMarkup
         | types.ReplyKeyboardRemove
         | types.ForceReply
-        | None = None,
+        | None = object,
         reply_parameters: types.ReplyParameters | None = None,
         direct_messages_topic_id: int | None = None,
         effect_id: int | None = None,

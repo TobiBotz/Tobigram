@@ -21,15 +21,17 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-from pyrogram import raw
 
 from .. import utils
 from .caching import PEER_CACHE_SIZE
 from .remote_storage import SESSION_FIELDS
 from .sqlite_storage import SQLiteStorage
 from .storage import Storage
+
+if TYPE_CHECKING:
+    from pyrogram import raw
 
 log = logging.getLogger(__name__)
 

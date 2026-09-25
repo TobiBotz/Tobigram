@@ -23,6 +23,9 @@ import pyrogram
 from pyrogram import raw, types, utils
 
 
+from pyrogram.methods.messages.inline_session import invoke_inline
+
+
 class SetGameScore:
     async def set_game_score(
         self: pyrogram.Client,
@@ -82,18 +85,28 @@ class SetGameScore:
                 await app.set_game_score(user_id, 25, force=True)
         """
         if inline_message_id is not None:
-            r = await self.invoke(
+            unpacked = utils.unpack_inline_message_id(inline_message_id)
+            dc_id = unpacked.dc_id
+
+            return await invoke_inline(
+                self,
+                dc_id,
                 raw.functions.messages.SetInlineGameScore(
-                    id=utils.unpack_inline_message_id(inline_message_id),
+                    id=unpacked,
                     user_id=await self.resolve_peer(user_id),
                     score=score,
                     force=force if force is not None else None,
                     edit_message=not disable_edit_message
                     if disable_edit_message is not None
                     else None,
-                )
+                ),
             )
         else:
+            if chat_id is None or message_id is None:
+                raise ValueError(
+                    "Either (chat_id, message_id) or inline_message_id must be provided"
+                )
+
             r = await self.invoke(
                 raw.functions.messages.SetGameScore(
                     peer=await self.resolve_peer(chat_id),

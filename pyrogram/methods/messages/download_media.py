@@ -21,15 +21,18 @@ from __future__ import annotations
 import logging
 import os
 import re
-from collections.abc import Callable
 from datetime import datetime
-from typing import BinaryIO
+from typing import TYPE_CHECKING
 
 log = logging.getLogger(__name__)
 
 import pyrogram
 from pyrogram import types, utils
 from pyrogram.file_id import PHOTO_TYPES, FileId, FileType
+
+if TYPE_CHECKING:
+    from io import BytesIO
+    from collections.abc import Callable
 
 DEFAULT_DOWNLOAD_DIR = "downloads/"
 STORY_MEDIA = ("photo", "video")
@@ -80,7 +83,7 @@ def save_inline_thumbnail(
     message: types.StrippedThumbnail | types.PaidMediaPreview,
     file_name: str,
     in_memory: bool,
-) -> str | BinaryIO:
+) -> str | BytesIO:
     if isinstance(message, types.StrippedThumbnail):
         data = message.data
     else:
@@ -117,7 +120,7 @@ async def download_paid_media(
     block: bool,
     progress: Callable | None,
     progress_args: tuple,
-) -> list[str | BinaryIO] | None:
+) -> list[str | BytesIO] | None:
     directory, name = os.path.split(file_name)
     results = []
 
@@ -152,7 +155,7 @@ class DownloadMedia:
         block: bool = True,
         progress: Callable | None = None,
         progress_args: tuple = (),
-    ) -> str | BinaryIO | None:
+    ) -> str | BytesIO | list[str] | list[BytesIO] | None:
         """Download the media from a message.
 
         .. include:: /_includes/usable-by/users-bots.rst
@@ -200,10 +203,11 @@ class DownloadMedia:
                 You can either keep ``*args`` or add every single extra argument in your function signature.
 
         Returns:
-            ``str`` | ``None`` | ``BinaryIO``: On success, the absolute path of the downloaded file is returned,
-            otherwise, in case the download failed or was deliberately stopped with
+            ``str`` | ``BytesIO`` | ``list[str]`` | ``list[BytesIO]`` | ``None``: On success, the absolute path of the
+            downloaded file is returned. In case ``in_memory=True``, a binary file-like object with its attribute
+            ".name" set is returned. If the message contains multiple media (purchased paid media), a list of paths or
+            binary file-like objects is returned. In case the download failed or was deliberately stopped with
             :meth:`~pyrogram.Client.stop_transmission`, None is returned.
-            Otherwise, in case ``in_memory=True``, a binary file-like object with its attribute ".name" set is returned.
 
         Raises:
             ValueError: if the message doesn't contain any downloadable media
