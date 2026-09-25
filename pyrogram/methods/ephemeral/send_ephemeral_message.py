@@ -131,7 +131,7 @@ class SendEphemeralMessage:
             r = await self.invoke(
                 raw.functions.ephemeral.SendMessage(
                     peer=await self.resolve_peer(chat_id),
-                    receiver_id=await self.resolve_peer(receiver_id),
+                    receiver_id=utils.get_input_user(await self.resolve_peer(receiver_id)),
                     message="",
                     random_id=self.rnd_id(),
                     reply_to=await utils.get_reply_to(self, reply_parameters),
@@ -152,7 +152,7 @@ class SendEphemeralMessage:
             r = await self.invoke(
                 raw.functions.ephemeral.SendMessage(
                     peer=await self.resolve_peer(chat_id),
-                    receiver_id=await self.resolve_peer(receiver_id),
+                    receiver_id=utils.get_input_user(await self.resolve_peer(receiver_id)),
                     message=plain_text,
                     random_id=self.rnd_id(),
                     entities=entities or None,

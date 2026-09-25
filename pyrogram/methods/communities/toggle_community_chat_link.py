@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
 
 
 class ToggleCommunityChatLink:
@@ -68,7 +68,7 @@ class ToggleCommunityChatLink:
 
         return await self.invoke(
             raw.functions.communities.TogglePeerLink(
-                community=comm_peer,
+                community=utils.get_input_channel(comm_peer),
                 peer=chat_peer,
                 visible=visible,
                 hidden=hidden,

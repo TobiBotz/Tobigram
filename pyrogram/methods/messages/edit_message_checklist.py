@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class EditMessageChecklist:
@@ -31,7 +34,7 @@ class EditMessageChecklist:
         message_id: int,
         checklist: types.InputChecklist,
         business_connection_id: str | None = None,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         schedule_date: datetime | None = None,
         repeat_period: int | None = None,
         quick_reply_shortcut: int | None = None,
@@ -57,6 +60,7 @@ class EditMessageChecklist:
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
             schedule_date (:py:obj:`~datetime.datetime`, *optional*):
                 New date when the scheduled message will be sent.
@@ -107,7 +111,7 @@ class EditMessageChecklist:
                         others_can_complete=checklist.others_can_mark_tasks_as_done,
                     )
                 ),
-                reply_markup=await reply_markup.write(self) if reply_markup else None,
+                reply_markup=await utils.write_edit_reply_markup(self, reply_markup=reply_markup),
             ),
             business_connection_id=business_connection_id,
         )

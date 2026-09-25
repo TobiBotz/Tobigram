@@ -21,7 +21,10 @@ from __future__ import annotations
 import asyncio
 import logging
 
-import pyrogram
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pyrogram
 
 log = logging.getLogger(__name__)
 

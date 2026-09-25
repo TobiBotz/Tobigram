@@ -40,6 +40,27 @@ import pyrogram
 from pyrogram import enums, raw, types
 from pyrogram.file_id import DOCUMENT_TYPES, PHOTO_TYPES, FileId, FileType
 
+try:
+    import uvloop
+except ImportError:
+    uvloop = None
+
+
+def new_event_loop() -> asyncio.AbstractEventLoop:
+    """Return a fresh event loop, preferring uvloop when importable."""
+    if uvloop is not None:
+        return uvloop.new_event_loop()
+
+    return asyncio.new_event_loop()
+
+
+def run(main: Any) -> Any:
+    """Run a coroutine to completion, preferring uvloop when importable."""
+    if uvloop is not None:
+        return uvloop.run(main)
+
+    return asyncio.run(main)
+
 
 def get_event_loop() -> asyncio.AbstractEventLoop:
     try:
@@ -54,7 +75,7 @@ def get_event_loop() -> asyncio.AbstractEventLoop:
                     return asyncio.get_event_loop_policy().get_event_loop()
                 except (RuntimeError, AttributeError):
                     pass
-            loop = asyncio.new_event_loop()
+            loop = new_event_loop()
             asyncio.set_event_loop(loop)
             return loop
 
@@ -414,6 +435,27 @@ def get_raw_peer_id(
             return peer.channel_id
 
     return None
+
+
+PEERS_WITH_A_USER_ID = (
+    raw.types.PeerUser,
+    raw.types.InputPeerUser,
+    raw.types.InputPeerUserFromMessage,
+    raw.types.RequestedPeerUser,
+)
+
+PEERS_WITH_A_CHAT_ID = (
+    raw.types.PeerChat,
+    raw.types.InputPeerChat,
+    raw.types.RequestedPeerChat,
+)
+
+PEERS_WITH_A_CHANNEL_ID = (
+    raw.types.PeerChannel,
+    raw.types.InputPeerChannel,
+    raw.types.InputPeerChannelFromMessage,
+    raw.types.RequestedPeerChannel,
+)
 
 
 def get_peer_id(peer: raw.base.Peer | raw.base.InputPeer | raw.base.RequestedPeer) -> int:
@@ -1068,3 +1110,22 @@ class Cache:
 
         if len(self._cache) > self.capacity:
             self._cache.popitem(last=False)
+
+
+async def write_edit_reply_markup(
+    client: pyrogram.Client,
+    *,
+    reply_markup: types.InlineKeyboardMarkup | type[object] | None,
+) -> raw.base.ReplyMarkup | None:
+    """Serialize reply_markup for edit requests, supporting None to remove keyboards.
+
+    `object` (the class, not an instance) is the sentinel for "not specified",
+    distinct from None, which means "remove the reply markup".
+    """
+    if reply_markup is object:
+        return None
+
+    if reply_markup is None:
+        return raw.types.ReplyInlineMarkup(rows=[])
+
+    return await reply_markup.write(client)

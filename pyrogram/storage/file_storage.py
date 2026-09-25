@@ -19,11 +19,14 @@
 from __future__ import annotations
 
 import logging
-from pathlib import Path
 
 import aiosqlite
 
 from .sqlite_storage import SQLiteStorage
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 log = logging.getLogger(__name__)
 

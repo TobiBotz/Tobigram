@@ -20,7 +20,6 @@ from __future__ import annotations
 
 import inspect
 import re
-from collections.abc import Callable
 from re import Pattern
 
 import pyrogram
@@ -35,6 +34,10 @@ from pyrogram.types import (
     ReplyKeyboardMarkup,
     Update,
 )
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class Filter:

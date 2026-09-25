@@ -19,49 +19,67 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, types, utils
 
 
 class TranslateRichMessage:
     async def translate_rich_message(
         self: pyrogram.Client,
-        chat_id: int | str,
-        message_id: int,
-        to_lang: str,
-        text: raw.base.RichText | None = None,
+        chat_id: int | str | None = None,
+        message_id: int | list[int] | None = None,
+        to_lang: str = "en",
+        text: (
+            raw.base.InputRichMessage
+            | list[raw.base.InputRichMessage]
+            | str
+            | types.InputRichMessage
+            | types.RichMessage
+            | None
+        ) = None,
         tone: str | None = None,
-    ) -> raw.base.messages.TranslatedText:
+    ) -> types.RichMessage | list[types.RichMessage]:
         """Translate a rich message (with formatting) to another language.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            chat_id (``int`` | ``str``):
+            chat_id (``int`` | ``str``, *optional*):
                 Unique identifier (int) or username (str) of the target chat.
 
-            message_id (``int``):
-                The message ID to translate.
+            message_id (``int`` | List of ``int``, *optional*):
+                The message ID(s) to translate.
 
             to_lang (``str``):
                 Target language code (e.g., "en", "ru").
 
-            text (:obj:`~pyrogram.raw.base.RichText`, *optional*):
-                Override the message text to translate.
+            text (:obj:`~pyrogram.raw.base.InputRichMessage` | List of :obj:`~pyrogram.raw.base.InputRichMessage` | ``str`` | :obj:`~pyrogram.types.InputRichMessage`, *optional*):
+                The rich message content to translate.
 
             tone (``str``, *optional*):
                 Translation tone/style.
 
         Returns:
-            :obj:`~pyrogram.raw.base.messages.TranslatedText`: The translated text.
+            :obj:`~pyrogram.types.RichMessage` | List of :obj:`~pyrogram.types.RichMessage`: The translated rich message(s).
 
         Example:
             .. code-block:: python
 
                 result = await app.translate_rich_message(chat_id, message_id, to_lang="en")
         """
-        peer = await self.resolve_peer(chat_id)
+        peer = await self.resolve_peer(chat_id) if chat_id is not None else None
+        is_single = isinstance(message_id, int) or (text is not None and not isinstance(text, list))
 
-        return await self.invoke(
+        if isinstance(message_id, int):
+            message_id = [message_id]
+
+        if text is not None:
+            if not isinstance(text, list):
+                if isinstance(text, (str, types.InputRichMessage, types.RichMessage)):
+                    text = [await utils.build_input_rich_message(self, text, chat_id=chat_id)]
+                elif isinstance(text, raw.base.InputRichMessage):
+                    text = [text]
+
+        r = await self.invoke(
             raw.functions.messages.TranslateRichMessage(
                 peer=peer,
                 id=message_id,
@@ -70,3 +88,11 @@ class TranslateRichMessage:
                 tone=tone,
             )
         )
+
+        if isinstance(r, raw.types.messages.TranslatedRichMessage):
+            parsed = types.List([await types.RichMessage._parse(self, msg) for msg in r.result])
+            if is_single and len(parsed) == 1:
+                return parsed[0]
+            return parsed
+
+        return r

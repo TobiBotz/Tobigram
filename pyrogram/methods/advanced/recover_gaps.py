@@ -21,7 +21,6 @@ from __future__ import annotations
 import asyncio
 import logging
 
-from collections.abc import Iterable
 
 import pyrogram
 from pyrogram import raw
@@ -33,6 +32,10 @@ from pyrogram.errors import (
     PersistentTimestampOutdated,
 )
 from pyrogram.utils import ZERO_CHANNEL_ID
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 log = logging.getLogger(__name__)
 

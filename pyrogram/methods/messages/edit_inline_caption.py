@@ -19,8 +19,11 @@
 from __future__ import annotations
 
 
-import pyrogram
-from pyrogram import enums, types
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram import enums, types
+    import pyrogram
 
 
 class EditInlineCaption:
@@ -31,7 +34,7 @@ class EditInlineCaption:
         parse_mode: enums.ParseMode | None = None,
         caption_entities: list[types.MessageEntity] | None = None,
         show_caption_above_media: bool | None = None,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         business_connection_id: str | None = None,
     ) -> bool:
         """Edit the caption of inline media messages.
@@ -58,6 +61,7 @@ class EditInlineCaption:
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
             business_connection_id (``str``, *optional*):
                 Unique identifier of the business connection.

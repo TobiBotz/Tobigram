@@ -19,9 +19,11 @@
 from __future__ import annotations
 
 
-from pyrogram import enums, types
-
 from ..object import Object
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram import enums, types
 
 
 class ReplyParameters(Object):

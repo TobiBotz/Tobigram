@@ -18,13 +18,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 
 import pyrogram
 from pyrogram import enums, types
-from pyrogram.filters import Filter
 
 from .listen import UNSET, resolve_listener_ids
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram.filters import Filter
+    from collections.abc import Callable
 
 
 class RegisterNextStepHandler:

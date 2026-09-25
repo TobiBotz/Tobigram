@@ -18,8 +18,11 @@
 
 from __future__ import annotations
 
-import pyrogram
-from pyrogram import types
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram import types
+    import pyrogram
 
 
 class CopyStoryAlbum:

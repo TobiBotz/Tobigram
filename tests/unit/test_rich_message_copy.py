@@ -78,14 +78,21 @@ async def test_rich_message_copy():
     assert isinstance(invoked_rpc.rich_message, raw.types.InputRichMessage)
     assert invoked_rpc.rich_message.blocks == raw_rich.blocks
 
-    # 5. Test Client.copy_message with rich message
+    # 5. Test Client.copy_message with rich message preserving reply_markup by default
     from pyrogram.methods.messages.copy_message import CopyMessage
+    from pyrogram.methods.messages.copy_messages import CopyMessages
 
+    msg.reply_markup = reply_markup
     real_client.get_messages = AsyncMock(return_value=msg)
-    await CopyMessage.copy_message(
-        real_client, chat_id=789, from_chat_id=456, message_id=123, reply_markup=reply_markup
-    )
+    # Default copy_message without reply_markup argument should preserve msg.reply_markup
+    await CopyMessage.copy_message(real_client, chat_id=789, from_chat_id=456, message_id=123)
     assert mock_client.send_rich_message.call_count == 2
+    assert mock_client.send_rich_message.call_args.kwargs["reply_markup"] == reply_markup
+
+    # Test copy_messages preserving reply_markup
+    await CopyMessages.copy_messages(real_client, chat_id=789, from_chat_id=456, message_ids=[123])
+    assert mock_client.send_rich_message.call_count == 3
+    assert mock_client.send_rich_message.call_args.kwargs["reply_markup"] == reply_markup
 
 
 @pytest.mark.asyncio

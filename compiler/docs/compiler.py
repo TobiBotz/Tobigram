@@ -1020,6 +1020,7 @@ def pyrogram_api():
             add_recent_sticker
             add_sticker_to_set
             change_sticker_set
+            check_sticker_set_short_name
             clear_recent_stickers
             create_new_sticker_set
             delete_sticker_from_set

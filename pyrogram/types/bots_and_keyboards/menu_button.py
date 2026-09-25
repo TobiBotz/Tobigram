@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-import pyrogram
-from pyrogram import raw
 
 from ..object import Object
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram import raw
+    import pyrogram
 
 
 class MenuButton(Object):

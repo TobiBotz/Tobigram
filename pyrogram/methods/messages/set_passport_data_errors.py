@@ -19,7 +19,9 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+
+
+import inspect
 
 
 class SetPassportDataErrors:
@@ -63,21 +65,17 @@ class SetPassportDataErrors:
                     )
                 ])
         """
-        peer = await self.resolve_peer(user_id)
+        raw_errors = []
+        for e in errors:
+            if hasattr(e, "write") and not isinstance(e, pyrogram.raw.core.TLObject):
+                res = e.write(self)
+                if inspect.isawaitable(res):
+                    res = await res
+                raw_errors.append(res)
+            else:
+                raw_errors.append(e)
 
-        await self.invoke(
-            raw.functions.account.AcceptAuthorization(
-                user_id=peer.user_id,
-                bot_id=0,
-                scope="",
-                public_key="",
-                value_hashes=[],
-                credentials=raw.types.SecureCredentialsEncrypted(
-                    data=b"",
-                    hash=b"",
-                    secret=b"",
-                ),
-            )
+        return await self.set_secure_value_errors(
+            user_id=user_id,
+            errors=raw_errors,
         )
-
-        return True

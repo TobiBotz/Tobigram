@@ -90,8 +90,8 @@ class InputMediaVenue(InputMedia):
             ]
         ):
             provider = "gplaces"
-            venue_id = self.google_place_id
-            venue_type = self.google_place_type
+            venue_id = self.google_place_id or ""
+            venue_type = self.google_place_type or ""
         elif any(
             [
                 self.foursquare_id,
@@ -99,8 +99,8 @@ class InputMediaVenue(InputMedia):
             ]
         ):
             provider = "foursquare"
-            venue_id = self.foursquare_id
-            venue_type = self.foursquare_type
+            venue_id = self.foursquare_id or ""
+            venue_type = self.foursquare_type or ""
 
         return raw.types.InputMediaVenue(
             geo_point=raw.types.InputGeoPoint(

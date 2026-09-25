@@ -21,6 +21,8 @@ from __future__ import annotations
 import pyrogram
 from pyrogram import raw, types, utils
 
+from .inline_session import invoke_inline
+
 
 class StopMessageLiveLocation:
     async def stop_message_live_location(
@@ -28,7 +30,7 @@ class StopMessageLiveLocation:
         chat_id: int | str | None = None,
         message_id: int | None = None,
         inline_message_id: str | None = None,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         business_connection_id: str | None = None,
     ) -> types.Message | bool:
         """Stop updating a live location message before its ``live_period`` expires.
@@ -49,6 +51,7 @@ class StopMessageLiveLocation:
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 A new inline keyboard to replace the current one.
+                Pass None to remove the existing reply markup.
 
             business_connection_id (``str``, *optional*):
                 Unique identifier of the business connection.
@@ -64,6 +67,11 @@ class StopMessageLiveLocation:
                 await app.stop_message_live_location(chat_id, message_id)
         """
         if inline_message_id is None:
+            if chat_id is None or message_id is None:
+                raise ValueError(
+                    "Either (chat_id, message_id) or inline_message_id must be provided"
+                )
+
             peer = await self.resolve_peer(chat_id)
             r = await self.invoke(
                 raw.functions.messages.EditMessage(
@@ -73,7 +81,9 @@ class StopMessageLiveLocation:
                         geo_point=raw.types.InputGeoPointEmpty(),
                         stopped=True,
                     ),
-                    reply_markup=await reply_markup.write(self) if reply_markup else None,
+                    reply_markup=await utils.write_edit_reply_markup(
+                        self, reply_markup=reply_markup
+                    ),
                 ),
                 business_connection_id=business_connection_id,
             )
@@ -87,14 +97,21 @@ class StopMessageLiveLocation:
 
             return True
         else:
-            await self.invoke(
+            unpacked = utils.unpack_inline_message_id(inline_message_id)
+            dc_id = unpacked.dc_id
+
+            return await invoke_inline(
+                self,
+                dc_id,
                 raw.functions.messages.EditInlineBotMessage(
-                    id=utils.decode_inline_message_id(inline_message_id),
+                    id=unpacked,
                     media=raw.types.InputMediaGeoLive(
                         geo_point=raw.types.InputGeoPointEmpty(),
                         stopped=True,
                     ),
-                    reply_markup=await reply_markup.write(self) if reply_markup else None,
-                )
+                    reply_markup=await utils.write_edit_reply_markup(
+                        self, reply_markup=reply_markup
+                    ),
+                ),
+                business_connection_id,
             )
-            return True

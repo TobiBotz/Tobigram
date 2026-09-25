@@ -32,7 +32,6 @@ import sys
 import time
 import weakref
 from collections import OrderedDict
-from collections.abc import AsyncGenerator, Callable
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 from hashlib import sha256
@@ -66,7 +65,13 @@ from pyrogram.methods.rate_limiter import TokenBucket
 from pyrogram.qrlogin import QRLogin
 from pyrogram.session import Auth, Session
 from pyrogram.storage import SQLiteStorage, Storage
-from pyrogram.types import LinkPreviewOptions, ListenerRegistry, TermsOfService, User
+from pyrogram.types import (
+    LinkPreviewOptions,
+    ListenerRegistry,
+    SentCode,
+    TermsOfService,
+    User,
+)
 from pyrogram.utils import ainput
 
 from .connection import Connection, Proxy, ProxyDict, normalize_proxy
@@ -76,6 +81,10 @@ from .file_id import FileId, FileType, ThumbnailSource
 from .mime_types import mime_types
 from .parser import Parser
 from .session.internals import MsgId
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncGenerator, Callable
 
 log = logging.getLogger(__name__)
 
@@ -170,7 +179,7 @@ def write_at(fd: int, data: bytes, offset: int) -> None:
 
 
 class Client(Methods):
-    """Pyrogram Client, the main means for interacting with Telegram.
+    """Tobigram Client, the main means for interacting with Telegram.
 
     Parameters:
         name (``str``):
@@ -186,7 +195,7 @@ class Client(Methods):
 
         app_version (``str``, *optional*):
             Application version.
-            Defaults to "Pyrogram x.y.z".
+            Defaults to "Tobigram x.y.z".
 
         device_model (``str``, *optional*):
             Device model.
@@ -269,7 +278,7 @@ class Client(Methods):
 
         workdir (``str``, *optional*):
             Define a custom working directory.
-            The working directory is the location in the filesystem where Pyrogram will store the session files.
+            The working directory is the location in the filesystem where Tobiirogram will store the session files.
             Defaults to the parent directory of the main script.
 
         plugins (``dict``, *optional*):
@@ -394,7 +403,7 @@ class Client(Methods):
             Defaults to True.
     """
 
-    APP_VERSION = f"Pyrogram {__version__}"
+    APP_VERSION = f"Tobigram {__version__}"
     DEVICE_MODEL = f"{platform.python_implementation()} {platform.python_version()}"
     SYSTEM_VERSION = f"{platform.system()} {platform.release()}"
 
@@ -757,15 +766,18 @@ class Client(Methods):
         if self.bot_token:
             return await self.sign_in_bot(self.bot_token)
 
-        print(r"$$\      $$\            $$$$$$\                                   ")
-        print(r"$$ | $\  $$ |          $$  __$$\                                  ")
-        print(r"$$ |$$$\ $$ |$$$$$$$$\ $$ /  \__| $$$$$$\  $$$$$$\  $$$$$$\$$$$\  ")
-        print(r"$$ $$ $$\$$ |\____$$  |$$ |$$$$\ $$  __$$\ \____$$\ $$  _$$  _$$\ ")
-        print(r"$$$$  _$$$$ |  $$$$ _/ $$ |\_$$ |$$ |  \__|$$$$$$$ |$$ / $$ / $$ |")
-        print(r"$$$  / \$$$ | $$  _/   $$ |  $$ |$$ |     $$  __$$ |$$ | $$ | $$ |")
-        print(r"$$  /   \$$ |$$$$$$$$\ \$$$$$$  |$$ |     \$$$$$$$ |$$ | $$ | $$ |")
-        print(r"\__/     \__|\________| \______/ \__|      \_______|\__| \__| \__|")
-        print(f"  pyrogram v{__version__}")
+        print(r"$$$$$$$$\        $$\       $$\                                            ")
+        print(r"\__$$  __|       $$ |      \__|                                           ")
+        print(r"   $$ | $$$$$$\  $$$$$$$\  $$\  $$$$$$\   $$$$$$\  $$$$$$\  $$$$$$\$$$$\  ")
+        print(r"   $$ |$$  __$$\ $$  __$$\ $$ |$$  __$$\ $$  __$$\ \____$$\ $$  _$$  _$$\ ")
+        print(r"   $$ |$$ /  $$ |$$ |  $$ |$$ |$$ /  $$ |$$ |  \__|$$$$$$$ |$$ / $$ / $$ |")
+        print(r"   $$ |$$ |  $$ |$$ |  $$ |$$ |$$ |  $$ |$$ |     $$  __$$ |$$ | $$ | $$ |")
+        print(r"   $$ |\$$$$$$  |$$$$$$$  |$$ |\$$$$$$$ |$$ |     \$$$$$$$ |$$ | $$ | $$ |")
+        print(r"   \__| \______/ \_______/ \__| \____$$ |\__|      \_______|\__| \__| \__|")
+        print(r"                               $$\   $$ |                                 ")
+        print(r"                               \$$$$$$  |                                 ")
+        print(r"                                \______/                                  ")
+        print(f"  Tobigram v{__version__}")
         print()
 
         while True:
@@ -835,14 +847,88 @@ class Client(Methods):
                     )
 
                     if isinstance(email_sent_code, raw.types.account.EmailVerifiedLogin):
-                        if isinstance(
-                            email_sent_code.sent_code, raw.types.auth.SentCodePaymentRequired
-                        ):
-                            # TODO: Call raw.functions.auth.CheckPaidAuth (requires premium payment support)
-                            raise Unauthorized(
-                                f"You need to pay {email_sent_code.sent_code.amount}{email_sent_code.sent_code.currency} or purchase premium to continue authorization "
-                                "process, which is currently not supported by Pyrogram."
+                        login_sent_code = email_sent_code.sent_code
+
+                        if isinstance(login_sent_code, raw.types.auth.SentCodePaymentRequired):
+                            payment_form = await self.invoke(
+                                raw.functions.payments.GetPaymentForm(
+                                    invoice=raw.types.InputInvoicePremiumAuthCode(
+                                        purpose=raw.types.InputStorePaymentAuthCode(
+                                            phone_number=self.phone_number,
+                                            phone_code_hash=login_sent_code.phone_code_hash,
+                                            premium_days=login_sent_code.premium_days,
+                                            currency=login_sent_code.currency,
+                                            amount=login_sent_code.amount,
+                                        )
+                                    )
+                                )
                             )
+
+                            amount_str = (
+                                f"{login_sent_code.amount / 100:.2f}"
+                                if login_sent_code.currency in ("USD", "EUR", "GBP")
+                                else f"{login_sent_code.amount}"
+                            )
+                            print(
+                                f"Payment of {amount_str} {login_sent_code.currency} required to continue "
+                                f"({login_sent_code.premium_days} days of Telegram Premium)."
+                            )
+                            if hasattr(payment_form, "url") and payment_form.url:
+                                print(
+                                    f"Open this URL in your browser to complete payment:\n{payment_form.url}"
+                                )
+
+                            while True:
+                                confirm = await ainput(
+                                    "Press Enter once payment is completed (or 'q' to abort): ",
+                                    loop=self.loop,
+                                )
+                                if confirm.strip().lower() == "q":
+                                    raise Unauthorized(
+                                        f"Payment of {amount_str} {login_sent_code.currency} was aborted."
+                                    )
+                                try:
+                                    paid_sent_code = await self.check_paid_auth(
+                                        phone_number=self.phone_number,
+                                        phone_code_hash=login_sent_code.phone_code_hash,
+                                        form_id=payment_form.form_id,
+                                    )
+                                    break
+                                except BadRequest as e:
+                                    print(e.MESSAGE)
+
+                            if isinstance(paid_sent_code, raw.types.auth.SentCodeSuccess):
+                                r = paid_sent_code.authorization
+                                if isinstance(r, raw.types.auth.AuthorizationSignUpRequired):
+                                    if r.terms_of_service:
+                                        terms = TermsOfService._parse(
+                                            terms_of_service=r.terms_of_service
+                                        )
+                                        await self.accept_terms_of_service(terms.id)
+                                    return await self.sign_up(
+                                        self.phone_number, login_sent_code.phone_code_hash
+                                    )
+                                await self.storage.user_id(r.user.id)
+                                await self.storage.is_bot(False)
+                                return User._parse(self, r.user)
+                            elif isinstance(paid_sent_code, raw.types.auth.SentCode):
+                                sent_code = SentCode._parse(paid_sent_code)
+                        elif isinstance(login_sent_code, raw.types.auth.SentCodeSuccess):
+                            r = login_sent_code.authorization
+                            if isinstance(r, raw.types.auth.AuthorizationSignUpRequired):
+                                if r.terms_of_service:
+                                    terms = TermsOfService._parse(
+                                        terms_of_service=r.terms_of_service
+                                    )
+                                    await self.accept_terms_of_service(terms.id)
+                                return await self.sign_up(
+                                    self.phone_number, sent_code.phone_code_hash
+                                )
+                            await self.storage.user_id(r.user.id)
+                            await self.storage.is_bot(False)
+                            return User._parse(self, r.user)
+                        elif isinstance(login_sent_code, raw.types.auth.SentCode):
+                            sent_code = SentCode._parse(login_sent_code)
                 except BadRequest as e:
                     print(e.MESSAGE)
                 else:
@@ -952,8 +1038,8 @@ class Client(Methods):
             try:
                 print(
                     "\x1b[2J\n"
-                    f"Welcome to Pyrogram (version {__version__})\n"
-                    "Pyrogram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n"
+                    f"Welcome to Tobigram (version {__version__})\n"
+                    "Tobigram is free software and comes with ABSOLUTELY NO WARRANTY. Licensed\n"
                     f"under the terms of the {__license__}.\n"
                     "Scan the QR code below to login\n"
                     "Settings -> Privacy and Security -> Active Sessions -> Scan QR Code.",

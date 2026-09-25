@@ -21,9 +21,7 @@ from __future__ import annotations
 import io
 import os
 import re
-from collections.abc import Callable
-from datetime import datetime
-from typing import BinaryIO
+from typing import BinaryIO, TYPE_CHECKING
 
 import pyrogram
 from pyrogram import StopTransmission, enums, raw, types, utils
@@ -31,6 +29,10 @@ from pyrogram.errors import FilePartMissing
 from pyrogram.file_id import FileType
 
 from ..ephemeral.as_ephemeral import as_ephemeral
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
+    from collections.abc import Callable
 
 
 class SendVideo:
@@ -53,7 +55,7 @@ class SendVideo:
         disable_notification: bool | None = None,
         reply_to_message_id: int | None = None,
         reply_to_chat_id: int | str | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
         protect_content: bool | None = None,
         reply_markup: types.InlineKeyboardMarkup
         | types.ReplyKeyboardMarkup

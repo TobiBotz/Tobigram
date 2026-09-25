@@ -19,30 +19,32 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, types, utils
 
 
 class ComposeRichMessageWithAI:
     async def compose_rich_message_with_ai(
         self: pyrogram.Client,
-        text: raw.base.InputRichMessage | None = None,
+        text: (
+            raw.base.InputRichMessage | str | types.InputRichMessage | types.RichMessage | None
+        ) = None,
         translate_to_lang: str | None = None,
-        tone: str | None = None,
+        tone: str | raw.base.InputAiComposeTone | None = None,
         proofread: bool | None = None,
         emojify: bool | None = None,
-    ) -> raw.base.messages.TranslatedText:
+    ) -> types.RichMessage:
         """Use AI to compose, proofread, translate or emojify a rich text message.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            text (:obj:`~pyrogram.raw.base.InputRichMessage`, *optional*):
+            text (:obj:`~pyrogram.raw.base.InputRichMessage` | ``str`` | :obj:`~pyrogram.types.InputRichMessage`, *optional*):
                 The input rich text to process.
 
             translate_to_lang (``str``, *optional*):
                 Target language code to translate to.
 
-            tone (``str``, *optional*):
+            tone (``str`` | :obj:`~pyrogram.raw.base.InputAiComposeTone`, *optional*):
                 The tone/style to use for composition.
 
             proofread (``bool``, *optional*):
@@ -52,21 +54,31 @@ class ComposeRichMessageWithAI:
                 If True, add relevant emojis.
 
         Returns:
-            :obj:`~pyrogram.raw.base.messages.TranslatedText`: The AI-composed text.
+            :obj:`~pyrogram.types.RichMessage`: The AI-composed rich message.
 
         Example:
             .. code-block:: python
 
                 result = await app.compose_rich_message_with_ai(
-                    text=input_rich_msg, proofread=True
+                    text="Hello world", proofread=True
                 )
         """
-        return await self.invoke(
+        if text is not None and not isinstance(text, raw.base.InputRichMessage):
+            text = await utils.build_input_rich_message(self, text)
+
+        raw_tone = raw.types.InputAiComposeToneDefault(tone=tone) if isinstance(tone, str) else tone
+
+        r = await self.invoke(
             raw.functions.messages.ComposeRichMessageWithAI(
                 text=text,
                 translate_to_lang=translate_to_lang,
-                tone=tone,
+                tone=raw_tone,
                 proofread=proofread,
                 emojify=emojify,
             )
         )
+
+        if isinstance(r, raw.types.messages.ComposedRichMessageWithAI):
+            return await types.RichMessage._parse(self, r.result)
+
+        return r

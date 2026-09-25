@@ -18,14 +18,14 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from pyrogram.filters import Filter
 
 from .handler import Handler
 
 if TYPE_CHECKING:
+    from pyrogram.filters import Filter
+    from collections.abc import Callable
     import pyrogram
     from pyrogram import types
 

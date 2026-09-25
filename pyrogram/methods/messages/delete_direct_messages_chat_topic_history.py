@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class DeleteDirectMessagesChatTopicHistory:
@@ -30,8 +33,8 @@ class DeleteDirectMessagesChatTopicHistory:
         chat_id: int | str,
         topic_id: int | None = None,
         max_id: int = 0,
-        min_date: datetime | None = None,
-        max_date: datetime | None = None,
+        min_date: datetime | timedelta | None = None,
+        max_date: datetime | timedelta | None = None,
     ) -> int:
         """Delete messages in the topic in a channel direct messages chat administered by the current user.
 

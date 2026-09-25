@@ -21,12 +21,15 @@ from __future__ import annotations
 import logging
 import os
 import re
-from collections.abc import Callable
-from datetime import datetime
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
 from pyrogram.file_id import FileType
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
+    from collections.abc import Callable
 
 log = logging.getLogger(__name__)
 
@@ -50,7 +53,7 @@ class SendPaidMedia:
         paid_message_star_count: int | None = None,
         reply_parameters: types.ReplyParameters | None = None,
         suggested_post_parameters: types.SuggestedPostParameters | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
         protect_content: bool | None = None,
         show_caption_above_media: bool | None = None,
         business_connection_id: str | None = None,

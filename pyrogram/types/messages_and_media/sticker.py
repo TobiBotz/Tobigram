@@ -18,7 +18,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 import inspect
 
 import pyrogram
@@ -27,6 +26,10 @@ from pyrogram.errors import StickersetInvalid
 from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
 
 from ..object import Object
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class Sticker(Object):
@@ -223,10 +226,16 @@ class Sticker(Object):
         )
         video_attributes = document_attributes.get(raw.types.DocumentAttributeVideo, None)
 
-        if client.fetch_stickers and sticker_attribute:
-            sticker_set = sticker_attribute.stickerset
+        if sticker_attribute:
+            sticker_set = getattr(sticker_attribute, "stickerset", None)
 
-            if isinstance(sticker_set, raw.types.InputStickerSetID):
+            if isinstance(sticker_set, raw.types.InputStickerSetShortName):
+                set_name = sticker_set.short_name
+            elif (
+                isinstance(sticker_set, raw.types.InputStickerSetID)
+                and client
+                and getattr(client, "fetch_stickers", True)
+            ):
                 input_sticker_set_id = (sticker_set.id, sticker_set.access_hash)
                 set_name = await Sticker._get_sticker_set_name(client, input_sticker_set_id)
 
@@ -239,32 +248,30 @@ class Sticker(Object):
 
             videos.sort(key=lambda v: v.w * v.h)
 
-            if not videos:
-                return None
+            if videos:
+                main = videos[-1]
 
-            main = videos[-1]
-
-            premium_animation = Sticker(
-                file_id=FileId(
-                    file_type=FileType.STICKER,
-                    dc_id=sticker.dc_id,
-                    media_id=sticker.id,
-                    access_hash=sticker.access_hash,
-                    file_reference=sticker.file_reference,
-                ).encode(),
-                file_unique_id=FileUniqueId(
-                    file_unique_type=FileUniqueType.DOCUMENT, media_id=sticker.id
-                ).encode(),
-                type=sticker_type,
-                width=main.w,
-                height=main.h,
-                is_animated=None,
-                is_video=None,
-                file_size=main.size,
-                file_name=f"Mask{file_name}",
-                mime_type="application/x-tgsticker",
-                raw=main,
-            )
+                premium_animation = Sticker(
+                    file_id=FileId(
+                        file_type=FileType.STICKER,
+                        dc_id=sticker.dc_id,
+                        media_id=sticker.id,
+                        access_hash=sticker.access_hash,
+                        file_reference=sticker.file_reference,
+                    ).encode(),
+                    file_unique_id=FileUniqueId(
+                        file_unique_type=FileUniqueType.DOCUMENT, media_id=sticker.id
+                    ).encode(),
+                    type=sticker_type,
+                    width=main.w,
+                    height=main.h,
+                    is_animated=None,
+                    is_video=None,
+                    file_size=main.size,
+                    file_name=f"Mask{file_name}" if file_name else None,
+                    mime_type="application/x-tgsticker",
+                    raw=main,
+                )
 
         return Sticker(
             file_id=FileId(

@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
 
 
 class DeleteEphemeralMessage:
@@ -56,7 +56,7 @@ class DeleteEphemeralMessage:
         return await self.invoke(
             raw.functions.ephemeral.DeleteMessage(
                 peer=await self.resolve_peer(chat_id),
-                receiver_id=await self.resolve_peer(receiver_id),
+                receiver_id=utils.get_input_user(await self.resolve_peer(receiver_id)),
                 id=message_id,
             )
         )

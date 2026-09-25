@@ -111,6 +111,32 @@ def _sanitize_caption(cap: raw.types.PageCaption | None) -> raw.types.PageCaptio
     return cap
 
 
+def _sanitize_list_item(item: raw.base.PageListItem) -> raw.base.PageListItem:
+    if isinstance(item, raw.types.PageListItemText):
+        return raw.types.PageListItemText(
+            text=_sanitize_rich_text(item.text) or raw.types.TextEmpty()
+        )
+    if isinstance(item, raw.types.PageListItemBlocks):
+        return raw.types.PageListItemBlocks(blocks=[_sanitize_block(b) for b in item.blocks])
+    return item
+
+
+def _sanitize_ordered_list_item(
+    item: raw.base.PageListOrderedItem,
+) -> raw.base.PageListOrderedItem:
+    if isinstance(item, raw.types.PageListOrderedItemText):
+        return raw.types.PageListOrderedItemText(
+            num=item.num,
+            text=_sanitize_rich_text(item.text) or raw.types.TextEmpty(),
+        )
+    if isinstance(item, raw.types.PageListOrderedItemBlocks):
+        return raw.types.PageListOrderedItemBlocks(
+            num=item.num,
+            blocks=[_sanitize_block(b) for b in item.blocks],
+        )
+    return item
+
+
 def _sanitize_block(block: raw.base.PageBlock) -> raw.base.PageBlock:
     if isinstance(block, raw.types.PageBlockParagraph):
         return raw.types.PageBlockParagraph(
@@ -165,7 +191,6 @@ def _sanitize_block(block: raw.base.PageBlock) -> raw.base.PageBlock:
         return raw.types.PageBlockVideo(
             video_id=block.video_id,
             caption=_sanitize_caption(block.caption),
-            flags=block.flags,
             autoplay=block.autoplay,
             loop=block.loop,
             spoiler=block.spoiler,
@@ -212,8 +237,15 @@ def _sanitize_block(block: raw.base.PageBlock) -> raw.base.PageBlock:
 
     if isinstance(block, raw.types.PageBlockList):
         return raw.types.PageBlockList(
-            items=[_sanitize_rich_text(item) for item in block.items],
-            ordered=block.ordered,
+            items=[_sanitize_list_item(item) for item in block.items],
+        )
+
+    if isinstance(block, raw.types.PageBlockOrderedList):
+        return raw.types.PageBlockOrderedList(
+            items=[_sanitize_ordered_list_item(item) for item in block.items],
+            reversed=block.reversed,
+            start=block.start,
+            type=block.type,
         )
 
     if isinstance(block, raw.types.PageBlockDetails):

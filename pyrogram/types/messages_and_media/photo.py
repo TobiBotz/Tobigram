@@ -18,7 +18,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, types, utils
@@ -31,6 +30,10 @@ from pyrogram.file_id import (
 )
 
 from ..object import Object
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 
 class Photo(Object):

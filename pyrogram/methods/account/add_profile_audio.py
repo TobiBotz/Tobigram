@@ -19,13 +19,15 @@
 from __future__ import annotations
 
 import os
-from collections.abc import Callable
-from typing import BinaryIO
+from typing import BinaryIO, TYPE_CHECKING
 
 import pyrogram
 from pyrogram import StopTransmission, raw, utils
 from pyrogram.errors import FilePartMissing
 from pyrogram.file_id import FileType
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class AddProfileAudio:

@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class ForwardMediaGroup:
@@ -32,7 +35,7 @@ class ForwardMediaGroup:
         message_id: int,
         message_thread_id: int | None = None,
         disable_notification: bool | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
         hide_sender_name: bool | None = None,
         hide_captions: bool | None = None,
         protect_content: bool | None = None,

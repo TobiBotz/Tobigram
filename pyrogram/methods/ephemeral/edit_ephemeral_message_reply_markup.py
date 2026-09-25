@@ -19,10 +19,12 @@
 from __future__ import annotations
 
 
-import pyrogram
-from pyrogram import types
-
 from .edit_ephemeral_message import edit_ephemeral
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pyrogram import types
+    import pyrogram
 
 
 class EditEphemeralMessageReplyMarkup:
@@ -31,7 +33,7 @@ class EditEphemeralMessageReplyMarkup:
         chat_id: int | str,
         receiver_id: int | str,
         message_id: int,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         welcome: bool | None = None,
     ) -> types.Message | None:
         """Edit only the inline keyboard of an ephemeral message.
@@ -50,8 +52,8 @@ class EditEphemeralMessageReplyMarkup:
                 Identifier of the ephemeral message to edit.
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
-                An inline keyboard. Pass nothing to leave the current one unchanged:
-                the RPC omits the field, which the server reads as "no change".
+                An inline keyboard. Pass nothing to leave the current one unchanged,
+                or ``None`` to remove it.
 
             welcome (``bool``, *optional*):
                 Pass True when editing a stored welcome message rather than one that was

@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
 
 
 class ApproveCommunityLinkRequest:
@@ -60,7 +60,7 @@ class ApproveCommunityLinkRequest:
 
         return await self.invoke(
             raw.functions.communities.TogglePeerLinkRequestApproval(
-                community=comm_peer,
+                community=utils.get_input_channel(comm_peer),
                 peer=chat_peer,
                 reject=reject,
             )

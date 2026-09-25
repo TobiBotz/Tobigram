@@ -21,12 +21,14 @@ from __future__ import annotations
 import logging
 import time
 from abc import abstractmethod
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-from pyrogram import raw
 
 from .caching import PEER_CACHE_SIZE, PeerRowCache, SessionAttrCache, get_input_peer
 from .storage import Storage
+
+if TYPE_CHECKING:
+    from pyrogram import raw
 
 log = logging.getLogger(__name__)
 

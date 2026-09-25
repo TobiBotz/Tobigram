@@ -42,6 +42,7 @@ class GetFavoriteStickers:
         return types.List(
             [
                 await types.Sticker._parse(self, sticker, {type(a): a for a in sticker.attributes})
-                for sticker in r.stickers
+                for sticker in getattr(r, "stickers", [])
+                if isinstance(sticker, raw.types.Document)
             ]
         )

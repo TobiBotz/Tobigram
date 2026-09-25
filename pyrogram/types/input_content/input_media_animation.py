@@ -21,16 +21,18 @@ from __future__ import annotations
 import io
 import pathlib
 import re
-from collections.abc import Callable
-from typing import BinaryIO
+from typing import BinaryIO, TYPE_CHECKING
 
 import pyrogram
 from pyrogram import raw, utils
 from pyrogram.file_id import FileType
 
-from ... import enums
-from ..messages_and_media import MessageEntity
 from .input_media import InputMedia
+
+if TYPE_CHECKING:
+    from ..messages_and_media import MessageEntity
+    from ... import enums
+    from collections.abc import Callable
 
 
 class InputMediaAnimation(InputMedia):

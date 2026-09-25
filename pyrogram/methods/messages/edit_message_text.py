@@ -1,9 +1,12 @@
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class EditMessageText:
@@ -21,8 +24,8 @@ class EditMessageText:
         rich_text: str | types.InputRichMessage | None = None,
         rich_text_parse_mode: enums.ParseMode = enums.ParseMode.MARKDOWN,
         rich_text_media: list[types.InputRichMessageMedia] | None = None,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
-        schedule_date: datetime | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
+        schedule_date: datetime | timedelta | None = None,
         repeat_period: int | None = None,
         quick_reply_shortcut: int | None = None,
     ) -> types.Message:
@@ -75,6 +78,7 @@ class EditMessageText:
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An inline keyboard for the message.
+                Pass None to remove the existing reply markup.
 
             schedule_date (:py:obj:`~datetime.datetime`, *optional*):
                 New date when the scheduled message will be sent.
@@ -144,9 +148,9 @@ class EditMessageText:
                     force_small_media=link_preview_options.prefer_small_media,
                     optional=True,
                 )
-                if link_preview_options is not None and link_preview_options.url
+                if link_preview_options is not None and link_preview_options.url and not no_webpage
                 else None,
-                reply_markup=await reply_markup.write(self) if reply_markup else None,
+                reply_markup=await utils.write_edit_reply_markup(self, reply_markup=reply_markup),
                 **text_params,
             ),
             sleep_threshold=60,

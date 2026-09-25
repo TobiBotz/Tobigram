@@ -21,7 +21,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 import orjson
 
@@ -30,7 +30,8 @@ def dumps(obj: Any, default: Any = None) -> str:
     return orjson.dumps(obj, default=default, option=orjson.OPT_INDENT_2).decode()
 
 
-import pyrogram
+if TYPE_CHECKING:
+    import pyrogram
 
 
 def _public_attributes(instance: Object) -> dict[str, Any]:

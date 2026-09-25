@@ -19,10 +19,13 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime
 
 log = logging.getLogger(__name__)
 

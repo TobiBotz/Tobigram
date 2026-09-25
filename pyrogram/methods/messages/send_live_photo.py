@@ -18,14 +18,16 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
-from datetime import datetime
-from typing import BinaryIO
+from typing import BinaryIO, TYPE_CHECKING
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
 
 from ..ephemeral.as_ephemeral import as_ephemeral
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
+    from collections.abc import Callable
 
 
 class SendLivePhoto:
@@ -46,7 +48,7 @@ class SendLivePhoto:
         effect_id: int | None = None,
         show_caption_above_media: bool | None = None,
         reply_parameters: types.ReplyParameters | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
         repeat_period: int | None = None,
         protect_content: bool | None = None,
         business_connection_id: str | None = None,

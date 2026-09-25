@@ -21,7 +21,7 @@ from __future__ import annotations
 import logging
 
 import pyrogram
-from pyrogram import raw, types
+from pyrogram import raw, types, utils
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ async def as_ephemeral(
 
     return raw.functions.ephemeral.SendMessage(
         peer=request.peer,
-        receiver_id=await client.resolve_peer(parameters.receiver_user_id),
+        receiver_id=utils.get_input_user(await client.resolve_peer(parameters.receiver_user_id)),
         query_id=(
             int(parameters.callback_query_id) if parameters.callback_query_id is not None else None
         ),

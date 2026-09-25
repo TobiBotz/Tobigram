@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class BanChatMember:
@@ -29,7 +32,7 @@ class BanChatMember:
         self: pyrogram.Client,
         chat_id: int | str,
         user_id: int | str,
-        until_date: datetime = utils.zero_datetime(),
+        until_date: datetime | timedelta = utils.zero_datetime(),
         revoke_messages: bool | None = None,
         revoke_reactions: bool | None = None,
     ) -> types.Message | bool:

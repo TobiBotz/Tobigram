@@ -20,7 +20,7 @@ from __future__ import annotations
 
 
 import pyrogram
-from pyrogram import raw, types
+from pyrogram import raw, types, utils
 
 
 async def edit_ephemeral(
@@ -33,7 +33,7 @@ async def edit_ephemeral(
     entities: list[raw.base.MessageEntity] | None = None,
     media: raw.base.InputMedia | None = None,
     rich_message: raw.base.InputRichMessage | None = None,
-    reply_markup: types.InlineKeyboardMarkup | None = None,
+    reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
     show_caption_above_media: bool | None = None,
     welcome: bool | None = None,
 ) -> types.Message | None:
@@ -46,13 +46,13 @@ async def edit_ephemeral(
     r = await client.invoke(
         raw.functions.ephemeral.EditMessage(
             peer=await client.resolve_peer(chat_id),
-            receiver_id=await client.resolve_peer(receiver_id),
+            receiver_id=utils.get_input_user(await client.resolve_peer(receiver_id)),
             id=message_id,
             message=message,
             entities=entities or None,
             media=media,
             rich_message=rich_message,
-            reply_markup=await reply_markup.write(client) if reply_markup else None,
+            reply_markup=await utils.write_edit_reply_markup(client, reply_markup=reply_markup),
             invert_media=show_caption_above_media,
             welcome=welcome,
         )

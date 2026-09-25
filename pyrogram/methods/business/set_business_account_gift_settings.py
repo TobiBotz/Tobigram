@@ -67,9 +67,11 @@ class SetBusinessAccountGiftSettings:
                 )
         """
         await self.invoke(
-            raw.functions.payments.SaveStarGift(
-                unsave=not show_gift_button,
-                stargift=None,
+            raw.functions.account.SetGlobalPrivacySettings(
+                settings=raw.types.GlobalPrivacySettings(
+                    display_gifts_button=show_gift_button,
+                    disallowed_gifts=accepted_gift_types,
+                )
             ),
             business_connection_id=business_connection_id,
         )

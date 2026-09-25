@@ -18,13 +18,16 @@
 
 from __future__ import annotations
 
-from re import Match
 
 import pyrogram
 from pyrogram import enums, raw, types
 
 from ..object import Object
 from ..update import Update
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from re import Match
 
 
 class InlineQuery(Object, Update):

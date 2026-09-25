@@ -21,12 +21,15 @@ from __future__ import annotations
 import logging
 import os
 import re
-from collections.abc import Callable
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, types, utils
 from pyrogram.file_id import FileType
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
+    from collections.abc import Callable
 
 log = logging.getLogger(__name__)
 
@@ -44,7 +47,7 @@ class SendMediaGroup:
         disable_notification: bool | None = None,
         reply_to_message_id: int | None = None,
         reply_to_chat_id: int | str | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
         protect_content: bool | None = None,
         message_thread_id: int | None = None,
         direct_messages_topic_id: int | None = None,

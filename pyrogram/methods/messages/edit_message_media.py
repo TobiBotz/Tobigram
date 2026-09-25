@@ -18,7 +18,6 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 import io
 import os
 import re
@@ -26,6 +25,10 @@ import re
 import pyrogram
 from pyrogram import raw, types, utils
 from pyrogram.file_id import FileType
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 async def resolve_input_media(
@@ -291,11 +294,11 @@ class EditMessageMedia:
         chat_id: int | str,
         message_id: int,
         media: types.InputMedia,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         file_name: str | None = None,
         business_connection_id: str | None = None,
         show_caption_above_media: bool | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
     ) -> types.Message:
         """Edit animation, audio, document, photo or video messages.
 
@@ -318,6 +321,7 @@ class EditMessageMedia:
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
             file_name (``str``, *optional*):
                 File name of the media to be sent. Not applicable to photos.
@@ -359,7 +363,7 @@ class EditMessageMedia:
                 peer=await self.resolve_peer(chat_id),
                 id=message_id,
                 media=media,
-                reply_markup=await reply_markup.write(self) if reply_markup else None,
+                reply_markup=await utils.write_edit_reply_markup(self, reply_markup=reply_markup),
                 message=message,
                 entities=entities,
                 invert_media=show_caption_above_media

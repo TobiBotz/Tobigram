@@ -18,9 +18,12 @@
 
 from __future__ import annotations
 
-import pyrogram
 
 from ..object import Object
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pyrogram
 
 
 class InputPrivacyRule(Object):

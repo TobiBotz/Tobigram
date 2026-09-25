@@ -18,11 +18,14 @@
 
 from __future__ import annotations
 
-from collections.abc import AsyncGenerator
-from datetime import datetime
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
+    from collections.abc import AsyncGenerator
 
 
 # noinspection PyShadowingBuiltins
@@ -37,8 +40,8 @@ async def get_chunk(
     saved_peer_id: int | str | None = None,
     top_msg_id: int | None = None,
     offset_id: int = 0,
-    min_date: datetime | None = None,
-    max_date: datetime | None = None,
+    min_date: datetime | timedelta | None = None,
+    max_date: datetime | timedelta | None = None,
     min_id: int = 0,
     max_id: int = 0,
 ) -> list[types.Message]:
@@ -78,8 +81,8 @@ class SearchMessages:
         saved_peer_id: int | str | None = None,
         top_msg_id: int | None = None,
         offset_id: int = 0,
-        min_date: datetime | None = None,
-        max_date: datetime | None = None,
+        min_date: datetime | timedelta | None = None,
+        max_date: datetime | timedelta | None = None,
         min_id: int = 0,
         max_id: int = 0,
     ) -> AsyncGenerator[types.Message, None] | None:

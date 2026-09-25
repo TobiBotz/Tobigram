@@ -3408,3 +3408,178 @@ def test_upload_name_is_a_basename_not_a_local_path(tmp_path):
     assert utils.get_file_name(named, file_name="", fallback="video.mp4") == "clip.mp4"
     assert utils.get_file_name(named, file_name="pinned.mp4", fallback="video.mp4") == "pinned.mp4"
     assert utils.get_file_name(str(path), fallback="video.mp4") == "holiday.jpg"
+
+
+async def test_authorize_paid_auth_flow():
+    from unittest.mock import AsyncMock, patch
+    from pyrogram import Client, enums, raw, types
+    from pyrogram.errors import Unauthorized
+
+    client = Client("test_session", api_id=123, api_hash="abc", in_memory=True)
+    client.phone_number = "+1234567890"
+
+    sent_code_email = types.SentCode(
+        type=enums.SentCodeType.SETUP_EMAIL_REQUIRED,
+        phone_code_hash="hash_email",
+    )
+    client.send_phone_number_code = AsyncMock(return_value=sent_code_email)
+
+    paid_code = raw.types.auth.SentCodePaymentRequired(
+        store_product="premium_sub",
+        phone_code_hash="hash_paid",
+        support_email_address="support@telegram.org",
+        support_email_subject="Paid Auth",
+        premium_days=30,
+        currency="USD",
+        amount=199,
+    )
+    email_login = raw.types.account.EmailVerifiedLogin(email="user@test.com", sent_code=paid_code)
+
+    payment_form = raw.types.payments.PaymentForm(
+        form_id=999,
+        bot_id=1,
+        title="Auth Payment",
+        description="Login fee",
+        invoice=raw.types.Invoice(
+            currency="USD",
+            prices=[raw.types.LabeledPrice(label="fee", amount=199)],
+            test=False,
+            name_requested=False,
+            phone_requested=False,
+            email_requested=False,
+            shipping_address_requested=False,
+            flexible=False,
+            phone_to_provider=False,
+            email_to_provider=False,
+        ),
+        provider_id=123,
+        url="https://telegram.org/pay/123",
+        users=[],
+    )
+
+    client.invoke = AsyncMock(
+        side_effect=[
+            raw.types.account.SentEmailCode(email_pattern="u***@test.com", length=6),
+            email_login,
+            payment_form,
+        ]
+    )
+
+    with patch(
+        "pyrogram.client.ainput", AsyncMock(side_effect=["test@example.com", "y", "123456", "q"])
+    ):
+        import pytest
+
+        with pytest.raises(Unauthorized, match="aborted"):
+            await client.authorize()
+
+
+async def test_authorize_paid_auth_flow_success():
+    from unittest.mock import AsyncMock, patch
+    from pyrogram import Client, enums, raw, types
+
+    client = Client("test_session", api_id=123, api_hash="abc", in_memory=True)
+    client.phone_number = "+1234567890"
+
+    sent_code_email = types.SentCode(
+        type=enums.SentCodeType.SETUP_EMAIL_REQUIRED,
+        phone_code_hash="hash_email",
+    )
+    client.send_phone_number_code = AsyncMock(return_value=sent_code_email)
+
+    paid_code = raw.types.auth.SentCodePaymentRequired(
+        store_product="premium_sub",
+        phone_code_hash="hash_paid",
+        support_email_address="support@telegram.org",
+        support_email_subject="Paid Auth",
+        premium_days=30,
+        currency="USD",
+        amount=199,
+    )
+    email_login = raw.types.account.EmailVerifiedLogin(email="user@test.com", sent_code=paid_code)
+
+    payment_form = raw.types.payments.PaymentForm(
+        form_id=999,
+        bot_id=1,
+        title="Auth Payment",
+        description="Login fee",
+        invoice=raw.types.Invoice(
+            currency="USD",
+            prices=[raw.types.LabeledPrice(label="fee", amount=199)],
+            test=False,
+            name_requested=False,
+            phone_requested=False,
+            email_requested=False,
+            shipping_address_requested=False,
+            flexible=False,
+            phone_to_provider=False,
+            email_to_provider=False,
+        ),
+        provider_id=123,
+        url="https://telegram.org/pay/123",
+        users=[],
+    )
+
+    paid_sent_code = raw.types.auth.SentCode(
+        type=raw.types.auth.SentCodeTypeSms(length=5),
+        phone_code_hash="hash_after_payment",
+    )
+
+    client.invoke = AsyncMock(
+        side_effect=[
+            raw.types.account.SentEmailCode(email_pattern="u***@test.com", length=6),
+            email_login,
+            payment_form,
+        ]
+    )
+    client.check_paid_auth = AsyncMock(return_value=paid_sent_code)
+    expected_user = types.User(id=12345, is_self=True)
+    client.sign_in = AsyncMock(return_value=expected_user)
+
+    with patch(
+        "pyrogram.client.ainput",
+        AsyncMock(side_effect=["test@example.com", "y", "123456", "", "54321"]),
+    ):
+        user = await client.authorize()
+        assert user == expected_user
+        client.check_paid_auth.assert_awaited_once_with(
+            phone_number="+1234567890",
+            phone_code_hash="hash_paid",
+            form_id=999,
+        )
+        client.sign_in.assert_awaited_once_with(
+            "+1234567890",
+            "hash_after_payment",
+            "54321",
+        )
+
+
+async def test_disabled_link_preview_with_url_does_not_send_media_webpage():
+    from unittest.mock import AsyncMock
+    from pyrogram import Client, raw, types
+
+    client = Client("test_session", in_memory=True)
+    client.resolve_peer = AsyncMock(return_value=raw.types.InputPeerSelf())
+    client.invoke = AsyncMock(
+        return_value=raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0)
+    )
+
+    # Test send_message
+    lpo = types.LinkPreviewOptions(is_disabled=True, url="https://example.com")
+    await client.send_message(
+        chat_id="me",
+        text="Hello https://example.com",
+        link_preview_options=lpo,
+    )
+    sent_rpc = client.invoke.call_args[0][0]
+    assert isinstance(sent_rpc, raw.functions.messages.SendMessage)
+    assert sent_rpc.no_webpage is True
+
+    # Test input_text_message_content write
+    itmc = types.InputTextMessageContent(
+        message_text="Hello https://example.com",
+        link_preview_options=lpo,
+    )
+    written = await itmc.write(client, reply_markup=None)
+    assert isinstance(written, raw.types.InputBotInlineMessageText)
+    assert written.no_webpage is True

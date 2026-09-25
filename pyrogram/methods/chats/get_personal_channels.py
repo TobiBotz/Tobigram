@@ -25,15 +25,15 @@ from pyrogram import raw, types
 
 class GetPersonalChannels:
     async def get_personal_channels(
-        self: pyrogram.Client, for_community_peer: int | str | None = None
+        self: pyrogram.Client, for_community_peer: bool | None = None
     ) -> list[types.Chat] | None:
         """Get all your public channels.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            for_community_peer (``int`` | ``str``, *optional*):
-                Unique identifier (int) or username (str) of the community to get channels for.
+            for_community_peer (``bool``, *optional*):
+                Pass True to get channels suitable for community linking.
 
         Returns:
             List of :obj:`~pyrogram.types.Chat`: On success, a list of personal channels is returned.
@@ -47,9 +47,7 @@ class GetPersonalChannels:
         r = await self.invoke(
             raw.functions.channels.GetAdminedPublicChannels(
                 for_personal=True,
-                for_community_peer=await self.resolve_peer(for_community_peer)
-                if for_community_peer is not None
-                else None,
+                for_community_peer=for_community_peer,
             )
         )
 

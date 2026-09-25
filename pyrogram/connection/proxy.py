@@ -28,7 +28,6 @@ from typing import (
     ClassVar,
     Final,
     Literal,
-    NamedTuple,
     TypedDict,
 )
 from urllib.parse import parse_qs, urlsplit
@@ -112,7 +111,8 @@ HttpProxy = HTTPProxy
 MtProxy = MTProxy
 
 
-class ProxyAddress(NamedTuple):
+@dataclass(frozen=True)
+class ProxyAddress:
     hostname: str
     port: int
 
@@ -270,7 +270,8 @@ _WEB_FAKE_TLS_REJECTION: Final[str] = (
 )
 
 
-class _DecodedSecret(NamedTuple):
+@dataclass(frozen=True)
+class _DecodedSecret:
     secret: bytes  # bare 16 bytes, or 17 with the dd marker kept
     sni_hostname: str | None  # the domain an ee secret appends, else None
 

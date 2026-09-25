@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class EditMessageReplyMarkup:
@@ -29,9 +32,9 @@ class EditMessageReplyMarkup:
         self: pyrogram.Client,
         chat_id: int | str,
         message_id: int,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         business_connection_id: str | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
         repeat_period: int | None = None,
         quick_reply_shortcut: int | None = None,
     ) -> types.Message:
@@ -50,6 +53,7 @@ class EditMessageReplyMarkup:
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An InlineKeyboardMarkup object.
+                Pass None to remove the existing reply markup.
 
             schedule_date (:py:obj:`~datetime.datetime`, *optional*):
                 New date when the scheduled message will be sent.
@@ -84,7 +88,7 @@ class EditMessageReplyMarkup:
                 quick_reply_shortcut_id=quick_reply_shortcut,
                 peer=await self.resolve_peer(chat_id),
                 id=message_id,
-                reply_markup=await reply_markup.write(self) if reply_markup else None,
+                reply_markup=await utils.write_edit_reply_markup(self, reply_markup=reply_markup),
             ),
             sleep_threshold=60,
             business_connection_id=business_connection_id,

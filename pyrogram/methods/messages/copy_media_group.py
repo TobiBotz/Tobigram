@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class CopyMediaGroup:
@@ -33,7 +36,7 @@ class CopyMediaGroup:
         captions: list[str] | str | None = None,
         disable_notification: bool | None = None,
         reply_to_message_id: int | None = None,
-        schedule_date: datetime | None = None,
+        schedule_date: datetime | timedelta | None = None,
         protect_content: bool | None = None,
         effect_id: int | None = None,
         show_caption_above_media: bool | None = None,

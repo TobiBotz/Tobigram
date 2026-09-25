@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, types, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class RestrictChatMember:
@@ -30,7 +33,7 @@ class RestrictChatMember:
         chat_id: int | str,
         user_id: int | str,
         permissions: types.ChatPermissions,
-        until_date: datetime = utils.zero_datetime(),
+        until_date: datetime | timedelta = utils.zero_datetime(),
     ) -> types.Chat:
         """Restrict a user in a supergroup.
 

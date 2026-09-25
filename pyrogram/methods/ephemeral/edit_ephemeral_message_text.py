@@ -41,7 +41,7 @@ class EditEphemeralMessageText:
         rich_text_media: list[types.InputRichMessageMedia] | None = None,
         rich_message: types.InputRichMessage | None = None,
         link_preview_options: types.LinkPreviewOptions | None = None,
-        reply_markup: types.InlineKeyboardMarkup | None = None,
+        reply_markup: types.InlineKeyboardMarkup | type[object] | None = object,
         welcome: bool | None = None,
     ) -> types.Message | None:
         """Edit the text of an ephemeral message.
@@ -93,6 +93,7 @@ class EditEphemeralMessageText:
 
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup`, *optional*):
                 An inline keyboard.
+                Pass None to remove the existing reply markup.
 
             welcome (``bool``, *optional*):
                 Pass True when editing a stored welcome message rather than one that was
@@ -147,7 +148,9 @@ class EditEphemeralMessageText:
                 force_small_media=link_preview_options.prefer_small_media,
                 optional=True,
             )
-            if link_preview_options is not None and link_preview_options.url
+            if link_preview_options is not None
+            and link_preview_options.url
+            and not link_preview_options.is_disabled
             else None,
             reply_markup=reply_markup,
             welcome=welcome,

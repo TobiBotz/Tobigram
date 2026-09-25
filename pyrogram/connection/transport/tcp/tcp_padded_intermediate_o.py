@@ -18,7 +18,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 import os
 import random
@@ -28,6 +27,10 @@ from pyrogram.crypto import aes
 
 from .tcp import TCP, finalize_obfuscated2_tag, generate_obfuscated2_nonce
 from .tcp_padded_intermediate import strip_padding
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import asyncio
 
 log = logging.getLogger(__name__)
 

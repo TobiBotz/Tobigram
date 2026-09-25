@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, utils
 
 
 class GetCommunityLinkRequests:
@@ -55,7 +55,7 @@ class GetCommunityLinkRequests:
 
         return await self.invoke(
             raw.functions.communities.GetPeerLinkRequests(
-                community=comm_peer,
+                community=utils.get_input_channel(comm_peer),
                 offset=offset,
                 limit=limit,
             )

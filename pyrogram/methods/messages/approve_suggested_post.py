@@ -18,10 +18,13 @@
 
 from __future__ import annotations
 
-from datetime import datetime
 
 import pyrogram
 from pyrogram import raw, utils
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from datetime import datetime, timedelta
 
 
 class ApproveSuggestedPost:
@@ -29,7 +32,7 @@ class ApproveSuggestedPost:
         self: pyrogram.Client,
         chat_id: int | str,
         message_id: int,
-        send_date: datetime | None = None,
+        send_date: datetime | timedelta | None = None,
     ) -> bool:
         """Use this method to approve a suggested post in a direct messages chat.
 
