@@ -10373,12 +10373,14 @@ class Message(Object, Update):
                     reply_parameters=reply_parameters,
                     message_thread_id=message_thread_id,
                     schedule_date=schedule_date,
+                    protect_content=protect_content,
                     allow_paid_broadcast=allow_paid_broadcast,
                     paid_message_star_count=paid_message_star_count,
                     direct_messages_topic_id=direct_messages_topic_id,
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
                     business_connection_id=business_connection_id,
+                    reply_markup=self.reply_markup if reply_markup is object else reply_markup,
                 )
             elif self.location:
                 return await self._client.send_location(
@@ -10389,12 +10391,14 @@ class Message(Object, Update):
                     message_thread_id=message_thread_id,
                     reply_parameters=reply_parameters,
                     schedule_date=schedule_date,
+                    protect_content=protect_content,
                     allow_paid_broadcast=allow_paid_broadcast,
                     paid_message_star_count=paid_message_star_count,
                     direct_messages_topic_id=direct_messages_topic_id,
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
                     business_connection_id=business_connection_id,
+                    reply_markup=self.reply_markup if reply_markup is object else reply_markup,
                 )
             elif self.venue:
                 return await self._client.send_venue(
@@ -10409,12 +10413,14 @@ class Message(Object, Update):
                     message_thread_id=message_thread_id,
                     reply_parameters=reply_parameters,
                     schedule_date=schedule_date,
+                    protect_content=protect_content,
                     allow_paid_broadcast=allow_paid_broadcast,
                     paid_message_star_count=paid_message_star_count,
                     direct_messages_topic_id=direct_messages_topic_id,
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
                     business_connection_id=business_connection_id,
+                    reply_markup=self.reply_markup if reply_markup is object else reply_markup,
                 )
             elif self.poll:
                 if self.poll.type == enums.PollType.QUIZ and not self.poll.correct_option_ids:
@@ -10439,19 +10445,26 @@ class Message(Object, Update):
                     disable_notification=disable_notification,
                     reply_parameters=reply_parameters,
                     schedule_date=schedule_date,
+                    protect_content=protect_content,
                     allow_paid_broadcast=allow_paid_broadcast,
                     paid_message_star_count=paid_message_star_count,
                     direct_messages_topic_id=direct_messages_topic_id,
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
+                    reply_markup=self.reply_markup if reply_markup is object else reply_markup,
                 )
             elif self.game:
                 return await self._client.send_game(
                     chat_id,
                     game_short_name=self.game.short_name,
                     disable_notification=disable_notification,
+                    reply_parameters=reply_parameters,
+                    schedule_date=schedule_date,
+                    protect_content=protect_content,
                     allow_paid_broadcast=allow_paid_broadcast,
                     message_thread_id=message_thread_id,
+                    business_connection_id=business_connection_id,
+                    reply_markup=self.reply_markup if reply_markup is object else reply_markup,
                 )
             elif self.dice:
                 return await self._client.send_dice(
@@ -10468,6 +10481,7 @@ class Message(Object, Update):
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
                     business_connection_id=business_connection_id,
+                    reply_markup=self.reply_markup if reply_markup is object else reply_markup,
                 )
             else:
                 raise ValueError(f"Unable to copy a {self.media} message")

@@ -116,7 +116,9 @@ def write_button_type(
         )
 
     if copy_text is not None:
-        return raw.types.InlineButtonTypeCopy(copy_text=copy_text.text)
+        return raw.types.InlineButtonTypeCopy(
+            copy_text=copy_text.text if hasattr(copy_text, "text") else str(copy_text)
+        )
 
     if pay:
         return raw.types.InlineButtonTypeBuy()

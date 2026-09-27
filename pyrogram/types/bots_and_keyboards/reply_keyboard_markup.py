@@ -83,24 +83,30 @@ class ReplyKeyboardMarkup(Object):
 
     @staticmethod
     def read(kb: raw.base.ReplyMarkup):
+        if not kb:
+            return None
+
         keyboard = []
 
-        for i in kb.rows:
+        for i in getattr(kb, "rows", []):
             row = []
 
-            for j in i.buttons:
-                row.append(types.KeyboardButton.read(j))
+            for j in getattr(i, "buttons", []):
+                btn = types.KeyboardButton.read(j)
+                if btn is not None:
+                    row.append(btn)
 
-            keyboard.append(row)
+            if row:
+                keyboard.append(row)
 
         return ReplyKeyboardMarkup(
             keyboard=keyboard,
-            is_persistent=kb.persistent,
-            resize_keyboard=kb.resize,
-            one_time_keyboard=kb.single_use,
-            selective=kb.selective,
-            placeholder=kb.placeholder,
-            force_reply=kb.force_reply,
+            is_persistent=getattr(kb, "persistent", None),
+            resize_keyboard=getattr(kb, "resize", None),
+            one_time_keyboard=getattr(kb, "single_use", None),
+            selective=getattr(kb, "selective", None),
+            placeholder=getattr(kb, "placeholder", None),
+            force_reply=getattr(kb, "force_reply", None),
         )
 
     async def write(self, _: pyrogram.Client):
@@ -108,11 +114,21 @@ class ReplyKeyboardMarkup(Object):
             rows=[
                 raw.types.KeyboardButtonRow(
                     buttons=[
-                        types.KeyboardButton(j).write() if isinstance(j, str) else j.write()
+                        (
+                            types.KeyboardButton(j).write()
+                            if isinstance(j, str)
+                            else (
+                                j.write()
+                                if hasattr(j, "write")
+                                else types.KeyboardButton(str(j)).write()
+                            )
+                        )
                         for j in i
+                        if j is not None
                     ]
                 )
                 for i in self.keyboard
+                if i
             ],
             resize=self.resize_keyboard,
             single_use=self.one_time_keyboard,

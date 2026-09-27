@@ -187,7 +187,7 @@ class KeyboardButton(Object):
         styling = types.InlineKeyboardButton._with_style(b)
         plain = styling["style"] == ButtonStyle.DEFAULT and styling["icon_custom_emoji_id"] is None
 
-        t = b.type
+        t = getattr(b, "type", None)
 
         if isinstance(t, raw.types.ButtonTypeDefault):
             return b.text if plain else KeyboardButton(text=b.text, **styling)
@@ -208,6 +208,9 @@ class KeyboardButton(Object):
 
         if isinstance(t, raw.types.ButtonTypeSimpleWebView):
             return KeyboardButton(text=b.text, web_app=types.WebAppInfo(url=t.url), **styling)
+
+        text = getattr(b, "text", str(b))
+        return text if plain else KeyboardButton(text=text, **styling)
 
     def _peer_request(self):
         if self.request_users:
