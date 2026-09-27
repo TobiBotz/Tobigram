@@ -10177,7 +10177,7 @@ class Message(Object, Update):
             reply_markup (:obj:`~pyrogram.types.InlineKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardMarkup` | :obj:`~pyrogram.types.ReplyKeyboardRemove` | :obj:`~pyrogram.types.ForceReply`, *optional*):
                 Additional interface options. An object for an inline keyboard, custom reply keyboard,
                 instructions to remove reply keyboard or to force a reply from the user.
-                If not specified, the original reply markup is kept.
+                If not specified, the original inline keyboard markup is kept (reply keyboards are not copied by default).
                 Pass None to remove the reply markup.
 
             has_spoiler (``bool``, *optional*):
@@ -10221,15 +10221,26 @@ class Message(Object, Update):
                 self.chat.id,
                 self.id,
             )
+            return None
         elif self.game and not await self._client.storage.is_bot():
             log.warning(
                 "Users cannot send messages with Game media type. chat_id: %s, message_id: %s",
                 self.chat.id,
                 self.id,
             )
+            return None
         elif self.empty:
             log.warning("Empty messages cannot be copied.")
-        elif self.rich_message:
+            return None
+
+        if reply_markup is object:
+            reply_markup = (
+                self.reply_markup
+                if isinstance(self.reply_markup, types.InlineKeyboardMarkup)
+                else None
+            )
+
+        if self.rich_message:
             if reply_parameters is None and reply_to_message_id is not None:
                 reply_parameters = types.ReplyParameters(
                     message_id=reply_to_message_id,
@@ -10249,7 +10260,7 @@ class Message(Object, Update):
                 if protect_content is None
                 else protect_content,
                 effect_id=effect_id,
-                reply_markup=self.reply_markup if reply_markup is object else reply_markup,
+                reply_markup=reply_markup,
                 business_connection_id=business_connection_id,
                 allow_paid_broadcast=allow_paid_broadcast,
                 paid_message_star_count=paid_message_star_count,
@@ -10278,7 +10289,7 @@ class Message(Object, Update):
                 direct_messages_topic_id=direct_messages_topic_id,
                 effect_id=effect_id,
                 suggested_post_parameters=suggested_post_parameters,
-                reply_markup=self.reply_markup if reply_markup is object else reply_markup,
+                reply_markup=reply_markup,
             )
         elif self.media:
             send_media = partial(
@@ -10303,7 +10314,7 @@ class Message(Object, Update):
                 paid_message_star_count=paid_message_star_count,
                 direct_messages_topic_id=direct_messages_topic_id,
                 suggested_post_parameters=suggested_post_parameters,
-                reply_markup=self.reply_markup if reply_markup is object else reply_markup,
+                reply_markup=reply_markup,
             )
 
             if self.photo:
@@ -10343,7 +10354,7 @@ class Message(Object, Update):
                     direct_messages_topic_id=direct_messages_topic_id,
                     suggested_post_parameters=suggested_post_parameters,
                     reply_parameters=reply_parameters,
-                    reply_markup=self.reply_markup if reply_markup is object else reply_markup,
+                    reply_markup=reply_markup,
                     video_cover=video_cover
                     if video_cover is not None
                     else self.video.video_cover.file_id
@@ -10380,7 +10391,7 @@ class Message(Object, Update):
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
                     business_connection_id=business_connection_id,
-                    reply_markup=self.reply_markup if reply_markup is object else reply_markup,
+                    reply_markup=reply_markup,
                 )
             elif self.location:
                 return await self._client.send_location(
@@ -10398,7 +10409,7 @@ class Message(Object, Update):
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
                     business_connection_id=business_connection_id,
-                    reply_markup=self.reply_markup if reply_markup is object else reply_markup,
+                    reply_markup=reply_markup,
                 )
             elif self.venue:
                 return await self._client.send_venue(
@@ -10420,7 +10431,7 @@ class Message(Object, Update):
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
                     business_connection_id=business_connection_id,
-                    reply_markup=self.reply_markup if reply_markup is object else reply_markup,
+                    reply_markup=reply_markup,
                 )
             elif self.poll:
                 if self.poll.type == enums.PollType.QUIZ and not self.poll.correct_option_ids:
@@ -10451,7 +10462,7 @@ class Message(Object, Update):
                     direct_messages_topic_id=direct_messages_topic_id,
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
-                    reply_markup=self.reply_markup if reply_markup is object else reply_markup,
+                    reply_markup=reply_markup,
                 )
             elif self.game:
                 return await self._client.send_game(
@@ -10464,7 +10475,7 @@ class Message(Object, Update):
                     allow_paid_broadcast=allow_paid_broadcast,
                     message_thread_id=message_thread_id,
                     business_connection_id=business_connection_id,
-                    reply_markup=self.reply_markup if reply_markup is object else reply_markup,
+                    reply_markup=reply_markup,
                 )
             elif self.dice:
                 return await self._client.send_dice(
@@ -10481,7 +10492,7 @@ class Message(Object, Update):
                     effect_id=effect_id,
                     suggested_post_parameters=suggested_post_parameters,
                     business_connection_id=business_connection_id,
-                    reply_markup=self.reply_markup if reply_markup is object else reply_markup,
+                    reply_markup=reply_markup,
                 )
             else:
                 raise ValueError(f"Unable to copy a {self.media} message")
