@@ -76,7 +76,7 @@ def start():
 
         for i in files:
             code, name = re.search(r"(\d+)_([A-Z_]+)", i).groups()
-            module = "{}_{}".format(name.lower(), code)
+            module = f"{name.lower()}_{code}"
 
             f_all.write(f"    {code}: {{\n")
 
@@ -123,8 +123,8 @@ def start():
                     bases = super_class
 
                     if owners[sub_class] != module:
-                        imports.append("from .{} import {}".format(owners[sub_class], sub_class))
-                        bases = "{}, {}".format(super_class, sub_class)
+                        imports.append(f"from .{owners[sub_class]} import {sub_class}")
+                        bases = f"{super_class}, {sub_class}"
                         sub_class += code
                     elif sub_class in seen:
                         bases = sub_class
