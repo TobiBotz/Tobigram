@@ -22,6 +22,7 @@ from typing import TYPE_CHECKING
 
 import pyrogram
 from pyrogram import raw
+from pyrogram.parser.rich_media import resolve_media
 
 from ..object import Object
 
@@ -125,21 +126,25 @@ class InputRichMessage(Object):
 
         return files or None
 
-    def write(self) -> raw.base.InputRichMessage:
-        if self.html:
-            input_rich_message = raw.types.InputRichMessageHTML(
-                html=self.html,
-                rtl=self.is_rtl,
-                noautolink=self.skip_entity_detection,
-                files=self.write_files(),
-            )
-        elif self.markdown:
-            input_rich_message = raw.types.InputRichMessageMarkdown(
-                markdown=self.markdown,
-                rtl=self.is_rtl,
-                noautolink=self.skip_entity_detection,
-                files=self.write_files(),
-            )
+    def write(self, client: pyrogram.Client | None = None) -> raw.base.InputRichMessage:
+        if self.html is not None and self.markdown is not None:
+            raise ValueError("You must provide exactly one of blocks, markdown or html")
+
+        if self.html is not None or self.markdown is not None:
+            content = self.html if self.html is not None else self.markdown
+
+            if not isinstance(content, str) or not content:
+                raise ValueError(
+                    "You must provide either blocks, markdown or html in the rich message"
+                )
+
+            content, files = resolve_media(content, self.html is not None, self.write_files())
+            options = {"rtl": self.is_rtl, "noautolink": self.skip_entity_detection, "files": files}
+
+            if self.html is not None:
+                return raw.types.InputRichMessageHTML(html=content, **options)
+
+            return raw.types.InputRichMessageMarkdown(markdown=content, **options)
         elif self.blocks:
             photos = list(self._photos)
             documents = list(self._documents)

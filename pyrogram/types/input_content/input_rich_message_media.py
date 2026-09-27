@@ -119,6 +119,9 @@ class InputRichMessageMedia(Object):
 
         media = self.media
 
+        if isinstance(media, types.InputMedia) and isinstance(getattr(media, "media", None), str):
+            media = utils.get_input_media_from_file_id(media.media)
+
         if isinstance(media, str):
             media = utils.get_input_media_from_file_id(media)
 

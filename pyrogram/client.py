@@ -81,7 +81,7 @@ from .file_id import FileId, FileType, ThumbnailSource
 from .mime_types import mime_types
 from .parser import Parser
 from .session.internals import MsgId
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from collections.abc import AsyncGenerator, Callable
@@ -89,6 +89,27 @@ if TYPE_CHECKING:
 log = logging.getLogger(__name__)
 
 Cache = utils.Cache
+
+
+def _plugin_handlers(target: Any) -> list[tuple] | None:
+    try:
+        handlers = target.handlers
+
+        if not isinstance(handlers, (list, tuple)):
+            return None
+
+        pairs = list(handlers)
+    except Exception:
+        return None
+
+    for pair in pairs:
+        if not (
+            isinstance(pair, (tuple, list)) and len(pair) == 2 and isinstance(pair[0], Handler)
+        ):
+            return None
+
+    return pairs
+
 
 _handler_executor: ThreadPoolExecutor | None = None
 
@@ -401,6 +422,11 @@ class Client(Methods):
             Pass True to automatically wrap read-only and non-critical API calls with InvokeWithoutUpdates,
             reducing server-side update traffic and flood pressure.
             Defaults to True.
+
+        no_joined_notifications (``bool``, *optional*):
+            Pass True to disable notification about the current user joining Telegram for other users that added
+            them to contact list. Pass False to notify people on Telegram who know my phone number that I signed up.
+            Defaults to False.
     """
 
     APP_VERSION = f"Tobigram {__version__}"
@@ -590,6 +616,8 @@ class Client(Methods):
             self.storage = SQLiteStorage(self.name, workdir=self.workdir, in_memory=True)
         else:
             self.storage = SQLiteStorage(self.name, workdir=self.workdir)
+
+        self._state_marks = {}
 
         self.listeners = ListenerRegistry(self)
 
@@ -1276,11 +1304,44 @@ class Client(Methods):
                     self.register_min_peer(c.id, chat_id, msg_id)
                     self.register_min_peer(utils.get_channel_id(c.id), chat_id, msg_id)
 
+    async def _save_update_state(self, state):
+        marks = getattr(self, "_state_marks", None)
+        if marks is None:
+            marks = self._state_marks = {}
+
+        if isinstance(state, int):
+            marks.pop(state, None)
+            await self.storage.update_state(state)
+            return
+
+        state_id, pts, qts = state[:3]
+        known_pts, known_qts = marks.get(state_id, (None, None))
+
+        if pts is not None and known_pts is not None and pts < known_pts:
+            pts = None
+
+        if qts is not None and known_qts is not None and qts < known_qts:
+            qts = None
+
+        if pts is None and qts is None and (state[1] is not None or state[2] is not None):
+            return
+
+        marks[state_id] = (
+            known_pts if pts is None else pts,
+            known_qts if qts is None else qts,
+        )
+
+        await self.storage.update_state((state_id, pts, qts) + tuple(state[3:]))
+
     async def handle_updates(self, updates):
         # the datetime is what callers read; the watchdog measures a duration and
         # a host clock that steps backwards must not stall it for the step
         self.last_update_time = datetime.now()
         self._last_update_monotonic = time.monotonic()
+
+        save_state = getattr(self, "_save_update_state", None)
+        if not callable(save_state):
+            save_state = getattr(getattr(self, "storage", None), "update_state", None)
 
         if isinstance(updates, (raw.types.Updates, raw.types.UpdatesCombined)):
             is_min = any(
@@ -1310,13 +1371,20 @@ class Client(Methods):
 
                 pts = getattr(update, "pts", None)
                 pts_count = getattr(update, "pts_count", None)
+                qts = getattr(update, "qts", None)
 
                 if pts:
                     key = utils.get_channel_id(channel_id) if channel_id else 0
-                    known = pending_states.get(key)
+                    known = pending_states.get(key, (key, None, None, updates.date, updates.seq))
 
-                    if known is None or pts > known[1]:
-                        pending_states[key] = (key, pts, None, updates.date, updates.seq)
+                    if known[1] is None or pts > known[1]:
+                        pending_states[key] = (key, pts) + known[2:]
+
+                if qts:
+                    known = pending_states.get(0, (0, None, None, updates.date, updates.seq))
+
+                    if known[2] is None or qts > known[2]:
+                        pending_states[0] = known[:2] + (qts,) + known[3:]
 
                 if isinstance(update, raw.types.UpdateChannelTooLong):
                     log.info(update)
@@ -1364,9 +1432,11 @@ class Client(Methods):
                 await self.dispatcher.enqueue_update(update, users, chats)
 
             for state in pending_states.values():
-                await self.storage.update_state(state)
+                if callable(save_state):
+                    await save_state(state)
         elif isinstance(updates, (raw.types.UpdateShortMessage, raw.types.UpdateShortChatMessage)):
-            await self.storage.update_state((0, updates.pts, None, updates.date, None))
+            if callable(save_state):
+                await save_state((0, updates.pts, None, updates.date, None))
 
             diff = await self.invoke(
                 raw.functions.updates.GetDifference(
@@ -1387,10 +1457,17 @@ class Client(Methods):
                     await self.dispatcher.enqueue_update(diff.other_updates[0], {}, {})
         elif isinstance(updates, raw.types.UpdateShort):
             await self.dispatcher.enqueue_update(updates.update, {}, {})
+
+            qts = getattr(updates.update, "qts", None)
+
+            if qts:
+                if callable(save_state):
+                    await save_state((0, None, qts, updates.date, None))
         elif isinstance(updates, raw.types.UpdatesTooLong):
             log.info(updates)
 
     async def load_session(self):
+        self._state_marks = {}
         await self.storage.open()
 
         session_empty = any(
@@ -1489,20 +1566,26 @@ class Client(Methods):
                     module_path = ".".join(path.parent.parts + (path.stem,))
                     module = import_module(module_path)
 
-                    for name in vars(module).keys():
-                        # noinspection PyBroadException
-                        try:
-                            for handler, group in getattr(module, name).handlers:
-                                if isinstance(handler, Handler) and isinstance(group, int):
-                                    self.add_handler(handler, group)
+                    for name in list(vars(module)):
+                        for handler, group in _plugin_handlers(getattr(module, name)) or ():
+                            if not isinstance(group, int):
+                                log.warning(
+                                    '[%s] [LOAD] Ignoring %s("%s") from "%s": the group must be an int, got %r',
+                                    self.name,
+                                    type(handler).__name__,
+                                    name,
+                                    module_path,
+                                    group,
+                                )
+                                continue
 
-                                    log.info(
-                                        f'[{self.name}] [LOAD] {type(handler).__name__}("{name}") in group {group} from "{module_path}"'
-                                    )
+                            self.add_handler(handler, group)
 
-                                    count += 1
-                        except Exception:
-                            pass
+                            log.info(
+                                f'[{self.name}] [LOAD] {type(handler).__name__}("{name}") in group {group} from "{module_path}"'
+                            )
+
+                            count += 1
             else:
                 for path, handlers in include:
                     module_path = root + "." + path
@@ -2352,6 +2435,7 @@ class Client(Methods):
 
             for session in self.media_session_pools.get(dc_id, []):
                 if session.is_started.is_set() or session.is_restarting:
+                    session.last_used = time.monotonic()
                     pool.append(session)
                 else:
                     # dropping it here puts it out of the reaper's reach, and its

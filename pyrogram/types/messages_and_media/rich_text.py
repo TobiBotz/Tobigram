@@ -94,6 +94,8 @@ class RichText(Object):
     def __str__(self) -> str:
         return self.to_plain_text()
 
+    _to_plain_text = staticmethod(_extract_plain_text)
+
     @staticmethod
     async def _parse(
         client: pyrogram.Client,
@@ -101,26 +103,41 @@ class RichText(Object):
         users: dict[int, raw.base.User] = {},
         chats: dict[int, raw.base.Chat] = {},
     ) -> str | list[RichText] | RichText | None:
+        users = users or {}
+        chats = chats or {}
+
+        if rich_text is None or isinstance(rich_text, str):
+            return rich_text
+
+        if isinstance(rich_text, raw.types.TextEmpty):
+            return ""
+
         if isinstance(rich_text, raw.types.TextPlain):
             return rich_text.text
 
         if isinstance(rich_text, raw.types.TextConcat):
-            return types.List([await RichText._parse(client, text) for text in rich_text.texts])
+            return types.List(
+                [await RichText._parse(client, text, users, chats) for text in rich_text.texts]
+            )
 
         if isinstance(rich_text, raw.types.TextBold):
-            return RichTextBold(text=await RichText._parse(client, rich_text.text))
+            return RichTextBold(text=await RichText._parse(client, rich_text.text, users, chats))
 
         if isinstance(rich_text, raw.types.TextItalic):
-            return RichTextItalic(text=await RichText._parse(client, rich_text.text))
+            return RichTextItalic(text=await RichText._parse(client, rich_text.text, users, chats))
 
         if isinstance(rich_text, raw.types.TextUnderline):
-            return RichTextUnderline(text=await RichText._parse(client, rich_text.text))
+            return RichTextUnderline(
+                text=await RichText._parse(client, rich_text.text, users, chats)
+            )
 
         if isinstance(rich_text, raw.types.TextStrike):
-            return RichTextStrikethrough(text=await RichText._parse(client, rich_text.text))
+            return RichTextStrikethrough(
+                text=await RichText._parse(client, rich_text.text, users, chats)
+            )
 
         if isinstance(rich_text, raw.types.TextSpoiler):
-            return RichTextSpoiler(text=await RichText._parse(client, rich_text.text))
+            return RichTextSpoiler(text=await RichText._parse(client, rich_text.text, users, chats))
 
         if isinstance(rich_text, raw.types.TextDate):
             if rich_text.relative:
@@ -142,28 +159,33 @@ class RichText(Object):
                     date_time_format += "T"
 
             return RichTextDateTime(
-                text=await RichText._parse(client, rich_text.text),
+                text=await RichText._parse(client, rich_text.text, users, chats),
                 date=utils.timestamp_to_datetime(rich_text.date),
                 date_time_format=date_time_format or None,
             )
 
         if isinstance(rich_text, raw.types.TextMentionName):
+            raw_user = users.get(rich_text.user_id)
             return RichTextTextMention(
-                text=await RichText._parse(client, rich_text.text),
-                user=types.User._parse(client, users.get(rich_text.user_id)),
+                text=await RichText._parse(client, rich_text.text, users, chats),
+                user=types.User._parse(client, raw_user) if raw_user is not None else None,
             )
 
         if isinstance(rich_text, raw.types.TextSubscript):
-            return RichTextSubscript(text=await RichText._parse(client, rich_text.text))
+            return RichTextSubscript(
+                text=await RichText._parse(client, rich_text.text, users, chats)
+            )
 
         if isinstance(rich_text, raw.types.TextSuperscript):
-            return RichTextSuperscript(text=await RichText._parse(client, rich_text.text))
+            return RichTextSuperscript(
+                text=await RichText._parse(client, rich_text.text, users, chats)
+            )
 
         if isinstance(rich_text, raw.types.TextMarked):
-            return RichTextMarked(text=await RichText._parse(client, rich_text.text))
+            return RichTextMarked(text=await RichText._parse(client, rich_text.text, users, chats))
 
         if isinstance(rich_text, raw.types.TextFixed):
-            return RichTextCode(text=await RichText._parse(client, rich_text.text))
+            return RichTextCode(text=await RichText._parse(client, rich_text.text, users, chats))
 
         if isinstance(rich_text, raw.types.TextCustomEmoji):
             return RichTextCustomEmoji(
@@ -174,7 +196,7 @@ class RichText(Object):
             return RichTextMathematicalExpression(expression=rich_text.source)
 
         if isinstance(rich_text, raw.types.TextUrl):
-            content = await RichText._parse(client, rich_text.text)
+            content = await RichText._parse(client, rich_text.text, users, chats)
 
             if rich_text.url.startswith("#"):
                 anchor = rich_text.url[1:]
@@ -187,100 +209,118 @@ class RichText(Object):
             return RichTextUrl(text=content, url=rich_text.url)
 
         if isinstance(rich_text, raw.types.TextAutoUrl):
-            content = await RichText._parse(client, rich_text.text)
+            content = await RichText._parse(client, rich_text.text, users, chats)
             return RichTextUrl(
                 text=content,
-                url=_extract_plain_text(content),
+                url=RichText._to_plain_text(content),
             )
 
         if isinstance(rich_text, raw.types.TextEmail):
             return RichTextEmailAddress(
-                text=await RichText._parse(client, rich_text.text), email_address=rich_text.email
+                text=await RichText._parse(client, rich_text.text, users, chats),
+                email_address=rich_text.email,
             )
 
         if isinstance(rich_text, raw.types.TextAutoEmail):
-            content = await RichText._parse(client, rich_text.text)
+            content = await RichText._parse(client, rich_text.text, users, chats)
             return RichTextEmailAddress(
                 text=content,
-                email_address=_extract_plain_text(content),
+                email_address=RichText._to_plain_text(content),
             )
 
         if isinstance(rich_text, raw.types.TextPhone):
             return RichTextPhoneNumber(
-                text=await RichText._parse(client, rich_text.text), phone_number=rich_text.phone
+                text=await RichText._parse(client, rich_text.text, users, chats),
+                phone_number=rich_text.phone,
             )
 
         if isinstance(rich_text, raw.types.TextAutoPhone):
-            content = await RichText._parse(client, rich_text.text)
+            content = await RichText._parse(client, rich_text.text, users, chats)
             return RichTextPhoneNumber(
                 text=content,
-                phone_number=_extract_plain_text(content),
+                phone_number=RichText._to_plain_text(content),
             )
 
         if isinstance(rich_text, raw.types.TextBankCard):
-            content = await RichText._parse(client, rich_text.text)
+            content = await RichText._parse(client, rich_text.text, users, chats)
             return RichTextBankCardNumber(
                 text=content,
-                bank_card_number=_extract_plain_text(content),
+                bank_card_number=RichText._to_plain_text(content),
             )
 
         if isinstance(rich_text, raw.types.TextMention):
-            content = await RichText._parse(client, rich_text.text)
+            content = await RichText._parse(client, rich_text.text, users, chats)
 
             return RichTextMention(
                 text=content,
-                username=_extract_plain_text(content).lstrip("@"),
+                username=RichText._to_plain_text(content).lstrip("@"),
             )
 
         if isinstance(rich_text, raw.types.TextHashtag):
-            content = await RichText._parse(client, rich_text.text)
+            content = await RichText._parse(client, rich_text.text, users, chats)
 
             return RichTextHashtag(
                 text=content,
-                hashtag=_extract_plain_text(content).lstrip("#"),
+                hashtag=RichText._to_plain_text(content).lstrip("#"),
             )
 
         if isinstance(rich_text, raw.types.TextCashtag):
-            content = await RichText._parse(client, rich_text.text)
+            content = await RichText._parse(client, rich_text.text, users, chats)
 
             return RichTextCashtag(
                 text=content,
-                cashtag=_extract_plain_text(content).lstrip("$"),
+                cashtag=RichText._to_plain_text(content).lstrip("$"),
             )
 
         if isinstance(rich_text, raw.types.TextBotCommand):
-            content = await RichText._parse(client, rich_text.text)
+            content = await RichText._parse(client, rich_text.text, users, chats)
 
             return RichTextBotCommand(
                 text=content,
-                bot_command=_extract_plain_text(content).lstrip("/"),
+                bot_command=RichText._to_plain_text(content).lstrip("/"),
             )
 
         if isinstance(rich_text, raw.types.TextAnchor):
             if isinstance(rich_text.text, raw.types.TextEmpty):
                 return RichTextAnchor(
-                    text=await RichText._parse(client, rich_text.text), name=rich_text.name
+                    text=await RichText._parse(client, rich_text.text, users, chats),
+                    name=rich_text.name,
                 )
 
             return RichTextReference(
-                text=await RichText._parse(client, rich_text.text), name=rich_text.name
-            )
-
-        if isinstance(rich_text, raw.types.TextImage):
-            return RichTextImage(
-                document_id=rich_text.document_id,
-                width=rich_text.w,
-                height=rich_text.h,
-            )
-
-        if isinstance(rich_text, raw.types.TextDiff):
-            return RichTextDiff(
-                text=await RichText._parse(client, rich_text.text),
-                old_text=await RichText._parse(client, rich_text.old_text),
+                text=await RichText._parse(client, rich_text.text, users, chats),
+                name=rich_text.name,
             )
 
         if isinstance(rich_text, raw.types.TextButton):
             return RichTextButton(button=await types.RichMessageButton._parse(client, rich_text))
+
+        # Preserve readable content when a newer layer adds a text wrapper.
+        content = getattr(rich_text, "text", None)
+
+        return RichTextUnsupported(
+            original_type=type(rich_text).__name__,
+            raw=rich_text,
+            text=await RichText._parse(client, content, users, chats)
+            if content is not None
+            else None,
+        )
+
+
+class RichTextUnsupported(RichText):
+    """Unsupported rich text with its original constructor name and readable content."""
+
+    def __init__(
+        self,
+        original_type: str | None = None,
+        text: types.RichText | None = None,
+        raw: raw.base.RichText | None = None,
+    ):
+        super().__init__()
+
+        self.original_type = original_type
+        self.text = text
+        self.raw = raw
 
 
 class RichTextButton(RichText):

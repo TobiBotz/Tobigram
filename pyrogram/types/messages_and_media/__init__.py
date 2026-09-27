@@ -185,6 +185,7 @@ from .rich_text import (
     RichTextSuperscript,
     RichTextTextMention,
     RichTextUnderline,
+    RichTextUnsupported,
     RichTextUrl,
 )
 from .saved_credentials import SavedCredentials
@@ -407,6 +408,7 @@ __all__ = [
     "RichTextSuperscript",
     "RichTextTextMention",
     "RichTextUnderline",
+    "RichTextUnsupported",
     "RichTextUrl",
     "SavedCredentials",
     "ScreenshotTaken",

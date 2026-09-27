@@ -434,15 +434,25 @@ class SQLiteStorage(Storage):
             if isinstance(value, int):
                 await self.conn.execute("DELETE FROM update_state WHERE id = ?", (value,))
             else:
-                await self.conn.execute(
-                    "INSERT INTO update_state (id, pts, qts, date, seq) VALUES (?, ?, ?, ?, ?) "
-                    "ON CONFLICT(id) DO UPDATE SET "
-                    "  pts   = excluded.pts,"
-                    "  qts   = excluded.qts,"
-                    "  date  = excluded.date,"
-                    "  seq   = excluded.seq",
-                    value,
+                state_id, *values = value
+                fields = [
+                    field
+                    for field, val in zip(("pts", "qts", "date", "seq"), values)
+                    if val is not None
+                ]
+
+                if not fields:
+                    return
+
+                insert_fields = ["id"] + fields
+                placeholders = ", ".join("?" for _ in insert_fields)
+                updates = ", ".join(f"{field} = excluded.{field}" for field in fields)
+                sql = (
+                    f"INSERT INTO update_state ({', '.join(insert_fields)}) VALUES ({placeholders}) "
+                    f"ON CONFLICT(id) DO UPDATE SET {updates}"
                 )
+                non_none_values = [state_id] + [v for v in values if v is not None]
+                await self.conn.execute(sql, non_none_values)
 
             await self._maybe_commit()
 

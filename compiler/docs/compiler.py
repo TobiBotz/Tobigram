@@ -1482,6 +1482,7 @@ def pyrogram_api():
             RichTextSuperscript
             RichTextTextMention
             RichTextUnderline
+            RichTextUnsupported
             RichTextUrl
             SavedCredentials
             Str

@@ -5,6 +5,8 @@ import pyrogram
 from pyrogram import enums, raw, types, utils
 from typing import TYPE_CHECKING
 
+from ..ephemeral.as_ephemeral import as_ephemeral
+
 if TYPE_CHECKING:
     from datetime import datetime, timedelta
 
@@ -45,6 +47,7 @@ class SendCachedMedia:
         update_stickersets_order: bool | None = None,
         send_as: int | str | None = None,
         quick_reply_shortcut: int | None = None,
+        ephemeral_message_parameters: types.EphemeralMessageParameters | None = None,
     ) -> types.Message | None:
         """Send any media stored on the Telegram servers using a file_id.
 
@@ -149,6 +152,16 @@ class SendCachedMedia:
             quick_reply_shortcut (``int``, *optional*):
                 Unique identifier of the quick reply shortcut the message belongs to.
 
+            ephemeral_message_parameters (:obj:`~pyrogram.types.EphemeralMessageParameters`, *optional*):
+                Send the message as an ephemeral message, visible only to the user it
+                names and absent from the chat's history, rather than as an ordinary one.
+                The ephemeral RPC has no field for *silent*, *background*, *clear_draft*,
+                *schedule_date*, *repeat_period*, *send_as*, *effect_id*,
+                *quick_reply_shortcut*, *allow_paid_broadcast*,
+                *paid_message_star_count*, *suggested_post_parameters* or
+                *update_stickersets_order*; any of those that is set is logged and
+                dropped.
+
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent media message is returned.
 
@@ -177,44 +190,48 @@ class SendCachedMedia:
         text_params = await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
 
         r = await self.invoke(
-            raw.functions.messages.SendMedia(
-                peer=await self.resolve_peer(chat_id),
-                media=utils.get_input_media_from_file_id(file_id, has_spoiler=has_spoiler),
-                silent=disable_notification if disable_notification is not None else None,
-                reply_to=await utils.get_reply_to(
-                    self,
-                    reply_parameters,
-                    message_thread_id,
-                    direct_messages_topic_id=direct_messages_topic_id,
+            await as_ephemeral(
+                self,
+                ephemeral_message_parameters,
+                raw.functions.messages.SendMedia(
+                    peer=await self.resolve_peer(chat_id),
+                    media=utils.get_input_media_from_file_id(file_id, has_spoiler=has_spoiler),
+                    silent=disable_notification if disable_notification is not None else None,
+                    reply_to=await utils.get_reply_to(
+                        self,
+                        reply_parameters,
+                        message_thread_id,
+                        direct_messages_topic_id=direct_messages_topic_id,
+                    ),
+                    random_id=self.rnd_id(),
+                    schedule_date=utils.datetime_to_timestamp(schedule_date),
+                    noforwards=protect_content,
+                    effect=effect_id,
+                    invert_media=show_caption_above_media
+                    if show_caption_above_media is not None
+                    else None,
+                    schedule_repeat_period=repeat_period,
+                    allow_paid_floodskip=allow_paid_broadcast
+                    if allow_paid_broadcast is not None
+                    else None,
+                    allow_paid_stars=paid_message_star_count
+                    if paid_message_star_count is not None
+                    else None,
+                    suggested_post=suggested_post_parameters.write()
+                    if suggested_post_parameters
+                    else None,
+                    reply_markup=await reply_markup.write(self) if reply_markup else None,
+                    background=background,
+                    clear_draft=clear_draft,
+                    update_stickersets_order=update_stickersets_order,
+                    send_as=await self.resolve_peer(send_as) if send_as is not None else None,
+                    quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(
+                        shortcut_id=quick_reply_shortcut
+                    )
+                    if quick_reply_shortcut is not None
+                    else None,
+                    **text_params,
                 ),
-                random_id=self.rnd_id(),
-                schedule_date=utils.datetime_to_timestamp(schedule_date),
-                noforwards=protect_content,
-                effect=effect_id,
-                invert_media=show_caption_above_media
-                if show_caption_above_media is not None
-                else None,
-                schedule_repeat_period=repeat_period,
-                allow_paid_floodskip=allow_paid_broadcast
-                if allow_paid_broadcast is not None
-                else None,
-                allow_paid_stars=paid_message_star_count
-                if paid_message_star_count is not None
-                else None,
-                suggested_post=suggested_post_parameters.write()
-                if suggested_post_parameters
-                else None,
-                reply_markup=await reply_markup.write(self) if reply_markup else None,
-                background=background,
-                clear_draft=clear_draft,
-                update_stickersets_order=update_stickersets_order,
-                send_as=await self.resolve_peer(send_as) if send_as is not None else None,
-                quick_reply_shortcut=raw.types.InputQuickReplyShortcutId(
-                    shortcut_id=quick_reply_shortcut
-                )
-                if quick_reply_shortcut is not None
-                else None,
-                **text_params,
             ),
             sleep_threshold=60,
             business_connection_id=business_connection_id,
@@ -227,6 +244,7 @@ class SendCachedMedia:
                     raw.types.UpdateNewMessage,
                     raw.types.UpdateNewChannelMessage,
                     raw.types.UpdateNewScheduledMessage,
+                    raw.types.UpdateNewEphemeralMessage,
                 ),
             ):
                 return await types.Message._parse(
@@ -235,4 +253,5 @@ class SendCachedMedia:
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
                     is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
+                    business_connection_id=business_connection_id,
                 )

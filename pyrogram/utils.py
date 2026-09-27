@@ -348,12 +348,22 @@ def parse_deleted_messages(client, update, users, chats) -> list[types.Message]:
                 chat = types.Chat._parse_channel_chat(client, chats[chat_id])
 
     parsed_messages = []
+    ephemeral = isinstance(update, raw.types.UpdateDeleteEphemeralMessages)
 
     for message in messages:
+        known = (
+            client.message_cache.pop((chat.id, "ephemeral", message))
+            if ephemeral and chat is not None and getattr(client, "message_cache", None) is not None
+            else None
+        )
+
         parsed_messages.append(
             types.Message(
                 id=message,
                 chat=chat,
+                ephemeral_message_id=message if ephemeral else None,
+                from_user=known.from_user if known else None,
+                receiver_user=known.receiver_user if known else None,
                 business_connection_id=getattr(update, "connection_id", None),
                 client=client,
             )
@@ -1104,6 +1114,9 @@ class Cache:
         self._cache.move_to_end(key)
         return self._cache[key]
 
+    def pop(self, key: Any, default: Any = None) -> Any:
+        return self._cache.pop(key, default)
+
     def set(self, key: Any, value: Any) -> None:
         self._cache[key] = value
         self._cache.move_to_end(key)
@@ -1129,3 +1142,10 @@ async def write_edit_reply_markup(
         return raw.types.ReplyInlineMarkup(rows=[])
 
     return await reply_markup.write(client)
+
+
+def unbound_handler_args(receiver, filters, group: int):
+    if isinstance(filters, int):
+        return receiver, filters
+
+    return (receiver if receiver is not None else filters), group

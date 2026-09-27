@@ -101,6 +101,11 @@ class CallbackQuery(Object, Update):
         self.connection_id = connection_id
         self.reply_to_message = reply_to_message
 
+    @property
+    def chat(self) -> types.Chat | None:
+        """:obj:`~pyrogram.types.Chat`: Chat the callback button lives in, if the message is known."""
+        return self.message.chat if self.message else None
+
     @staticmethod
     async def _parse(client: pyrogram.Client, callback_query, users, chats=None) -> CallbackQuery:
         if chats is None:

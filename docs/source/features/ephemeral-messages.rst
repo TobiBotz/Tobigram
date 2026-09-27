@@ -135,8 +135,9 @@ From any send method
 *Bot API 10.3 — August 2026*
 
 Bot API 10.3 sends an ephemeral message by adding ``ephemeral_message_parameters`` to an
-ordinary send method rather than by calling a separate one, so every send method takes it —
-:meth:`~pyrogram.Client.send_message` and the twelve that send media:
+ordinary send method rather than by calling a separate one. :meth:`~pyrogram.Client.send_message`,
+:meth:`~pyrogram.Client.send_rich_message`, :meth:`~pyrogram.Client.send_cached_media` and the
+twelve that send one kind of media take it:
 
 .. code-block:: python
 
@@ -228,6 +229,28 @@ whoever sent it, quoting it:
     async def balance(client, message):
         await message.reply_ephemeral_text(f"You have {get_balance(message.from_user.id)}")
 
+A message that is itself ephemeral keeps the conversation private. ``reply``, ``answer``
+and the media shortcuts built on the send methods that take ``ephemeral_message_parameters``
+send their message as an ephemeral one to the other side — the sender of a message you
+received, or the receiver of one you sent — so a user's ephemeral command is never answered
+in front of the whole group. The same holds for a button pressed on an ephemeral
+message:
+
+.. code-block:: python
+
+    @app.on_callback_query()
+    async def pressed(client, query):
+        await query.message.reply("Only you can see this")
+
+A reply quotes the message when it came from the other side. Telegram refuses a quote of an
+ephemeral message you sent yourself, so a reply to one of those is sent without the quote.
+
+Polls, dice, games, invoices, paid media, checklists, media groups and inline bot results
+cannot be ephemeral: Telegram refuses them in ``ephemeral.sendMessage`` or strips them from it.
+Their ``reply_*`` and ``answer_*`` shortcuts raise :class:`ValueError` on an ephemeral message
+rather than post the answer to a private message for the whole chat. Call the client method,
+such as :meth:`~pyrogram.Client.send_poll`, to post one publicly on purpose.
+
 Deleting one
 ------------
 
@@ -240,6 +263,11 @@ Deleting one
     )
 
 The receiver has to be named again, because the message only ever existed for them.
+
+A deleted ephemeral message reaches :meth:`~pyrogram.Client.on_deleted_messages` with
+``is_ephemeral`` set and its id in ``ephemeral_message_id``, so it is not mistaken for the
+chat message that happens to have the same id. Its sender and receiver are filled in when
+this client saw the message.
 
 Gotchas
 -------
@@ -254,6 +282,4 @@ Gotchas
 - Everything about them is per-receiver. To tell three people something privately, send
   three messages. A welcome message is the exception: it is stored once and shown to
   everyone who arrives.
-- The Bot API also lets ``sendMessage`` and the media send methods carry
-  ``ephemeral_message_parameters``. pyrogram does not: send an ephemeral message through
-  :meth:`~pyrogram.Client.send_ephemeral_message`.
+

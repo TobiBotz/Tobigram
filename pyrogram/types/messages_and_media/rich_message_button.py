@@ -153,11 +153,14 @@ class RichMessageButton(Object):
     ) -> RichMessageButton:
         fields = read_button_type(button.type)
 
-        return RichMessageButton(
+        result = RichMessageButton(
             text=await types.RichText._parse(client, button.text),
             style=RichMessageButton._parse_style(button.style),
             **{k: v for k, v in fields.items() if k in RichMessageButton._FIELDS},
         )
+        result.raw = button
+
+        return result
 
     def _write_type(self) -> raw.base.InlineButtonType:
         return write_button_type(

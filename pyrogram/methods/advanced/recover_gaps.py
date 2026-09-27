@@ -43,6 +43,35 @@ log = logging.getLogger(__name__)
 class RecoverGaps:
     MAX_STALE_TIMESTAMP_RETRIES = 3
 
+    async def _save_update_state(self, state):
+        marks = getattr(self, "_state_marks", None)
+        if marks is None:
+            marks = self._state_marks = {}
+
+        if isinstance(state, int):
+            marks.pop(state, None)
+            await self.storage.update_state(state)
+            return
+
+        state_id, pts, qts = state[:3]
+        known_pts, known_qts = marks.get(state_id, (None, None))
+
+        if pts is not None and known_pts is not None and pts < known_pts:
+            pts = None
+
+        if qts is not None and known_qts is not None and qts < known_qts:
+            qts = None
+
+        if pts is None and qts is None and (state[1] is not None or state[2] is not None):
+            return
+
+        marks[state_id] = (
+            known_pts if pts is None else pts,
+            known_qts if qts is None else qts,
+        )
+
+        await self.storage.update_state((state_id, pts, qts) + tuple(state[3:]))
+
     async def recover_gaps(
         self: pyrogram.Client, ids: int | Iterable[int] | None = None
     ) -> tuple[int, int]:
@@ -79,6 +108,10 @@ class RecoverGaps:
             log.info("No states found, skipping recovery")
             return (message_updates_counter, other_updates_counter)
 
+        save_state = getattr(self, "_save_update_state", None)
+        if not callable(save_state):
+            save_state = getattr(getattr(self, "storage", None), "update_state", None)
+
         log.info("Started gaps recovering...")
 
         for local_state in states:
@@ -87,13 +120,14 @@ class RecoverGaps:
             if local_pts is None:
                 continue
 
-            prev_pts = 0
             stale_attempts = 0
             unusable = False
             failed = False
 
             while True:
                 try:
+                    request = (local_pts, local_qts)
+
                     diff = await self.invoke(
                         raw.functions.updates.GetChannelDifference(
                             channel=await self.resolve_peer(id),
@@ -104,7 +138,7 @@ class RecoverGaps:
                         )
                         if id < ZERO_CHANNEL_ID
                         else raw.functions.updates.GetDifference(
-                            pts=local_pts, date=local_date, qts=0
+                            pts=local_pts, date=local_date, qts=local_qts or 0
                         )
                     )
                 except (ChannelPrivate, ChannelInvalid, PeerIdInvalid):
@@ -135,31 +169,34 @@ class RecoverGaps:
                     break
 
                 if isinstance(diff, raw.types.updates.DifferenceEmpty):
-                    await self.storage.update_state((id, local_pts, None, diff.date, diff.seq))
+                    await save_state((id, local_pts, local_qts, diff.date, diff.seq))
                     break
                 elif isinstance(diff, raw.types.updates.DifferenceTooLong):
                     local_pts = diff.pts
-                    await self.storage.update_state((id, local_pts, None, local_date, local_seq))
+                    await save_state(
+                        (id, local_pts, local_qts, local_date, local_seq)
+                    )
                     continue
                 elif isinstance(diff, raw.types.updates.Difference):
                     local_pts = diff.state.pts
+                    local_qts = diff.state.qts
                     local_date = diff.state.date
                     local_seq = diff.state.seq
                 elif isinstance(diff, raw.types.updates.DifferenceSlice):
                     local_pts = diff.intermediate_state.pts
+                    local_qts = diff.intermediate_state.qts
                     local_date = diff.intermediate_state.date
                     local_seq = diff.intermediate_state.seq
-
-                    if prev_pts == local_pts:
-                        break
-
-                    prev_pts = local_pts
                 elif isinstance(diff, raw.types.updates.ChannelDifferenceEmpty):
-                    await self.storage.update_state((id, diff.pts, None, local_date, local_seq))
+                    await save_state(
+                        (id, diff.pts, local_qts, local_date, local_seq)
+                    )
                     break
                 elif isinstance(diff, raw.types.updates.ChannelDifferenceTooLong):
                     local_pts = diff.dialog.pts
-                    await self.storage.update_state((id, local_pts, None, local_date, local_seq))
+                    await save_state(
+                        (id, local_pts, local_qts, local_date, local_seq)
+                    )
                     continue
                 elif isinstance(diff, raw.types.updates.ChannelDifference):
                     local_pts = diff.pts
@@ -179,19 +216,23 @@ class RecoverGaps:
                     other_updates_counter += 1
                     await self.dispatcher.enqueue_update(update, users, chats)
 
-                if isinstance(
-                    diff, (raw.types.updates.Difference, raw.types.updates.ChannelDifference)
-                ):
+                if isinstance(diff, raw.types.updates.Difference):
+                    break
+
+                if isinstance(diff, raw.types.updates.ChannelDifference) and diff.final:
+                    break
+
+                if (local_pts, local_qts) == request:
                     break
 
             if failed:
                 continue
 
             if unusable:
-                await self.storage.update_state(id)
+                await save_state(id)
                 continue
 
-            await self.storage.update_state((id, local_pts, None, local_date, local_seq))
+            await save_state((id, local_pts, local_qts, local_date, local_seq))
 
         log.info(
             "Recovered %s messages and %s updates", message_updates_counter, other_updates_counter

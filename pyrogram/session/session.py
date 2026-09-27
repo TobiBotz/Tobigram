@@ -165,6 +165,7 @@ class Session:
         self._start_active = False
         self._start_completed = asyncio.Event()
         self._stopping = False
+        self._closed = False
 
         self.loop = utils.get_event_loop()
 
@@ -180,6 +181,10 @@ class Session:
         try:
             while True:
                 attempt += 1
+
+                if self._closed:
+                    return
+
                 self._stopping = False
                 self._teardown_started = False
                 self._skew_breaches = 0
@@ -246,10 +251,13 @@ class Session:
                     log.info("System: %s (%s)", self.client.system_version, self.client.lang_code)
                 except AuthKeyDuplicated as e:
                     self._start_exc = e
-                    await self.stop()
+                    await self._stop()
                     raise e
                 except (FloodWait, FloodPremiumWait) as e:
-                    await self.stop()
+                    await self._stop()
+
+                    if self._closed:
+                        return
 
                     if max_attempts is not None and attempt >= max_attempts:
                         self._start_exc = e
@@ -263,7 +271,10 @@ class Session:
                     )
                     await asyncio.sleep(backoff)
                 except (InternalServerError, ServiceUnavailable, TimeoutError, OSError) as e:
-                    await self.stop()
+                    await self._stop()
+
+                    if self._closed:
+                        return
 
                     if max_attempts is not None and attempt >= max_attempts:
                         self._start_exc = e
@@ -279,14 +290,18 @@ class Session:
                     await asyncio.sleep(backoff)
                 except RPCError as e:
                     self._start_exc = e
-                    await self.stop()
+                    await self._stop()
                     raise
                 except (Exception, asyncio.CancelledError) as e:
                     self._start_exc = e
-                    await self.stop()
+                    await self._stop()
                     raise e
                 else:
                     break
+
+            if self._closed:
+                await self._stop()
+                return
 
             self.is_started.set()
 
@@ -302,6 +317,11 @@ class Session:
                 log.exception(e)
 
     async def stop(self):
+        self._closed = True
+
+        await self._stop()
+
+    async def _stop(self):
         self.is_started.clear()
         self._stopping = True
 
@@ -356,13 +376,20 @@ class Session:
         return self._restart_lock.locked() or self._start_active
 
     async def restart(self):
+        if self._closed:
+            return
+
         if self._restart_lock.locked():
             await self._restart_done.wait()
             return
         async with self._restart_lock:
             self._restart_done.clear()
             try:
-                await self.stop()
+                await self._stop()
+
+                if self._closed:
+                    return
+
                 if getattr(self.client.storage, "conn", True) is None:
                     await self.client.storage.open()
                 await self.start(max_attempts=self.MAX_RETRIES)
@@ -775,6 +802,9 @@ class Session:
     async def _wait_started(self):
         if self._start_active:
             await self._start_completed.wait()
+
+        if self._closed:
+            raise ConnectionError("Session is stopped")
 
         if not self.is_started.is_set():
             await self.restart()

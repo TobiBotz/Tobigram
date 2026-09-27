@@ -19,6 +19,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 
 import pyrogram
@@ -96,10 +97,10 @@ class Terminate:
             self.updates_watchdog_event.set()
 
             if self.updates_watchdog_task is not None:
-                try:
+                self.updates_watchdog_task.cancel()
+
+                with contextlib.suppress(asyncio.CancelledError):
                     await self.updates_watchdog_task
-                except (Exception, asyncio.CancelledError):
-                    log.exception("Error stopping updates watchdog")
 
                 self.updates_watchdog_task = None
 

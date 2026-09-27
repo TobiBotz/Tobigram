@@ -3583,3 +3583,733 @@ async def test_disabled_link_preview_with_url_does_not_send_media_webpage():
     written = await itmc.write(client, reply_markup=None)
     assert isinstance(written, raw.types.InputBotInlineMessageText)
     assert written.no_webpage is True
+
+
+def _ephemeral_client():
+    from pyrogram import Client
+
+    return Client("test_ephemeral", in_memory=True)
+
+
+def _ephemeral_parties():
+    from pyrogram import raw
+
+    users = {
+        5: raw.types.User(id=5, first_name="Five"),
+        7: raw.types.User(id=7, first_name="Seven"),
+    }
+    chats = {
+        100: raw.types.Channel(id=100, title="Channel", photo=raw.types.ChatPhotoEmpty(), date=0),
+    }
+    return users, chats
+
+
+def _raw_ephemeral(sender=7, receiver=5, message_id=86, channel_id=100):
+    from pyrogram import raw
+
+    return raw.types.EphemeralMessage(
+        id=message_id,
+        from_id=raw.types.PeerUser(user_id=sender),
+        peer_id=raw.types.PeerChannel(channel_id=channel_id),
+        receiver_id=receiver,
+        date=1700000000,
+        message="Hello ephemeral",
+        out=True,
+    )
+
+
+async def test_a_deleted_ephemeral_message_is_reported_as_ephemeral():
+    from pyrogram import raw, types, utils
+
+    client = _ephemeral_client()
+    users, chats = _ephemeral_parties()
+    sent = await types.Message._parse(
+        client, _raw_ephemeral(sender=7, receiver=5, message_id=86), users, chats
+    )
+
+    deleted = utils.parse_deleted_messages(
+        client,
+        raw.types.UpdateDeleteEphemeralMessages(
+            peer=raw.types.PeerChannel(channel_id=100), ids=[86, 87]
+        ),
+        users,
+        chats,
+    )
+
+    assert [(m.id, m.ephemeral_message_id, m.is_ephemeral) for m in deleted] == [
+        (86, 86, True),
+        (87, 87, True),
+    ]
+    assert deleted[0].chat.id == -1000000000100
+    assert (deleted[0].from_user.id, deleted[0].receiver_user.id) == (
+        sent.from_user.id,
+        sent.receiver_user.id,
+    )
+    assert deleted[1].from_user is None and deleted[1].receiver_user is None
+    assert client.message_cache.get((-1000000000100, "ephemeral", 86)) is None
+
+
+def test_a_deleted_ordinary_message_is_not_reported_as_ephemeral():
+    from pyrogram import raw, utils
+
+    client = _ephemeral_client()
+    users, chats = _ephemeral_parties()
+
+    deleted = utils.parse_deleted_messages(
+        client,
+        raw.types.UpdateDeleteChannelMessages(channel_id=100, messages=[86], pts=1, pts_count=1),
+        users,
+        chats,
+    )
+
+    assert [(m.id, m.is_ephemeral) for m in deleted] == [(86, False)]
+
+
+@pytest.mark.parametrize(
+    "style", [pyrogram.enums.ParseMode.HTML, pyrogram.enums.ParseMode.MARKDOWN]
+)
+def test_a_mention_survives_copy_and_pickle(style):
+    import copy
+    import pickle
+
+    from pyrogram.types.user_and_chats.user import Link
+
+    link = Link("tg://user?id=1", "A <b> & B", style)
+    copies = [copy.copy(link), copy.deepcopy(link)] + [
+        pickle.loads(pickle.dumps(link, protocol))
+        for protocol in range(pickle.HIGHEST_PROTOCOL + 1)
+    ]
+
+    for copied in copies:
+        assert type(copied) is Link
+        assert copied == link
+        assert (copied.url, copied.text, copied.style) == (link.url, link.text, link.style)
+        assert copied("other") == link("other")
+
+
+_FILTERED_DECORATORS = sorted(
+    name
+    for name in dir(pyrogram.Client)
+    if name.startswith("on_")
+    and name not in {"on_start", "on_stop", "on_connect", "on_disconnect", "on_error"}
+)
+
+
+def _unbound_registration(decorator):
+    def callback(*args):
+        pass
+
+    decorator(callback)
+    [(handler, group)] = callback.handlers
+    return handler, group
+
+
+@pytest.mark.parametrize("name", _FILTERED_DECORATORS)
+@pytest.mark.parametrize(
+    "call,expected_filter,expected_group",
+    [
+        (lambda on, f: on(), None, 0),
+        (lambda on, f: on(f), "f", 0),
+        (lambda on, f: on(f, 2), "f", 2),
+        (lambda on, f: on(f, group=2), "f", 2),
+        (lambda on, f: on(filters=f), "f", 0),
+        (lambda on, f: on(filters=f, group=2), "f", 2),
+        (lambda on, f: on(group=2), None, 2),
+        (lambda on, f: on(None, 2), None, 2),
+    ],
+)
+def test_an_unbound_decorator_keeps_its_filter_and_group(
+    name, call, expected_filter, expected_group
+):
+    f = pyrogram.filters.create(lambda *args: True)
+
+    handler, group = _unbound_registration(call(getattr(pyrogram.Client, name), f))
+
+    assert handler.filters is (f if expected_filter else None)
+    assert group == expected_group
+
+
+def test_an_unbound_decorator_keeps_an_empty_set_filter():
+    empty = pyrogram.filters.user([])
+
+    handler, group = _unbound_registration(pyrogram.Client.on_message(filters=empty))
+
+    assert handler.filters is empty
+    assert group == 0
+
+
+@pytest.mark.parametrize(
+    "call,expected_exceptions,expected_filter,expected_group",
+    [
+        (lambda on, f: on(), None, None, 0),
+        (lambda on, f: on(ValueError), ValueError, None, 0),
+        (lambda on, f: on([ValueError, KeyError]), [ValueError, KeyError], None, 0),
+        (lambda on, f: on(ValueError, f), ValueError, "f", 0),
+        (lambda on, f: on(ValueError, f, 2), ValueError, "f", 2),
+        (lambda on, f: on(ValueError, f, group=2), ValueError, "f", 2),
+        (lambda on, f: on(ValueError, filters=f), ValueError, "f", 0),
+        (lambda on, f: on(ValueError, group=2), ValueError, None, 2),
+        (lambda on, f: on(ValueError, None, 2), ValueError, None, 2),
+        (lambda on, f: on(exceptions=ValueError, filters=f, group=2), ValueError, "f", 2),
+        (lambda on, f: on(filters=f), None, "f", 0),
+        (lambda on, f: on(group=2), None, None, 2),
+        (lambda on, f: on(None, f, 2), None, "f", 2),
+        (lambda on, f: on(None, None, 2), None, None, 2),
+        (lambda on, f: on(ValueError, None, f), ValueError, "f", 0),
+    ],
+)
+def test_an_unbound_error_decorator_keeps_its_exceptions_filter_and_group(
+    call, expected_exceptions, expected_filter, expected_group
+):
+    f = pyrogram.filters.create(lambda *args: True)
+
+    handler, group = _unbound_registration(call(pyrogram.Client.on_error, f))
+
+    expected = (
+        expected_exceptions
+        if isinstance(expected_exceptions, list)
+        else ([expected_exceptions] if expected_exceptions else [Exception])
+    )
+    assert list(handler.exceptions) == expected
+    assert handler.filters is (f if expected_filter else None)
+    assert group == expected_group
+
+
+def test_a_plugin_registered_with_a_keyword_filter_is_loaded(tmp_path, monkeypatch):
+    package = tmp_path / "kwplugins"
+    package.mkdir()
+    (package / "handlers.py").write_text(
+        "from pyrogram import Client, filters\n"
+        "\n"
+        "@Client.on_message(filters=filters.private, group=4)\n"
+        "async def private(client, message):\n"
+        "    pass\n"
+        "\n"
+        "@Client.on_error(ValueError, filters.private, 5)\n"
+        "async def failed(client, error, handler, update):\n"
+        "    pass\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    client = pyrogram.Client("kw", in_memory=True, plugins={"root": "kwplugins"})
+    added = []
+    client.add_handler = lambda handler, group=0: added.append(
+        (type(handler).__name__, group, handler)
+    )
+
+    client.load_plugins()
+
+    by_kind = {kind: (group, handler) for kind, group, handler in added}
+    assert by_kind["MessageHandler"][0] == 4
+    assert by_kind["MessageHandler"][1].filters is pyrogram.filters.private
+    assert by_kind["ErrorHandler"][0] == 5
+    assert list(by_kind["ErrorHandler"][1].exceptions) == [ValueError]
+
+
+def _bare(cls, **fields):
+    import inspect
+
+    obj = cls.__new__(cls)
+    for name in inspect.signature(cls.__init__).parameters:
+        if name not in {"self", "client"}:
+            try:
+                setattr(obj, name, None)
+            except AttributeError:
+                pass
+    for name, value in fields.items():
+        setattr(obj, name, value)
+    return obj
+
+
+def _sender_filter_cases():
+    t = pyrogram.types
+    someone = t.User(id=5, username="Someone", is_self=False, is_bot=False)
+    me = t.User(id=6, is_self=True, is_bot=False)
+    robot = t.User(id=7, is_self=False, is_bot=True)
+    group = t.Chat(id=-100)
+
+    return [
+        (
+            "message",
+            _bare(t.Message, from_user=someone, chat=group, outgoing=False),
+            someone,
+            None,
+        ),
+        (
+            "channel post",
+            _bare(t.Message, sender_chat=group, chat=group, outgoing=False),
+            None,
+            group,
+        ),
+        (
+            "user status",
+            t.User(id=5, username="Someone", is_self=False, is_bot=False),
+            someone,
+            None,
+        ),
+        ("own status", t.User(id=6, is_self=True, is_bot=False), me, None),
+        ("bot status", t.User(id=7, is_self=False, is_bot=True), robot, None),
+        (
+            "reaction",
+            _bare(t.MessageReactionUpdated, user=someone, chat=group),
+            someone,
+            None,
+        ),
+        ("own reaction", _bare(t.MessageReactionUpdated, user=me, chat=group), me, None),
+        (
+            "anonymous reaction",
+            _bare(t.MessageReactionUpdated, actor_chat=group, chat=group),
+            None,
+            group,
+        ),
+        (
+            "boost",
+            _bare(
+                t.ChatBoostUpdated,
+                boost=_bare(t.ChatBoost, from_user=someone),
+                chat=group,
+            ),
+            someone,
+            None,
+        ),
+        (
+            "boost without booster",
+            _bare(t.ChatBoostUpdated, boost=_bare(t.ChatBoost), chat=group),
+            None,
+            None,
+        ),
+        ("removed boost", _bare(t.ChatBoostUpdated, chat=group), None, None),
+        (
+            "business connection",
+            _bare(t.BusinessConnection, user=someone),
+            someone,
+            None,
+        ),
+        (
+            "managed bot",
+            _bare(t.ManagedBotUpdated, user=someone, bot=robot),
+            someone,
+            None,
+        ),
+        ("callback query", _bare(t.CallbackQuery, from_user=robot), robot, None),
+        ("poll", _bare(t.Poll), None, None),
+        ("reaction count", _bare(t.MessageReactionCountUpdated, chat=group), None, None),
+        ("generation stopped", _bare(t.MessageGenerationStopped, chat=group), None, None),
+    ]
+
+
+@pytest.mark.parametrize(
+    "label,update,sender,sender_chat",
+    _sender_filter_cases(),
+    ids=[c[0] for c in _sender_filter_cases()],
+)
+@pytest.mark.asyncio
+async def test_the_sender_filters_read_every_update_type(label, update, sender, sender_chat):
+    f = pyrogram.filters
+
+    assert bool(await f.user(5)(None, update)) == bool(sender and sender.id == 5)
+    assert bool(await f.user("@someone")(None, update)) == bool(sender and sender.id == 5)
+    assert bool(await f.user("me")(None, update)) == bool(sender and sender.is_self)
+    assert bool(await f.me(None, update)) == bool(sender and sender.is_self)
+    assert bool(await f.bot(None, update)) == bool(sender and sender.is_bot)
+    assert bool(await f.sender_chat(None, update)) == bool(sender_chat)
+
+    if getattr(update, "chat", None) is not None:
+        assert bool(await f.chat("me")(None, update)) == bool(sender and sender.is_self)
+
+
+def _chat_filter_cases():
+    t = pyrogram.types
+    someone = t.User(id=5, is_self=False, is_bot=False)
+    private = t.Chat(id=5, type=pyrogram.enums.ChatType.PRIVATE)
+    group = t.Chat(
+        id=-100,
+        type=pyrogram.enums.ChatType.SUPERGROUP,
+        is_forum=True,
+        is_admin=True,
+    )
+    channel = t.Chat(id=-200, type=pyrogram.enums.ChatType.CHANNEL)
+
+    return [
+        (
+            "incoming message",
+            _bare(t.Message, from_user=someone, chat=private, outgoing=False),
+            private,
+            False,
+        ),
+        (
+            "outgoing message",
+            _bare(t.Message, from_user=someone, chat=group, outgoing=True),
+            group,
+            True,
+        ),
+        (
+            "channel post",
+            _bare(t.Message, chat=channel, outgoing=False),
+            channel,
+            False,
+        ),
+        (
+            "callback query",
+            _bare(
+                t.CallbackQuery,
+                from_user=someone,
+                message=_bare(t.Message, chat=group),
+            ),
+            group,
+            False,
+        ),
+        ("inline callback query", _bare(t.CallbackQuery, from_user=someone), None, False),
+        ("inline query", _bare(t.InlineQuery, from_user=someone), None, False),
+        (
+            "chosen inline result",
+            _bare(t.ChosenInlineResult, from_user=someone),
+            None,
+            False,
+        ),
+        ("user status", t.User(id=5, is_self=False), None, False),
+        ("poll", _bare(t.Poll), None, False),
+        (
+            "pre checkout query",
+            _bare(t.PreCheckoutQuery, from_user=someone),
+            None,
+            False,
+        ),
+        ("shipping query", _bare(t.ShippingQuery, from_user=someone), None, False),
+        (
+            "purchased paid media",
+            _bare(t.PurchasedPaidMedia, from_user=someone),
+            None,
+            False,
+        ),
+        ("business connection", _bare(t.BusinessConnection, user=someone), None, False),
+        ("managed bot", _bare(t.ManagedBotUpdated, user=someone), None, False),
+        (
+            "chat member",
+            _bare(t.ChatMemberUpdated, from_user=someone, chat=group),
+            group,
+            False,
+        ),
+        (
+            "reaction",
+            _bare(t.MessageReactionUpdated, user=someone, chat=private),
+            private,
+            False,
+        ),
+        ("boost", _bare(t.ChatBoostUpdated, chat=channel), channel, False),
+    ]
+
+
+@pytest.mark.parametrize(
+    "label,update,chat,outgoing",
+    _chat_filter_cases(),
+    ids=[c[0] for c in _chat_filter_cases()],
+)
+@pytest.mark.asyncio
+async def test_the_chat_and_direction_filters_read_every_update_type(label, update, chat, outgoing):
+    f = pyrogram.filters
+    types = pyrogram.enums.ChatType
+    kind = chat.type if chat else None
+
+    assert bool(await f.incoming(None, update)) is (not outgoing)
+    assert bool(await f.outgoing(None, update)) is outgoing
+    assert bool(await f.private(None, update)) is (kind in {types.PRIVATE, types.BOT})
+    assert bool(await f.direct(None, update)) is (kind == types.PRIVATE)
+    assert bool(await f.group(None, update)) is (
+        kind in {types.GROUP, types.SUPERGROUP, types.FORUM}
+    )
+    assert bool(await f.channel(None, update)) is (kind == types.CHANNEL)
+    assert bool(await f.forum(None, update)) is bool(chat and chat.is_forum)
+    assert bool(await f.admin(None, update)) is bool(chat and chat.is_admin)
+    assert bool(await f.chat(-100)(None, update)) is bool(chat and chat.id == -100)
+    assert bool(await f.chat([5, -200])(None, update)) is bool(chat and chat.id in (5, -200))
+
+
+def _restartable_session(monkeypatch, connect=None, send=None):
+    from pyrogram.session.session import Session
+
+    from tests.test_session import DummyClient
+
+    made = []
+
+    class _Connection:
+        def __init__(self, *args, **kwargs):
+            made.append(self)
+
+        async def connect(self):
+            if connect is not None:
+                await connect(len(made))
+
+        async def close(self):
+            pass
+
+    async def _send(self, query, *args, **kwargs):
+        if send is not None:
+            return await send(query)
+
+    class _Storage:
+        conn = object()
+        opened = 0
+
+        async def api_id(self):
+            return 1
+
+        async def open(self):
+            self.opened += 1
+
+    monkeypatch.setattr(DummyClient, "connection_factory", _Connection)
+    monkeypatch.setattr(Session, "send", _send)
+    monkeypatch.setattr(Session, "recv_worker", lambda self: asyncio.sleep(3600))
+
+    client = DummyClient()
+    client.storage = _Storage()
+
+    return Session(client, 1, b"\x00" * 256, False, crypto_executor=None), made, client.storage
+
+
+@pytest.mark.parametrize("stop_during", ["storage", "handshake", "backoff"])
+async def test_a_stop_during_a_restart_keeps_the_session_stopped(monkeypatch, stop_during):
+    reached = asyncio.Event()
+    release = asyncio.Event()
+
+    async def connect(attempt):
+        if attempt == 2 and stop_during == "handshake":
+            reached.set()
+            await release.wait()
+
+        if attempt == 2 and stop_during == "backoff":
+            reached.set()
+            raise OSError("down")
+
+    session, made, storage = _restartable_session(monkeypatch, connect)
+    await session.start()
+
+    if stop_during == "storage":
+
+        async def open_storage():
+            reached.set()
+            await release.wait()
+
+        storage.conn = None
+        storage.open = open_storage
+
+    restarting = asyncio.ensure_future(session.restart())
+
+    await reached.wait()
+    await session.stop()
+
+    release.set()
+    await asyncio.wait_for(restarting, 5)
+
+    assert not session.is_started.is_set()
+    assert len(made) == (1 if stop_during == "storage" else 2)
+    assert session.ping_task.done()
+    assert session.recv_task.done()
+
+
+@pytest.mark.parametrize("in_flight", [False, True])
+async def test_a_request_on_a_stopped_session_does_not_reconnect(monkeypatch, in_flight):
+    from pyrogram import raw
+
+    sending = asyncio.Event()
+    stopped = asyncio.Event()
+
+    async def send(query):
+        if isinstance(query, raw.functions.help.GetConfig):
+            sending.set()
+            await stopped.wait()
+            raise ConnectionResetError("Connection lost while awaiting a response")
+
+    session, made, storage = _restartable_session(monkeypatch, send=send)
+    await session.start()
+
+    if in_flight:
+        request = asyncio.ensure_future(session.invoke(raw.functions.help.GetConfig()))
+        await sending.wait()
+
+    await session.stop()
+    stopped.set()
+    storage.conn = None
+
+    if not in_flight:
+        request = asyncio.ensure_future(session.invoke(raw.functions.help.GetConfig()))
+
+    with pytest.raises(ConnectionError, match="Session is stopped"):
+        await asyncio.wait_for(request, 5)
+
+    assert len(made) == 1
+    assert storage.opened == 0
+    assert not session.is_started.is_set()
+
+
+async def test_a_media_session_handed_out_is_not_reaped_before_its_first_request():
+    import time
+
+    class _MediaSession:
+        results = {}
+        is_restarting = False
+
+        def __init__(self):
+            self.last_used = time.monotonic() - 10_000
+            self.is_started = asyncio.Event()
+            self.is_started.set()
+            self.stopped = False
+
+        async def stop(self):
+            self.stopped = True
+
+    class _Client:
+        _get_media_session_pool = pyrogram.Client._get_media_session_pool
+        reap_media_sessions = pyrogram.Client.reap_media_sessions
+        MEDIA_SESSION_IDLE_TIMEOUT = 300
+
+        def __init__(self):
+            self.media_session_pools = {2: [_MediaSession()]}
+            self._media_sessions_locks = {}
+
+    client = _Client()
+    session = client.media_session_pools[2][0]
+
+    assert await client._get_media_session_pool(2, 1) == [session]
+    assert await client.reap_media_sessions() == 0
+    assert not session.stopped
+
+
+_EPHEMERAL_SHORTCUTS = ["reply", "answer", "reply_rich", "answer_rich"] + [
+    f"{prefix}_{kind}"
+    for kind in (
+        "animation",
+        "audio",
+        "contact",
+        "document",
+        "location",
+        "live_photo",
+        "photo",
+        "sticker",
+        "venue",
+        "video",
+        "video_note",
+        "voice",
+    )
+    for prefix in ("reply", "answer")
+]
+
+
+def _shortcut_message(ephemeral, outgoing=False):
+    from unittest.mock import AsyncMock
+
+    from pyrogram import enums, types
+
+    return types.Message(
+        id=11,
+        chat=types.Chat(id=-100, type=enums.ChatType.SUPERGROUP),
+        from_user=types.User(id=5),
+        receiver_user=types.User(id=7) if ephemeral else None,
+        ephemeral_message_id=11 if ephemeral else None,
+        outgoing=outgoing,
+        client=AsyncMock(),
+    )
+
+
+async def _call_shortcut(message, name):
+    import inspect
+
+    method = getattr(message, name)
+    required = [
+        p.name
+        for p in inspect.signature(method).parameters.values()
+        if p.default is inspect.Parameter.empty and p.kind is p.POSITIONAL_OR_KEYWORD
+    ]
+
+    await method(**{p: 1 if p in ("latitude", "longitude") else "x" for p in required})
+
+    return next(c.kwargs for c in message._client.method_calls if c[0].startswith("send_"))
+
+
+@pytest.mark.parametrize("name", _EPHEMERAL_SHORTCUTS)
+@pytest.mark.parametrize("outgoing, receiver", [(False, 5), (True, 7)])
+async def test_a_reply_to_an_ephemeral_message_stays_ephemeral(name, outgoing, receiver):
+    kwargs = await _call_shortcut(_shortcut_message(True, outgoing), name)
+
+    assert kwargs["ephemeral_message_parameters"].receiver_user_id == receiver
+
+    if name.startswith("reply") and outgoing:
+        assert kwargs["reply_parameters"] is None
+    elif name.startswith("reply"):
+        assert kwargs["reply_parameters"].ephemeral_message_id == 11
+        assert kwargs["reply_parameters"].message_id is None
+
+
+@pytest.mark.parametrize("name", _EPHEMERAL_SHORTCUTS)
+async def test_a_reply_to_an_ordinary_message_is_not_ephemeral(name):
+    kwargs = await _call_shortcut(_shortcut_message(False), name)
+
+    assert kwargs["ephemeral_message_parameters"] is None
+
+    if name.startswith("reply"):
+        assert kwargs["reply_parameters"].message_id == 11
+        assert kwargs["reply_parameters"].ephemeral_message_id is None
+
+
+@pytest.mark.parametrize("outgoing, receiver", [(False, 5), (True, 7)])
+async def test_an_ephemeral_reply_to_an_ephemeral_message_goes_to_the_other_side(
+    outgoing, receiver
+):
+    message = _shortcut_message(True, outgoing)
+
+    await message.reply_ephemeral_text("only you")
+
+    kwargs = message._client.send_ephemeral_message.await_args.kwargs
+
+    assert kwargs["receiver_id"] == receiver
+
+    if outgoing:
+        assert kwargs["reply_parameters"] is None
+    else:
+        assert kwargs["reply_parameters"].ephemeral_message_id == 11
+        assert kwargs["reply_parameters"].message_id is None
+
+
+async def test_an_ephemeral_message_keeps_a_receiver_missing_from_the_users():
+    from unittest.mock import Mock
+
+    from pyrogram import raw, types
+
+    message = await types.Message._parse(
+        Mock(),
+        raw.types.EphemeralMessage(
+            id=3,
+            from_id=raw.types.PeerUser(user_id=5),
+            peer_id=raw.types.PeerChannel(channel_id=100),
+            receiver_id=7,
+            date=0,
+            message="hi",
+            out=True,
+        ),
+        {
+            5: raw.types.User(
+                id=5,
+                bot=True,
+                first_name="bot",
+                usernames=[],
+                restriction_reason=[],
+            )
+        },
+        {
+            100: raw.types.Channel(
+                id=100,
+                title="g",
+                photo=raw.types.ChatPhotoEmpty(),
+                date=0,
+                megagroup=True,
+                usernames=[],
+                restriction_reason=[],
+            )
+        },
+    )
+
+    assert message.receiver_user.id == 7
+    assert message._ephemeral_target() == 7
+    assert message._reply_receiver_id() == 7

@@ -49,6 +49,8 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
+EPHEMERAL_QUOTE_SECONDS = 13
+
 
 class Str(str):
     """A message text or caption, indexed the way Telegram counts it.
@@ -2184,7 +2186,9 @@ class Message(Object, Update):
                 )
                 chat = types.Chat._parse_user_chat(client, users.get(counterpart))
 
-            receiver_user = types.User._parse(client, users.get(message.receiver_id))
+            receiver_user = types.User._parse(client, users.get(message.receiver_id)) or types.User(
+                id=message.receiver_id, client=client
+            )
 
             entities = types.List(
                 filter(
@@ -2198,7 +2202,7 @@ class Message(Object, Update):
 
             reply_markup = _parse_reply_markup(message.reply_markup)
 
-            return Message(
+            parsed_message = Message(
                 id=message.id,
                 from_user=from_user,
                 chat=chat,
@@ -2218,6 +2222,20 @@ class Message(Object, Update):
                 raw=message,
                 client=client,
             )
+
+            if (
+                client
+                and getattr(client, "message_cache", None) is not None
+                and parsed_message.chat is not None
+            ):
+                try:
+                    client.message_cache[
+                        (parsed_message.chat.id, "ephemeral", parsed_message.id)
+                    ] = parsed_message
+                except TypeError:
+                    pass
+
+            return parsed_message
 
     @property
     def link(self) -> str:
@@ -2463,10 +2481,8 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
-                quote=quote_text,
-                quote_entities=quote_entities,
+            reply_parameters = self._reply_parameters(
+                reply_to_message_id, quote_text, quote_entities
             )
 
         if quote is not None:
@@ -2483,6 +2499,7 @@ class Message(Object, Update):
 
         return await self._client.send_animation(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             animation=animation,
             caption=caption,
             parse_mode=parse_mode,
@@ -2683,6 +2700,7 @@ class Message(Object, Update):
 
         return await self._client.send_animation(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             animation=animation,
             caption=caption,
             parse_mode=parse_mode,
@@ -2865,10 +2883,8 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
-                quote=quote_text,
-                quote_entities=quote_entities,
+            reply_parameters = self._reply_parameters(
+                reply_to_message_id, quote_text, quote_entities
             )
 
         if quote is not None:
@@ -2885,6 +2901,7 @@ class Message(Object, Update):
 
         return await self._client.send_audio(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             audio=audio,
             caption=caption,
             parse_mode=parse_mode,
@@ -2950,6 +2967,7 @@ class Message(Object, Update):
         * message_thread_id
         * direct_messages_topic_id
         * business_connection_id
+        * ephemeral_message_parameters
 
         Parameters:
             audio (``str``):
@@ -3069,6 +3087,7 @@ class Message(Object, Update):
 
         return await self._client.send_audio(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             audio=audio,
             caption=caption,
             parse_mode=parse_mode,
@@ -3128,6 +3147,7 @@ class Message(Object, Update):
         * direct_messages_topic_id
         * business_connection_id
         * reply_parameters
+        * ephemeral_message_parameters
 
         Parameters:
             phone_number (``str``):
@@ -3190,10 +3210,8 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
-                quote=quote_text,
-                quote_entities=quote_entities,
+            reply_parameters = self._reply_parameters(
+                reply_to_message_id, quote_text, quote_entities
             )
 
         if quote is not None:
@@ -3210,6 +3228,7 @@ class Message(Object, Update):
 
         return await self._client.send_contact(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             phone_number=phone_number,
             first_name=first_name,
             last_name=last_name,
@@ -3259,6 +3278,7 @@ class Message(Object, Update):
         * message_thread_id
         * direct_messages_topic_id
         * business_connection_id
+        * ephemeral_message_parameters
 
         Parameters:
             phone_number (``str``):
@@ -3328,6 +3348,7 @@ class Message(Object, Update):
 
         return await self._client.send_contact(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             phone_number=phone_number,
             first_name=first_name,
             last_name=last_name,
@@ -3493,10 +3514,8 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
-                quote=quote_text,
-                quote_entities=quote_entities,
+            reply_parameters = self._reply_parameters(
+                reply_to_message_id, quote_text, quote_entities
             )
 
         if quote is not None:
@@ -3513,6 +3532,7 @@ class Message(Object, Update):
 
         return await self._client.send_document(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             document=document,
             thumb=thumb,
             caption=caption,
@@ -3574,6 +3594,7 @@ class Message(Object, Update):
         * message_thread_id
         * direct_messages_topic_id
         * business_connection_id
+        * ephemeral_message_parameters
 
         Parameters:
             document (``str``):
@@ -3689,6 +3710,7 @@ class Message(Object, Update):
 
         return await self._client.send_document(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             document=document,
             thumb=thumb,
             caption=caption,
@@ -3778,7 +3800,10 @@ class Message(Object, Update):
 
         Raises:
             RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since a game cannot be sent as one.
         """
+        self._refuse_ephemeral("A game", "send_game")
+
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id
@@ -3868,7 +3893,10 @@ class Message(Object, Update):
 
         Raises:
             RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since a game cannot be sent as one.
         """
+        self._refuse_ephemeral("A game", "send_game")
+
         if message_thread_id is None:
             message_thread_id = self.message_thread_id
 
@@ -4045,7 +4073,13 @@ class Message(Object, Update):
 
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent invoice message is returned.
+
+        Raises:
+            RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since an invoice cannot be sent as one.
         """
+        self._refuse_ephemeral("An invoice", "send_invoice")
+
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(message_id=self.id)
 
@@ -4253,7 +4287,13 @@ class Message(Object, Update):
 
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent invoice message is returned.
+
+        Raises:
+            RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since an invoice cannot be sent as one.
         """
+        self._refuse_ephemeral("An invoice", "send_invoice")
+
         if message_thread_id is None:
             message_thread_id = self.message_thread_id
 
@@ -4333,6 +4373,7 @@ class Message(Object, Update):
         * direct_messages_topic_id
         * business_connection_id
         * reply_parameters
+        * ephemeral_message_parameters
 
         Parameters:
             latitude (``float``):
@@ -4405,10 +4446,8 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
-                quote=quote_text,
-                quote_entities=quote_entities,
+            reply_parameters = self._reply_parameters(
+                reply_to_message_id, quote_text, quote_entities
             )
 
         if quote is not None:
@@ -4425,6 +4464,7 @@ class Message(Object, Update):
 
         return await self._client.send_location(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             latitude=latitude,
             longitude=longitude,
             horizontal_accuracy=horizontal_accuracy,
@@ -4478,6 +4518,7 @@ class Message(Object, Update):
         * message_thread_id
         * direct_messages_topic_id
         * business_connection_id
+        * ephemeral_message_parameters
 
         Parameters:
             latitude (``float``):
@@ -4557,6 +4598,7 @@ class Message(Object, Update):
 
         return await self._client.send_location(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             latitude=latitude,
             longitude=longitude,
             horizontal_accuracy=horizontal_accuracy,
@@ -4699,13 +4741,16 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(message_id=self.id)
+            reply_parameters = self._reply_parameters()
 
         if message_thread_id is None:
             message_thread_id = self.message_thread_id
 
         if direct_messages_topic_id is None:
             direct_messages_topic_id = self.direct_messages_topic_id
+
+        if ephemeral_message_parameters is None:
+            ephemeral_message_parameters = self._ephemeral_reply_parameters()
 
         return await self._client.send_live_photo(
             chat_id=self.chat.id,
@@ -4862,6 +4907,9 @@ class Message(Object, Update):
         if direct_messages_topic_id is None:
             direct_messages_topic_id = self.direct_messages_topic_id
 
+        if ephemeral_message_parameters is None:
+            ephemeral_message_parameters = self._ephemeral_reply_parameters()
+
         return await self._client.send_live_photo(
             chat_id=self.chat.id,
             live_photo=live_photo,
@@ -4966,12 +5014,13 @@ class Message(Object, Update):
 
         Raises:
             RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since a media group cannot be sent as one.
         """
+        self._refuse_ephemeral("A media group", "send_media_group")
+
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
-                quote=quote_text,
-                quote_entities=quote_entities,
+            reply_parameters = self._reply_parameters(
+                reply_to_message_id, quote_text, quote_entities
             )
 
         if quote is not None:
@@ -5075,7 +5124,10 @@ class Message(Object, Update):
 
         Raises:
             RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since a media group cannot be sent as one.
         """
+        self._refuse_ephemeral("A media group", "send_media_group")
+
         if message_thread_id is None:
             message_thread_id = self.message_thread_id
 
@@ -5129,6 +5181,7 @@ class Message(Object, Update):
         * direct_messages_topic_id
         * business_connection_id
         * reply_parameters
+        * ephemeral_message_parameters
 
         Example:
             .. code-block:: python
@@ -5201,7 +5254,7 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(message_id=self.id)
+            reply_parameters = self._reply_parameters()
 
         if message_thread_id is None:
             message_thread_id = self.message_thread_id
@@ -5211,6 +5264,7 @@ class Message(Object, Update):
 
         return await self._client.send_rich_message(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             rich_text=rich_text,
             parse_mode=parse_mode,
             media=media,
@@ -5261,6 +5315,7 @@ class Message(Object, Update):
         * message_thread_id
         * direct_messages_topic_id
         * business_connection_id
+        * ephemeral_message_parameters
 
         Unlike :meth:`~pyrogram.types.Message.reply_rich`, this method does not reply to
         the message it is bound to.
@@ -5343,6 +5398,7 @@ class Message(Object, Update):
 
         return await self._client.send_rich_message(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             rich_text=rich_text,
             parse_mode=parse_mode,
             media=media,
@@ -5398,6 +5454,7 @@ class Message(Object, Update):
         * message_thread_id
         * direct_messages_topic_id
         * business_connection_id
+        * ephemeral_message_parameters
         * reply_parameters
 
         Parameters:
@@ -5468,10 +5525,8 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
-                quote=quote_text,
-                quote_entities=quote_entities,
+            reply_parameters = self._reply_parameters(
+                reply_to_message_id, quote_text, quote_entities
             )
 
         if quote is not None:
@@ -5488,6 +5543,7 @@ class Message(Object, Update):
 
         return await self._client.send_message(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             text=text,
             parse_mode=parse_mode,
             entities=entities,
@@ -5544,6 +5600,7 @@ class Message(Object, Update):
         * message_thread_id
         * direct_messages_topic_id
         * business_connection_id
+        * ephemeral_message_parameters
 
         Parameters:
             text (``str``):
@@ -5620,6 +5677,7 @@ class Message(Object, Update):
 
         return await self._client.send_message(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             text=text,
             parse_mode=parse_mode,
             entities=entities,
@@ -5789,10 +5847,8 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
-                quote=quote_text,
-                quote_entities=quote_entities,
+            reply_parameters = self._reply_parameters(
+                reply_to_message_id, quote_text, quote_entities
             )
 
         if quote is not None:
@@ -5809,6 +5865,7 @@ class Message(Object, Update):
 
         return await self._client.send_photo(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             photo=photo,
             caption=caption,
             parse_mode=parse_mode,
@@ -5872,6 +5929,7 @@ class Message(Object, Update):
         * message_thread_id
         * direct_messages_topic_id
         * business_connection_id
+        * ephemeral_message_parameters
 
         Parameters:
             photo (``str``):
@@ -5988,6 +6046,7 @@ class Message(Object, Update):
 
         return await self._client.send_photo(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             photo=photo,
             caption=caption,
             parse_mode=parse_mode,
@@ -6178,7 +6237,10 @@ class Message(Object, Update):
 
         Raises:
             RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since a poll cannot be sent as one.
         """
+        self._refuse_ephemeral("A poll", "send_poll")
+
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(message_id=self.id)
 
@@ -6383,7 +6445,10 @@ class Message(Object, Update):
 
         Raises:
             RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since a poll cannot be sent as one.
         """
+        self._refuse_ephemeral("A poll", "send_poll")
+
         if message_thread_id is None:
             message_thread_id = self.message_thread_id
 
@@ -6499,7 +6564,13 @@ class Message(Object, Update):
 
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent dice message is returned.
+
+        Raises:
+            RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since a dice cannot be sent as one.
         """
+        self._refuse_ephemeral("A dice", "send_dice")
+
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(message_id=self.id)
 
@@ -6600,7 +6671,13 @@ class Message(Object, Update):
 
         Returns:
             :obj:`~pyrogram.types.Message`: On success, the sent dice message is returned.
+
+        Raises:
+            RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since a dice cannot be sent as one.
         """
+        self._refuse_ephemeral("A dice", "send_dice")
+
         if message_thread_id is None:
             message_thread_id = self.message_thread_id
 
@@ -6765,10 +6842,8 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
-                quote=quote_text,
-                quote_entities=quote_entities,
+            reply_parameters = self._reply_parameters(
+                reply_to_message_id, quote_text, quote_entities
             )
 
         if quote is not None:
@@ -6785,6 +6860,7 @@ class Message(Object, Update):
 
         return await self._client.send_sticker(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             sticker=sticker,
             disable_notification=disable_notification,
             emoji=emoji,
@@ -6842,6 +6918,7 @@ class Message(Object, Update):
         * message_thread_id
         * direct_messages_topic_id
         * business_connection_id
+        * ephemeral_message_parameters
 
         Parameters:
             sticker (``str``):
@@ -6956,6 +7033,7 @@ class Message(Object, Update):
 
         return await self._client.send_sticker(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             sticker=sticker,
             disable_notification=disable_notification,
             emoji=emoji,
@@ -7013,6 +7091,7 @@ class Message(Object, Update):
         * direct_messages_topic_id
         * business_connection_id
         * reply_parameters
+        * ephemeral_message_parameters
 
         Parameters:
             latitude (``float``):
@@ -7082,10 +7161,8 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
-                quote=quote_text,
-                quote_entities=quote_entities,
+            reply_parameters = self._reply_parameters(
+                reply_to_message_id, quote_text, quote_entities
             )
 
         if quote is not None:
@@ -7102,6 +7179,7 @@ class Message(Object, Update):
 
         return await self._client.send_venue(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             latitude=latitude,
             longitude=longitude,
             title=title,
@@ -7155,6 +7233,7 @@ class Message(Object, Update):
         * message_thread_id
         * direct_messages_topic_id
         * business_connection_id
+        * ephemeral_message_parameters
 
         Parameters:
             latitude (``float``):
@@ -7231,6 +7310,7 @@ class Message(Object, Update):
 
         return await self._client.send_venue(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             latitude=latitude,
             longitude=longitude,
             title=title,
@@ -7464,10 +7544,8 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
-                quote=quote_text,
-                quote_entities=quote_entities,
+            reply_parameters = self._reply_parameters(
+                reply_to_message_id, quote_text, quote_entities
             )
 
         if quote is not None:
@@ -7484,6 +7562,7 @@ class Message(Object, Update):
 
         return await self._client.send_video(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             video=video,
             caption=caption,
             parse_mode=parse_mode,
@@ -7723,6 +7802,7 @@ class Message(Object, Update):
 
         return await self._client.send_video(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             video=video,
             caption=caption,
             parse_mode=parse_mode,
@@ -7896,10 +7976,8 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
-                quote=quote_text,
-                quote_entities=quote_entities,
+            reply_parameters = self._reply_parameters(
+                reply_to_message_id, quote_text, quote_entities
             )
 
         if quote is not None:
@@ -7916,6 +7994,7 @@ class Message(Object, Update):
 
         return await self._client.send_video_note(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             video_note=video_note,
             duration=duration,
             length=length,
@@ -7973,6 +8052,7 @@ class Message(Object, Update):
         * message_thread_id
         * direct_messages_topic_id
         * business_connection_id
+        * ephemeral_message_parameters
 
         Parameters:
             video_note (``str``):
@@ -8081,6 +8161,7 @@ class Message(Object, Update):
 
         return await self._client.send_video_note(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             video_note=video_note,
             duration=duration,
             length=length,
@@ -8247,10 +8328,8 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if reply_parameters is None:
-            reply_parameters = types.ReplyParameters(
-                message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
-                quote=quote_text,
-                quote_entities=quote_entities,
+            reply_parameters = self._reply_parameters(
+                reply_to_message_id, quote_text, quote_entities
             )
 
         if quote is not None:
@@ -8267,6 +8346,7 @@ class Message(Object, Update):
 
         return await self._client.send_voice(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             voice=voice,
             caption=caption,
             parse_mode=parse_mode,
@@ -8328,6 +8408,7 @@ class Message(Object, Update):
         * message_thread_id
         * direct_messages_topic_id
         * business_connection_id
+        * ephemeral_message_parameters
 
         Parameters:
             voice (``str``):
@@ -8440,6 +8521,7 @@ class Message(Object, Update):
 
         return await self._client.send_voice(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             voice=voice,
             caption=caption,
             parse_mode=parse_mode,
@@ -8529,7 +8611,13 @@ class Message(Object, Update):
 
         Returns:
             List of :obj:`~pyrogram.types.Message`: On success, a list of messages is returned.
+
+        Raises:
+            RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since paid media cannot be sent as one.
         """
+        self._refuse_ephemeral("Paid media", "send_paid_media")
+
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(message_id=self.id)
 
@@ -8619,7 +8707,13 @@ class Message(Object, Update):
 
         Returns:
             List of :obj:`~pyrogram.types.Message`: On success, a list of messages is returned.
+
+        Raises:
+            RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since paid media cannot be sent as one.
         """
+        self._refuse_ephemeral("Paid media", "send_paid_media")
+
         if direct_messages_topic_id is None:
             direct_messages_topic_id = self.direct_messages_topic_id
 
@@ -8676,6 +8770,7 @@ class Message(Object, Update):
         * direct_messages_topic_id
         * business_connection_id
         * reply_parameters
+        * ephemeral_message_parameters
 
         Parameters:
             file_id (``str``):
@@ -8765,6 +8860,7 @@ class Message(Object, Update):
 
         return await self._client.send_cached_media(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             file_id=file_id,
             caption=caption,
             parse_mode=parse_mode,
@@ -8818,6 +8914,7 @@ class Message(Object, Update):
         * message_thread_id
         * direct_messages_topic_id
         * business_connection_id
+        * ephemeral_message_parameters
 
         Parameters:
             file_id (``str``):
@@ -8894,6 +8991,7 @@ class Message(Object, Update):
 
         return await self._client.send_cached_media(
             chat_id=self.chat.id,
+            ephemeral_message_parameters=self._ephemeral_reply_parameters(),
             file_id=file_id,
             caption=caption,
             parse_mode=parse_mode,
@@ -9005,7 +9103,10 @@ class Message(Object, Update):
 
         Raises:
             RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since an inline bot result cannot be sent as one.
         """
+        self._refuse_ephemeral("An inline bot result", "send_inline_bot_result")
+
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(
                 message_id=reply_to_message_id if reply_to_message_id is not None else self.id,
@@ -9088,7 +9189,10 @@ class Message(Object, Update):
 
         Raises:
             RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since an inline bot result cannot be sent as one.
         """
+        self._refuse_ephemeral("An inline bot result", "send_inline_bot_result")
+
         if message_thread_id is None:
             message_thread_id = self.message_thread_id
 
@@ -9180,7 +9284,10 @@ class Message(Object, Update):
 
         Raises:
             RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since a checklist cannot be sent as one.
         """
+        self._refuse_ephemeral("A checklist", "send_checklist")
+
         if reply_parameters is None:
             reply_parameters = types.ReplyParameters(message_id=self.id)
 
@@ -9279,7 +9386,10 @@ class Message(Object, Update):
 
         Raises:
             RPCError: In case of a Telegram RPC error.
+            ValueError: In case this message is ephemeral, since a checklist cannot be sent as one.
         """
+        self._refuse_ephemeral("A checklist", "send_checklist")
+
         if message_thread_id is None:
             message_thread_id = self.message_thread_id
 
@@ -9322,6 +9432,49 @@ class Message(Object, Update):
             )
 
         return self.receiver_user.id
+
+    def _reply_receiver_id(self) -> int:
+        user = self.receiver_user if self.is_ephemeral and self.outgoing else self.from_user
+
+        if user is None:
+            raise ValueError(
+                "the message has no sender, so there is nobody to address the "
+                "ephemeral reply to; pass receiver_id"
+            )
+
+        return user.id
+
+    def _ephemeral_reply_parameters(self) -> types.EphemeralMessageParameters | None:
+        if not self.is_ephemeral:
+            return None
+
+        return types.EphemeralMessageParameters(receiver_user_id=self._reply_receiver_id())
+
+    def _reply_parameters(
+        self,
+        message_id: int | None = None,
+        quote_text: str | None = None,
+        quote_entities: list[types.MessageEntity] | None = None,
+    ) -> types.ReplyParameters | None:
+        if message_id is None and self.is_ephemeral:
+            if self.outgoing:
+                return None
+
+            return types.ReplyParameters(ephemeral_message_id=self.ephemeral_message_id)
+
+        return types.ReplyParameters(
+            message_id=self.id if message_id is None else message_id,
+            quote=quote_text,
+            quote_entities=quote_entities,
+        )
+
+    def _refuse_ephemeral(self, what: str, method: str):
+        if self.is_ephemeral:
+            raise ValueError(
+                f"{what} cannot be sent as an ephemeral message, so an answer to this "
+                f"ephemeral message would be posted for the whole chat to see; call "
+                f"client.{method} to post it publicly"
+            )
 
     async def edit_ephemeral_text(
         self,
@@ -9663,13 +9816,7 @@ class Message(Object, Update):
             RPCError: In case of a Telegram RPC error.
         """
         if receiver_id is None:
-            if self.from_user is None:
-                raise ValueError(
-                    "the message has no sender, so there is nobody to address the "
-                    "ephemeral reply to; pass receiver_id"
-                )
-
-            receiver_id = self.from_user.id
+            receiver_id = self._reply_receiver_id()
 
         return await self._client.send_ephemeral_message(
             chat_id=self.chat.id,
@@ -9677,7 +9824,7 @@ class Message(Object, Update):
             text=text,
             parse_mode=parse_mode,
             entities=entities,
-            reply_parameters=types.ReplyParameters(message_id=self.id),
+            reply_parameters=self._reply_parameters(),
             reply_markup=reply_markup,
             query_id=query_id,
             rich_text=rich_text,

@@ -447,6 +447,7 @@ SEND_METHODS = (
     "send_contact",
     "send_sticker",
     "send_rich_message",
+    "send_cached_media",
 )
 
 

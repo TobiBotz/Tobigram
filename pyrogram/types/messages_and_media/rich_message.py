@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import pyrogram
 from pyrogram import raw, types
+from pyrogram.parser.rich_message import RichMessageSerializer
 
 from ..object import Object
 
@@ -287,6 +288,40 @@ class RichMessage(Object):
         self.is_rtl = is_rtl
         self.is_partial = is_partial
         self._raw: raw.types.RichMessage | None = None
+
+    @property
+    def html(self) -> str:
+        """Telegram rich HTML with reusable file IDs embedded in media links.
+
+        Unsupported content emits UnsupportedRichContentWarning and is skipped.
+        """
+        return RichMessageSerializer().render(self, html=True)
+
+    @property
+    def markdown(self) -> str:
+        """Telegram rich Markdown, with HTML for structures Markdown cannot preserve.
+
+        This differs from Message.text.markdown. Media links embed reusable file IDs
+        which InputRichMessage resolves automatically when sending.
+        """
+        return RichMessageSerializer().render(self, html=False)
+
+    def to_input(self, format: str = "html") -> types.InputRichMessage:
+        """Convert to a sendable rich message, retaining media and RTL direction.
+
+        Parameters:
+            format (``str``): Either "html" (default) or "markdown".
+
+        Unsupported content warns and is skipped. An entirely unsupported tree
+        produces empty content, which cannot be sent as a rich message.
+        """
+        if format not in ("html", "markdown"):
+            raise ValueError('Rich message format must be "html" or "markdown"')
+
+        serializer = RichMessageSerializer()
+        content = serializer.render(self, html=format == "html")
+
+        return types.InputRichMessage(**{format: content}, is_rtl=self.is_rtl)
 
     def to_input_rich_message(self) -> raw.base.InputRichMessage:
         """Convert this RichMessage into an InputRichMessage suitable for sending."""

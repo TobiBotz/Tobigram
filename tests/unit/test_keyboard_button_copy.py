@@ -100,7 +100,9 @@ async def test_message_copy_preserves_regular_buttons():
     assert mock_client.send_message.call_args.kwargs["reply_markup"] is None
 
     # Test that InlineKeyboardMarkup IS copied by default
-    inline_kb = types.InlineKeyboardMarkup([[types.InlineKeyboardButton("URL", url="https://t.me")]])
+    inline_kb = types.InlineKeyboardMarkup(
+        [[types.InlineKeyboardButton("URL", url="https://t.me")]]
+    )
     text_msg_inline = types.Message(
         id=1011,
         chat=types.Chat(id=1001, type=enums.ChatType.PRIVATE),

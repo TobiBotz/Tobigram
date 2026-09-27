@@ -60,6 +60,16 @@ class Link(str):
     def __new__(cls, url, text, style):
         return str.__new__(cls, Link.format(url, text, style))
 
+    def __getnewargs__(self):
+        return self.url, self.text, self.style
+
+    def __getstate__(self):
+        return {"url": self.url, "text": self.text, "style": self.style}
+
+    def __setstate__(self, state):
+        for k, v in state.items():
+            setattr(self, k, v)
+
     def __call__(self, other: str | None = None, *, style: str | None = None):
         return Link.format(self.url, other or self.text, style or self.style)
 
