@@ -128,7 +128,7 @@ class GiveawayWinners(Object):
                 message_ids=giveaway_media.launch_msg_id,
                 replies=0,
             )
-        except (errors.ChannelPrivate, errors.ChannelInvalid):
+        except (errors.ChannelPrivate, errors.ChannelInvalid, errors.MessageIdsEmpty):
             pass
 
         return GiveawayWinners(

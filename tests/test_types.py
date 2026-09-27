@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from unittest.mock import AsyncMock, Mock
+from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
 
@@ -1929,3 +1929,38 @@ async def test_a_media_block_inside_a_list_item_still_finds_its_document() -> No
     )
 
     assert parsed.items[0].blocks[0].document.file_name == "a.pdf"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "ids",
+    [
+        {"foursquare_id": "x"},
+        {"foursquare_type": "x"},
+        {"google_place_id": "x"},
+        {"google_place_type": "x"},
+    ],
+)
+async def test_a_venue_with_half_an_identifier_pair_still_serializes(ids) -> None:
+    media = await types.InputMediaVenue(
+        latitude=1.0, longitude=2.0, title="t", address="a", **ids
+    ).write()
+
+    media.write()
+
+
+@pytest.mark.asyncio
+async def test_giveaway_winners_parse_when_the_launch_message_is_gone():
+    from pyrogram.errors import MessageIdsEmpty
+
+    client = MagicMock()
+    client.get_messages = AsyncMock(side_effect=MessageIdsEmpty())
+    channel = raw.types.Channel(id=7, title="t", photo=raw.types.ChatPhotoEmpty(), date=0, usernames=[], restriction_reason=[])
+    media = raw.types.MessageMediaGiveawayResults(
+        channel_id=7, launch_msg_id=5, winners_count=1, unclaimed_count=0, winners=[], until_date=0
+    )
+
+    winners = await types.GiveawayWinners._parse(client, media, {}, {7: channel})
+
+    assert winners.giveaway_message_id == 5
+    assert winners.giveaway_message is None
