@@ -411,3 +411,18 @@ async def test_passing_a_markup_sends_its_buttons():
     sent = _reply_markup_on_the_wire(client)
     assert isinstance(sent, raw.types.ReplyInlineMarkup)
     assert [button.text for row in sent.rows for button in row.buttons] == ["New button"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("kwargs", [{"message_ids": 0}, {"reply_to_message_ids": 0}])
+async def test_get_messages_sends_message_id_zero(kwargs):
+    from unittest.mock import AsyncMock, MagicMock
+
+    from pyrogram.methods.messages.get_messages import GetMessages
+
+    client = MagicMock()
+    client.resolve_peer = AsyncMock(return_value=raw.types.InputPeerSelf())
+    client.invoke = AsyncMock(return_value=raw.types.messages.Messages(messages=[], chats=[], users=[], topics=[]))
+
+    assert await GetMessages.get_messages(client, "me", **kwargs) is None
+    assert client.invoke.await_args.args[0].id[0].id == 0
