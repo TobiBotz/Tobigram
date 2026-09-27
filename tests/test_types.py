@@ -1955,7 +1955,14 @@ async def test_giveaway_winners_parse_when_the_launch_message_is_gone():
 
     client = MagicMock()
     client.get_messages = AsyncMock(side_effect=MessageIdsEmpty())
-    channel = raw.types.Channel(id=7, title="t", photo=raw.types.ChatPhotoEmpty(), date=0, usernames=[], restriction_reason=[])
+    channel = raw.types.Channel(
+        id=7,
+        title="t",
+        photo=raw.types.ChatPhotoEmpty(),
+        date=0,
+        usernames=[],
+        restriction_reason=[],
+    )
     media = raw.types.MessageMediaGiveawayResults(
         channel_id=7, launch_msg_id=5, winners_count=1, unclaimed_count=0, winners=[], until_date=0
     )

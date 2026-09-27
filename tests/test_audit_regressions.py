@@ -2022,6 +2022,25 @@ def test_guessing_a_mime_type_survives_a_nameless_buffer():
     assert client.guess_mime_type("a.png") == "image/png"
 
 
+@pytest.mark.parametrize(
+    "name,mime",
+    [
+        ("a.mts", None),
+        ("a.ts", None),
+        ("a.jxl", "image/jxl"),
+        ("a.avif", "image/avif"),
+        ("a.heic", "image/heic"),
+        ("a.md", "text/markdown"),
+        ("a.fb2", "application/x-fictionbook+xml"),
+        ("a.sqlite", "application/vnd.sqlite3"),
+    ],
+)
+def test_guessed_mime_types_do_not_depend_on_the_python_version(name, mime):
+    client = pyrogram.Client.__new__(pyrogram.Client)
+
+    assert client.guess_mime_type(name) == mime
+
+
 class _CapturedUpload(Exception):
     pass
 
