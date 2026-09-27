@@ -173,9 +173,7 @@ class RecoverGaps:
                     break
                 elif isinstance(diff, raw.types.updates.DifferenceTooLong):
                     local_pts = diff.pts
-                    await save_state(
-                        (id, local_pts, local_qts, local_date, local_seq)
-                    )
+                    await save_state((id, local_pts, local_qts, local_date, local_seq))
                     continue
                 elif isinstance(diff, raw.types.updates.Difference):
                     local_pts = diff.state.pts
@@ -188,15 +186,11 @@ class RecoverGaps:
                     local_date = diff.intermediate_state.date
                     local_seq = diff.intermediate_state.seq
                 elif isinstance(diff, raw.types.updates.ChannelDifferenceEmpty):
-                    await save_state(
-                        (id, diff.pts, local_qts, local_date, local_seq)
-                    )
+                    await save_state((id, diff.pts, local_qts, local_date, local_seq))
                     break
                 elif isinstance(diff, raw.types.updates.ChannelDifferenceTooLong):
                     local_pts = diff.dialog.pts
-                    await save_state(
-                        (id, local_pts, local_qts, local_date, local_seq)
-                    )
+                    await save_state((id, local_pts, local_qts, local_date, local_seq))
                     continue
                 elif isinstance(diff, raw.types.updates.ChannelDifference):
                     local_pts = diff.pts

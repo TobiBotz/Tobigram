@@ -7,7 +7,7 @@ from pyrogram.errors import (
     RPCError,
     UnknownError,
 )
-from pyrogram.errors.exceptions.bad_request_400 import AboutTooLong, ChatAdminRequired
+from pyrogram.errors.exceptions.bad_request_400 import AboutTooLong, ChatAdminRequired400 as ChatAdminRequired
 from pyrogram.errors.exceptions.flood_420 import FloodWait, SlowmodeWait
 from pyrogram.errors.exceptions.forbidden_403 import ChatWriteForbidden, UserIsBlocked
 
@@ -184,3 +184,47 @@ class TestUnknownError:
     def test_with_rpc_name(self):
         err = UnknownError(rpc_name="messages.sendMessage")
         assert '(caused by "messages.sendMessage")' in str(err)
+
+
+def _all_known_errors():
+    from pyrogram.errors.exceptions.all import exceptions
+
+    return [(code, error_id) for code, table in exceptions.items() for error_id in table if error_id != "_"]
+
+
+@pytest.mark.parametrize("code,error_id", _all_known_errors())
+def test_an_error_keeps_the_code_telegram_sent(code, error_id):
+    import pyrogram.errors as errors
+    from pyrogram import raw
+    from pyrogram.errors.exceptions.all import exceptions
+
+    message = error_id.replace("_X", "_2").replace("_*", "_A")
+
+    with pytest.raises(RPCError) as info:
+        RPCError.raise_it(raw.types.RpcError(error_code=code, error_message=message), raw.functions.Ping)
+
+    assert info.value.CODE == code
+    assert isinstance(info.value, getattr(errors, exceptions[code]["_"]))
+    assert f"[{code} " in str(info.value)
+
+
+def test_a_phone_number_refused_with_400_is_a_bad_request():
+    from pyrogram import raw
+    from pyrogram.errors import NotAcceptable, PhoneNumberInvalid
+
+    with pytest.raises(PhoneNumberInvalid) as info:
+        RPCError.raise_it(
+            raw.types.RpcError(error_code=400, error_message="PHONE_NUMBER_INVALID"), raw.functions.Ping
+        )
+
+    assert isinstance(info.value, BadRequest)
+    assert info.value.CODE == 400
+    assert PhoneNumberInvalid.CODE == 406
+    assert issubclass(PhoneNumberInvalid, NotAcceptable)
+
+
+def test_an_error_known_under_two_codes_keeps_its_class_name():
+    from pyrogram.errors.exceptions import forbidden_403
+
+    assert UserIsBlocked is forbidden_403.UserIsBlocked
+    assert UserIsBlocked.CODE == 403
