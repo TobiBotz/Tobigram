@@ -23,7 +23,7 @@ import re
 
 import pyrogram
 from pyrogram import raw, utils
-from pyrogram.errors import PeerIdInvalid
+from pyrogram.errors import BadRequest, PeerIdInvalid
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ class ResolvePeer:
         Parameters:
             peer_id (``int`` | ``str``):
                 The peer id you want to extract the InputPeer from.
-                Can be a direct id (int), a username (str) or a phone number (str).
+                Can be a direct id (int), a username (str), a phone number (str) or a t.me link (str).
 
         Returns:
             ``InputPeer``: On success, the resolved peer id is returned in form of an InputPeer object.
@@ -56,6 +56,15 @@ class ResolvePeer:
         """
         if not self.is_connected:
             raise ConnectionError("Client has not been started yet")
+
+        if isinstance(peer_id, str):
+            match = self.CHANNEL_MESSAGE_LINK_RE.match(peer_id.lower())
+
+            if match:
+                peer_id = match.group(1)
+
+                if peer_id.isdigit():
+                    peer_id = utils.get_channel_id(int(peer_id))
 
         try:
             return await self.storage.get_peer_by_id(peer_id)
@@ -79,7 +88,15 @@ class ResolvePeer:
                     try:
                         return await self.storage.get_peer_by_phone_number(peer_id)
                     except KeyError:
-                        raise PeerIdInvalid
+                        if not peer_id.isdigit():
+                            raise PeerIdInvalid
+
+                        try:
+                            r = await self.invoke(raw.functions.contacts.ResolvePhone(phone=peer_id))
+                        except BadRequest as e:
+                            raise PeerIdInvalid from e
+
+                        return await self.storage.get_peer_by_id(utils.get_peer_id(r.peer))
 
             peer_type = utils.get_peer_type(peer_id)
 

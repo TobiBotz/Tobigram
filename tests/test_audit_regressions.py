@@ -4338,7 +4338,7 @@ from io import BytesIO
 import inspect
 from unittest.mock import AsyncMock
 
-from pyrogram import enums, raw, types
+from pyrogram import enums, raw, types, utils
 from pyrogram.methods.messages.edit_message_text import EditMessageText
 from pyrogram.parser.parser import Parser
 
@@ -4544,3 +4544,90 @@ async def test_a_scheduled_message_is_not_cached_under_a_sent_message_id():
     )
 
     assert client.message_cache == {}
+
+
+class _ResolveStorage:
+    def __init__(self, peers):
+        self.peers = peers
+        self.asked = []
+
+    async def get_peer_by_id(self, peer_id):
+        self.asked.append(peer_id)
+        return self.peers[peer_id]
+
+    async def get_peer_by_username(self, username):
+        return self.peers[username]
+
+    async def get_peer_by_phone_number(self, phone):
+        return self.peers[phone]
+
+
+def _resolve_client(peers, answer=None):
+    client = pyrogram.Client("resolve", api_id=1, api_hash="a" * 32, in_memory=True)
+    client.storage = _ResolveStorage(peers)
+    client.is_connected = True
+    client.sent = []
+
+    async def invoke(query, *args, **kwargs):
+        client.sent.append(query)
+        for key, value in (answer or {}).items():
+            client.storage.peers[key] = value
+        return raw.types.contacts.ResolvedPeer(
+            peer=raw.types.PeerUser(user_id=42), chats=[], users=[]
+        )
+
+    client.invoke = invoke
+    return client
+
+
+@pytest.mark.parametrize(
+    "link",
+    [
+        "https://t.me/Telegram",
+        "t.me/telegram",
+        "http://www.t.me/telegram/5",
+        "https://telegram.me/telegram?start=x",
+    ],
+)
+async def test_resolve_peer_reads_the_username_out_of_a_link(link):
+    peer = raw.types.InputPeerChannel(channel_id=1, access_hash=2)
+
+    assert await _resolve_client({"telegram": peer}).resolve_peer(link) == peer
+
+
+async def test_resolve_peer_reads_the_channel_id_out_of_a_private_link():
+    peer = raw.types.InputPeerChannel(channel_id=1234, access_hash=2)
+    client = _resolve_client({utils.get_channel_id(1234): peer})
+
+    assert await client.resolve_peer("https://t.me/c/1234/56") == peer
+    assert client.sent == []
+
+
+async def test_resolve_peer_asks_telegram_for_an_unknown_phone_number():
+    peer = raw.types.InputPeerUser(user_id=42, access_hash=7)
+    client = _resolve_client({}, answer={42: peer})
+
+    assert await client.resolve_peer("+1 202 555 0123") == peer
+    assert [type(q) for q in client.sent] == [raw.functions.contacts.ResolvePhone]
+    assert client.sent[0].phone == "12025550123"
+
+
+async def test_resolve_peer_does_not_ask_for_a_phone_that_is_not_one():
+    client = _resolve_client({})
+
+    with pytest.raises(pyrogram.errors.PeerIdInvalid):
+        await client.resolve_peer("-100123")
+
+    assert client.sent == []
+
+
+async def test_resolve_peer_keeps_peer_id_invalid_for_a_phone_telegram_does_not_know():
+    client = _resolve_client({})
+
+    async def invoke(query, *args, **kwargs):
+        raise pyrogram.errors.BadRequest("[400 PHONE_NOT_OCCUPIED]")
+
+    client.invoke = invoke
+
+    with pytest.raises(pyrogram.errors.PeerIdInvalid):
+        await client.resolve_peer("+999 000 0000")
