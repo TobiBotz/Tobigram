@@ -1541,7 +1541,9 @@ class TestQuizPollSerialises:
         client.invoke = invoke
         client.resolve_peer = AsyncMock(return_value=raw.types.InputPeerSelf())
         client.rnd_id = lambda: 1
-        client.parser.parse = AsyncMock(return_value={"message": "q", "entities": []})
+        client.parser.parse = AsyncMock(
+            side_effect=lambda text, *args: {"message": text, "entities": []}
+        )
 
         await SendPoll.send_poll(client, chat_id=1, **kwargs)
 

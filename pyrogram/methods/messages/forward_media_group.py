@@ -83,6 +83,7 @@ class ForwardMediaGroup:
 
             hide_captions (``bool``, *optional*):
                 If True, the original media captions will be removed.
+                Telegram only removes captions from a forward that hides the sender, so this also hides the sender name.
 
             protect_content (``bool``, *optional*):
                 Protects the contents of the sent message from forwarding and saving.
@@ -136,7 +137,7 @@ class ForwardMediaGroup:
                 silent=disable_notification if disable_notification is not None else None,
                 random_id=[self.rnd_id() for _ in message_ids],
                 schedule_date=utils.datetime_to_timestamp(schedule_date),
-                drop_author=hide_sender_name if hide_sender_name is not None else None,
+                drop_author=True if hide_captions else hide_sender_name,
                 drop_media_captions=hide_captions if hide_captions is not None else None,
                 noforwards=protect_content,
                 allow_paid_floodskip=allow_paid_broadcast

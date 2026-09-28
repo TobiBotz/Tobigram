@@ -101,4 +101,9 @@ class CreateChatInviteLink:
             )
         )
 
-        return types.ChatInviteLink._parse(self, r)
+        link = types.ChatInviteLink._parse(self, r)
+
+        if link:
+            link.creator = self.me
+
+        return link

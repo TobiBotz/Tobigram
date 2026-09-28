@@ -451,7 +451,11 @@ class SendPaidMedia:
                                 ),
                                 spoiler=i.has_spoiler,
                                 mime_type=self.guess_mime_type(
-                                    getattr(i.media, "name", "video.mp4")
+                                    utils.get_file_name(
+                                        i.media,
+                                        file_name=i.file_name or "",
+                                        fallback="video.mp4",
+                                    )
                                 )
                                 or "video/mp4",
                                 nosound_video=i.no_sound,
@@ -465,7 +469,11 @@ class SendPaidMedia:
                                         h=i.height,
                                     ),
                                     raw.types.DocumentAttributeFilename(
-                                        file_name=utils.get_file_name(i.media, fallback="video.mp4")
+                                        file_name=utils.get_file_name(
+                                            i.media,
+                                            file_name=i.file_name or "",
+                                            fallback="video.mp4",
+                                        )
                                     ),
                                 ],
                             ),

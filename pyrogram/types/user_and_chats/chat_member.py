@@ -209,7 +209,11 @@ class ChatMember(Object):
                 tag=member.rank,
                 user=user,
                 chat=chat,
-                until_date=utils.timestamp_to_datetime(member.banned_rights.until_date),
+                until_date=(
+                    utils.timestamp_to_datetime(member.banned_rights.until_date)
+                    if member.banned_rights.until_date != 2**31 - 1
+                    else None
+                ),
                 joined_date=utils.timestamp_to_datetime(member.date),
                 is_member=not member.left,
                 restricted_by=types.User._parse(client, users[member.kicked_by]),

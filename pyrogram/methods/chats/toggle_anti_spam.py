@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw, types
+from pyrogram import raw
 
 
 class ToggleAntiSpam:
@@ -28,7 +28,7 @@ class ToggleAntiSpam:
         self: pyrogram.Client,
         chat_id: int | str,
         enabled: bool | None = None,
-    ) -> types.Message:
+    ) -> bool:
         """Toggle the anti-spam filter in a supergroup.
 
         .. include:: /_includes/usable-by/users.rst
@@ -43,7 +43,7 @@ class ToggleAntiSpam:
 
 
         Returns:
-            :obj:`~pyrogram.types.Message`
+            ``bool``: True on success.
 
         Example:
             .. code-block:: python
@@ -51,26 +51,11 @@ class ToggleAntiSpam:
                 await app.toggle_anti_spam(chat_id, ...)
         """
 
-        r = await self.invoke(
+        await self.invoke(
             raw.functions.channels.ToggleAntiSpam(
                 channel=await self.resolve_peer(chat_id),
                 enabled=enabled,
             )
         )
 
-        for i in r.updates:
-            if isinstance(
-                i,
-                (
-                    raw.types.UpdateNewMessage,
-                    raw.types.UpdateNewChannelMessage,
-                    raw.types.UpdateNewScheduledMessage,
-                ),
-            ):
-                return await types.Message._parse(
-                    self,
-                    i.message,
-                    {i.id: i for i in r.users},
-                    {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
-                )
+        return True

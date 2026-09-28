@@ -19,6 +19,11 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
 import pyrogram
 from pyrogram import raw
 
@@ -27,19 +32,18 @@ class DeleteScheduledMessages:
     async def delete_scheduled_messages(
         self: pyrogram.Client,
         chat_id: int | str,
-        id: list[int] | None = None,
+        id: int | Iterable[int],
     ) -> bool:
         """Delete scheduled messages.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
         Parameters:
-
-            id (List[int], *optional*): List of message IDs to delete
-
             chat_id (``int`` | ``str``):
                 Unique identifier (int) or username (str) of the target chat.
 
+            id (``int`` | Iterable of ``int``):
+                A scheduled message identifier or a list of scheduled message identifiers to delete.
 
 
         Returns:
@@ -48,13 +52,13 @@ class DeleteScheduledMessages:
         Example:
             .. code-block:: python
 
-                await app.delete_scheduled_messages(chat_id, ...)
+                await app.delete_scheduled_messages(chat_id, message_id)
         """
 
         r = await self.invoke(
             raw.functions.messages.DeleteScheduledMessages(
                 peer=await self.resolve_peer(chat_id),
-                id=id,
+                id=[id] if isinstance(id, int) else list(id),
             )
         )
 

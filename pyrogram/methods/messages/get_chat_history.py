@@ -125,7 +125,7 @@ class GetChatHistory:
         min_id = (min_id - 1) if min_id else 0
         max_id = (max_id + 1) if max_id else 0
 
-        if not offset_id:
+        if not offset_id and not (reverse and utils.datetime_to_timestamp(offset_date)):
             offset_id = min_id + 1 if reverse else max_id
 
         if reverse:

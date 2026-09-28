@@ -10939,7 +10939,12 @@ class Message(Object, Update):
             label = x.encode("utf-16", "surrogatepass").decode("utf-16")
 
             try:
-                button = [button for row in keyboard for button in row if label == button.text][0]
+                button = [
+                    button
+                    for row in keyboard
+                    for button in row
+                    if label == getattr(button, "text", button)
+                ][0]
             except IndexError:
                 raise ValueError(f"The button with label '{x}' doesn't exists")
         else:
@@ -10985,14 +10990,16 @@ class Message(Object, Update):
             elif button.switch_inline_query_current_chat:
                 return button.switch_inline_query_current_chat
             elif button.copy_text:
-                return button.copy_text
+                return button.copy_text.text
             else:
                 raise ValueError("This button is not supported yet")
         else:
+            text = getattr(button, "text", button)
+
             if quote:
-                await self.reply(text=button)
+                return await self.reply(text=text)
             else:
-                await self.answer(text=button)
+                return await self.answer(text=text)
 
     async def react(
         self, emoji: int | str | list[int | str] | None = None, big: bool = False

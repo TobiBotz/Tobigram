@@ -353,16 +353,39 @@ class SendMessage:
                 else -peer.chat_id
             )
 
+            entities = r.entities or entities
+            web_page = (
+                types.WebPage._parse(self, r.media)
+                if isinstance(r.media, raw.types.MessageMediaWebPage)
+                else None
+            )
+            parsed_entities = (
+                [types.MessageEntity._parse(None, entity, {}) for entity in entities]
+                if not rich_text and entities
+                else None
+            )
+
             return types.Message(
                 id=r.id,
-                chat=types.Chat(id=peer_id, type=enums.ChatType.PRIVATE, client=self),
-                text=plain_text,
+                from_user=self.me,
+                chat=types.Chat(
+                    id=peer_id,
+                    type=enums.ChatType.PRIVATE
+                    if isinstance(peer, raw.types.InputPeerUser)
+                    else enums.ChatType.GROUP,
+                    client=self,
+                ),
+                text=types.Str(plain_text).init(parsed_entities),
                 date=utils.timestamp_to_datetime(r.date),
                 outgoing=r.out,
+                reply_to_message_id=reply_parameters.message_id if reply_parameters else None,
                 reply_markup=reply_markup,
-                entities=[types.MessageEntity._parse(None, entity, {}) for entity in entities]
-                if not rich_text and entities
-                else None,
+                entities=parsed_entities,
+                media=enums.MessageMediaType.WEB_PAGE if web_page else None,
+                web_page=web_page,
+                link_preview_options=types.LinkPreviewOptions._parse(
+                    r.media, utils.get_first_url(plain_text)
+                ),
                 client=self,
             )
 

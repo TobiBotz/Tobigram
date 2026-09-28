@@ -74,7 +74,14 @@ class ChatEventAction(AutoName):
     MEMBER_JOINED = auto()
     "a member joined by themselves. (see ``user``)"
 
-    # MEMBER_JOINED_BY_LINK = auto()
+    MEMBER_JOINED_BY_LINK = auto()
+    "a member joined by an invite link (see ``invite_link``)"
+
+    MEMBER_JOINED_BY_REQUEST = auto()
+    "a member joined after their join request was approved (see ``invite_link`` and ``approver_user``)"
+
+    MEMBER_TAG_CHANGED = auto()
+    "a member tag has been changed (see ``tagged_user``, ``old_tag`` and ``new_tag``)"
 
     MEMBER_LEFT = auto()
     "a member left by themselves. (see ``user``)"
@@ -128,5 +135,29 @@ class ChatEventAction(AutoName):
     DELETED_FORUM_TOPIC = auto()
     "a forum topic has been deleted"
 
+    PINNED_FORUM_TOPIC = auto()
+    "a forum topic has been pinned or unpinned (see ``old_forum_topic`` and ``new_forum_topic``)"
+
+    AVAILABLE_REACTIONS_CHANGED = auto()
+    "the available reactions have been changed (see ``old_available_reactions`` and ``new_available_reactions``)"
+
+    USERNAMES_CHANGED = auto()
+    "the chat usernames have been changed (see ``old_usernames`` and ``new_usernames``)"
+
+    PROTECTED_CONTENT_ENABLED = auto()
+    "content protection has been enabled or disabled (see ``protected_content_enabled``)"
+
+    FORUM_ENABLED = auto()
+    "forum topics have been enabled or disabled (see ``forum_enabled``)"
+
+    ANTI_SPAM_ENABLED = auto()
+    "the anti-spam filter has been enabled or disabled (see ``anti_spam_enabled``)"
+
+    SIGNATURE_PROFILES_ENABLED = auto()
+    "author profiles in message signatures have been enabled or disabled (see ``signature_profiles_enabled``)"
+
+    AUTO_TRANSLATION_ENABLED = auto()
+    "automatic translation has been enabled or disabled (see ``auto_translation_enabled``)"
+
     UNKNOWN = auto()
-    "Unknown chat event action"
+    "Unknown chat event action (see ``raw``)"

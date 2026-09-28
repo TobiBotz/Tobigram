@@ -3225,6 +3225,7 @@ async def test_copying_a_media_group_keeps_the_source_formatting(monkeypatch):
         video=None,
         caption="one_two",
         caption_entities=bold,
+        has_media_spoiler=None,
     )
     client.get_media_group = AsyncMock(return_value=[source])
 

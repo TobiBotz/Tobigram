@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw, types
+from pyrogram import raw
 
 
 class ToggleSignatures:
@@ -29,7 +29,7 @@ class ToggleSignatures:
         chat_id: int | str,
         signatures_enabled: bool | None = None,
         profiles_enabled: bool | None = None,
-    ) -> types.Message:
+    ) -> bool:
         """Toggle channel signatures.
 
         .. include:: /_includes/usable-by/users.rst
@@ -47,7 +47,7 @@ class ToggleSignatures:
 
 
         Returns:
-            :obj:`~pyrogram.types.Message`
+            ``bool``: True on success.
 
         Example:
             .. code-block:: python
@@ -55,7 +55,7 @@ class ToggleSignatures:
                 await app.toggle_signatures(chat_id, ...)
         """
 
-        r = await self.invoke(
+        await self.invoke(
             raw.functions.channels.ToggleSignatures(
                 signatures_enabled=signatures_enabled,
                 profiles_enabled=profiles_enabled,
@@ -63,19 +63,4 @@ class ToggleSignatures:
             )
         )
 
-        for i in r.updates:
-            if isinstance(
-                i,
-                (
-                    raw.types.UpdateNewMessage,
-                    raw.types.UpdateNewChannelMessage,
-                    raw.types.UpdateNewScheduledMessage,
-                ),
-            ):
-                return await types.Message._parse(
-                    self,
-                    i.message,
-                    {i.id: i for i in r.users},
-                    {i.id: i for i in r.chats},
-                    is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
-                )
+        return True

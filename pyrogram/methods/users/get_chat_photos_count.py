@@ -47,11 +47,25 @@ class GetChatPhotosCount:
 
         peer_id = await self.resolve_peer(chat_id)
 
-        if isinstance(peer_id, (raw.types.InputPeerChannel, raw.types.InputPeerChannelFromMessage)):
+        if isinstance(
+            peer_id,
+            (
+                raw.types.InputPeerChannel,
+                raw.types.InputPeerChannelFromMessage,
+                raw.types.InputPeerChat,
+            ),
+        ):
             if self.me.is_bot:
-                r = await self.invoke(
-                    raw.functions.channels.GetFullChannel(channel=utils.get_input_channel(peer_id))
-                )
+                if isinstance(peer_id, raw.types.InputPeerChat):
+                    r = await self.invoke(
+                        raw.functions.messages.GetFullChat(chat_id=peer_id.chat_id)
+                    )
+                else:
+                    r = await self.invoke(
+                        raw.functions.channels.GetFullChannel(
+                            channel=utils.get_input_channel(peer_id)
+                        )
+                    )
 
                 return int(isinstance(r.full_chat.chat_photo, raw.types.Photo))
 

@@ -92,7 +92,9 @@ class ResolvePeer:
                             raise PeerIdInvalid
 
                         try:
-                            r = await self.invoke(raw.functions.contacts.ResolvePhone(phone=peer_id))
+                            r = await self.invoke(
+                                raw.functions.contacts.ResolvePhone(phone=peer_id)
+                            )
                         except BadRequest as e:
                             raise PeerIdInvalid from e
 

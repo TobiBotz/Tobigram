@@ -182,7 +182,7 @@ async def test_the_pinned_message_is_asked_for_by_its_own_type(monkeypatch):
 
     monkeypatch.setattr(utils, "parse_messages", parse_messages)
 
-    await pyrogram.Client.get_messages(client, 7, pinned=True)
+    await pyrogram.Client.get_messages(client, -7, pinned=True)
 
     assert isinstance(client.sent[0].id[0], raw.types.InputMessagePinned)
 

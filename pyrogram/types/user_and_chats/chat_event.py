@@ -140,12 +140,61 @@ class ChatEvent(Object):
             For :obj:`~pyrogram.enums.ChatEventAction.CREATED_FORUM_TOPIC` action only.
 
         old_forum_topic, new_forum_topic (:obj:`~pyrogram.types.ForumTopic`, *optional*):
-            Edited forum topic.
-            For :obj:`~pyrogram.enums.ChatEventAction.EDITED_FORUM_TOPIC` action only.
+            Previous and new forum topic.
+            For :obj:`~pyrogram.enums.ChatEventAction.EDITED_FORUM_TOPIC` and
+            :obj:`~pyrogram.enums.ChatEventAction.PINNED_FORUM_TOPIC` actions only.
 
         deleted_forum_topic (:obj:`~pyrogram.types.ForumTopic`, *optional*):
             Deleted forum topic.
             For :obj:`~pyrogram.enums.ChatEventAction.DELETED_FORUM_TOPIC` action only.
+
+        invite_link (:obj:`~pyrogram.types.ChatInviteLink`, *optional*):
+            Invite link used to join the chat.
+            For :obj:`~pyrogram.enums.ChatEventAction.MEMBER_JOINED_BY_LINK` and
+            :obj:`~pyrogram.enums.ChatEventAction.MEMBER_JOINED_BY_REQUEST` actions only.
+
+        approver_user (:obj:`~pyrogram.types.User`, *optional*):
+            Administrator that approved the join request.
+            For :obj:`~pyrogram.enums.ChatEventAction.MEMBER_JOINED_BY_REQUEST` action only.
+
+        tagged_user (:obj:`~pyrogram.types.User`, *optional*):
+            Member whose tag has been changed.
+            For :obj:`~pyrogram.enums.ChatEventAction.MEMBER_TAG_CHANGED` action only.
+
+        old_tag, new_tag (``str``, *optional*):
+            Previous and new member tag.
+            For :obj:`~pyrogram.enums.ChatEventAction.MEMBER_TAG_CHANGED` action only.
+
+        old_available_reactions, new_available_reactions (:obj:`~pyrogram.types.ChatReactions`, *optional*):
+            Previous and new available reactions.
+            For :obj:`~pyrogram.enums.ChatEventAction.AVAILABLE_REACTIONS_CHANGED` action only.
+
+        old_usernames, new_usernames (List of ``str``, *optional*):
+            Previous and new chat usernames.
+            For :obj:`~pyrogram.enums.ChatEventAction.USERNAMES_CHANGED` action only.
+
+        protected_content_enabled (``bool``, *optional*):
+            If content protection was enabled (True) or disabled (False).
+            For :obj:`~pyrogram.enums.ChatEventAction.PROTECTED_CONTENT_ENABLED` action only.
+
+        forum_enabled (``bool``, *optional*):
+            If forum topics were enabled (True) or disabled (False).
+            For :obj:`~pyrogram.enums.ChatEventAction.FORUM_ENABLED` action only.
+
+        anti_spam_enabled (``bool``, *optional*):
+            If the anti-spam filter was enabled (True) or disabled (False).
+            For :obj:`~pyrogram.enums.ChatEventAction.ANTI_SPAM_ENABLED` action only.
+
+        signature_profiles_enabled (``bool``, *optional*):
+            If author profiles in message signatures were enabled (True) or disabled (False).
+            For :obj:`~pyrogram.enums.ChatEventAction.SIGNATURE_PROFILES_ENABLED` action only.
+
+        auto_translation_enabled (``bool``, *optional*):
+            If automatic translation was enabled (True) or disabled (False).
+            For :obj:`~pyrogram.enums.ChatEventAction.AUTO_TRANSLATION_ENABLED` action only.
+
+        raw (:obj:`~pyrogram.raw.base.ChannelAdminLogEventAction`, *optional*):
+            The raw event action, useful for :obj:`~pyrogram.enums.ChatEventAction.UNKNOWN` actions.
     """
 
     def __init__(
@@ -154,7 +203,7 @@ class ChatEvent(Object):
         id: int,
         date: datetime,
         user: types.User,
-        action: str,
+        action: enums.ChatEventAction,
         old_description: str | None = None,
         new_description: str | None = None,
         old_history_ttl: int | None = None,
@@ -193,6 +242,21 @@ class ChatEvent(Object):
         old_forum_topic: types.ForumTopic | None = None,
         new_forum_topic: types.ForumTopic | None = None,
         deleted_forum_topic: types.ForumTopic | None = None,
+        invite_link: types.ChatInviteLink | None = None,
+        approver_user: types.User | None = None,
+        tagged_user: types.User | None = None,
+        old_tag: str | None = None,
+        new_tag: str | None = None,
+        old_available_reactions: types.ChatReactions | None = None,
+        new_available_reactions: types.ChatReactions | None = None,
+        old_usernames: list[str] | None = None,
+        new_usernames: list[str] | None = None,
+        protected_content_enabled: bool | None = None,
+        forum_enabled: bool | None = None,
+        anti_spam_enabled: bool | None = None,
+        signature_profiles_enabled: bool | None = None,
+        auto_translation_enabled: bool | None = None,
+        raw: raw.base.ChannelAdminLogEventAction | None = None,
     ):
         super().__init__()
 
@@ -258,6 +322,27 @@ class ChatEvent(Object):
         self.old_forum_topic = old_forum_topic
         self.new_forum_topic = new_forum_topic
         self.deleted_forum_topic = deleted_forum_topic
+
+        self.invite_link = invite_link
+        self.approver_user = approver_user
+
+        self.tagged_user = tagged_user
+        self.old_tag = old_tag
+        self.new_tag = new_tag
+
+        self.old_available_reactions = old_available_reactions
+        self.new_available_reactions = new_available_reactions
+
+        self.old_usernames = old_usernames
+        self.new_usernames = new_usernames
+
+        self.protected_content_enabled = protected_content_enabled
+        self.forum_enabled = forum_enabled
+        self.anti_spam_enabled = anti_spam_enabled
+        self.signature_profiles_enabled = signature_profiles_enabled
+        self.auto_translation_enabled = auto_translation_enabled
+
+        self.raw = raw
 
     @staticmethod
     async def _parse(
@@ -329,6 +414,25 @@ class ChatEvent(Object):
         old_forum_topic: types.ForumTopic | None = None
         new_forum_topic: types.ForumTopic | None = None
         deleted_forum_topic: types.ForumTopic | None = None
+
+        invite_link: types.ChatInviteLink | None = None
+        approver_user: types.User | None = None
+
+        tagged_user: types.User | None = None
+        old_tag: str | None = None
+        new_tag: str | None = None
+
+        old_available_reactions: types.ChatReactions | None = None
+        new_available_reactions: types.ChatReactions | None = None
+
+        old_usernames: list[str] | None = None
+        new_usernames: list[str] | None = None
+
+        protected_content_enabled: bool | None = None
+        forum_enabled: bool | None = None
+        anti_spam_enabled: bool | None = None
+        signature_profiles_enabled: bool | None = None
+        auto_translation_enabled: bool | None = None
 
         if isinstance(action, raw.types.ChannelAdminLogEventActionChangeAbout):
             old_description = action.prev_value
@@ -469,8 +573,62 @@ class ChatEvent(Object):
             )
             action = enums.ChatEventAction.DELETED_FORUM_TOPIC
 
+        elif isinstance(action, raw.types.ChannelAdminLogEventActionParticipantJoinByInvite):
+            invite_link = types.ChatInviteLink._parse(client, action.invite, users)
+            action = enums.ChatEventAction.MEMBER_JOINED_BY_LINK
+
+        elif isinstance(action, raw.types.ChannelAdminLogEventActionParticipantJoinByRequest):
+            invite_link = types.ChatInviteLink._parse(client, action.invite, users)
+            approver_user = types.User._parse(client, users.get(action.approved_by))
+            action = enums.ChatEventAction.MEMBER_JOINED_BY_REQUEST
+
+        elif isinstance(action, raw.types.ChannelAdminLogEventActionParticipantEditRank):
+            tagged_user = types.User._parse(client, users.get(action.user_id))
+            old_tag = action.prev_rank
+            new_tag = action.new_rank
+            action = enums.ChatEventAction.MEMBER_TAG_CHANGED
+
+        elif isinstance(action, raw.types.ChannelAdminLogEventActionChangeAvailableReactions):
+            old_available_reactions = types.ChatReactions._parse(client, action.prev_value)
+            new_available_reactions = types.ChatReactions._parse(client, action.new_value)
+            action = enums.ChatEventAction.AVAILABLE_REACTIONS_CHANGED
+
+        elif isinstance(action, raw.types.ChannelAdminLogEventActionChangeUsernames):
+            old_usernames = action.prev_value
+            new_usernames = action.new_value
+            action = enums.ChatEventAction.USERNAMES_CHANGED
+
+        elif isinstance(action, raw.types.ChannelAdminLogEventActionToggleNoForwards):
+            protected_content_enabled = action.new_value
+            action = enums.ChatEventAction.PROTECTED_CONTENT_ENABLED
+
+        elif isinstance(action, raw.types.ChannelAdminLogEventActionToggleForum):
+            forum_enabled = action.new_value
+            action = enums.ChatEventAction.FORUM_ENABLED
+
+        elif isinstance(action, raw.types.ChannelAdminLogEventActionToggleAntiSpam):
+            anti_spam_enabled = action.new_value
+            action = enums.ChatEventAction.ANTI_SPAM_ENABLED
+
+        elif isinstance(action, raw.types.ChannelAdminLogEventActionToggleSignatureProfiles):
+            signature_profiles_enabled = action.new_value
+            action = enums.ChatEventAction.SIGNATURE_PROFILES_ENABLED
+
+        elif isinstance(action, raw.types.ChannelAdminLogEventActionToggleAutotranslation):
+            auto_translation_enabled = action.new_value
+            action = enums.ChatEventAction.AUTO_TRANSLATION_ENABLED
+
+        elif isinstance(action, raw.types.ChannelAdminLogEventActionPinTopic):
+            old_forum_topic = types.ForumTopic._parse(
+                client, action.prev_topic, users=users, chats=chats
+            )
+            new_forum_topic = types.ForumTopic._parse(
+                client, action.new_topic, users=users, chats=chats
+            )
+            action = enums.ChatEventAction.PINNED_FORUM_TOPIC
+
         else:
-            action = f"{enums.ChatEventAction.UNKNOWN}-{action.QUALNAME}"
+            action = enums.ChatEventAction.UNKNOWN
 
         return ChatEvent(
             id=event.id,
@@ -515,4 +673,19 @@ class ChatEvent(Object):
             old_forum_topic=old_forum_topic,
             new_forum_topic=new_forum_topic,
             deleted_forum_topic=deleted_forum_topic,
+            invite_link=invite_link,
+            approver_user=approver_user,
+            tagged_user=tagged_user,
+            old_tag=old_tag,
+            new_tag=new_tag,
+            old_available_reactions=old_available_reactions,
+            new_available_reactions=new_available_reactions,
+            old_usernames=old_usernames,
+            new_usernames=new_usernames,
+            protected_content_enabled=protected_content_enabled,
+            forum_enabled=forum_enabled,
+            anti_spam_enabled=anti_spam_enabled,
+            signature_profiles_enabled=signature_profiles_enabled,
+            auto_translation_enabled=auto_translation_enabled,
+            raw=event.action,
         )

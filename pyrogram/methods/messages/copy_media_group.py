@@ -168,7 +168,10 @@ class CopyMediaGroup:
             else:
                 raise ValueError("Message with this type can't be copied.")
 
-            media = utils.get_input_media_from_file_id(file_id=file_id, has_spoiler=has_spoilers)
+            media = utils.get_input_media_from_file_id(
+                file_id=file_id,
+                has_spoiler=has_spoilers if has_spoilers is not None else message.has_media_spoiler,
+            )
 
             if isinstance(captions, list) and i < len(captions) and captions[i] is not None:
                 text, entities = (await self.parser.parse(captions[i])).values()

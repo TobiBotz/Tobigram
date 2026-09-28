@@ -999,18 +999,18 @@ def command(
 
             without_prefix = text[len(prefix) :]
 
-            username_pattern = rf"(?:@{re.escape(username)})?" if username else ""
+            mention = rf"(?:@(?i:{re.escape(username)}))?" if username else ""
 
             for cmd in flt.commands:
                 escaped_cmd = re.escape(cmd)
                 flags = re.IGNORECASE if not flt.case_sensitive else 0
                 if not re.match(
-                    rf"^(?:{escaped_cmd}{username_pattern})(?:\s|$)", without_prefix, flags=flags
+                    rf"^(?:{escaped_cmd}{mention})(?:\s|$)", without_prefix, flags=flags
                 ):
                     continue
 
                 without_command = re.sub(
-                    rf"^{escaped_cmd}{username_pattern}\s?",
+                    rf"^{escaped_cmd}{mention}\s?",
                     "",
                     without_prefix,
                     count=1,
@@ -1054,7 +1054,11 @@ def regex(pattern: str | Pattern, flags: int = 0):
         else:
             raise ValueError(f"Regex filter doesn't work with {type(update)}")
 
-        update.matches = (list(flt.p.finditer(value)) or None) if value else None
+        update.matches = (
+            (list(flt.p.finditer(value)) or None)
+            if value and isinstance(value, type(flt.p.pattern))
+            else None
+        )
 
         return bool(update.matches)
 

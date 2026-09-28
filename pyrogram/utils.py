@@ -333,8 +333,22 @@ def parse_deleted_messages(client, update, users, chats) -> list[types.Message]:
 
     chat = None
 
-    if channel_id:
-        chat = types.Chat(id=get_channel_id(channel_id), type=enums.ChatType.CHANNEL, client=client)
+    if channel_id and channel_id in chats:
+        chat = types.Chat._parse_channel_chat(client, chats[channel_id])
+    elif channel_id:
+        storage = getattr(client.storage, "local", client.storage)
+        peer_cache = getattr(storage, "_peer_cache", None)
+        row = peer_cache.get(get_channel_id(channel_id)) if peer_cache is not None else None
+
+        chat = types.Chat(
+            id=get_channel_id(channel_id),
+            type={
+                "supergroup": enums.ChatType.SUPERGROUP,
+                "forum": enums.ChatType.FORUM,
+                "direct": enums.ChatType.PRIVATE,
+            }.get(row and row[2], enums.ChatType.CHANNEL),
+            client=client,
+        )
     if peer:
         chat_id = get_raw_peer_id(peer)
         if chat_id:

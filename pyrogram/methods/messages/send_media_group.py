@@ -397,7 +397,11 @@ class SendMediaGroup:
                                 ),
                                 spoiler=i.has_spoiler,
                                 mime_type=self.guess_mime_type(
-                                    getattr(i.media, "name", "video.mp4")
+                                    utils.get_file_name(
+                                        i.media,
+                                        file_name=i.file_name or "",
+                                        fallback="video.mp4",
+                                    )
                                 )
                                 or "video/mp4",
                                 nosound_video=i.no_sound,
@@ -492,7 +496,11 @@ class SendMediaGroup:
                             peer=await self.resolve_peer(chat_id),
                             media=raw.types.InputMediaUploadedDocument(
                                 mime_type=self.guess_mime_type(
-                                    getattr(i.media, "name", "audio.mp3")
+                                    utils.get_file_name(
+                                        i.media,
+                                        file_name=i.file_name,
+                                        fallback="audio.mp3",
+                                    )
                                 )
                                 or "audio/mpeg",
                                 file=await self.save_file(
@@ -579,7 +587,13 @@ class SendMediaGroup:
                         raw.functions.messages.UploadMedia(
                             peer=await self.resolve_peer(chat_id),
                             media=raw.types.InputMediaUploadedDocument(
-                                mime_type=self.guess_mime_type(getattr(i.media, "name", "file.zip"))
+                                mime_type=self.guess_mime_type(
+                                    utils.get_file_name(
+                                        i.media,
+                                        file_name=i.file_name,
+                                        fallback="file.zip",
+                                    )
+                                )
                                 or "application/zip",
                                 file=await self.save_file(
                                     i.media, progress=progress, progress_args=progress_args

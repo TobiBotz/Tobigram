@@ -212,8 +212,13 @@ class ListenerRegistry:
             return tuple((listener_type, _CHAT, chat) for chat in chats)
 
         users = _as_keys(identifier.user_id)
+        pinned = identifier.message_id is not None or identifier.inline_message_id is not None
 
-        if users:
+        if users and not (
+            listener_type is pyrogram.enums.ListenerTypes.CALLBACK_QUERY
+            and listener.unallowed_click_alert
+            and pinned
+        ):
             return tuple((listener_type, _USER, user) for user in users)
 
         return ((listener_type, _GLOBAL, None),)

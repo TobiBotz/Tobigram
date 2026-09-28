@@ -21,8 +21,9 @@ from __future__ import annotations
 import logging
 
 import pyrogram
-from pyrogram import raw, types, utils
 from typing import TYPE_CHECKING
+
+from pyrogram import errors, raw, types, utils
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -96,9 +97,25 @@ class GetMessages:
         Raises:
             ValueError: In case of invalid arguments.
         """
+        peer = await self.resolve_peer(chat_id)
+
         if pinned:
             is_iterable = False
-            ids = [raw.types.InputMessagePinned()]
+
+            if isinstance(peer, raw.types.InputPeerChannel):
+                ids = [raw.types.InputMessagePinned()]
+            else:
+                if isinstance(peer, raw.types.InputPeerChat):
+                    r = await self.invoke(raw.functions.messages.GetFullChat(chat_id=peer.chat_id))
+                    pinned_msg_id = r.full_chat.pinned_msg_id
+                else:
+                    r = await self.invoke(raw.functions.users.GetFullUser(id=peer))
+                    pinned_msg_id = r.full_user.pinned_msg_id
+
+                if not pinned_msg_id:
+                    return None
+
+                ids = [raw.types.InputMessageID(id=pinned_msg_id)]
         else:
             ids, ids_type = (
                 (message_ids, raw.types.InputMessageID)
@@ -117,8 +134,6 @@ class GetMessages:
             ids = list(ids) if is_iterable else [ids]
             ids = [ids_type(id=i) for i in ids]
 
-        peer = await self.resolve_peer(chat_id)
-
         if replies < 0:
             replies = (1 << 31) - 1
 
@@ -127,7 +142,13 @@ class GetMessages:
         else:
             rpc = raw.functions.messages.GetMessages(id=ids)
 
-        r = await self.invoke(rpc, sleep_threshold=-1)
+        try:
+            r = await self.invoke(rpc, sleep_threshold=-1)
+        except errors.MessageIdsEmpty:
+            if pinned:
+                return None
+
+            raise
 
         messages = await utils.parse_messages(self, r, replies=replies)
 

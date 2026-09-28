@@ -174,7 +174,7 @@ class SaveFile:
 
             if isinstance(path, (str, os.PathLike)):
                 fp = open(path, "rb", buffering=READ_BUFFER)
-            elif isinstance(path, io.IOBase):
+            elif isinstance(path, io.IOBase) and not isinstance(path, io.TextIOBase):
                 fp = path
             else:
                 raise ValueError(
