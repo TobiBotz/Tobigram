@@ -4332,3 +4332,215 @@ async def test_an_ephemeral_message_keeps_a_receiver_missing_from_the_users():
     assert message.receiver_user.id == 7
     assert message._ephemeral_target() == 7
     assert message._reply_receiver_id() == 7
+
+
+from io import BytesIO
+import inspect
+from unittest.mock import AsyncMock
+
+from pyrogram import enums, raw, types
+from pyrogram.methods.messages.edit_message_text import EditMessageText
+from pyrogram.parser.parser import Parser
+
+
+def _empty_updates():
+    return raw.types.Updates(updates=[], users=[], chats=[], date=0, seq=0)
+
+
+class _Client(EditMessageText):
+    parse_mode = enums.ParseMode.MARKDOWN
+    link_preview_options = None
+    me = None
+
+    def __init__(self, reply=None):
+        self.sent = []
+        self.reply = reply if reply is not None else _empty_updates()
+        self.parser = Parser(self)
+        self.message_cache = {}
+        self.topic_cache = {}
+        self.fetch_topics = False
+
+    async def resolve_peer(self, peer_id):
+        return raw.types.InputPeerSelf()
+
+    def rnd_id(self):
+        return 1
+
+    def guess_mime_type(self, filename):
+        return None
+
+    async def save_file(self, path, *args, **kwargs):
+        return raw.types.InputFile(id=1, parts=1, name="x", md5_checksum="") if path else None
+
+    async def invoke(self, query, *args, **kwargs):
+        self.sent.append(query)
+        return self.reply
+
+
+@pytest.mark.parametrize("scheduled", [True, False])
+async def test_shortcuts_on_a_scheduled_message_act_on_the_scheduled_one(scheduled):
+    from datetime import datetime
+
+    when = datetime(2030, 1, 1, 12, 0)
+    client = AsyncMock()
+    message = types.Message(
+        id=2,
+        chat=types.Chat(id=-100, type=enums.ChatType.SUPERGROUP),
+        date=when,
+        scheduled=scheduled,
+        client=client,
+    )
+
+    await message.delete()
+    await message.edit_text("x")
+    await message.edit_caption("x")
+    await message.edit_media(types.InputMediaPhoto("x"))
+    await message.edit_checklist(types.InputChecklist(title="x", tasks=[]))
+    await message.edit_reply_markup(None)
+
+    if scheduled:
+        client.delete_scheduled_messages.assert_awaited_once_with(-100, [2])
+        client.delete_messages.assert_not_awaited()
+    else:
+        client.delete_messages.assert_awaited_once()
+        client.delete_scheduled_messages.assert_not_awaited()
+
+    for name in (
+        "edit_message_text",
+        "edit_message_caption",
+        "edit_message_media",
+        "edit_message_checklist",
+        "edit_message_reply_markup",
+    ):
+        kwargs = getattr(client, name).await_args.kwargs
+        assert kwargs["message_id"] == 2
+        assert kwargs["schedule_date"] == (when if scheduled else None), name
+
+
+async def test_editing_a_scheduled_message_returns_it():
+    reply = raw.core.TLObject.read(
+        BytesIO(
+            raw.types.Updates(
+                updates=[
+                    raw.types.UpdateNewScheduledMessage(
+                        message=raw.types.Message(
+                            id=2,
+                            peer_id=raw.types.PeerUser(user_id=1),
+                            date=1893499200,
+                            message="edited",
+                            out=True,
+                        )
+                    )
+                ],
+                users=[raw.types.User(id=1, first_name="a")],
+                chats=[],
+                date=0,
+                seq=0,
+            ).write()
+        )
+    )
+
+    client = _Client(reply)
+    client.message_cache = {}
+
+    edited = await client.edit_message_text("me", 2, "edited")
+
+    assert edited is not None
+    assert edited.id == 2
+    assert edited.text == "edited"
+    assert edited.scheduled is True
+
+
+_SCHEDULED_REFUSED = sorted(
+    name
+    for name, _ in inspect.getmembers(types.Message, inspect.iscoroutinefunction)
+    if name.startswith("reply") and name != "reply_chat_action"
+) + [
+    "forward",
+    "copy_media_group",
+    "pin",
+    "unpin",
+    "react",
+    "vote",
+    "retract_vote",
+    "click",
+    "read",
+    "view",
+    "get_media_group",
+    "edit_live_location",
+    "stop_live_location",
+    "pay",
+    "accept_gift_purchase_offer",
+    "reject_gift_purchase_offer",
+    "summarize",
+    "wait_for_click",
+]
+
+
+def _scheduled_message(scheduled):
+    from datetime import datetime
+
+    return types.Message(
+        id=2,
+        chat=types.Chat(id=-100, type=enums.ChatType.SUPERGROUP),
+        from_user=types.User(id=5),
+        date=datetime(2030, 1, 1),
+        scheduled=scheduled,
+        client=AsyncMock(),
+    )
+
+
+async def _call_with_placeholders(message, name):
+    method = getattr(message, name)
+    required = [
+        p.name
+        for p in inspect.signature(method).parameters.values()
+        if p.default is inspect.Parameter.empty and p.kind is p.POSITIONAL_OR_KEYWORD
+    ]
+
+    await method(**{p: 1 if p in ("latitude", "longitude", "heading") else "x" for p in required})
+
+
+@pytest.mark.parametrize("name", _SCHEDULED_REFUSED)
+async def test_a_scheduled_message_refuses_shortcuts_that_would_hit_a_sent_message(name):
+    message = _scheduled_message(True)
+
+    with pytest.raises(ValueError, match="scheduled message"):
+        await _call_with_placeholders(message, name)
+
+    assert message._client.method_calls == []
+
+
+@pytest.mark.parametrize(
+    "name", ["reply_text", "forward", "pin", "react", "answer", "answer_photo"]
+)
+async def test_the_scheduled_guard_leaves_sent_messages_and_answers_alone(name):
+    await _call_with_placeholders(_scheduled_message(False), name)
+
+    if name.startswith("answer"):
+        await _call_with_placeholders(_scheduled_message(True), name)
+
+
+async def test_a_scheduled_message_is_not_cached_under_a_sent_message_id():
+    client = _Client()
+    client.message_cache = {}
+
+    await types.Message._parse(
+        client,
+        raw.core.TLObject.read(
+            BytesIO(
+                raw.types.Message(
+                    id=2,
+                    peer_id=raw.types.PeerUser(user_id=1),
+                    date=1893499200,
+                    message="later",
+                    out=True,
+                ).write()
+            )
+        ),
+        {1: raw.core.TLObject.read(BytesIO(raw.types.User(id=1, first_name="a").write()))},
+        {},
+        is_scheduled=True,
+    )
+
+    assert client.message_cache == {}
