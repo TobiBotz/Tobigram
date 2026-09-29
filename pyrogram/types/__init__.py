@@ -24,6 +24,7 @@ from .list import List
 from .listeners import *
 from .messages_and_media import *
 from .object import Object
+from .phone import *
 from .stats import *
 from .update import *
 from .user_and_chats import *

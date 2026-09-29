@@ -143,6 +143,7 @@ def pyrogram_api():
     categories = dict(
         account="""
         Account
+            accept_authorization
             add_profile_audio
             cancel_password_email
             change_authorization_settings
@@ -984,7 +985,56 @@ def pyrogram_api():
         """,
         phone="""
         Phone
+            accept_call
+            change_call_volume
+            check_group_call
+            confirm_call
+            create_conference_call
+            create_group_call
+            decline_conference_call_invite
+            delete_conference_call_participants
+            delete_group_call_messages
+            delete_group_call_participant_messages
+            discard_call
+            discard_group_call
+            edit_group_call_participant
+            edit_group_call_title
+            export_group_call_invite
+            get_call_config
             get_call_members
+            get_group_call
+            get_group_call_chain_blocks
+            get_group_call_join_as
+            get_group_call_stars
+            get_group_call_stream_channels
+            get_group_call_stream_rtmp_url
+            invite_conference_call_participant
+            invite_to_group_call
+            join_group_call
+            join_group_call_presentation
+            leave_group_call
+            leave_group_call_presentation
+            mute_group_call_participant
+            pause_stream
+            play
+            play_audio
+            play_video
+            received_call
+            request_call
+            resume_stream
+            save_call_debug
+            save_call_log
+            save_default_group_call_join_as
+            save_default_send_as
+            send_conference_call_broadcast
+            send_group_call_encrypted_message
+            send_group_call_message
+            send_signaling_data
+            set_call_rating
+            start_scheduled_group_call
+            toggle_group_call_record
+            toggle_group_call_settings
+            toggle_group_call_start_subscription
         """,
         premium="""
         Premium
@@ -1077,6 +1127,7 @@ def pyrogram_api():
             read_chat_stories
             reorder_story_albums
             report_story
+            repost_story
             search_stories
             send_story
             send_story_reaction
@@ -1161,6 +1212,8 @@ def pyrogram_api():
             on_start
             on_stop
             on_story
+            on_stream_end
+            on_stream_start
             on_user_status
         """,
     )
@@ -1301,6 +1354,8 @@ def pyrogram_api():
             VideoChatStarted
             VideoChatEnded
             VideoChatMembersInvited
+            GroupCall
+            MediaStream
             WebAppData
             MessageReactions
             MessagePeerReaction
@@ -1717,6 +1772,7 @@ def pyrogram_api():
             StickerFormat
             StickerType
             StoriesPrivacyRules
+            StreamType
             SuggestedPostRefundReason
             SuggestedPostState
             TopChatCategory
@@ -1885,6 +1941,26 @@ def pyrogram_api():
             Chat.unmute
             Chat.set_ttl
             Chat.export_invite_link
+            Chat.play
+            Chat.play_audio
+            Chat.play_video
+            Chat.join_group_call
+            Chat.leave_group_call
+            Chat.pause_stream
+            Chat.resume_stream
+            Chat.change_call_volume
+            Chat.get_group_call
+            Chat.create_group_call
+            Chat.discard_group_call
+            Chat.edit_group_call_title
+            Chat.export_group_call_invite
+            Chat.get_group_call_stream_rtmp_url
+            Chat.invite_to_group_call
+            Chat.start_scheduled_group_call
+            Chat.toggle_group_call_record
+            Chat.edit_group_call_participant
+            Chat.mute_group_call_participant
+            Chat.toggle_group_call_settings
             Chat.full_name
             Chat.is_fake
             Chat.is_scam

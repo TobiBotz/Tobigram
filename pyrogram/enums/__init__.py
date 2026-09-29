@@ -60,6 +60,7 @@ from .sent_code_type import SentCodeType
 from .sticker_format import StickerFormat
 from .sticker_type import StickerType
 from .stories_privacy_rules import StoriesPrivacyRules
+from .stream_type import StreamType
 from .suggested_post_refund_reason import SuggestedPostRefundReason
 from .suggested_post_state import SuggestedPostState
 from .top_chat_category import TopChatCategory
@@ -111,6 +112,7 @@ __all__ = [
     "StickerFormat",
     "StickerType",
     "StoriesPrivacyRules",
+    "StreamType",
     "SuggestedPostRefundReason",
     "SuggestedPostState",
     "TopChatCategory",

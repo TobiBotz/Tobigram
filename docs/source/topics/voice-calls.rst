@@ -1,9 +1,12 @@
 Voice Calls
 ===========
 
-pyrogram does not implement voice or video calls. The MTProto call layer needs a media stack —
-WebRTC, codecs, encryption negotiation — that is a different project from an API framework,
-so it is handled by external libraries built on top of pyrogram.
+.. note::
+    **Tobigram now provides native voice and video streaming!**
+    You no longer need external setup to stream audio and video. See the comprehensive :doc:`calls` guide for full examples.
+
+pyrogram historically did not implement media streaming for calls. The MTProto call layer needs a media stack —
+WebRTC, codecs, encryption negotiation — that is a different project from an API framework.
 
 
 -----
@@ -11,10 +14,10 @@ so it is handled by external libraries built on top of pyrogram.
 Libraries
 ---------
 
-- `pytgcalls <https://github.com/pytgcalls/pytgcalls>`_ — group voice chats and private
-  calls, actively maintained, and the one most projects use.
-- `tgcalls <https://github.com/MarshalX/tgcalls>`_ — the Python bindings pytgcalls is built
-  on, usable directly for lower-level control.
+- `ntgcalls <https://github.com/pytgcalls/ntgcalls>`_ — modern C++ WebRTC bindings for
+  group video chats and voice calls.
+- `py-tgcalls <https://github.com/pytgcalls/pytgcalls>`_ — high-level streaming pipeline
+  built on top of ntgcalls, integrated natively into Tobigram.
 
 Because pyrogram is a drop-in replacement for Pyrogram, a library that takes a Pyrogram client
 takes a pyrogram one.

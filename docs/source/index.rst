@@ -83,6 +83,7 @@ Features
 - :doc:`features/listeners`: Inline conversation flows without state machines.
 - :doc:`features/rate-limiting`: Client-side rate limiting and throttling.
 - :doc:`features/session-strings`: Checksummed portable session strings.
+- :doc:`topics/calls`: Native WebRTC voice chats and video streaming.
 
 Meta
 ^^^^
@@ -169,6 +170,7 @@ Meta
 
     topics/advanced-usage
     topics/speedups
+    topics/calls
     topics/voice-calls
     topics/debugging
 

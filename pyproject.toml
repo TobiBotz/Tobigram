@@ -92,6 +92,10 @@ botapi = [
     "beautifulsoup4>=4.12",
     "html5lib>=1.1",
 ]
+calls = [
+    "ntgcalls>=3.0.0",
+    "py-tgcalls>=3.0.0",
+]
 
 [tool.hatch.version]
 path = "pyrogram/__init__.py"

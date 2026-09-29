@@ -42,6 +42,7 @@ from pathlib import Path
 
 import pyrogram
 from pyrogram import __license__, __version__, enums, raw, utils
+from pyrogram.calls import CallsManager
 from pyrogram.crypto import aes
 from pyrogram.crypto.executor import get_crypto_executor
 from pyrogram.errors import (
@@ -622,6 +623,8 @@ class Client(Methods):
         self.listeners = ListenerRegistry(self)
 
         self.dispatcher: Dispatcher = Dispatcher(self)
+
+        self.calls: CallsManager = CallsManager(self)
 
         self.rnd_id = MsgId
 
@@ -2564,3 +2567,36 @@ class Client(Methods):
 
     def guess_extension(self, mime_type: str) -> str | None:
         return self.mimetypes.guess_extension(mime_type)
+
+    async def _dispatch_call_update(self, update: pyrogram.types.Update):
+        """Dispatch an internal call/stream update to registered handlers."""
+        from pyrogram.handlers import StreamEndedHandler, StreamStartedHandler
+        from pyrogram.types import StreamEnded, StreamStarted
+
+        target_handler_cls = (
+            StreamEndedHandler
+            if isinstance(update, StreamEnded)
+            else StreamStartedHandler
+            if isinstance(update, StreamStarted)
+            else None
+        )
+        if target_handler_cls is None:
+            return
+
+        for _group, handlers in list(self.dispatcher.groups.items()):
+            for handler in handlers:
+                if isinstance(handler, target_handler_cls):
+                    try:
+                        if await handler.check(self, update):
+                            if inspect.iscoroutinefunction(handler.callback):
+                                await handler.callback(self, update)
+                            else:
+                                await self.loop.run_in_executor(
+                                    self.executor, handler.callback, self, update
+                                )
+                    except pyrogram.StopPropagation:
+                        return
+                    except pyrogram.ContinuePropagation:
+                        continue
+                    except Exception as e:
+                        log.exception("Error in call update handler: %s", e)

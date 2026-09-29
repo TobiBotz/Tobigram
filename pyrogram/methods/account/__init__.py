@@ -16,6 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
+from .accept_authorization import AcceptAuthorization
 from .add_profile_audio import AddProfileAudio
 from .cancel_password_email import CancelPasswordEmail
 from .change_authorization_settings import ChangeAuthorizationSettings
@@ -113,6 +114,7 @@ from .verify_phone import VerifyPhone
 
 
 class Account(
+    AcceptAuthorization,
     AddProfileAudio,
     CancelPasswordEmail,
     ChangeAuthorizationSettings,

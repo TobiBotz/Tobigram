@@ -46,6 +46,8 @@ from .on_shipping_query import OnShippingQuery
 from .on_start import OnStart
 from .on_stop import OnStop
 from .on_story import OnStory
+from .on_stream_end import OnStreamEnd
+from .on_stream_start import OnStreamStart
 from .on_user_status import OnUserStatus
 
 
@@ -80,6 +82,8 @@ class Decorators(
     OnStart,
     OnStop,
     OnStory,
+    OnStreamEnd,
+    OnStreamStart,
     OnUserStatus,
 ):
     pass

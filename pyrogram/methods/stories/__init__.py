@@ -56,6 +56,7 @@ from .toggle_stories_pinned_to_top import ToggleStoriesPinnedToTop
 from .toggle_all_stories_hidden import ToggleAllStoriesHidden
 from .get_all_read_peer_stories import GetAllReadPeerStories
 from .get_peer_max_story_ids import GetPeerMaxStoryIDs
+from .repost_story import RepostStory
 
 
 class Stories(
@@ -84,6 +85,7 @@ class Stories(
     ReadChatStories,
     ReorderStoryAlbums,
     ReportStory,
+    RepostStory,
     SendStory,
     SendStoryReaction,
     ShowChatStories,

@@ -27,7 +27,7 @@ from pyrogram import enums, raw, types, utils
 from ..object import Object
 
 if TYPE_CHECKING:
-    from datetime import datetime
+    from datetime import datetime, timedelta
     from collections.abc import AsyncGenerator
 
 log = logging.getLogger(__name__)
@@ -2238,3 +2238,546 @@ class Chat(Object):
             ``bool``: On success, True is returned.
         """
         return await self._client.report_spam(self.id)
+
+    async def play(
+        self,
+        path: str,
+        volume: int = 100,
+        muted: bool = False,
+    ) -> bool:
+        """Bound method *play* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.play_audio(chat_id, path, volume=volume, muted=muted)
+
+        Parameters:
+            path (``str``):
+                Audio file path or audio stream URL.
+
+            volume (``int``, *optional*):
+                Playback volume level from 1 to 100. Defaults to 100.
+
+            muted (``bool``, *optional*):
+                Whether to join the voice chat muted. Defaults to False.
+
+        Example:
+            .. code-block:: python
+
+                await chat.play("song.mp3")
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.play_audio(
+            self.id,
+            path=path,
+            volume=volume,
+            muted=muted,
+        )
+
+    play_audio = play
+
+    async def play_video(
+        self,
+        path: str,
+        volume: int = 100,
+        muted: bool = False,
+        video_stopped: bool = False,
+    ) -> bool:
+        """Bound method *play_video* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.play_video(chat_id, path, volume=volume, muted=muted, video_stopped=video_stopped)
+
+        Parameters:
+            path (``str``):
+                Video file path or stream URL.
+
+            volume (``int``, *optional*):
+                Audio playback volume level from 1 to 100. Defaults to 100.
+
+            muted (``bool``, *optional*):
+                Whether to join the voice chat with muted microphone. Defaults to False.
+
+            video_stopped (``bool``, *optional*):
+                Whether to start with video paused/stopped. Defaults to False.
+
+        Example:
+            .. code-block:: python
+
+                await chat.play_video("video.mp4")
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.play_video(
+            self.id,
+            path=path,
+            volume=volume,
+            muted=muted,
+            video_stopped=video_stopped,
+        )
+
+    async def join_group_call(
+        self,
+        params: str | raw.base.DataJSON | None = None,
+        join_as: int | str | raw.base.InputPeer | None = None,
+        muted: bool | None = None,
+        video_stopped: bool | None = None,
+        invite_hash: str | None = None,
+    ) -> raw.base.Updates:
+        """Bound method *join_group_call* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.join_group_call(chat_id)
+
+        Parameters:
+            params (``str`` | :obj:`~pyrogram.raw.base.DataJSON`, *optional*):
+                Signaling parameters payload JSON string or DataJSON object.
+
+            join_as (``int`` | ``str`` | :obj:`~pyrogram.raw.base.InputPeer`, *optional*):
+                Channel or identity to join as. Defaults to self.
+
+            muted (``bool``, *optional*):
+                Whether to join muted.
+
+            video_stopped (``bool``, *optional*):
+                Whether to join with video disabled.
+
+            invite_hash (``str``, *optional*):
+                Invite hash to speak in a muted channel voice chat.
+
+        Example:
+            .. code-block:: python
+
+                await chat.join_group_call()
+
+        Returns:
+            :obj:`~pyrogram.raw.base.Updates`: Updates resulting from joining the call.
+        """
+        return await self._client.join_group_call(
+            self.id,
+            params=params,
+            join_as=join_as,
+            muted=muted,
+            video_stopped=video_stopped,
+            invite_hash=invite_hash,
+        )
+
+    async def leave_group_call(self) -> bool:
+        """Bound method *leave_group_call* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.leave_group_call(chat_id)
+
+        Example:
+            .. code-block:: python
+
+                await chat.leave_group_call()
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.leave_group_call(self.id)
+
+    async def pause_stream(self) -> bool:
+        """Bound method *pause_stream* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.pause_stream(chat_id)
+
+        Example:
+            .. code-block:: python
+
+                await chat.pause_stream()
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.pause_stream(self.id)
+
+    async def resume_stream(self) -> bool:
+        """Bound method *resume_stream* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.resume_stream(chat_id)
+
+        Example:
+            .. code-block:: python
+
+                await chat.resume_stream()
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.resume_stream(self.id)
+
+    async def change_call_volume(self, volume: int) -> bool:
+        """Bound method *change_call_volume* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.change_call_volume(chat_id, volume)
+
+        Parameters:
+            volume (``int``):
+                New volume percentage (1 to 100).
+
+        Example:
+            .. code-block:: python
+
+                await chat.change_call_volume(80)
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.change_call_volume(self.id, volume=volume)
+
+    async def get_group_call(self) -> types.GroupCall | None:
+        """Bound method *get_group_call* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.get_group_call(chat_id)
+
+        Example:
+            .. code-block:: python
+
+                call = await chat.get_group_call()
+
+        Returns:
+            :obj:`~pyrogram.types.GroupCall` | ``None``: The active group call, or None.
+        """
+        return await self._client.get_group_call(self.id)
+
+    async def create_group_call(
+        self,
+        title: str | None = None,
+        schedule_date: datetime | timedelta | None = None,
+        rtmp_stream: bool | None = None,
+    ) -> types.GroupCall:
+        """Bound method *create_group_call* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.create_group_call(chat_id, title=title, schedule_date=schedule_date, rtmp_stream=rtmp_stream)
+
+        Parameters:
+            title (``str``, *optional*):
+                Group call title.
+
+            schedule_date (:py:obj:`~datetime.datetime` | :py:obj:`~datetime.timedelta`, *optional*):
+                Date when the call is scheduled to start.
+
+            rtmp_stream (``bool``, *optional*):
+                Pass True to start an RTMP stream instead of a regular voice chat.
+
+        Example:
+            .. code-block:: python
+
+                await chat.create_group_call(title="Community Hangout")
+
+        Returns:
+            :obj:`~pyrogram.types.GroupCall`: The newly created group call.
+        """
+        return await self._client.create_group_call(
+            self.id,
+            title=title,
+            schedule_date=schedule_date,
+            rtmp_stream=rtmp_stream,
+        )
+
+    async def discard_group_call(self) -> bool:
+        """Bound method *discard_group_call* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.discard_group_call(chat_id)
+
+        Example:
+            .. code-block:: python
+
+                await chat.discard_group_call()
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.discard_group_call(self.id)
+
+    async def edit_group_call_title(self, title: str) -> bool:
+        """Bound method *edit_group_call_title* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.edit_group_call_title(chat_id, title)
+
+        Parameters:
+            title (``str``):
+                New group call title.
+
+        Example:
+            .. code-block:: python
+
+                await chat.edit_group_call_title("New Title")
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.edit_group_call_title(self.id, title=title)
+
+    async def export_group_call_invite(self, can_self_unmute: bool | None = None) -> str:
+        """Bound method *export_group_call_invite* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.export_group_call_invite(chat_id, can_self_unmute=can_self_unmute)
+
+        Parameters:
+            can_self_unmute (``bool``, *optional*):
+                Pass True if invited users can unmute themselves.
+
+        Example:
+            .. code-block:: python
+
+                link = await chat.export_group_call_invite()
+
+        Returns:
+            ``str``: The invite link.
+        """
+        return await self._client.export_group_call_invite(self.id, can_self_unmute=can_self_unmute)
+
+    async def get_group_call_stream_rtmp_url(
+        self, revoke: bool | None = None
+    ) -> raw.types.phone.GroupCallStreamRtmpUrl:
+        """Bound method *get_group_call_stream_rtmp_url* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.get_group_call_stream_rtmp_url(chat_id, revoke=revoke)
+
+        Parameters:
+            revoke (``bool``, *optional*):
+                Pass True to revoke the previous stream key.
+
+        Example:
+            .. code-block:: python
+
+                rtmp = await chat.get_group_call_stream_rtmp_url()
+
+        Returns:
+            The RTMP streaming URL and key object.
+        """
+        return await self._client.get_group_call_stream_rtmp_url(self.id, revoke=revoke)
+
+    async def invite_to_group_call(self, users: int | str | list[int | str]) -> bool:
+        """Bound method *invite_to_group_call* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.invite_to_group_call(chat_id, users)
+
+        Parameters:
+            users (``int`` | ``str`` | List of ``int`` or ``str``):
+                User ID(s) or username(s) to invite.
+
+        Example:
+            .. code-block:: python
+
+                await chat.invite_to_group_call("username")
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.invite_to_group_call(self.id, users=users)
+
+    async def start_scheduled_group_call(self) -> bool:
+        """Bound method *start_scheduled_group_call* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.start_scheduled_group_call(chat_id)
+
+        Example:
+            .. code-block:: python
+
+                await chat.start_scheduled_group_call()
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.start_scheduled_group_call(self.id)
+
+    async def toggle_group_call_record(
+        self,
+        start: bool,
+        title: str | None = None,
+        video: bool | None = None,
+        video_portrait: bool | None = None,
+    ) -> bool:
+        """Bound method *toggle_group_call_record* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.toggle_group_call_record(chat_id, start=start, title=title, video=video, video_portrait=video_portrait)
+
+        Parameters:
+            start (``bool``):
+                Pass True to start recording, False to stop.
+
+            title (``str``, *optional*):
+                Recording title.
+
+            video (``bool``, *optional*):
+                Pass True to record video as well.
+
+            video_portrait (``bool``, *optional*):
+                Pass True to record video in portrait orientation.
+
+        Example:
+            .. code-block:: python
+
+                await chat.toggle_group_call_record(start=True, title="My Podcast")
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.toggle_group_call_record(
+            self.id,
+            start=start,
+            title=title,
+            video=video,
+            video_portrait=video_portrait,
+        )
+
+    async def edit_group_call_participant(
+        self,
+        participant: int | str,
+        muted: bool | None = None,
+        volume: int | None = None,
+        raise_hand: bool | None = None,
+        video_stopped: bool | None = None,
+        video_paused: bool | None = None,
+        presentation_paused: bool | None = None,
+    ) -> bool:
+        """Bound method *edit_group_call_participant* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.edit_group_call_participant(chat_id, participant, muted=muted, volume=volume, ...)
+
+        Parameters:
+            participant (``int`` | ``str``):
+                The user ID or username of the participant.
+
+            muted (``bool``, *optional*):
+                Pass True to mute, False to unmute.
+
+            volume (``int``, *optional*):
+                New volume percentage.
+
+            raise_hand (``bool``, *optional*):
+                Pass True to raise hand.
+
+            video_stopped (``bool``, *optional*):
+                Pass True to stop video.
+
+            video_paused (``bool``, *optional*):
+                Pass True to pause video.
+
+            presentation_paused (``bool``, *optional*):
+                Pass True to pause presentation.
+
+        Example:
+            .. code-block:: python
+
+                await chat.edit_group_call_participant("username", muted=True)
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.edit_group_call_participant(
+            self.id,
+            participant=participant,
+            muted=muted,
+            volume=volume,
+            raise_hand=raise_hand,
+            video_stopped=video_stopped,
+            video_paused=video_paused,
+            presentation_paused=presentation_paused,
+        )
+
+    mute_group_call_participant = edit_group_call_participant
+
+    async def toggle_group_call_settings(
+        self,
+        reset_invite_hash: bool | None = None,
+        join_muted: bool | None = None,
+    ) -> bool:
+        """Bound method *toggle_group_call_settings* of :obj:`~pyrogram.types.Chat`.
+
+        Use as a shortcut for:
+
+        .. code-block:: python
+
+            client.toggle_group_call_settings(chat_id, reset_invite_hash=reset_invite_hash, join_muted=join_muted)
+
+        Parameters:
+            reset_invite_hash (``bool``, *optional*):
+                Pass True to reset the invite hash.
+
+            join_muted (``bool``, *optional*):
+                Pass True to mute new joiners.
+
+        Example:
+            .. code-block:: python
+
+                await chat.toggle_group_call_settings(join_muted=True)
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.toggle_group_call_settings(
+            self.id,
+            reset_invite_hash=reset_invite_hash,
+            join_muted=join_muted,
+        )

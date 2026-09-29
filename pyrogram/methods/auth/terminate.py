@@ -63,6 +63,12 @@ class Terminate:
         finally:
             self.takeout_id = None
 
+            if hasattr(self, "calls"):
+                try:
+                    await self.calls.stop()
+                except Exception:
+                    log.exception("Error stopping calls manager")
+
             try:
                 await self.dispatcher.stop(clear_handlers=clear_handlers)
             except Exception:
