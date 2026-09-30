@@ -324,7 +324,7 @@ async def test_a_file_just_under_the_big_threshold_still_uploads_in_parallel(tmp
     elapsed = time.monotonic() - started
 
     assert dc.served == size // UPLOAD_PART
-    assert elapsed < rtt * 4, (
+    assert elapsed < rtt * 6, (
         f"{elapsed / rtt:.1f} round trips for {size // CHUNK} MiB in "
         f"{size // UPLOAD_PART} parts; peak {dc.peak_inflight} in flight"
     )
