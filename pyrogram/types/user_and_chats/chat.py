@@ -2373,24 +2373,24 @@ class Chat(Object):
             invite_hash=invite_hash,
         )
 
-    async def stop_group_call(self) -> bool:
-        """Bound method *stop_group_call* of :obj:`~pyrogram.types.Chat`.
+    async def leave_group_call(self) -> bool:
+        """Bound method *leave_group_call* of :obj:`~pyrogram.types.Chat`.
 
         Use as a shortcut for:
 
         .. code-block:: python
 
-            client.stop_group_call(chat_id)
+            client.leave_group_call(chat_id)
 
         Example:
             .. code-block:: python
 
-                await chat.stop_group_call()
+                await chat.leave_group_call()
 
         Returns:
             ``bool``: True on success.
         """
-        return await self._client.stop_group_call(self.id)
+        return await self._client.leave_group_call(self.id)
 
     async def pause_stream(self) -> bool:
         """Bound method *pause_stream* of :obj:`~pyrogram.types.Chat`.
@@ -2763,8 +2763,6 @@ class Chat(Object):
             video_paused=video_paused,
             presentation_paused=presentation_paused,
         )
-
-    mute_group_call_participant = edit_group_call_participant
 
     async def edit_group_call_settings(
         self,

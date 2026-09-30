@@ -12,7 +12,7 @@ def mock_client():
     client.play_audio = AsyncMock(return_value=True)
     client.play_video = AsyncMock(return_value=True)
     client.join_group_call = AsyncMock(return_value=True)
-    client.stop_group_call = AsyncMock(return_value=True)
+    client.leave_group_call = AsyncMock(return_value=True)
     client.pause_stream = AsyncMock(return_value=True)
     client.resume_stream = AsyncMock(return_value=True)
     client.change_call_volume = AsyncMock(return_value=True)
@@ -63,8 +63,8 @@ async def test_chat_stop_and_pause_resume(mock_client):
     await chat.resume_stream()
     mock_client.resume_stream.assert_awaited_once_with(-1001234567890)
 
-    await chat.stop_group_call()
-    mock_client.stop_group_call.assert_awaited_once_with(-1001234567890)
+    await chat.leave_group_call()
+    mock_client.leave_group_call.assert_awaited_once_with(-1001234567890)
 
     await chat.join_group_call()
     mock_client.join_group_call.assert_awaited_once_with(

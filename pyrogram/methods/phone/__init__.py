@@ -63,7 +63,7 @@ from .set_call_rating import SetCallRating
 from .start_group_call import StartGroupCall
 from .start_group_call_record import StartGroupCallRecord
 from .start_scheduled_group_call import StartScheduledGroupCall
-from .stop_group_call import StopGroupCall
+from .leave_group_call import LeaveGroupCall
 from .stop_group_call_record import StopGroupCallRecord
 from .subscribe_to_group_call import SubscribeToGroupCall
 from .unsubscribe_from_group_call import UnsubscribeFromGroupCall
@@ -98,6 +98,7 @@ class Phone(
     InviteToGroupCall,
     JoinGroupCall,
     JoinGroupCallPresentation,
+    LeaveGroupCall,
     LeaveGroupCallPresentation,
     PauseStream,
     PlayAudio,
@@ -117,7 +118,6 @@ class Phone(
     StartGroupCall,
     StartGroupCallRecord,
     StartScheduledGroupCall,
-    StopGroupCall,
     StopGroupCallRecord,
     SubscribeToGroupCall,
     UnsubscribeFromGroupCall,

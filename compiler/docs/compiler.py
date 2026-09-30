@@ -1013,8 +1013,8 @@ def pyrogram_api():
             invite_to_group_call
             join_group_call
             join_group_call_presentation
+            leave_group_call
             leave_group_call_presentation
-            mute_group_call_participant
             pause_stream
             play_audio
             play_video
@@ -1033,7 +1033,6 @@ def pyrogram_api():
             start_group_call
             start_group_call_record
             start_scheduled_group_call
-            stop_group_call
             stop_group_call_record
             subscribe_to_group_call
             unsubscribe_from_group_call
@@ -1948,7 +1947,7 @@ def pyrogram_api():
             Chat.play_audio
             Chat.play_video
             Chat.join_group_call
-            Chat.stop_group_call
+            Chat.leave_group_call
             Chat.pause_stream
             Chat.resume_stream
             Chat.change_call_volume
@@ -1964,7 +1963,6 @@ def pyrogram_api():
             Chat.start_recording
             Chat.stop_recording
             Chat.edit_group_call_participant
-            Chat.mute_group_call_participant
             Chat.edit_group_call_settings
             Chat.full_name
             Chat.is_fake

@@ -22,13 +22,13 @@ import pyrogram
 from pyrogram import raw, types, utils
 
 
-class StopGroupCall:
-    async def stop_group_call(
+class LeaveGroupCall:
+    async def leave_group_call(
         self: pyrogram.Client,
         chat_id: int | str | raw.types.InputGroupCall | types.GroupCall,
         source: int | None = None,
     ) -> bool | raw.base.Updates:
-        """Stop participating in an active group voice chat or video stream (leave call).
+        """Leave an active group voice chat or video stream without ending the call for others.
 
         .. include:: /_includes/usable-by/users.rst
 
@@ -46,7 +46,7 @@ class StopGroupCall:
         Example:
             .. code-block:: python
 
-                await app.stop_group_call(chat_id)
+                await app.leave_group_call(chat_id)
         """
         try:
             await self.calls.leave(chat_id=chat_id)

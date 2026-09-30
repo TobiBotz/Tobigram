@@ -104,5 +104,3 @@ class EditGroupCallParticipant:
                 presentation_paused=presentation_paused,
             )
         )
-
-    mute_group_call_participant = edit_group_call_participant

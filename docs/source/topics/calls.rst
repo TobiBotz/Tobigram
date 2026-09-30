@@ -132,8 +132,8 @@ While a call is active, you can control playback state and volume:
     # Change playback volume (0 to 200%)
     await app.change_call_volume(chat_id, volume=150)
 
-    # Leave the voice chat and stop streaming
-    await app.stop_group_call(chat_id)
+    # Leave the voice chat
+    await app.leave_group_call(chat_id)
 
 -----
 
@@ -194,7 +194,7 @@ Tobigram provides full coverage of Telegram's MTProto ``phone`` functions as cle
 Method                                                   Description
 =======================================================  ==============================================================
 :meth:`~pyrogram.Client.start_group_call`               Start a new voice chat or live stream in a chat.
-:meth:`~pyrogram.Client.stop_group_call`                Leave an active voice chat and stop streaming.
+:meth:`~pyrogram.Client.leave_group_call`               Leave an active voice chat and stop streaming without closing VC.
 :meth:`~pyrogram.Client.end_group_call`                 Completely end and destroy an active voice chat for all members.
 :meth:`~pyrogram.Client.edit_group_call_title`           Change the title of an active voice chat.
 :meth:`~pyrogram.Client.edit_group_call_participant`     Mute, unmute, or adjust volume of a specific participant.
@@ -208,13 +208,13 @@ Method                                                   Description
 :meth:`~pyrogram.Client.get_call_members`                List current participants in a voice chat.
 =======================================================  ==============================================================
 
-Stopping a Call vs Ending a Call
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Leaving a Call vs Ending a Call
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It is important to distinguish between **stopping** (leaving) a call and **ending** a call:
+It is important to distinguish between **leaving** a call and **ending** a call:
 
-- **Stop / Leave Call** (:meth:`~pyrogram.Client.stop_group_call`):
-  Stops your client's media stream and disconnects your client from the voice chat. Other participants remain in the call.
+- **Leave Call** (:meth:`~pyrogram.Client.leave_group_call`):
+  Stops your client's media stream and disconnects your client from the voice chat without closing it for others.
 - **End Call** (:meth:`~pyrogram.Client.end_group_call`):
   Admin action (corresponds to *"End Video Chat"* in the Telegram UI). Completely closes and destroys the voice chat for all members.
 
