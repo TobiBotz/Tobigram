@@ -20,9 +20,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from pyrogram import raw
+from pyrogram import raw, types
 from pyrogram.types.phone import CallState, GroupCall, MediaStream, StreamEnded, StreamStarted
 
 if TYPE_CHECKING:
@@ -39,7 +39,15 @@ class CallsManager:
         self._is_running = False
         self._engine = None
         self._active_calls: dict[int, dict] = {}
+        self._stream_server = None
         self._lock = asyncio.Lock()
+
+    def _get_stream_server(self):
+        if self._stream_server is None:
+            from pyrogram.calls.media_streamer import MediaStreamServer
+
+            self._stream_server = MediaStreamServer(self._client)
+        return self._stream_server
 
     def _init_engine(self):
         if self._engine is not None:
@@ -103,19 +111,75 @@ class CallsManager:
                             await self._engine.stop()
                     except Exception:
                         pass
+                if self._stream_server:
+                    try:
+                        await self._stream_server.stop()
+                    except Exception:
+                        pass
+                    self._stream_server = None
                 self._is_running = False
 
     async def play(
         self,
         chat_id: int | str,
-        media: str | MediaStream,
+        media: Any,
+        video: bool | None = None,
     ) -> GroupCall:
-        """Stream media into group voice chat."""
+        """Stream media into group voice chat. Supports local files, URLs, and in-memory Telegram media."""
+        from pyrogram.calls.media_streamer import is_telegram_media
+
         peer = await self._client.resolve_peer(chat_id)
         numeric_chat_id = utils_get_chat_id(peer)
 
-        if isinstance(media, str):
-            media = MediaStream(media)
+        target_obj = media
+        if isinstance(media, types.Message):
+            target_obj = (
+                media.video
+                or media.animation
+                or media.video_note
+                or media.document
+                or media.audio
+                or media.voice
+            )
+        media_width = getattr(target_obj, "width", None)
+        media_height = getattr(target_obj, "height", None)
+
+        if isinstance(media, MediaStream):
+            if video is not None:
+                media.video = video
+            if media.width is None and media_width is not None:
+                media.width = media_width
+            if media.height is None and media_height is not None:
+                media.height = media_height
+            if is_telegram_media(media.path):
+                server = self._get_stream_server()
+                if not server.is_running:
+                    await server.start()
+                stream_url, detected_video = server.register_media(
+                    media.path,
+                    chat_id=numeric_chat_id,
+                    is_video=media.has_video or video or None,
+                )
+                media.path = stream_url
+                if not media.video and detected_video:
+                    media.video = True
+        elif is_telegram_media(media):
+            server = self._get_stream_server()
+            if not server.is_running:
+                await server.start()
+            stream_url, detected_video = server.register_media(
+                media,
+                chat_id=numeric_chat_id,
+                is_video=video,
+            )
+            media = MediaStream(
+                path=stream_url,
+                video=video if video is not None else detected_video,
+                width=media_width,
+                height=media_height,
+            )
+        elif isinstance(media, str):
+            media = MediaStream(media, video=video or False, width=media_width, height=media_height)
 
         engine = self._init_engine()
 
@@ -127,12 +191,11 @@ class CallsManager:
         )
 
         call_info = full_chat.full_chat.call
-        if not call_info or isinstance(call_info, raw.types.InputGroupCall):
-            input_call = call_info
-        else:
+        if not call_info:
             raise ValueError(
                 f"No active Voice Chat found in {chat_id}. Please start a voice chat first."
             )
+        input_call = call_info
 
         # Step 2: Join Group Call via Engine
         self._active_calls[numeric_chat_id] = {
@@ -146,17 +209,56 @@ class CallsManager:
             if hasattr(engine, "play") and hasattr(engine, "_app"):
                 if not getattr(engine, "_is_running", False):
                     await engine.start()
-                from pytgcalls.types import MediaStream as TgMediaStream
 
-                if media.video:
-                    stream_obj = TgMediaStream(media.path)
+                try:
+                    from pytgcalls.types import AudioQuality, VideoQuality
+                    from pytgcalls.types import MediaStream as TgMediaStream
+                    from pytgcalls.types.raw import VideoParameters
+                except ImportError:
+                    TgMediaStream = None
+                    AudioQuality = None
+                    VideoQuality = None
+                    VideoParameters = None
+
+                if TgMediaStream is not None:
+                    stream_kwargs = {}
+                    if AudioQuality is not None:
+                        stream_kwargs["audio_parameters"] = (
+                            getattr(media, "audio_parameters", None) or AudioQuality.STUDIO
+                        )
+
+                    if media.video:
+                        video_params = getattr(media, "video_parameters", None)
+                        if not video_params:
+                            w = getattr(media, "width", 0) or 0
+                            h = getattr(media, "height", 0) or 0
+                            if w > 0 and h > 0 and VideoParameters is not None:
+                                # Stream at exact 100% original video resolution and aspect ratio
+                                video_params = VideoParameters(
+                                    width=w,
+                                    height=h,
+                                    frame_rate=30,
+                                    adjust_by_height=True,
+                                )
+                            elif VideoQuality is not None:
+                                video_params = VideoQuality.FHD_1080p
+                        if video_params is not None:
+                            stream_kwargs["video_parameters"] = video_params
+
+                    if media.video:
+                        stream_obj = TgMediaStream(media.path, **stream_kwargs)
+                    else:
+                        ignore_flag = getattr(getattr(TgMediaStream, "Flags", None), "IGNORE", None)
+                        if ignore_flag is not None:
+                            stream_kwargs["video_flags"] = ignore_flag
+                        stream_obj = TgMediaStream(
+                            media.path,
+                            **stream_kwargs,
+                        )
+
+                    await engine.play(numeric_chat_id, stream_obj)
                 else:
-                    stream_obj = TgMediaStream(
-                        media.path,
-                        video_flags=TgMediaStream.Flags.IGNORE,
-                    )
-
-                await engine.play(numeric_chat_id, stream_obj)
+                    await engine.play(numeric_chat_id, media.path)
             elif hasattr(engine, "play"):
                 await engine.play(numeric_chat_id, media.path)
             self._active_calls[numeric_chat_id]["state"] = CallState.PLAYING
@@ -197,6 +299,9 @@ class CallsManager:
                     await self._engine.leave(numeric_chat_id)
             except Exception:
                 pass
+
+        if self._stream_server:
+            self._stream_server.unregister_chat(numeric_chat_id)
 
         self._active_calls.pop(numeric_chat_id, None)
         return True

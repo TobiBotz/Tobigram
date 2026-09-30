@@ -17,5 +17,6 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from .call_manager import CallsManager
+from .media_streamer import MediaStreamServer, is_telegram_media
 
-__all__ = ["CallsManager"]
+__all__ = ["CallsManager", "MediaStreamServer", "is_telegram_media"]

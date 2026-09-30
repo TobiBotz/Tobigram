@@ -18,17 +18,31 @@
 
 from __future__ import annotations
 
-import pyrogram
-from pyrogram import types
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pyrogram
+    from pyrogram import types
 
 
 class PlayVideo:
     async def play_video(
         self: pyrogram.Client,
         chat_id: int | str,
-        video: str | types.MediaStream,
+        video: (
+            str
+            | types.MediaStream
+            | types.Message
+            | types.Video
+            | types.Animation
+            | types.Document
+        ),
     ) -> types.GroupCall:
-        """Stream a video file or remote stream into group voice chat.
+        """Stream a video file, remote stream, or Telegram media directly into group voice chat.
+
+        Telegram media objects (:obj:`~pyrogram.types.Message`, :obj:`~pyrogram.types.Video`,
+        :obj:`~pyrogram.types.Animation`, :obj:`~pyrogram.types.Document`, or file ID strings) are
+        streamed directly in-memory on-the-fly with ZERO disk footprint.
 
         .. include:: /_includes/usable-by/users.rst
 
@@ -36,8 +50,8 @@ class PlayVideo:
             chat_id (``int`` | ``str``):
                 Unique identifier (int) or username (str) of the target chat.
 
-            video (``str`` | :obj:`~pyrogram.types.MediaStream`):
-                Path to the video file (e.g. MP4, MKV) or a MediaStream descriptor.
+            video (``str`` | :obj:`~pyrogram.types.MediaStream` | :obj:`~pyrogram.types.Message` | :obj:`~pyrogram.types.Video` | :obj:`~pyrogram.types.Animation` | :obj:`~pyrogram.types.Document`):
+                Path to the video file (e.g. MP4, MKV), MediaStream descriptor, or Telegram media object.
 
         Returns:
             :obj:`~pyrogram.types.GroupCall`: On success, group call information is returned.
@@ -47,10 +61,9 @@ class PlayVideo:
 
                 # Play local MP4 video
                 await app.play_video(chat_id, "video.mp4")
-        """
-        if isinstance(video, str):
-            media = types.MediaStream(path=video, video=True)
-        else:
-            media = video
 
-        return await self.calls.play(chat_id=chat_id, media=media)
+                # Play Telegram video directly without downloading to disk
+                await app.play_video(chat_id, message.video)
+                await app.play_video(chat_id, message)
+        """
+        return await self.calls.play(chat_id=chat_id, media=video, video=True)

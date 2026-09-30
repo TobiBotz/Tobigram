@@ -18,17 +18,31 @@
 
 from __future__ import annotations
 
-import pyrogram
-from pyrogram import types
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import pyrogram
+    from pyrogram import types
 
 
 class PlayAudio:
     async def play_audio(
         self: pyrogram.Client,
         chat_id: int | str,
-        audio: str | types.MediaStream,
+        audio: (
+            str
+            | types.MediaStream
+            | types.Message
+            | types.Audio
+            | types.Voice
+            | types.Document
+        ),
     ) -> types.GroupCall:
-        """Stream an audio file or remote live URL into group voice chat.
+        """Stream an audio file, remote live URL, or Telegram media directly into group voice chat.
+
+        Telegram media objects (:obj:`~pyrogram.types.Message`, :obj:`~pyrogram.types.Audio`,
+        :obj:`~pyrogram.types.Voice`, :obj:`~pyrogram.types.Document`, or file ID strings) are
+        streamed directly in-memory on-the-fly with ZERO disk footprint.
 
         .. include:: /_includes/usable-by/users.rst
 
@@ -36,8 +50,9 @@ class PlayAudio:
             chat_id (``int`` | ``str``):
                 Unique identifier (int) or username (str) of the target chat.
 
-            audio (``str`` | :obj:`~pyrogram.types.MediaStream`):
-                Path to the audio file, live stream URL, or a MediaStream descriptor.
+            audio (``str`` | :obj:`~pyrogram.types.MediaStream` | :obj:`~pyrogram.types.Message` | :obj:`~pyrogram.types.Audio` | :obj:`~pyrogram.types.Voice` | :obj:`~pyrogram.types.Document`):
+                Path to the local audio file, live stream URL, MediaStream descriptor, or Telegram media object.
+                Telegram media objects are piped directly into the voice chat in RAM without writing to disk.
 
         Returns:
             :obj:`~pyrogram.types.GroupCall`: On success, group call information is returned.
@@ -50,12 +65,15 @@ class PlayAudio:
 
                 # Play live radio stream URL
                 await app.play_audio(chat_id, "https://live.stream/radio.aac")
+
+                # Play Telegram message audio without downloading to disk
+                await app.play_audio(chat_id, message.audio)
+                await app.play_audio(chat_id, message)
+
+                # Play Telegram Document (e.g. lossless FLAC)
+                await app.play_audio(chat_id, message.document)
+
+                # Play by Telegram file_id string
+                await app.play_audio(chat_id, "CQACAgQAAx0CYg-qTQAB...")
         """
-        if isinstance(audio, str):
-            media = types.MediaStream(path=audio)
-        else:
-            media = audio
-
-        return await self.calls.play(chat_id=chat_id, media=media)
-
-    play = play_audio
+        return await self.calls.play(chat_id=chat_id, media=audio, video=False)

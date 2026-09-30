@@ -40,6 +40,18 @@ class MediaStream(Object):
 
         headers (``dict``, *optional*):
             Custom HTTP headers for remote stream fetch.
+
+        video_parameters (``Any``, *optional*):
+            Video quality or parameters (e.g. VideoQuality.FHD_1080p, UHD_4K).
+
+        audio_parameters (``Any``, *optional*):
+            Audio quality or parameters (e.g. AudioQuality.STUDIO, HIGH).
+
+        width (``int``, *optional*):
+            Video width in pixels.
+
+        height (``int``, *optional*):
+            Video height in pixels.
     """
 
     def __init__(
@@ -49,6 +61,10 @@ class MediaStream(Object):
         volume: int = 100,
         bitrate: int = 48,
         headers: dict | None = None,
+        video_parameters: object | None = None,
+        audio_parameters: object | None = None,
+        width: int | None = None,
+        height: int | None = None,
     ):
         super().__init__()
         self.path = str(path)
@@ -56,6 +72,10 @@ class MediaStream(Object):
         self.volume = max(0, min(volume, 200))
         self.bitrate = bitrate
         self.headers = headers or {}
+        self.video_parameters = video_parameters
+        self.audio_parameters = audio_parameters
+        self.width = width
+        self.height = height
 
     @property
     def has_video(self) -> bool:

@@ -1016,7 +1016,6 @@ def pyrogram_api():
             leave_group_call_presentation
             mute_group_call_participant
             pause_stream
-            play
             play_audio
             play_video
             received_call

@@ -1486,7 +1486,7 @@ class Client(Methods):
             if not self.api_id or not self.api_hash:
                 raise AttributeError(
                     "The API key is required for new authorizations. "
-                    "More info: https://pyrogram.com/start/auth"
+                    "More info: https://docs.tobigram.com/start/auth"
                 )
 
             await self.storage.api_id(self.api_id)

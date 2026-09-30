@@ -78,7 +78,33 @@ To stream audio (music, radio, podcasts) with video automatically muted/disabled
 
     app.run(main())
 
-3. Joining without Media (Listener)
+3. Zero-Disk In-Memory Telegram Media Streaming
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Tobigram natively supports streaming Telegram files (:obj:`~pyrogram.types.Message`,
+:obj:`~pyrogram.types.Audio`, :obj:`~pyrogram.types.Video`, :obj:`~pyrogram.types.Document`,
+:obj:`~pyrogram.types.Voice`, or file ID strings) directly into voice chats with **zero disk footprint**.
+Chunks are piped in RAM on-the-fly directly to the calling engine:
+
+.. code-block:: python
+
+    @app.on_message(filters.command("play") & filters.reply)
+    async def play_handler(client, message):
+        replied = message.reply_to_message
+
+        # Stream Telegram audio directly without downloading to disk
+        await client.play_audio(message.chat.id, replied.audio)
+
+        # Or stream full message (automatically extracts audio/video/document)
+        await client.play_audio(message.chat.id, replied)
+
+        # Stream video into voice chat with video enabled
+        await client.play_video(message.chat.id, replied.video)
+
+        # Stream Telegram Document (e.g. uncompressed FLAC or MKV)
+        await client.play_audio(message.chat.id, replied.document)
+
+4. Joining without Media (Listener)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you only want the client to join an active voice chat as a listener (with microphone muted and without streaming any media file):
