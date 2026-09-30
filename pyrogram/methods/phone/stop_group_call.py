@@ -22,27 +22,37 @@ import pyrogram
 from pyrogram import raw, types, utils
 
 
-class DiscardGroupCall:
-    async def discard_group_call(
+class StopGroupCall:
+    async def stop_group_call(
         self: pyrogram.Client,
         chat_id: int | str | raw.types.InputGroupCall | types.GroupCall,
-    ) -> raw.base.Updates:
-        """End and discard an active group voice chat or live stream.
+        source: int | None = None,
+    ) -> bool | raw.base.Updates:
+        """Stop participating in an active group voice chat or video stream (leave call).
 
-        .. include:: /_includes/usable-by/users-bots.rst
+        .. include:: /_includes/usable-by/users.rst
 
         Parameters:
             chat_id (``int`` | ``str`` | :obj:`~pyrogram.types.GroupCall`):
-                Unique identifier (int) or username (str) of the target chat, or the GroupCall object.
+                Unique identifier (int) or username (str) of the target chat, or GroupCall object.
+
+            source (``int``, *optional*):
+                Source ID of the main group call stream if leaving via raw signaling.
+                If not specified, leaves using the active WebRTC call manager.
 
         Returns:
-            :obj:`~pyrogram.raw.base.Updates`: On success, updates are returned.
+            ``bool`` | :obj:`~pyrogram.raw.base.Updates`: True on success, or Updates if raw call left.
 
         Example:
             .. code-block:: python
 
-                await app.discard_group_call(chat_id)
+                await app.stop_group_call(chat_id)
         """
+        try:
+            await self.calls.leave(chat_id=chat_id)
+        except Exception:
+            pass
+
         if isinstance(chat_id, raw.types.InputGroupCall):
             call_input = chat_id
         elif hasattr(chat_id, "id") and hasattr(chat_id, "access_hash"):
@@ -54,12 +64,14 @@ class DiscardGroupCall:
                 if isinstance(peer, (raw.types.InputPeerChannel, raw.types.InputChannel))
                 else raw.functions.messages.GetFullChat(chat_id=peer.chat_id)
             )
-            if not full_chat.full_chat.call:
-                raise ValueError(f"No active voice chat found in {chat_id}")
             call_input = full_chat.full_chat.call
 
+        if not call_input:
+            return True
+
         return await self.invoke(
-            raw.functions.phone.DiscardGroupCall(
+            raw.functions.phone.LeaveGroupCall(
                 call=call_input,
+                source=source or 0,
             )
         )

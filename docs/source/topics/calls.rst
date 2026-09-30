@@ -107,7 +107,7 @@ While a call is active, you can control playback state and volume:
     await app.change_call_volume(chat_id, volume=150)
 
     # Leave the voice chat and stop streaming
-    await app.leave_group_call(chat_id)
+    await app.stop_group_call(chat_id)
 
 -----
 
@@ -167,24 +167,29 @@ Tobigram provides full coverage of Telegram's MTProto ``phone`` functions as cle
 =======================================================  ==============================================================
 Method                                                   Description
 =======================================================  ==============================================================
-:meth:`~pyrogram.Client.create_group_call`               Create and start a new voice chat or live stream in a chat.
-:meth:`~pyrogram.Client.discard_group_call`              Completely end and destroy an active voice chat for all members.
+:meth:`~pyrogram.Client.start_group_call`               Start a new voice chat or live stream in a chat.
+:meth:`~pyrogram.Client.stop_group_call`                Leave an active voice chat and stop streaming.
+:meth:`~pyrogram.Client.end_group_call`                 Completely end and destroy an active voice chat for all members.
 :meth:`~pyrogram.Client.edit_group_call_title`           Change the title of an active voice chat.
 :meth:`~pyrogram.Client.edit_group_call_participant`     Mute, unmute, or adjust volume of a specific participant.
+:meth:`~pyrogram.Client.edit_group_call_settings`        Edit voice chat permissions (e.g. only admins can speak).
 :meth:`~pyrogram.Client.export_group_call_invite`        Generate an invite link for the voice chat.
-:meth:`~pyrogram.Client.toggle_group_call_record`        Start or stop server-side recording of the voice/video chat.
-:meth:`~pyrogram.Client.toggle_group_call_settings`      Toggle permissions (e.g. only admins can speak).
+:meth:`~pyrogram.Client.start_group_call_record`         Start server-side recording of the voice/video chat.
+:meth:`~pyrogram.Client.stop_group_call_record`          Stop server-side recording of the voice/video chat.
+:meth:`~pyrogram.Client.subscribe_to_group_call`         Subscribe to notifications for scheduled voice chats.
+:meth:`~pyrogram.Client.get_group_call`                 Get details about an active group voice chat.
+:meth:`~pyrogram.Client.get_group_call_settings`        Get current settings (join muted, messages, stars) of a call.
 :meth:`~pyrogram.Client.get_call_members`                List current participants in a voice chat.
 =======================================================  ==============================================================
 
-Ending a Call vs Leaving a Call
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Stopping a Call vs Ending a Call
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-It is important to distinguish between **leaving** a call and **ending** a call:
+It is important to distinguish between **stopping** (leaving) a call and **ending** a call:
 
-- **Leave Call** (:meth:`~pyrogram.Client.leave_group_call`):
+- **Stop / Leave Call** (:meth:`~pyrogram.Client.stop_group_call`):
   Stops your client's media stream and disconnects your client from the voice chat. Other participants remain in the call.
-- **End / Discard Call** (:meth:`~pyrogram.Client.discard_group_call`):
+- **End Call** (:meth:`~pyrogram.Client.end_group_call`):
   Admin action (corresponds to *"End Video Chat"* in the Telegram UI). Completely closes and destroys the voice chat for all members.
 
 -----

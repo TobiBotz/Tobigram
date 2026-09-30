@@ -22,8 +22,8 @@ import pyrogram
 from pyrogram import raw
 
 
-class DiscardCall:
-    async def discard_call(
+class DeclineCall:
+    async def decline_call(
         self: pyrogram.Client,
         call_id: int,
         access_hash: int,
@@ -32,7 +32,7 @@ class DiscardCall:
         connection_id: int = 0,
         video: bool | None = None,
     ) -> raw.base.Updates:
-        """Discard (hang up, decline, or end) a 1-on-1 private phone call.
+        """Decline, reject, or hang up a 1-on-1 private phone call.
 
         .. include:: /_includes/usable-by/users.rst
 
@@ -47,7 +47,7 @@ class DiscardCall:
                 Total call duration in seconds. Defaults to 0.
 
             reason (:obj:`~pyrogram.raw.base.PhoneCallDiscardReason`, *optional*):
-                Why the call was discarded. Defaults to :obj:`~pyrogram.raw.types.PhoneCallDiscardReasonHangup`.
+                Why the call was declined or ended. Defaults to :obj:`~pyrogram.raw.types.PhoneCallDiscardReasonHangup`.
 
             connection_id (``int``, *optional*):
                 Preferred relay connection ID. Defaults to 0.
@@ -56,12 +56,13 @@ class DiscardCall:
                 Whether this was a video call.
 
         Returns:
-            :obj:`~pyrogram.raw.base.Updates`: Updates resulting from discarding the call.
+            :obj:`~pyrogram.raw.base.Updates`: Updates resulting from declining the call.
 
         Example:
             .. code-block:: python
 
-                await app.discard_call(call_id=123, access_hash=456, duration=15)
+                # Decline / Hang up a call
+                await app.decline_call(call_id=123, access_hash=456, duration=15)
         """
         if reason is None:
             reason = raw.types.PhoneCallDiscardReasonHangup()

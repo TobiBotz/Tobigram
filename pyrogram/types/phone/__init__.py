@@ -18,6 +18,7 @@
 
 from .call_state import CallState
 from .group_call import GroupCall
+from .group_call_settings import GroupCallSettings
 from .media_stream import MediaStream
 from .stream_ended import StreamEnded
 from .stream_started import StreamStarted
@@ -25,6 +26,7 @@ from .stream_started import StreamStarted
 __all__ = [
     "CallState",
     "GroupCall",
+    "GroupCallSettings",
     "MediaStream",
     "StreamEnded",
     "StreamStarted",

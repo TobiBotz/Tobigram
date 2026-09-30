@@ -990,21 +990,22 @@ def pyrogram_api():
             check_group_call
             confirm_call
             create_conference_call
-            create_group_call
             decline_conference_call_invite
             delete_conference_call_participants
             delete_group_call_messages
             delete_group_call_participant_messages
-            discard_call
-            discard_group_call
+            decline_call
             edit_group_call_participant
+            edit_group_call_settings
             edit_group_call_title
+            end_group_call
             export_group_call_invite
             get_call_config
             get_call_members
             get_group_call
             get_group_call_chain_blocks
             get_group_call_join_as
+            get_group_call_settings
             get_group_call_stars
             get_group_call_stream_channels
             get_group_call_stream_rtmp_url
@@ -1012,7 +1013,6 @@ def pyrogram_api():
             invite_to_group_call
             join_group_call
             join_group_call_presentation
-            leave_group_call
             leave_group_call_presentation
             mute_group_call_participant
             pause_stream
@@ -1031,10 +1031,13 @@ def pyrogram_api():
             send_group_call_message
             send_signaling_data
             set_call_rating
+            start_group_call
+            start_group_call_record
             start_scheduled_group_call
-            toggle_group_call_record
-            toggle_group_call_settings
-            toggle_group_call_start_subscription
+            stop_group_call
+            stop_group_call_record
+            subscribe_to_group_call
+            unsubscribe_from_group_call
         """,
         premium="""
         Premium
@@ -1355,6 +1358,7 @@ def pyrogram_api():
             VideoChatEnded
             VideoChatMembersInvited
             GroupCall
+            GroupCallSettings
             MediaStream
             WebAppData
             MessageReactions
@@ -1945,24 +1949,24 @@ def pyrogram_api():
             Chat.play_audio
             Chat.play_video
             Chat.join_group_call
-            Chat.leave_group_call
+            Chat.stop_group_call
             Chat.pause_stream
             Chat.resume_stream
             Chat.change_call_volume
             Chat.get_group_call
-            Chat.create_group_call
-            Chat.discard_group_call
+            Chat.get_group_call_settings
+            Chat.start_group_call
+            Chat.end_group_call
             Chat.edit_group_call_title
             Chat.export_group_call_invite
             Chat.get_group_call_stream_rtmp_url
             Chat.invite_to_group_call
             Chat.start_scheduled_group_call
-            Chat.toggle_group_call_record
             Chat.start_recording
             Chat.stop_recording
             Chat.edit_group_call_participant
             Chat.mute_group_call_participant
-            Chat.toggle_group_call_settings
+            Chat.edit_group_call_settings
             Chat.full_name
             Chat.is_fake
             Chat.is_scam
@@ -2066,8 +2070,10 @@ def pyrogram_api():
         GroupCall
             GroupCall.start_recording
             GroupCall.stop_recording
-            GroupCall.discard
+            GroupCall.end
             GroupCall.edit_title
+            GroupCall.edit_settings
+            GroupCall.get_settings
         """,
     )
 

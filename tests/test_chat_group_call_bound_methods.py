@@ -12,21 +12,25 @@ def mock_client():
     client.play_audio = AsyncMock(return_value=True)
     client.play_video = AsyncMock(return_value=True)
     client.join_group_call = AsyncMock(return_value=True)
-    client.leave_group_call = AsyncMock(return_value=True)
+    client.stop_group_call = AsyncMock(return_value=True)
     client.pause_stream = AsyncMock(return_value=True)
     client.resume_stream = AsyncMock(return_value=True)
     client.change_call_volume = AsyncMock(return_value=True)
     client.get_group_call = AsyncMock(return_value=MagicMock())
-    client.create_group_call = AsyncMock(return_value=MagicMock())
-    client.discard_group_call = AsyncMock(return_value=True)
+    client.get_group_call_settings = AsyncMock(return_value=MagicMock())
+    client.start_group_call = AsyncMock(return_value=MagicMock())
+    client.end_group_call = AsyncMock(return_value=True)
     client.edit_group_call_title = AsyncMock(return_value=True)
     client.export_group_call_invite = AsyncMock(return_value="https://t.me/call")
     client.get_group_call_stream_rtmp_url = AsyncMock(return_value=MagicMock())
     client.invite_to_group_call = AsyncMock(return_value=True)
     client.start_scheduled_group_call = AsyncMock(return_value=True)
-    client.toggle_group_call_record = AsyncMock(return_value=True)
+    client.start_group_call_record = AsyncMock(return_value=True)
+    client.stop_group_call_record = AsyncMock(return_value=True)
     client.edit_group_call_participant = AsyncMock(return_value=True)
-    client.toggle_group_call_settings = AsyncMock(return_value=True)
+    client.edit_group_call_settings = AsyncMock(return_value=True)
+    client.subscribe_to_group_call = AsyncMock(return_value=True)
+    client.unsubscribe_from_group_call = AsyncMock(return_value=True)
     return client
 
 
@@ -51,7 +55,7 @@ async def test_chat_play_video(mock_client):
 
 
 @pytest.mark.asyncio
-async def test_chat_leave_and_pause_resume(mock_client):
+async def test_chat_stop_and_pause_resume(mock_client):
     chat = Chat(id=-1001234567890, client=mock_client)
     await chat.pause_stream()
     mock_client.pause_stream.assert_awaited_once_with(-1001234567890)
@@ -59,8 +63,8 @@ async def test_chat_leave_and_pause_resume(mock_client):
     await chat.resume_stream()
     mock_client.resume_stream.assert_awaited_once_with(-1001234567890)
 
-    await chat.leave_group_call()
-    mock_client.leave_group_call.assert_awaited_once_with(-1001234567890)
+    await chat.stop_group_call()
+    mock_client.stop_group_call.assert_awaited_once_with(-1001234567890)
 
     await chat.join_group_call()
     mock_client.join_group_call.assert_awaited_once_with(
@@ -76,13 +80,16 @@ async def test_chat_leave_and_pause_resume(mock_client):
 @pytest.mark.asyncio
 async def test_chat_call_admin_methods(mock_client):
     chat = Chat(id=-1001234567890, client=mock_client)
-    await chat.create_group_call(title="Testing Call", rtmp_stream=True)
-    mock_client.create_group_call.assert_awaited_once_with(
+    await chat.start_group_call(title="Testing Call", rtmp_stream=True)
+    mock_client.start_group_call.assert_awaited_once_with(
         -1001234567890, title="Testing Call", schedule_date=None, rtmp_stream=True
     )
 
     await chat.get_group_call()
     mock_client.get_group_call.assert_awaited_once_with(-1001234567890)
+
+    await chat.get_group_call_settings()
+    mock_client.get_group_call_settings.assert_awaited_once_with(-1001234567890)
 
     await chat.edit_group_call_title("New Title")
     mock_client.edit_group_call_title.assert_awaited_once_with(-1001234567890, title="New Title")
@@ -103,11 +110,6 @@ async def test_chat_call_admin_methods(mock_client):
     await chat.start_scheduled_group_call()
     mock_client.start_scheduled_group_call.assert_awaited_once_with(-1001234567890)
 
-    await chat.toggle_group_call_record(start=True, title="Rec", video=True)
-    mock_client.toggle_group_call_record.assert_awaited_once_with(
-        -1001234567890, start=True, title="Rec", video=True, video_portrait=None
-    )
-
     await chat.edit_group_call_participant("user1", muted=True, volume=50)
     mock_client.edit_group_call_participant.assert_awaited_once_with(
         -1001234567890,
@@ -120,13 +122,17 @@ async def test_chat_call_admin_methods(mock_client):
         presentation_paused=None,
     )
 
-    await chat.toggle_group_call_settings(join_muted=True)
-    mock_client.toggle_group_call_settings.assert_awaited_once_with(
-        -1001234567890, reset_invite_hash=None, join_muted=True
+    await chat.edit_group_call_settings(join_muted=True)
+    mock_client.edit_group_call_settings.assert_awaited_once_with(
+        -1001234567890,
+        reset_invite_hash=None,
+        join_muted=True,
+        messages_enabled=None,
+        send_paid_messages_stars=None,
     )
 
-    await chat.discard_group_call()
-    mock_client.discard_group_call.assert_awaited_once_with(-1001234567890)
+    await chat.end_group_call()
+    mock_client.end_group_call.assert_awaited_once_with(-1001234567890)
 
 
 @pytest.mark.asyncio
@@ -134,9 +140,8 @@ async def test_chat_recording_shortcuts(mock_client):
     chat = Chat(id=-1001234567890, client=mock_client)
     res_start = await chat.start_recording(title="Stream 1", video=True, video_portrait=False)
     assert res_start is True
-    mock_client.toggle_group_call_record.assert_awaited_with(
+    mock_client.start_group_call_record.assert_awaited_with(
         -1001234567890,
-        start=True,
         title="Stream 1",
         video=True,
         video_portrait=False,
@@ -144,9 +149,8 @@ async def test_chat_recording_shortcuts(mock_client):
 
     res_stop = await chat.stop_recording()
     assert res_stop is True
-    mock_client.toggle_group_call_record.assert_awaited_with(
+    mock_client.stop_group_call_record.assert_awaited_with(
         -1001234567890,
-        start=False,
     )
 
 
@@ -157,9 +161,8 @@ async def test_group_call_bound_methods(mock_client):
     # start_recording
     res_start = await gc.start_recording(title="Episode 1", video=True)
     assert res_start is True
-    mock_client.toggle_group_call_record.assert_awaited_with(
+    mock_client.start_group_call_record.assert_awaited_with(
         raw.types.InputGroupCall(id=123456, access_hash=987654),
-        start=True,
         title="Episode 1",
         video=True,
         video_portrait=None,
@@ -168,15 +171,14 @@ async def test_group_call_bound_methods(mock_client):
     # stop_recording
     res_stop = await gc.stop_recording()
     assert res_stop is True
-    mock_client.toggle_group_call_record.assert_awaited_with(
+    mock_client.stop_group_call_record.assert_awaited_with(
         raw.types.InputGroupCall(id=123456, access_hash=987654),
-        start=False,
     )
 
-    # discard
-    res_discard = await gc.discard()
-    assert res_discard is True
-    mock_client.discard_group_call.assert_awaited_with(
+    # end
+    res_end = await gc.end()
+    assert res_end is True
+    mock_client.end_group_call.assert_awaited_with(
         raw.types.InputGroupCall(id=123456, access_hash=987654),
     )
 
@@ -188,3 +190,20 @@ async def test_group_call_bound_methods(mock_client):
         title="Updated Title",
     )
 
+    # edit_settings
+    res_settings = await gc.edit_settings(join_muted=False)
+    assert res_settings is True
+    mock_client.edit_group_call_settings.assert_awaited_with(
+        raw.types.InputGroupCall(id=123456, access_hash=987654),
+        reset_invite_hash=None,
+        join_muted=False,
+        messages_enabled=None,
+        send_paid_messages_stars=None,
+    )
+
+    # get_settings
+    res_get_settings = await gc.get_settings()
+    assert res_get_settings is not None
+    mock_client.get_group_call_settings.assert_awaited_with(
+        raw.types.InputGroupCall(id=123456, access_hash=987654),
+    )

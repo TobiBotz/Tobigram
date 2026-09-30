@@ -25,15 +25,15 @@ import pyrogram
 from pyrogram import raw, utils
 
 
-class CreateGroupCall:
-    async def create_group_call(
+class StartGroupCall:
+    async def start_group_call(
         self: pyrogram.Client,
         chat_id: int | str,
         title: str | None = None,
         schedule_date: datetime | int | None = None,
         rtmp_stream: bool | None = None,
     ) -> raw.base.Updates:
-        """Create or schedule a group voice chat or live stream in a chat.
+        """Start or schedule a group voice chat or live stream in a chat.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
@@ -57,10 +57,10 @@ class CreateGroupCall:
             .. code-block:: python
 
                 # Start an instant Voice Chat
-                await app.create_group_call(chat_id, title="Community Hangout")
+                await app.start_group_call(chat_id, title="Community Hangout")
 
                 # Start an RTMP Live Stream for OBS
-                await app.create_group_call(chat_id, title="Live Event", rtmp_stream=True)
+                await app.start_group_call(chat_id, title="Live Event", rtmp_stream=True)
         """
         peer = await self.resolve_peer(chat_id)
         schedule_ts = (

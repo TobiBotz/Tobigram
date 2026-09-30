@@ -21,21 +21,22 @@ from .change_call_volume import ChangeCallVolume
 from .check_group_call import CheckGroupCall
 from .confirm_call import ConfirmCall
 from .create_conference_call import CreateConferenceCall
-from .create_group_call import CreateGroupCall
+from .decline_call import DeclineCall
 from .decline_conference_call_invite import DeclineConferenceCallInvite
 from .delete_conference_call_participants import DeleteConferenceCallParticipants
 from .delete_group_call_messages import DeleteGroupCallMessages
 from .delete_group_call_participant_messages import DeleteGroupCallParticipantMessages
-from .discard_call import DiscardCall
-from .discard_group_call import DiscardGroupCall
 from .edit_group_call_participant import EditGroupCallParticipant
+from .edit_group_call_settings import EditGroupCallSettings
 from .edit_group_call_title import EditGroupCallTitle
+from .end_group_call import EndGroupCall
 from .export_group_call_invite import ExportGroupCallInvite
 from .get_call_config import GetCallConfig
 from .get_call_members import GetCallMembers
 from .get_group_call import GetGroupCall
 from .get_group_call_chain_blocks import GetGroupCallChainBlocks
 from .get_group_call_join_as import GetGroupCallJoinAs
+from .get_group_call_settings import GetGroupCallSettings
 from .get_group_call_stars import GetGroupCallStars
 from .get_group_call_stream_channels import GetGroupCallStreamChannels
 from .get_group_call_stream_rtmp_url import GetGroupCallStreamRtmpUrl
@@ -43,7 +44,6 @@ from .invite_conference_call_participant import InviteConferenceCallParticipant
 from .invite_to_group_call import InviteToGroupCall
 from .join_group_call import JoinGroupCall
 from .join_group_call_presentation import JoinGroupCallPresentation
-from .leave_group_call import LeaveGroupCall
 from .leave_group_call_presentation import LeaveGroupCallPresentation
 from .pause_stream import PauseStream
 from .play_audio import PlayAudio
@@ -60,10 +60,13 @@ from .send_group_call_encrypted_message import SendGroupCallEncryptedMessage
 from .send_group_call_message import SendGroupCallMessage
 from .send_signaling_data import SendSignalingData
 from .set_call_rating import SetCallRating
+from .start_group_call import StartGroupCall
+from .start_group_call_record import StartGroupCallRecord
 from .start_scheduled_group_call import StartScheduledGroupCall
-from .toggle_group_call_record import ToggleGroupCallRecord
-from .toggle_group_call_settings import ToggleGroupCallSettings
-from .toggle_group_call_start_subscription import ToggleGroupCallStartSubscription
+from .stop_group_call import StopGroupCall
+from .stop_group_call_record import StopGroupCallRecord
+from .subscribe_to_group_call import SubscribeToGroupCall
+from .unsubscribe_from_group_call import UnsubscribeFromGroupCall
 
 
 class Phone(
@@ -72,21 +75,22 @@ class Phone(
     CheckGroupCall,
     ConfirmCall,
     CreateConferenceCall,
-    CreateGroupCall,
     DeclineConferenceCallInvite,
     DeleteConferenceCallParticipants,
     DeleteGroupCallMessages,
     DeleteGroupCallParticipantMessages,
-    DiscardCall,
-    DiscardGroupCall,
+    DeclineCall,
     EditGroupCallParticipant,
+    EditGroupCallSettings,
     EditGroupCallTitle,
+    EndGroupCall,
     ExportGroupCallInvite,
     GetCallConfig,
     GetCallMembers,
     GetGroupCall,
     GetGroupCallChainBlocks,
     GetGroupCallJoinAs,
+    GetGroupCallSettings,
     GetGroupCallStars,
     GetGroupCallStreamChannels,
     GetGroupCallStreamRtmpUrl,
@@ -94,7 +98,6 @@ class Phone(
     InviteToGroupCall,
     JoinGroupCall,
     JoinGroupCallPresentation,
-    LeaveGroupCall,
     LeaveGroupCallPresentation,
     PauseStream,
     PlayAudio,
@@ -111,9 +114,12 @@ class Phone(
     SendGroupCallMessage,
     SendSignalingData,
     SetCallRating,
+    StartGroupCall,
+    StartGroupCallRecord,
     StartScheduledGroupCall,
-    ToggleGroupCallRecord,
-    ToggleGroupCallSettings,
-    ToggleGroupCallStartSubscription,
+    StopGroupCall,
+    StopGroupCallRecord,
+    SubscribeToGroupCall,
+    UnsubscribeFromGroupCall,
 ):
     pass

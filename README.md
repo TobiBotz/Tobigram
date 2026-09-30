@@ -119,16 +119,10 @@ app.run()
 
 ### Installing
 
-Stable version
+Stable version (Recommended)
 
 ```bash
 pip install tobigram
-```
-
-Using uv (Recommended)
-
-```bash
-uv add tobigram
 ```
 
 Dev version
@@ -141,6 +135,8 @@ Optional dependencies
 
 ```bash
 pip install tobigram[fast]     # uvloop for better performance
+pip install tobigram[call]     # voice and video calls (ntgcalls & py-tgcalls)
+pip install tobigram[all]      # all optional dependencies (calls, fast, databases)
 ```
 
 ### Resources
@@ -154,4 +150,5 @@ pip install tobigram[fast]     # uvloop for better performance
 - **[Dan](https://github.com/delivrance)** The original creator of [Pyrogram](https://github.com/pyrogram/pyrogram).
 - **[Kurimuzon Akuma](https://github.com/KurimuzonAkuma)** Creator and maintainer of [Kurigram](https://github.com/kurigram-org/kurigram).
 - **[Riajul](https://github.com/rjriajul)** Creator of [wzgram](https://github.com/rjriajul/wzgram) and author of [WarpCrypto](https://github.com/TobiBotz/WarpCrypto).
+- **[Laky-64](https://github.com/Laky-64)** and the **[PyTgCalls](https://github.com/pytgcalls)** team, creators of [PyTgCalls](https://github.com/pytgcalls/pytgcalls) and [NTgCalls](https://github.com/pytgcalls/ntgcalls).
 

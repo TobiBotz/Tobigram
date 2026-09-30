@@ -22,13 +22,12 @@ import pyrogram
 from pyrogram import raw, types, utils
 
 
-class ToggleGroupCallStartSubscription:
-    async def toggle_group_call_start_subscription(
+class GetGroupCallSettings:
+    async def get_group_call_settings(
         self: pyrogram.Client,
         chat_id: int | str | raw.types.InputGroupCall | types.GroupCall,
-        subscribed: bool = True,
-    ) -> raw.base.Updates:
-        """Subscribe or unsubscribe from notifications when a scheduled voice chat starts.
+    ) -> types.GroupCallSettings | None:
+        """Get current settings of an active group voice chat or live stream.
 
         .. include:: /_includes/usable-by/users.rst
 
@@ -36,11 +35,14 @@ class ToggleGroupCallStartSubscription:
             chat_id (``int`` | ``str`` | :obj:`~pyrogram.types.GroupCall`):
                 Unique identifier (int) or username (str) of the target chat, or the GroupCall object.
 
-            subscribed (``bool``, *optional*):
-                Pass True to subscribe, False to unsubscribe. Defaults to True.
-
         Returns:
-            :obj:`~pyrogram.raw.base.Updates`: On success, updates are returned.
+            :obj:`~pyrogram.types.GroupCallSettings` | None: On success, group call settings are returned.
+
+        Example:
+            .. code-block:: python
+
+                settings = await app.get_group_call_settings(chat_id)
+                print(settings.join_muted)
         """
         if isinstance(chat_id, raw.types.InputGroupCall):
             call_input = chat_id
@@ -53,13 +55,27 @@ class ToggleGroupCallStartSubscription:
                 if isinstance(peer, (raw.types.InputPeerChannel, raw.types.InputChannel))
                 else raw.functions.messages.GetFullChat(chat_id=peer.chat_id)
             )
-            if not full_chat.full_chat.call:
-                raise ValueError(f"No voice chat found in {chat_id}")
             call_input = full_chat.full_chat.call
 
-        return await self.invoke(
-            raw.functions.phone.ToggleGroupCallStartSubscription(
+        if not call_input:
+            return None
+
+        raw_group_call = await self.invoke(
+            raw.functions.phone.GetGroupCall(
                 call=call_input,
-                subscribed=subscribed,
+                limit=1,
             )
+        )
+        c = raw_group_call.call
+        if not isinstance(c, raw.types.GroupCall):
+            return None
+
+        return types.GroupCallSettings(
+            client=self,
+            join_muted=bool(getattr(c, "join_muted", False)),
+            messages_enabled=bool(getattr(c, "messages_enabled", True)),
+            listeners_hidden=getattr(c, "listeners_hidden", None),
+            send_paid_messages_stars=getattr(c, "send_paid_messages_stars", None),
+            can_change_join_muted=getattr(c, "can_change_join_muted", None),
+            can_change_messages_enabled=getattr(c, "can_change_messages_enabled", None),
         )

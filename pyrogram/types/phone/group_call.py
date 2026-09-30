@@ -26,6 +26,7 @@ from ..object import Object
 if TYPE_CHECKING:
     from datetime import datetime
     import pyrogram
+    from .group_call_settings import GroupCallSettings
 
 
 class GroupCall(Object):
@@ -144,9 +145,8 @@ class GroupCall(Object):
             ``bool``: True on success.
         """
         call_input = raw.types.InputGroupCall(id=self.id, access_hash=self.access_hash)
-        return await self._client.toggle_group_call_record(
+        return await self._client.start_group_call_record(
             call_input,
-            start=True,
             title=title,
             video=video,
             video_portrait=video_portrait,
@@ -161,21 +161,22 @@ class GroupCall(Object):
             ``bool``: True on success.
         """
         call_input = raw.types.InputGroupCall(id=self.id, access_hash=self.access_hash)
-        return await self._client.toggle_group_call_record(
+        return await self._client.stop_group_call_record(
             call_input,
-            start=False,
         )
 
-    async def discard(self) -> bool:
-        """Bound method *discard* of :obj:`~pyrogram.types.GroupCall`.
+    async def end(self) -> bool:
+        """Bound method *end* of :obj:`~pyrogram.types.GroupCall`.
 
-        End and discard this group call for all members.
+        End and terminate this group call for all members.
 
         Returns:
             ``bool``: True on success.
         """
         call_input = raw.types.InputGroupCall(id=self.id, access_hash=self.access_hash)
-        return await self._client.discard_group_call(call_input)
+        return await self._client.end_group_call(call_input)
+
+    discard = end
 
     async def edit_title(self, title: str) -> bool:
         """Bound method *edit_title* of :obj:`~pyrogram.types.GroupCall`.
@@ -191,3 +192,37 @@ class GroupCall(Object):
         """
         call_input = raw.types.InputGroupCall(id=self.id, access_hash=self.access_hash)
         return await self._client.edit_group_call_title(call_input, title=title)
+
+    async def edit_settings(
+        self,
+        reset_invite_hash: bool | None = None,
+        join_muted: bool | None = None,
+        messages_enabled: bool | None = None,
+        send_paid_messages_stars: int | None = None,
+    ) -> bool:
+        """Bound method *edit_settings* of :obj:`~pyrogram.types.GroupCall`.
+
+        Edit settings for this group call.
+
+        Returns:
+            ``bool``: True on success.
+        """
+        call_input = raw.types.InputGroupCall(id=self.id, access_hash=self.access_hash)
+        return await self._client.edit_group_call_settings(
+            call_input,
+            reset_invite_hash=reset_invite_hash,
+            join_muted=join_muted,
+            messages_enabled=messages_enabled,
+            send_paid_messages_stars=send_paid_messages_stars,
+        )
+
+    async def get_settings(self) -> GroupCallSettings | None:
+        """Bound method *get_settings* of :obj:`~pyrogram.types.GroupCall`.
+
+        Get current settings of this group call.
+
+        Returns:
+            :obj:`~pyrogram.types.GroupCallSettings` | ``None``: The group call settings, or None.
+        """
+        call_input = raw.types.InputGroupCall(id=self.id, access_hash=self.access_hash)
+        return await self._client.get_group_call_settings(call_input)

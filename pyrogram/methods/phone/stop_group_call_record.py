@@ -22,16 +22,12 @@ import pyrogram
 from pyrogram import raw, types, utils
 
 
-class ToggleGroupCallRecord:
-    async def toggle_group_call_record(
+class StopGroupCallRecord:
+    async def stop_group_call_record(
         self: pyrogram.Client,
         chat_id: int | str | raw.types.InputGroupCall | types.GroupCall,
-        start: bool = True,
-        title: str | None = None,
-        video: bool | None = None,
-        video_portrait: bool | None = None,
     ) -> raw.base.Updates:
-        """Start or stop recording an active group voice chat or live stream.
+        """Stop server-side recording of an active group voice chat or live stream.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
@@ -39,29 +35,13 @@ class ToggleGroupCallRecord:
             chat_id (``int`` | ``str`` | :obj:`~pyrogram.types.GroupCall`):
                 Unique identifier (int) or username (str) of the target chat, or the GroupCall object.
 
-            start (``bool``, *optional*):
-                Pass True to start recording, or False to stop. Defaults to True.
-
-            title (``str``, *optional*):
-                Recording title.
-
-            video (``bool``, *optional*):
-                Pass True to record video in addition to audio.
-
-            video_portrait (``bool``, *optional*):
-                Pass True if the recorded video orientation is portrait.
-
         Returns:
             :obj:`~pyrogram.raw.base.Updates`: On success, updates are returned.
 
         Example:
             .. code-block:: python
 
-                # Start audio recording
-                await app.toggle_group_call_record(chat_id, start=True, title="Podcast Ep. 1")
-
-                # Stop recording
-                await app.toggle_group_call_record(chat_id, start=False)
+                await app.stop_group_call_record(chat_id)
         """
         if isinstance(chat_id, raw.types.InputGroupCall):
             call_input = chat_id
@@ -81,9 +61,6 @@ class ToggleGroupCallRecord:
         return await self.invoke(
             raw.functions.phone.ToggleGroupCallRecord(
                 call=call_input,
-                start=start,
-                title=title,
-                video=video,
-                video_portrait=video_portrait,
+                start=False,
             )
         )

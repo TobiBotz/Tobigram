@@ -22,16 +22,15 @@ import pyrogram
 from pyrogram import raw, types, utils
 
 
-class ToggleGroupCallSettings:
-    async def toggle_group_call_settings(
+class StartGroupCallRecord:
+    async def start_group_call_record(
         self: pyrogram.Client,
         chat_id: int | str | raw.types.InputGroupCall | types.GroupCall,
-        join_muted: bool | None = None,
-        messages_enabled: bool | None = None,
-        reset_invite_hash: bool | None = None,
-        send_paid_messages_stars: int | None = None,
+        title: str | None = None,
+        video: bool | None = None,
+        video_portrait: bool | None = None,
     ) -> raw.base.Updates:
-        """Toggle settings for an active group voice chat (join muted, chat messages, stars).
+        """Start server-side recording of an active group voice chat or live stream.
 
         .. include:: /_includes/usable-by/users-bots.rst
 
@@ -39,20 +38,26 @@ class ToggleGroupCallSettings:
             chat_id (``int`` | ``str`` | :obj:`~pyrogram.types.GroupCall`):
                 Unique identifier (int) or username (str) of the target chat, or the GroupCall object.
 
-            join_muted (``bool``, *optional*):
-                Whether new participants join muted by default.
+            title (``str``, *optional*):
+                Recording title.
 
-            messages_enabled (``bool``, *optional*):
-                Whether text messages are enabled during the call.
+            video (``bool``, *optional*):
+                Pass True to record video in addition to audio.
 
-            reset_invite_hash (``bool``, *optional*):
-                Whether to reset the invite link hash.
-
-            send_paid_messages_stars (``int``, *optional*):
-                Minimum stars required to send paid messages in the voice chat.
+            video_portrait (``bool``, *optional*):
+                Pass True if the recorded video orientation is portrait.
 
         Returns:
             :obj:`~pyrogram.raw.base.Updates`: On success, updates are returned.
+
+        Example:
+            .. code-block:: python
+
+                # Start audio recording
+                await app.start_group_call_record(chat_id, title="Episode 1")
+
+                # Start video recording in portrait mode
+                await app.start_group_call_record(chat_id, title="Live Show", video=True, video_portrait=True)
         """
         if isinstance(chat_id, raw.types.InputGroupCall):
             call_input = chat_id
@@ -70,11 +75,11 @@ class ToggleGroupCallSettings:
             call_input = full_chat.full_chat.call
 
         return await self.invoke(
-            raw.functions.phone.ToggleGroupCallSettings(
+            raw.functions.phone.ToggleGroupCallRecord(
                 call=call_input,
-                join_muted=join_muted,
-                messages_enabled=messages_enabled,
-                reset_invite_hash=reset_invite_hash,
-                send_paid_messages_stars=send_paid_messages_stars,
+                start=True,
+                title=title,
+                video=video,
+                video_portrait=video_portrait,
             )
         )
