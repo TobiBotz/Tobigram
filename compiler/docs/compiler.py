@@ -1958,6 +1958,8 @@ def pyrogram_api():
             Chat.invite_to_group_call
             Chat.start_scheduled_group_call
             Chat.toggle_group_call_record
+            Chat.start_recording
+            Chat.stop_recording
             Chat.edit_group_call_participant
             Chat.mute_group_call_participant
             Chat.toggle_group_call_settings
@@ -2059,6 +2061,13 @@ def pyrogram_api():
             Folder.pin_chat
             Folder.remove_chat
             Folder.update_color
+        """,
+        group_call="""
+        GroupCall
+            GroupCall.start_recording
+            GroupCall.stop_recording
+            GroupCall.discard
+            GroupCall.edit_title
         """,
     )
 

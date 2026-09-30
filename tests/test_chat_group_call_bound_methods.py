@@ -1,6 +1,9 @@
-import pytest
 from unittest.mock import AsyncMock, MagicMock
-from pyrogram.types import Chat
+
+import pytest
+
+from pyrogram import raw
+from pyrogram.types import Chat, GroupCall
 
 
 @pytest.fixture
@@ -124,3 +127,64 @@ async def test_chat_call_admin_methods(mock_client):
 
     await chat.discard_group_call()
     mock_client.discard_group_call.assert_awaited_once_with(-1001234567890)
+
+
+@pytest.mark.asyncio
+async def test_chat_recording_shortcuts(mock_client):
+    chat = Chat(id=-1001234567890, client=mock_client)
+    res_start = await chat.start_recording(title="Stream 1", video=True, video_portrait=False)
+    assert res_start is True
+    mock_client.toggle_group_call_record.assert_awaited_with(
+        -1001234567890,
+        start=True,
+        title="Stream 1",
+        video=True,
+        video_portrait=False,
+    )
+
+    res_stop = await chat.stop_recording()
+    assert res_stop is True
+    mock_client.toggle_group_call_record.assert_awaited_with(
+        -1001234567890,
+        start=False,
+    )
+
+
+@pytest.mark.asyncio
+async def test_group_call_bound_methods(mock_client):
+    gc = GroupCall(id=123456, access_hash=987654, participants_count=5, client=mock_client)
+
+    # start_recording
+    res_start = await gc.start_recording(title="Episode 1", video=True)
+    assert res_start is True
+    mock_client.toggle_group_call_record.assert_awaited_with(
+        raw.types.InputGroupCall(id=123456, access_hash=987654),
+        start=True,
+        title="Episode 1",
+        video=True,
+        video_portrait=None,
+    )
+
+    # stop_recording
+    res_stop = await gc.stop_recording()
+    assert res_stop is True
+    mock_client.toggle_group_call_record.assert_awaited_with(
+        raw.types.InputGroupCall(id=123456, access_hash=987654),
+        start=False,
+    )
+
+    # discard
+    res_discard = await gc.discard()
+    assert res_discard is True
+    mock_client.discard_group_call.assert_awaited_with(
+        raw.types.InputGroupCall(id=123456, access_hash=987654),
+    )
+
+    # edit_title
+    res_title = await gc.edit_title("Updated Title")
+    assert res_title is True
+    mock_client.edit_group_call_title.assert_awaited_with(
+        raw.types.InputGroupCall(id=123456, access_hash=987654),
+        title="Updated Title",
+    )
+

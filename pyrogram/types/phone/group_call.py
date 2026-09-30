@@ -119,3 +119,75 @@ class GroupCall(Object):
             )
 
         return None
+
+    async def start_recording(
+        self,
+        title: str | None = None,
+        video: bool | None = None,
+        video_portrait: bool | None = None,
+    ) -> bool:
+        """Bound method *start_recording* of :obj:`~pyrogram.types.GroupCall`.
+
+        Start server-side recording of this group call.
+
+        Parameters:
+            title (``str``, *optional*):
+                Recording title.
+
+            video (``bool``, *optional*):
+                Pass True to record video in addition to audio.
+
+            video_portrait (``bool``, *optional*):
+                Pass True to record video in portrait orientation.
+
+        Returns:
+            ``bool``: True on success.
+        """
+        call_input = raw.types.InputGroupCall(id=self.id, access_hash=self.access_hash)
+        return await self._client.toggle_group_call_record(
+            call_input,
+            start=True,
+            title=title,
+            video=video,
+            video_portrait=video_portrait,
+        )
+
+    async def stop_recording(self) -> bool:
+        """Bound method *stop_recording* of :obj:`~pyrogram.types.GroupCall`.
+
+        Stop server-side recording of this group call.
+
+        Returns:
+            ``bool``: True on success.
+        """
+        call_input = raw.types.InputGroupCall(id=self.id, access_hash=self.access_hash)
+        return await self._client.toggle_group_call_record(
+            call_input,
+            start=False,
+        )
+
+    async def discard(self) -> bool:
+        """Bound method *discard* of :obj:`~pyrogram.types.GroupCall`.
+
+        End and discard this group call for all members.
+
+        Returns:
+            ``bool``: True on success.
+        """
+        call_input = raw.types.InputGroupCall(id=self.id, access_hash=self.access_hash)
+        return await self._client.discard_group_call(call_input)
+
+    async def edit_title(self, title: str) -> bool:
+        """Bound method *edit_title* of :obj:`~pyrogram.types.GroupCall`.
+
+        Change the title of this group call.
+
+        Parameters:
+            title (``str``):
+                New group call title.
+
+        Returns:
+            ``bool``: True on success.
+        """
+        call_input = raw.types.InputGroupCall(id=self.id, access_hash=self.access_hash)
+        return await self._client.edit_group_call_title(call_input, title=title)

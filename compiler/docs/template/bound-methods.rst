@@ -178,3 +178,16 @@ Folder
     :hidden:
 
     {folder_toctree}
+
+GroupCall
+---------
+
+.. hlist::
+    :columns: 2
+
+    {group_call_hlist}
+
+.. toctree::
+    :hidden:
+
+    {group_call_toctree}

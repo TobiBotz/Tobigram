@@ -2687,6 +2687,60 @@ class Chat(Object):
             video_portrait=video_portrait,
         )
 
+    async def start_recording(
+        self,
+        title: str | None = None,
+        video: bool | None = None,
+        video_portrait: bool | None = None,
+    ) -> bool:
+        """Bound method *start_recording* of :obj:`~pyrogram.types.Chat`.
+
+        Shortcut for starting server-side recording of the active group voice chat or live stream.
+
+        Parameters:
+            title (``str``, *optional*):
+                Recording title.
+
+            video (``bool``, *optional*):
+                Pass True to record video in addition to audio.
+
+            video_portrait (``bool``, *optional*):
+                Pass True to record video in portrait orientation.
+
+        Example:
+            .. code-block:: python
+
+                await chat.start_recording(title="Live Episode 1", video=True)
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.toggle_group_call_record(
+            self.id,
+            start=True,
+            title=title,
+            video=video,
+            video_portrait=video_portrait,
+        )
+
+    async def stop_recording(self) -> bool:
+        """Bound method *stop_recording* of :obj:`~pyrogram.types.Chat`.
+
+        Shortcut for stopping server-side recording of the active group voice chat or live stream.
+
+        Example:
+            .. code-block:: python
+
+                await chat.stop_recording()
+
+        Returns:
+            ``bool``: True on success.
+        """
+        return await self._client.toggle_group_call_record(
+            self.id,
+            start=False,
+        )
+
     async def edit_group_call_participant(
         self,
         participant: int | str,
