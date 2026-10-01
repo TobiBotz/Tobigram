@@ -30,12 +30,7 @@ class PlayVideo:
         self: pyrogram.Client,
         chat_id: int | str,
         video: (
-            str
-            | types.MediaStream
-            | types.Message
-            | types.Video
-            | types.Animation
-            | types.Document
+            str | types.MediaStream | types.Message | types.Video | types.Animation | types.Document
         ),
     ) -> types.GroupCall:
         """Stream a video file, remote stream, or Telegram media directly into group voice chat.

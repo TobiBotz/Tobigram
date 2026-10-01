@@ -670,6 +670,21 @@ class Message(Object, Update):
             IETF language tag of the message language on which it can be summarized.
             None if summary isn't available for the message.
 
+        quick_reply_shortcut_id (``int``, *optional*):
+            Unique identifier of the quick reply shortcut.
+
+        saved_peer_id (``int``, *optional*):
+            Identifier of the target peer for saved dialogs.
+
+        paid_suggested_post_ton (``bool``, *optional*):
+            True, if the suggested post requires payment in TON cryptocurrency.
+
+        report_delivery_until_date (:py:obj:`~datetime.datetime`, *optional*):
+            Date until which a delivery report can be requested.
+
+        reply_count (``int``, *optional*):
+            Number of replies or comments to this message.
+
         guest_bot_caller_user (:obj:`~pyrogram.types.User`, *optional*):
             For a message sent by a guest bot, this is the user whose original message triggered the bot's response.
 
@@ -889,6 +904,11 @@ class Message(Object, Update):
         channel_post: bool | None = None,
         repeat_period: int | None = None,
         summary_language_code: str | None = None,
+        quick_reply_shortcut_id: int | None = None,
+        saved_peer_id: int | None = None,
+        paid_suggested_post_ton: bool | None = None,
+        report_delivery_until_date: datetime | None = None,
+        reply_count: int | None = None,
         guest_bot_caller_user: types.User | None = None,
         guest_bot_caller_chat: types.Chat | None = None,
         receiver_user: types.User | None = None,
@@ -1169,6 +1189,11 @@ class Message(Object, Update):
         self.channel_post = channel_post
         self.repeat_period = repeat_period
         self.summary_language_code = summary_language_code
+        self.quick_reply_shortcut_id = quick_reply_shortcut_id
+        self.saved_peer_id = saved_peer_id
+        self.paid_suggested_post_ton = paid_suggested_post_ton
+        self.report_delivery_until_date = report_delivery_until_date
+        self.reply_count = reply_count
         self.guest_bot_caller_user = guest_bot_caller_user
         self.guest_bot_caller_chat = guest_bot_caller_chat
         self.receiver_user = receiver_user
@@ -1948,6 +1973,19 @@ class Message(Object, Update):
             channel_post=message.post,
             repeat_period=message.schedule_repeat_period,
             summary_language_code=message.summary_from_language,
+            quick_reply_shortcut_id=getattr(message, "quick_reply_shortcut_id", None),
+            saved_peer_id=(
+                utils.get_peer_id(message.saved_peer_id)
+                if getattr(message, "saved_peer_id", None)
+                else None
+            ),
+            paid_suggested_post_ton=getattr(message, "paid_suggested_post_ton", None),
+            report_delivery_until_date=(
+                utils.timestamp_to_datetime(message.report_delivery_until_date)
+                if getattr(message, "report_delivery_until_date", None)
+                else None
+            ),
+            reply_count=message.replies.replies if getattr(message, "replies", None) else None,
             guest_bot_caller_user=(
                 types.User._parse(client, users.get(guest_caller_id))
                 if guest_caller_id is not None

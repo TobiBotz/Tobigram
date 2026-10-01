@@ -30,12 +30,7 @@ class PlayAudio:
         self: pyrogram.Client,
         chat_id: int | str,
         audio: (
-            str
-            | types.MediaStream
-            | types.Message
-            | types.Audio
-            | types.Voice
-            | types.Document
+            str | types.MediaStream | types.Message | types.Audio | types.Voice | types.Document
         ),
     ) -> types.GroupCall:
         """Stream an audio file, remote live URL, or Telegram media directly into group voice chat.

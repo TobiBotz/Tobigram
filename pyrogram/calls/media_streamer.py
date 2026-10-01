@@ -44,9 +44,7 @@ def guess_mime_type(filename: str, client: pyrogram.Client | None = None) -> str
     return pyrogram.Client.guess_mime_type(pyrogram.Client, filename)
 
 
-def is_playable_media(
-    mime_or_filename: str, client: pyrogram.Client | None = None
-) -> bool:
+def is_playable_media(mime_or_filename: str, client: pyrogram.Client | None = None) -> bool:
     """Check if a MIME type or filename represents a playable audio or video format."""
     if not mime_or_filename:
         return False
@@ -69,9 +67,7 @@ def is_playable_media(
     )
 
 
-def is_playable_document(
-    doc: types.Document | Any, client: pyrogram.Client | None = None
-) -> bool:
+def is_playable_document(doc: types.Document | Any, client: pyrogram.Client | None = None) -> bool:
     """Check if a Document is an audio or video media file."""
     mime = getattr(doc, "mime_type", None)
     if mime and is_playable_media(mime, client=client):
@@ -182,23 +178,18 @@ def extract_media_info(
     elif isinstance(media_target, types.Document):
         if not is_playable_document(media_target, client=client):
             doc_name = getattr(media_target, "file_name", "document")
-            raise ValueError(
-                f"The Document '{doc_name}' is not a playable audio or video format."
-            )
+            raise ValueError(f"The Document '{doc_name}' is not a playable audio or video format.")
         file_size = getattr(media_target, "file_size", 0) or 0
         file_name = getattr(media_target, "file_name", None) or "document.bin"
         mime_type = getattr(media_target, "mime_type", None)
 
         if not mime_type or mime_type == "application/octet-stream":
             mime_type = (
-                guess_mime_type(file_name, client=client)
-                or mime_type
-                or "application/octet-stream"
+                guess_mime_type(file_name, client=client) or mime_type or "application/octet-stream"
             )
 
-        detected_is_video = (
-            (is_video is True)
-            or (is_video is None and mime_type.startswith("video/"))
+        detected_is_video = (is_video is True) or (
+            is_video is None and mime_type.startswith("video/")
         )
 
     elif isinstance(media_target, str):

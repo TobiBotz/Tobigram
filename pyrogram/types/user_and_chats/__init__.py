@@ -17,6 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from .accepted_gift_types import AcceptedGiftTypes
+from .animated_chat_photo import AnimatedChatPhoto
 from .birthday import Birthday
 from .bot_verification import BotVerification
 from .business_bot_rights import BusinessBotRights
@@ -59,6 +60,7 @@ from .chat_member import ChatMember
 from .chat_member_updated import ChatMemberUpdated
 from .chat_permissions import ChatPermissions
 from .chat_photo import ChatPhoto
+from .chat_photo_sticker import ChatPhotoSticker
 from .chat_preview import ChatPreview
 from .chat_reactions import ChatReactions
 from .chat_settings import ChatSettings
@@ -95,6 +97,7 @@ from .video_chat_started import VideoChatStarted
 
 __all__ = [
     "AcceptedGiftTypes",
+    "AnimatedChatPhoto",
     "BackgroundFill",
     "BackgroundFillFreeformGradient",
     "BackgroundFillGradient",
@@ -133,6 +136,7 @@ __all__ = [
     "ChatMemberUpdated",
     "ChatPermissions",
     "ChatPhoto",
+    "ChatPhotoSticker",
     "ChatPreview",
     "ChatPrivileges",
     "ChatReactions",

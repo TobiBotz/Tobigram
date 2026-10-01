@@ -1261,6 +1261,8 @@ def pyrogram_api():
             Chat
             ChatPreview
             ChatPhoto
+            AnimatedChatPhoto
+            ChatPhotoSticker
             ChatMember
             ChatPermissions
             ChatPrivileges
@@ -1742,6 +1744,7 @@ def pyrogram_api():
             ChatJoinType
             ChatMemberStatus
             ChatMembersFilter
+            ChatPhotoStickerType
             ChatType
             ClientPlatform
             FolderColor

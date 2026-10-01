@@ -375,6 +375,10 @@ class Chat(Object):
             A suggested set of administrator rights for the bot, to be shown when adding the bot as admin to a group.
             Returned only in :meth:`~pyrogram.Client.get_chat`.
 
+        bot_manager_id (``int``, *optional*):
+            Identifier of the user that manages this bot.
+            Returned only in :meth:`~pyrogram.Client.get_chat`.
+
         bot_can_manage_emoji_status (``bool``, *optional*):
             True, if the bot can change your emoji status.
             Returned only in :meth:`~pyrogram.Client.get_chat`.
@@ -548,6 +552,39 @@ class Chat(Object):
             The field is only available to chat administrators
             Returned only in :meth:`~pyrogram.Client.get_chat`.
 
+        date (:py:obj:`~datetime.datetime`, *optional*):
+            Date the chat was created.
+
+        access_hash (``int``, *optional*):
+            Channel's access hash.
+
+        stories_hidden_min (``bool``, *optional*):
+            True, if stories are hidden in min channel view.
+
+        pts (``int``, *optional*):
+            Persistent timestamp sequence state.
+
+        pending_suggestions (List of ``str``, *optional*):
+            Pending suggestions for the channel.
+
+        groupcall_default_join_as (:obj:`~pyrogram.types.Chat`, *optional*):
+            Default chat to join group calls as.
+
+        recent_requesters (List of ``int``, *optional*):
+            Identifiers of users who recently requested to join the chat.
+
+        notify_settings (:obj:`~pyrogram.raw.types.PeerNotifySettings`, *optional*):
+            Notification settings for this chat.
+            Returned only in :meth:`~pyrogram.Client.get_chat`.
+
+        bot_info (List of :obj:`~pyrogram.raw.types.BotInfo` | :obj:`~pyrogram.raw.types.BotInfo`, *optional*):
+            Information about bots in the chat.
+            Returned only in :meth:`~pyrogram.Client.get_chat`.
+
+        call (:obj:`~pyrogram.raw.types.InputGroupCall`, *optional*):
+            Active group call info.
+            Returned only in :meth:`~pyrogram.Client.get_chat`.
+
         raw (:obj:`~pyrogram.raw.types.UserFull` | :obj:`~pyrogram.raw.types.ChatFull` | :obj:`~pyrogram.raw.types.ChannelFull`, *optional*):
             The raw chat or user object, as received from the Telegram API.
 
@@ -701,6 +738,17 @@ class Chat(Object):
         accepted_gift_types: types.AcceptedGiftTypes | None = None,
         note: types.FormattedText | None = None,
         guard_bot: types.User | None = None,
+        bot_manager_id: int | None = None,
+        date: datetime | None = None,
+        access_hash: int | None = None,
+        stories_hidden_min: bool | None = None,
+        pts: int | None = None,
+        pending_suggestions: list[str] | None = None,
+        groupcall_default_join_as: types.Chat | None = None,
+        recent_requesters: list[int] | None = None,
+        notify_settings: raw.types.PeerNotifySettings | None = None,
+        bot_info: list[raw.types.BotInfo] | raw.types.BotInfo | None = None,
+        call: raw.types.InputGroupCall | None = None,
         raw: raw.types.UserFull | raw.types.ChatFull | raw.types.ChannelFull | None = None,
     ):
         super().__init__(client)
@@ -847,6 +895,17 @@ class Chat(Object):
         self.accepted_gift_types = accepted_gift_types
         self.note = note
         self.guard_bot = guard_bot
+        self.bot_manager_id = bot_manager_id
+        self.date = date
+        self.access_hash = access_hash
+        self.stories_hidden_min = stories_hidden_min
+        self.pts = pts
+        self.pending_suggestions = pending_suggestions
+        self.groupcall_default_join_as = groupcall_default_join_as
+        self.recent_requesters = recent_requesters
+        self.notify_settings = notify_settings
+        self.bot_info = bot_info
+        self.call = call
         self.raw = raw
 
     # region Deprecated
@@ -897,7 +956,7 @@ class Chat(Object):
             first_name=user.first_name,
             last_name=user.last_name,
             photo=(
-                types.ChatPhoto._parse(client, user.photo, peer_id, user.access_hash)
+                types.ChatPhoto._parse(client, user.photo, peer_id, getattr(user, "access_hash", 0))
                 if user.photo is not None
                 else None
             ),
@@ -1051,6 +1110,9 @@ class Chat(Object):
             has_automatic_translation=channel.autotranslation,
             has_forum_tabs=channel.forum_tabs,
             has_direct_messages_group=channel.broadcast_messages_allowed,
+            date=utils.timestamp_to_datetime(channel.date),
+            access_hash=getattr(channel, "access_hash", None),
+            stories_hidden_min=channel.stories_hidden_min,
             raw=channel,
             client=client,
         )
@@ -1061,6 +1123,16 @@ class Chat(Object):
             return None
 
         peer_id = community.id
+        photo = (
+            types.ChatPhoto._parse(
+                client,
+                getattr(community, "photo", None),
+                peer_id,
+                getattr(community, "access_hash", 0),
+            )
+            if getattr(community, "photo", None) is not None
+            else None
+        )
 
         return Chat(
             id=peer_id,
@@ -1068,6 +1140,7 @@ class Chat(Object):
             title=community.title,
             is_creator=getattr(community, "creator", None),
             is_min=getattr(community, "min", None),
+            photo=photo,
             dc_id=getattr(getattr(community, "photo", None), "dc_id", None),
             raw=community,
             client=client,
@@ -1140,11 +1213,15 @@ class Chat(Object):
         users: dict[int, raw.base.User],
         chats: dict[int, raw.base.Chat],
     ) -> Chat:
-        parsed_chat = Chat._parse_user_chat(client, users[user.id])
+        user_raw = users.get(user.id)
+        parsed_chat = Chat._parse_user_chat(client, user_raw)
+        if not parsed_chat:
+            return None
+
         parsed_chat.raw = user
 
         parsed_chat.settings = types.ChatSettings._parse(client, user.settings, users)
-        # parsed_chat.notify_settings
+        parsed_chat.notify_settings = user.notify_settings
         parsed_chat.common_chats = user.common_chats_count
         parsed_chat.is_blocked = user.blocked
         parsed_chat.is_phone_calls_available = user.phone_calls_available
@@ -1163,14 +1240,21 @@ class Chat(Object):
         parsed_chat.can_view_revenue = user.can_view_revenue
         parsed_chat.bot_can_manage_emoji_status = user.bot_can_manage_emoji_status
         parsed_chat.bio = user.about or None
+
+        peer_id = getattr(user_raw, "id", user.id)
+        peer_access_hash = getattr(user_raw, "access_hash", 0)
+
         parsed_chat.personal_photo = types.ChatPhoto._parse(
-            client, user.personal_photo, users[user.id].id, users[user.id].access_hash
+            client, user.personal_photo, peer_id, peer_access_hash
         )
-        # parsed_chat.photo = types.ChatPhoto._parse(client, user.profile_photo, users[user.id].id, users[user.id].access_hash)
+        if user.profile_photo:
+            photo = types.ChatPhoto._parse(client, user.profile_photo, peer_id, peer_access_hash)
+            if photo:
+                parsed_chat.photo = photo
         parsed_chat.public_photo = types.ChatPhoto._parse(
-            client, user.fallback_photo, users[user.id].id, users[user.id].access_hash
+            client, user.fallback_photo, peer_id, peer_access_hash
         )
-        # parsed_chat.bot_info = user.bot_info
+        parsed_chat.bot_info = user.bot_info
 
         if user.pinned_msg_id:
             parsed_chat.pinned_message = await client.get_messages(
@@ -1213,13 +1297,15 @@ class Chat(Object):
         parsed_chat.business_intro = await types.BusinessIntro._parse(client, user.business_intro)
         parsed_chat.birthday = types.Birthday._parse(user.birthday)
 
-        if user.personal_channel_id:
+        if user.personal_channel_id and chats.get(user.personal_channel_id):
             parsed_chat.personal_channel = Chat._parse_channel_chat(
                 client, chats[user.personal_channel_id]
             )
-            parsed_chat.personal_channel_message = await client.get_messages(
-                chat_id=parsed_chat.personal_channel.id, message_ids=user.personal_channel_message
-            )
+            if parsed_chat.personal_channel and user.personal_channel_message:
+                parsed_chat.personal_channel_message = await client.get_messages(
+                    chat_id=parsed_chat.personal_channel.id,
+                    message_ids=user.personal_channel_message,
+                )
 
         parsed_chat.gift_count = user.stargifts_count
         # parsed_chat.starref_program
@@ -1256,6 +1342,15 @@ class Chat(Object):
         parsed_chat.accepted_gift_types = types.AcceptedGiftTypes._parse(user.disallowed_gifts)
         parsed_chat.note = types.FormattedText._parse(client, user.note)
 
+        community_id = getattr(user_raw, "linked_community_id", None)
+        if community_id is not None:
+            parsed_chat.community = types.Community._parse(client, chats.get(community_id))
+
+        if getattr(user, "noforwards_peer_enabled", False):
+            parsed_chat.has_protected_content = True
+
+        parsed_chat.bot_manager_id = getattr(user, "bot_manager_id", None)
+
         return parsed_chat
 
     @staticmethod
@@ -1265,10 +1360,14 @@ class Chat(Object):
         users: dict[int, raw.base.User],
         chats: dict[int, raw.base.Chat],
     ) -> Chat:
-        parsed_chat = Chat._parse_chat_chat(client, chats[chat.id])
+        chat_raw = chats.get(chat.id)
+        parsed_chat = Chat._parse_chat_chat(client, chat_raw)
+        if not parsed_chat:
+            return None
+
         parsed_chat.raw = chat
 
-        community_id = getattr(chats.get(chat.id), "linked_community_id", None)
+        community_id = getattr(chat_raw, "linked_community_id", None)
 
         if community_id is not None:
             parsed_chat.community = types.Community._parse(client, chats.get(community_id))
@@ -1278,7 +1377,17 @@ class Chat(Object):
         if isinstance(chat.participants, raw.types.ChatParticipants):
             parsed_chat.members_count = len(chat.participants.participants)
 
-        # parsed_chat.notify_settings
+        if chat.chat_photo:
+            photo = types.ChatPhoto._parse(
+                client,
+                chat.chat_photo,
+                parsed_chat.id,
+                0,
+            )
+            if photo:
+                parsed_chat.photo = photo
+
+        parsed_chat.notify_settings = chat.notify_settings
         parsed_chat.can_set_username = chat.can_set_username
         parsed_chat.can_schedule_messages = chat.has_scheduled
         parsed_chat.is_translations_disabled = chat.translations_disabled
@@ -1287,7 +1396,7 @@ class Chat(Object):
         if isinstance(chat.exported_invite, raw.types.ChatInviteExported):
             parsed_chat.invite_link = chat.exported_invite.link
 
-        # parsed_chat.bot_info
+        parsed_chat.bot_info = getattr(chat, "bot_info", None)
 
         if chat.pinned_msg_id:
             parsed_chat.pinned_message = await client.get_messages(
@@ -1295,7 +1404,7 @@ class Chat(Object):
             )
 
         parsed_chat.folder_id = chat.folder_id
-        # parsed_chat.call
+        parsed_chat.call = getattr(chat, "call", None)
         parsed_chat.message_auto_delete_time = chat.ttl_period
         # parsed_chat.groupcall_default_join_as
         parsed_chat.theme = chat.theme_emoticon
@@ -1315,17 +1424,32 @@ class Chat(Object):
         users: dict[int, raw.base.User],
         chats: dict[int, raw.base.Chat],
     ) -> Chat:
-        parsed_chat = Chat._parse_channel_chat(client, chats[channel.id])
+        channel_raw = chats.get(channel.id)
+        parsed_chat = Chat._parse_channel_chat(client, channel_raw)
+        if not parsed_chat:
+            return None
+
         parsed_chat.raw = channel
+
+        community_id = getattr(channel_raw, "linked_community_id", None)
+        if community_id is not None:
+            parsed_chat.community = types.Community._parse(client, chats.get(community_id))
 
         parsed_chat.description = channel.about or None
         parsed_chat.read_inbox_max_id = channel.read_inbox_max_id
         parsed_chat.read_outbox_max_id = channel.read_outbox_max_id
         parsed_chat.unread_count = channel.unread_count
-        # parsed_chat.chat_photo
-        # parsed_chat.notify_settings
-        # parsed_chat.bot_info
-        # parsed_chat.pts
+        if channel.chat_photo:
+            photo = types.ChatPhoto._parse(
+                client,
+                channel.chat_photo,
+                parsed_chat.id,
+                getattr(channel_raw, "access_hash", 0),
+            )
+            if photo:
+                parsed_chat.photo = photo
+        parsed_chat.notify_settings = channel.notify_settings
+        parsed_chat.bot_info = channel.bot_info
         parsed_chat.can_view_participants = channel.can_view_participants
         parsed_chat.can_set_username = channel.can_set_username
         parsed_chat.can_set_sticker_set = channel.can_set_stickers
@@ -1375,13 +1499,10 @@ class Chat(Object):
                 client, chats[channel.linked_chat_id]
             )
 
-        if chats.get(chats[channel.id].linked_monoforum_id):
-            parsed_chat.direct_messages_chat_id = utils.get_channel_id(
-                chats[channel.id].linked_monoforum_id
-            )
-            parsed_chat.parent_chat = Chat._parse_channel_chat(
-                client, chats[chats[channel.id].linked_monoforum_id]
-            )
+        linked_monoforum_id = getattr(channel_raw, "linked_monoforum_id", None)
+        if linked_monoforum_id and chats.get(linked_monoforum_id):
+            parsed_chat.direct_messages_chat_id = utils.get_channel_id(linked_monoforum_id)
+            parsed_chat.parent_chat = Chat._parse_channel_chat(client, chats[linked_monoforum_id])
 
         # parsed_chat.location
         parsed_chat.slow_mode_delay = channel.slowmode_seconds
@@ -1389,21 +1510,29 @@ class Chat(Object):
             channel.slowmode_next_send_date
         )
         parsed_chat.stats_dc_id = channel.stats_dc
-        # parsed_chat.call
+        parsed_chat.call = getattr(channel, "call", None)
         parsed_chat.message_auto_delete_time = channel.ttl_period
-        # parsed_chat.pending_suggestions
-        # parsed_chat.groupcall_default_join_as
+        parsed_chat.pts = channel.pts
+        parsed_chat.pending_suggestions = channel.pending_suggestions
+        if channel.groupcall_default_join_as:
+            default_join_as_id = utils.get_raw_peer_id(channel.groupcall_default_join_as)
+            default_join_as_raw = users.get(default_join_as_id) or chats.get(default_join_as_id)
+            if default_join_as_raw:
+                parsed_chat.groupcall_default_join_as = Chat._parse_chat(
+                    client, default_join_as_raw
+                )
         parsed_chat.theme = channel.theme_emoticon
         parsed_chat.join_requests_count = channel.requests_pending
-        # parsed_chat.recent_requesters
+        parsed_chat.recent_requesters = channel.recent_requesters
 
         if channel.default_send_as:
             if isinstance(channel.default_send_as, raw.types.PeerUser):
-                send_as_raw = users[channel.default_send_as.user_id]
+                send_as_raw = users.get(channel.default_send_as.user_id)
             else:
-                send_as_raw = chats[channel.default_send_as.channel_id]
+                send_as_raw = chats.get(channel.default_send_as.channel_id)
 
-            parsed_chat.send_as_chat = Chat._parse_chat(client, send_as_raw)
+            if send_as_raw:
+                parsed_chat.send_as_chat = Chat._parse_chat(client, send_as_raw)
 
         parsed_chat.available_reactions = types.ChatReactions._parse(
             client, channel.available_reactions
@@ -1444,14 +1573,28 @@ class Chat(Object):
         community: raw.types.CommunityFull,
         users: dict[int, raw.base.User],
         chats: dict[int, raw.base.Chat],
-    ) -> Chat:
-        parsed_chat = Chat._parse_community_chat(client, chats.get(community.id))
+    ) -> Chat | None:
+        community_raw = chats.get(community.id)
+        parsed_chat = Chat._parse_community_chat(client, community_raw)
+        if not parsed_chat:
+            return None
+
         parsed_chat.raw = community
 
         parsed_chat.description = community.about or None
         parsed_chat.admins_count = community.admins_count
         parsed_chat.kicked_count = community.kicked_count
         parsed_chat.join_requests_count = community.peer_link_requests_pending
+
+        if getattr(community, "chat_photo", None):
+            photo = types.ChatPhoto._parse(
+                client,
+                community.chat_photo,
+                parsed_chat.id,
+                getattr(community_raw, "access_hash", 0),
+            )
+            if photo:
+                parsed_chat.photo = photo
 
         return parsed_chat
 
