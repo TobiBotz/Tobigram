@@ -1244,16 +1244,24 @@ class Chat(Object):
         peer_id = getattr(user_raw, "id", user.id)
         peer_access_hash = getattr(user_raw, "access_hash", 0)
 
-        parsed_chat.personal_photo = types.ChatPhoto._parse(
-            client, user.personal_photo, peer_id, peer_access_hash
-        )
+        if user.personal_photo:
+            photo = await types.ChatPhoto._parse_full(
+                client, user.personal_photo, peer_id, peer_access_hash
+            )
+            if photo:
+                parsed_chat.personal_photo = photo
         if user.profile_photo:
-            photo = types.ChatPhoto._parse(client, user.profile_photo, peer_id, peer_access_hash)
+            photo = await types.ChatPhoto._parse_full(
+                client, user.profile_photo, peer_id, peer_access_hash
+            )
             if photo:
                 parsed_chat.photo = photo
-        parsed_chat.public_photo = types.ChatPhoto._parse(
-            client, user.fallback_photo, peer_id, peer_access_hash
-        )
+        if user.fallback_photo:
+            photo = await types.ChatPhoto._parse_full(
+                client, user.fallback_photo, peer_id, peer_access_hash
+            )
+            if photo:
+                parsed_chat.public_photo = photo
         parsed_chat.bot_info = user.bot_info
 
         if user.pinned_msg_id:
@@ -1378,7 +1386,7 @@ class Chat(Object):
             parsed_chat.members_count = len(chat.participants.participants)
 
         if chat.chat_photo:
-            photo = types.ChatPhoto._parse(
+            photo = await types.ChatPhoto._parse_full(
                 client,
                 chat.chat_photo,
                 parsed_chat.id,
@@ -1440,7 +1448,7 @@ class Chat(Object):
         parsed_chat.read_outbox_max_id = channel.read_outbox_max_id
         parsed_chat.unread_count = channel.unread_count
         if channel.chat_photo:
-            photo = types.ChatPhoto._parse(
+            photo = await types.ChatPhoto._parse_full(
                 client,
                 channel.chat_photo,
                 parsed_chat.id,
@@ -1587,7 +1595,7 @@ class Chat(Object):
         parsed_chat.join_requests_count = community.peer_link_requests_pending
 
         if getattr(community, "chat_photo", None):
-            photo = types.ChatPhoto._parse(
+            photo = await types.ChatPhoto._parse_full(
                 client,
                 community.chat_photo,
                 parsed_chat.id,

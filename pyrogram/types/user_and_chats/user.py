@@ -813,16 +813,24 @@ class User(Object, Update):
         peer_id = getattr(user_raw, "id", user.id)
         peer_access_hash = getattr(user_raw, "access_hash", 0)
 
-        parsed_user.personal_photo = types.ChatPhoto._parse(
-            client, user.personal_photo, peer_id, peer_access_hash
-        )
+        if user.personal_photo:
+            photo = await types.ChatPhoto._parse_full(
+                client, user.personal_photo, peer_id, peer_access_hash
+            )
+            if photo:
+                parsed_user.personal_photo = photo
         if user.profile_photo:
-            photo = types.ChatPhoto._parse(client, user.profile_photo, peer_id, peer_access_hash)
+            photo = await types.ChatPhoto._parse_full(
+                client, user.profile_photo, peer_id, peer_access_hash
+            )
             if photo:
                 parsed_user.photo = photo
-        parsed_user.public_photo = types.ChatPhoto._parse(
-            client, user.fallback_photo, peer_id, peer_access_hash
-        )
+        if user.fallback_photo:
+            photo = await types.ChatPhoto._parse_full(
+                client, user.fallback_photo, peer_id, peer_access_hash
+            )
+            if photo:
+                parsed_user.public_photo = photo
         parsed_user.bot_info = user.bot_info
         # parsed_user.bot_forum_view
 

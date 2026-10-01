@@ -131,16 +131,14 @@ class ChatPhoto(Object):
         )
 
         animation = None
-        sticker = None
         has_video = getattr(chat_photo, "has_video", None)
 
         if isinstance(chat_photo, raw.types.Photo) and getattr(chat_photo, "video_sizes", None):
             animation = types.AnimatedChatPhoto._parse(client, chat_photo)
-            sticker = types.ChatPhotoSticker._parse(client, chat_photo.video_sizes)
 
         if has_video is not None:
             has_animation = bool(has_video)
-        elif animation is not None or sticker is not None:
+        elif animation is not None:
             has_animation = True
         else:
             has_animation = False
@@ -178,7 +176,24 @@ class ChatPhoto(Object):
             is_personal=getattr(chat_photo, "personal", False) or False,
             added_date=added_date,
             animation=animation,
-            sticker=sticker,
             stripped_thumb=getattr(chat_photo, "stripped_thumb", None),
             client=client,
         )
+
+    @staticmethod
+    async def _parse_full(
+        client: pyrogram.Client | None,
+        chat_photo: raw.types.UserProfilePhoto | raw.types.ChatPhoto | raw.types.Photo,
+        peer_id: int = 0,
+        peer_access_hash: int = 0,
+    ) -> ChatPhoto | None:
+        photo = ChatPhoto._parse(client, chat_photo, peer_id, peer_access_hash)
+        if (
+            photo is not None
+            and isinstance(chat_photo, raw.types.Photo)
+            and getattr(chat_photo, "video_sizes", None)
+        ):
+            photo.sticker = await types.ChatPhotoSticker._parse(client, chat_photo.video_sizes)
+            if photo.sticker is not None:
+                photo.has_animation = True
+        return photo

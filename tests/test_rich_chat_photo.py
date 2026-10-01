@@ -1,15 +1,19 @@
-from datetime import datetime, timezone
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock
+import pyrogram
 import pytest
 from pyrogram import enums, raw, types
 
 
-def test_chat_photo_user_profile_photo_fallback():
+@pytest.mark.asyncio
+async def test_chat_photo_user_profile_photo_fallback():
     raw_photo = raw.types.UserProfilePhoto(
         photo_id=123456789,
         dc_id=2,
         has_video=True,
         personal=False,
     )
+    # Sync _parse: works for UserProfilePhoto
     chat_photo = types.ChatPhoto._parse(None, raw_photo)
     assert chat_photo is not None
     assert chat_photo.has_animation is True
@@ -19,7 +23,8 @@ def test_chat_photo_user_profile_photo_fallback():
     assert chat_photo.added_date is None
 
 
-def test_chat_photo_rich_raw_photo_with_animation_and_sticker():
+@pytest.mark.asyncio
+async def test_chat_photo_rich_raw_photo_with_animation_and_sticker():
     sticker_markup = raw.types.VideoSizeStickerMarkup(
         stickerset=raw.types.InputStickerSetShortName(short_name="PremiumGifts"),
         sticker_id=5717737768998666247,
@@ -49,7 +54,7 @@ def test_chat_photo_rich_raw_photo_with_animation_and_sticker():
         has_stickers=True,
     )
 
-    chat_photo = types.ChatPhoto._parse(None, raw_photo)
+    chat_photo = await types.ChatPhoto._parse_full(None, raw_photo)
     assert chat_photo is not None
     assert chat_photo.has_animation is True
     assert chat_photo.added_date == datetime.fromtimestamp(1783421063)
@@ -66,7 +71,45 @@ def test_chat_photo_rich_raw_photo_with_animation_and_sticker():
     assert chat_photo.sticker.sticker_id == 5717737768998666247
 
 
-def test_chat_photo_rich_raw_photo_with_custom_emoji():
+@pytest.mark.asyncio
+async def test_chat_photo_rich_raw_photo_with_input_stickerset_id():
+    client = MagicMock(spec=pyrogram.Client)
+    mock_messages_stickerset = MagicMock()
+    mock_messages_stickerset.set.short_name = "RealStickerSetName"
+    client.invoke = AsyncMock(return_value=mock_messages_stickerset)
+
+    sticker_markup = raw.types.VideoSizeStickerMarkup(
+        stickerset=raw.types.InputStickerSetID(id=328917524764688479, access_hash=99887766),
+        sticker_id=5717737768998666247,
+        background_colors=[0xFFFFFF],
+    )
+    raw_photo = raw.types.Photo(
+        id=987654321,
+        access_hash=123456,
+        file_reference=b"fileref",
+        date=1783421063,
+        sizes=[raw.types.PhotoSize(type="a", w=800, h=800, size=1024)],
+        video_sizes=[sticker_markup],
+        dc_id=2,
+        has_stickers=True,
+    )
+
+    # Sync _parse: no sticker resolved (sticker is None for sync path)
+    sync_photo = types.ChatPhoto._parse(client, raw_photo)
+    assert sync_photo is not None
+    assert sync_photo.sticker is None
+
+    # Async _parse_full resolves the real name from Telegram API
+    chat_photo = await types.ChatPhoto._parse_full(client, raw_photo)
+    assert chat_photo is not None
+    assert chat_photo.sticker is not None
+    assert chat_photo.sticker.type == enums.ChatPhotoStickerType.REGULAR_OR_MASK
+    assert chat_photo.sticker.set_name == "RealStickerSetName"
+    assert chat_photo.sticker.sticker_id == 5717737768998666247
+
+
+@pytest.mark.asyncio
+async def test_chat_photo_rich_raw_photo_with_custom_emoji():
     emoji_markup = raw.types.VideoSizeEmojiMarkup(
         emoji_id=1122334455,
         background_colors=[0x000000],
@@ -81,7 +124,8 @@ def test_chat_photo_rich_raw_photo_with_custom_emoji():
         dc_id=2,
     )
 
-    chat_photo = types.ChatPhoto._parse(None, raw_photo)
+    # Custom emoji sticker is resolved via _parse_full (async path)
+    chat_photo = await types.ChatPhoto._parse_full(None, raw_photo)
     assert chat_photo is not None
     assert chat_photo.sticker is not None
     assert chat_photo.sticker.type == enums.ChatPhotoStickerType.CUSTOM_EMOJI

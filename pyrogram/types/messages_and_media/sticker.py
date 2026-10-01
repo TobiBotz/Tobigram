@@ -22,7 +22,6 @@ import inspect
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
-from pyrogram.errors import StickersetInvalid
 from pyrogram.file_id import FileId, FileType, FileUniqueId, FileUniqueType
 
 from ..object import Object
@@ -155,6 +154,9 @@ class Sticker(Object):
             if (set_id, set_access_hash) in Sticker.cache:
                 return Sticker.cache[(set_id, set_access_hash)]
 
+            if not client:
+                return None
+
             cache = getattr(client, "sticker_set_name_cache", None)
 
             if cache is not None:
@@ -188,7 +190,7 @@ class Sticker(Object):
                     await res
 
             return name
-        except StickersetInvalid:
+        except Exception:
             return None
 
     @staticmethod

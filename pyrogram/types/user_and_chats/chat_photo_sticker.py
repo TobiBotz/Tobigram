@@ -59,7 +59,7 @@ class ChatPhotoSticker(Object):
         self.custom_emoji_id = custom_emoji_id
 
     @staticmethod
-    def _parse(
+    async def _parse(
         client: pyrogram.Client | None,
         video_sizes: list[raw.base.VideoSize] | None,
     ) -> ChatPhotoSticker | None:
@@ -81,11 +81,9 @@ class ChatPhotoSticker(Object):
                 if isinstance(sticker_set, raw.types.InputStickerSetShortName):
                     set_name = sticker_set.short_name
                 elif hasattr(sticker_set, "id") and hasattr(sticker_set, "access_hash"):
-                    set_name = types.Sticker.cache.get((sticker_set.id, sticker_set.access_hash))
-                    if not set_name:
-                        set_name = str(sticker_set.id)
-                elif hasattr(sticker_set, "id"):
-                    set_name = str(sticker_set.id)
+                    set_name = await types.Sticker._get_sticker_set_name(
+                        client, (sticker_set.id, sticker_set.access_hash)
+                    )
 
                 return ChatPhotoSticker(
                     type=enums.ChatPhotoStickerType.REGULAR_OR_MASK,

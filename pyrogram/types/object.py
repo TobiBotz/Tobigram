@@ -26,8 +26,26 @@ from typing import Any, TYPE_CHECKING
 import orjson
 
 
+def _preprocess(obj: Any) -> Any:
+    """Recursively convert Enum values to their string representation before JSON serialization."""
+    if isinstance(obj, Enum):
+        return str(obj)
+    if isinstance(obj, dict):
+        return {k: _preprocess(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_preprocess(i) for i in obj]
+    return obj
+
+
 def dumps(obj: Any, default: Any = None) -> str:
-    return orjson.dumps(obj, default=default, option=orjson.OPT_INDENT_2).decode()
+    def _default(o: Any) -> Any:
+        if isinstance(o, Enum):
+            return str(o)
+        if default is not None:
+            return default(o)
+        raise TypeError
+
+    return orjson.dumps(obj, default=_default, option=orjson.OPT_INDENT_2).decode()
 
 
 if TYPE_CHECKING:
@@ -84,11 +102,15 @@ class Object:
         if attrs is not None:
             for k, v in attrs.items():
                 if not k.startswith("_") and v is not None:
+                    if isinstance(v, Enum):
+                        v = str(v)
                     d[k] = "*********" if k == "phone_number" else v
         else:
             for s in getattr(obj, "__slots__", ()):
                 v = getattr(obj, s, None)
                 if v is not None:
+                    if isinstance(v, Enum):
+                        v = str(v)
                     d[s] = "*********" if s == "phone_number" else v
 
         return d
