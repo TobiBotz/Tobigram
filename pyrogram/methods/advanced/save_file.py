@@ -35,6 +35,7 @@ from pyrogram import StopTransmission, raw, utils
 from pyrogram.errors import RPCError
 from pyrogram.methods.rate_limiter import TokenBucket
 from pyrogram.session import Session
+from pyrogram.session.session import media_window
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -123,7 +124,8 @@ class SaveFile:
             if path is None:
                 return None
 
-            async def worker(session):
+            async def worker(pool, i):
+                window = media_window(getattr(pool[0], "auth_key", None), dc_id)
                 while True:
                     data = await queue.get()
 
@@ -131,7 +133,9 @@ class SaveFile:
                         return
 
                     try:
-                        await _send_part(session, data)
+                        # picked per part, so a window that shrinks mid-upload
+                        # takes this worker off the connection the DC is dropping
+                        await _send_part(pool[i % window.connections(len(pool))], data)
                         _acked[0] += 1
                     finally:
                         data = None
@@ -240,11 +244,14 @@ class SaveFile:
 
                 _acked = [0]
 
-                n_workers = len(pool) * 2
+                # sized by what was asked for, not by the connections the window
+                # allows: each connection caps its own in-flight parts
+                n_workers = max(len(pool), pool_size) * 2
                 queue = asyncio.Queue(n_workers)
                 budget = ReadAhead(self.read_ahead_slots)
                 workers = [
-                    self.loop.create_task(worker(pool[i % len(pool)])) for i in range(n_workers)
+                    self.loop.create_task(worker(pool, i))
+                    for i in range(n_workers)
                 ]
             except BaseException:
                 await pool_lease.aclose()

@@ -86,6 +86,65 @@ class ConnectionLost:
     pass
 
 
+class MediaWindow:
+    """How many connections one auth key may hold open to one media DC, learned.
+
+    A media DC drops connections from a key that opens too many of them: measured
+    on DC4 with a bot key, one connection carried ~20 MB/s with no drops, while
+    four drew 26 server closes, sixteen drew 353 and a 2x8 run collapsed to 2 MB/s
+    with timeouts. The tolerated number is the server's and is not published, so
+    the window starts at one, halves on a drop, a -503 or a timeout, and only
+    grows by one after ``GROW_AFTER`` seconds without one and while a transfer is
+    asking for more.
+    """
+
+    GROW_AFTER = 60
+    SHRINK_COOLDOWN = 2
+
+    __slots__ = ("size", "_changed", "_shrunk")
+
+    def __init__(self):
+        self.size = 1
+        self._changed = None
+        self._shrunk = float("-inf")
+
+    def connections(self, wanted: int, now: Optional[float] = None) -> int:
+        now = time.monotonic() if now is None else now
+
+        if self._changed is None:
+            self._changed = now
+        elif wanted > self.size and now - self._changed >= self.GROW_AFTER:
+            self.size += 1
+            self._changed = now
+
+        return max(1, min(self.size, wanted))
+
+    def shrink(self, now: Optional[float] = None):
+        now = time.monotonic() if now is None else now
+
+        # every socket of a burst reports the same event; count it once
+        if now - self._shrunk < self.SHRINK_COOLDOWN:
+            return
+
+        self._shrunk = self._changed = now
+
+        if self.size > 1:
+            self.size //= 2
+            log.info("Media DC is refusing connections, using %s", self.size)
+
+
+_media_windows = {}
+
+
+def media_window(auth_key: bytes, dc_id: int) -> MediaWindow:
+    window = _media_windows.get((auth_key, dc_id))
+
+    if window is None:
+        window = _media_windows[(auth_key, dc_id)] = MediaWindow()
+
+    return window
+
+
 class Session:
     START_TIMEOUT = 2
     WAIT_TIMEOUT = 15
@@ -672,6 +731,9 @@ class Session:
             if reason is not None:
                 log.warning(reason)
 
+                if self.is_media and not self._stopping:
+                    media_window(self.auth_key, self.dc_id).shrink()
+
                 self._fail_pending(ConnectionResetError(reason))
 
                 if self.is_started.is_set():
@@ -831,6 +893,7 @@ class Session:
 
     async def _invoke(self, query: TLObject, retries: int, timeout: float, sleep_threshold: float):
         slept = 0.0
+        backoff = 0
         flood_budget = sleep_threshold * Session.MAX_RETRIES
         retries = max(1, retries)
 
@@ -887,13 +950,21 @@ class Session:
                     str(e) or repr(e),
                 )
 
+                overloaded = isinstance(e, (InternalServerError, ServiceUnavailable, TimeoutError))
+
+                if overloaded and self.is_media:
+                    media_window(self.auth_key, self.dc_id).shrink()
+
                 if isinstance(e, ConnectionResetError):
                     await asyncio.sleep(0.1)
                 elif isinstance(e, (InternalServerError, ServiceUnavailable)) or (
                     isinstance(e, TimeoutError)
                     and time.monotonic() - self.last_packet_received < self.WAIT_TIMEOUT
                 ):
-                    await asyncio.sleep(1)
+                    # a flat second put every worker of a transfer back on an
+                    # overloaded DC at the same instant, ten times, then gave up
+                    backoff += 1
+                    await asyncio.sleep(min(2 ** (backoff - 1), 16))
                 else:
                     await self.restart()
 

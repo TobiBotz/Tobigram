@@ -25,3 +25,13 @@ def auth_key_id(auth_key):
 @pytest.fixture
 def msg_id():
     return MsgId()
+
+
+@pytest.fixture(autouse=True)
+def fresh_media_windows():
+    # learned per auth key and DC for the life of the process; tests reuse keys
+    from pyrogram.session import session
+
+    session._media_windows.clear()
+    yield
+    session._media_windows.clear()

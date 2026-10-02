@@ -3,7 +3,7 @@ import time
 
 import pyrogram
 from pyrogram.client import write_at
-from pyrogram.session.session import Session
+from pyrogram.session.session import Session, media_window
 
 from .e2e import (
     CHUNK,
@@ -143,6 +143,9 @@ async def test_a_small_download_costs_one_round_trip():
     size = 8 * CHUNK
     dc = FixedLatencyDC(size, step=rtt)
     client = make_client(dc, sessions=6)
+    # a fresh window holds one connection; this is the cost once a DC has shown
+    # it tolerates six
+    media_window(b"\x00" * 256, 2).size = 6
 
     started = time.monotonic()
     got = await asyncio.wait_for(stream_all(client, size), timeout=30)

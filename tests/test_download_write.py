@@ -29,6 +29,8 @@ CHUNK = 1024 * 1024
 
 
 class FakeSession:
+    auth_key = b"fake-key"
+
     def __init__(self, chunks):
         self.chunks = list(chunks)
 
