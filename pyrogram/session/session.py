@@ -87,17 +87,6 @@ class ConnectionLost:
 
 
 class MediaWindow:
-    """How many connections one auth key may hold open to one media DC, learned.
-
-    A media DC drops connections from a key that opens too many of them: measured
-    on DC4 with a bot key, one connection carried ~20 MB/s with no drops, while
-    four drew 26 server closes, sixteen drew 353 and a 2x8 run collapsed to 2 MB/s
-    with timeouts. The tolerated number is the server's and is not published, so
-    the window starts at one, halves on a drop, a -503 or a timeout, and only
-    grows by one after ``GROW_AFTER`` seconds without one and while a transfer is
-    asking for more.
-    """
-
     GROW_AFTER = 60
     SHRINK_COOLDOWN = 2
 
@@ -119,10 +108,13 @@ class MediaWindow:
 
         return max(1, min(self.size, wanted))
 
+    def pick(self, pool: list, i: int) -> "Session":
+        session = pool[i % self.connections(len(pool))]
+        return pool[0] if getattr(session, "is_closed", False) else session
+
     def shrink(self, now: Optional[float] = None):
         now = time.monotonic() if now is None else now
 
-        # every socket of a burst reports the same event; count it once
         if now - self._shrunk < self.SHRINK_COOLDOWN:
             return
 
@@ -137,10 +129,11 @@ _media_windows = {}
 
 
 def media_window(auth_key: bytes, dc_id: int) -> MediaWindow:
-    window = _media_windows.get((auth_key, dc_id))
+    key = (auth_key, dc_id)
+    window = _media_windows.get(key)
 
     if window is None:
-        window = _media_windows[(auth_key, dc_id)] = MediaWindow()
+        window = _media_windows[key] = MediaWindow()
 
     return window
 
@@ -158,7 +151,7 @@ class Session:
     MAX_SKEW_BEHIND = 300
     MAX_SKEW_BREACHES = 3
     MAX_INFLIGHT_PACKETS = int(os.environ.get("PYROGRAM_MAX_INFLIGHT_PACKETS", 16))
-    MAX_INFLIGHT_MEDIA = int(os.environ.get("PYROGRAM_MAX_INFLIGHT_MEDIA", 6))
+    MAX_INFLIGHT_MEDIA = int(os.environ.get("PYROGRAM_MAX_INFLIGHT_MEDIA", 16))
     INLINE_CRYPTO_MAX = int(os.environ.get("PYROGRAM_INLINE_CRYPTO_MAX", 32 * 1024))
 
     TRANSPORT_ERRORS = Connection.TRANSPORT_ERRORS
@@ -181,6 +174,7 @@ class Session:
         self.test_mode = test_mode
         self.is_media = is_media
         self.is_cdn = is_cdn
+        self._windowed = is_media and not is_cdn
         self.server_address = server_address
         self.port = port
         self.crypto_executor = crypto_executor or get_crypto_executor()
@@ -429,6 +423,10 @@ class Session:
             if result.value is None:
                 result.value = value
             result.event.set()
+
+    @property
+    def is_closed(self) -> bool:
+        return self._closed
 
     @property
     def is_restarting(self) -> bool:
@@ -731,7 +729,7 @@ class Session:
             if reason is not None:
                 log.warning(reason)
 
-                if self.is_media and not self._stopping:
+                if self._windowed and not self._stopping:
                     media_window(self.auth_key, self.dc_id).shrink()
 
                 self._fail_pending(ConnectionResetError(reason))
@@ -950,9 +948,7 @@ class Session:
                     str(e) or repr(e),
                 )
 
-                overloaded = isinstance(e, (InternalServerError, ServiceUnavailable, TimeoutError))
-
-                if overloaded and self.is_media:
+                if self._windowed and isinstance(e, (InternalServerError, ServiceUnavailable, TimeoutError)):
                     media_window(self.auth_key, self.dc_id).shrink()
 
                 if isinstance(e, ConnectionResetError):
@@ -961,8 +957,6 @@ class Session:
                     isinstance(e, TimeoutError)
                     and time.monotonic() - self.last_packet_received < self.WAIT_TIMEOUT
                 ):
-                    # a flat second put every worker of a transfer back on an
-                    # overloaded DC at the same instant, ten times, then gave up
                     backoff += 1
                     await asyncio.sleep(min(2 ** (backoff - 1), 16))
                 else:

@@ -30,6 +30,7 @@ CHUNK = 1024 * 1024
 
 class FakeSession:
     auth_key = b"fake-key"
+    is_closed = False
 
     def __init__(self, chunks):
         self.chunks = list(chunks)

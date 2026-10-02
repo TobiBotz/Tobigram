@@ -1,11 +1,18 @@
+import ast
 import asyncio
+import sys
+import time
+from pathlib import Path
 
 import pytest
 
+import pyrogram
+import pyrogram.session.session as session_mod
 from pyrogram import raw
 from pyrogram.connection import Connection
 from pyrogram.connection.transport import TCPAbridged
 from pyrogram.errors import AuthKeyUnregistered
+from pyrogram.session.internals import msg_id as msg_id_mod, MsgId
 from pyrogram.session.session import Session, _serialize_file_part
 
 
@@ -396,3 +403,393 @@ async def test_send_hand_packs_upload_parts_and_declares_their_real_length(
     assert declared == [len(packed[0])], (
         f"declared {declared} but put {len(packed[0])} B on the wire"
     )
+
+
+class FakeQuery:
+    QUALNAME = "functions.test.Fake"
+
+
+class FakeSession:
+    MAX_RETRIES = Session.MAX_RETRIES
+    _windowed = False
+    WAIT_TIMEOUT = Session.WAIT_TIMEOUT
+
+    def __init__(self, fail_times=0):
+        self.sent = 0
+        self.fail_times = fail_times
+        self.is_started = asyncio.Event()
+        self.is_started.set()
+        self.last_packet_received = 0
+        self.client = type("C", (), {"name": "fake"})()
+
+    async def send(self, query, timeout):
+        self.sent += 1
+        if self.sent <= self.fail_times:
+            raise OSError("boom")
+        return "answer"
+
+    async def restart(self):
+        pass
+
+
+async def test_a_caller_that_asks_for_no_retries_still_gets_one_attempt():
+    session = FakeSession()
+
+    result = await Session._invoke(session, FakeQuery(), 0, 1, 1)
+
+    assert session.sent == 1
+    assert result == "answer"
+
+
+async def test_a_single_attempt_surfaces_the_real_error():
+    session = FakeSession(fail_times=1)
+
+    with pytest.raises(OSError):
+        await Session._invoke(session, FakeQuery(), 0, 1, 1)
+
+    assert session.sent == 1
+
+
+async def test_retries_still_retry():
+    session = FakeSession(fail_times=2)
+
+    result = await Session._invoke(session, FakeQuery(), 3, 1, 1)
+
+    assert session.sent == 3
+    assert result == "answer"
+METHODS = Path(__file__).resolve().parents[1] / "pyrogram" / "methods"
+
+
+def _handler_names(handler):
+    node = handler.type
+
+    if node is None:
+        return []
+
+    parts = node.elts if isinstance(node, ast.Tuple) else [node]
+
+    return [p.id if isinstance(p, ast.Name) else getattr(p, "attr", "") for p in parts]
+
+
+def _retry_loops():
+    for path in sorted(METHODS.rglob("*.py")):
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.While):
+                continue
+
+            if not (isinstance(node.test, ast.Constant) and node.test.value is True):
+                continue
+
+            for child in ast.walk(node):
+                if not isinstance(child, ast.Try) or not child.orelse:
+                    continue
+
+                if any("FilePartMissing" in _handler_names(h) for h in child.handlers):
+                    yield path, child
+
+
+def _cases():
+    return [pytest.param(p, t, id=f"{p.parent.name}/{p.stem}:{t.lineno}") for p, t in _retry_loops()]
+
+
+def test_the_retry_loops_are_still_there():
+    assert len(_cases()) >= 10, (
+        "this file guards the upload-retry loops; if they are gone the guard is "
+        "checking nothing"
+    )
+
+
+@pytest.mark.parametrize("path,try_node", [(p.values[0], p.values[1]) for p in _cases()],
+                         ids=[p.id for p in _cases()])
+def test_a_successful_send_is_never_retried(path, try_node):
+    # `while True` is there to re-send after FilePartMissing and nothing else. If
+    # the success branch can fall off the end - the server answered with an
+    # Updates carrying none of the update types the method looks for, which is
+    # what a business connection or a suggested post does - the loop sends the
+    # very same media again, and again, for as long as that keeps happening.
+    last = try_node.orelse[-1]
+
+    assert isinstance(last, (ast.Return, ast.Raise, ast.Break)), (
+        f"{path.name}: the success branch of the retry loop ends in "
+        f"{type(last).__name__}, so an answer it does not recognise re-sends the "
+        "message forever"
+    )
+
+
+class DummyStorage:
+    conn = object()
+
+    @staticmethod
+    async def api_id():
+        return 1
+
+    @staticmethod
+    async def open():
+        pass
+
+
+class MsgIdTimeOffsetDummyClient:
+    name = "skew"
+    app_version = "1.0"
+    device_model = "T"
+    system_version = "L"
+    lang_code = "en"
+    proxy = None
+    ipv6 = False
+    session = None
+    disconnect_handler = None
+    storage = DummyStorage()
+
+
+class FakeConn:
+    def __init__(self):
+        self.protocol = type("P", (), {"crypto_executor": None})()
+        self.closed = False
+
+    async def close(self):
+        self.closed = True
+
+
+@pytest.fixture
+def clock(monkeypatch):
+    state = {"skew": 0.0, "real": time.time(), "mono": 10_000.0}
+
+    class FakeTime:
+        @staticmethod
+        def time():
+            return state["real"] + state["skew"]
+
+        @staticmethod
+        def monotonic():
+            return state["mono"]
+
+    monkeypatch.setattr(msg_id_mod, "time", FakeTime)
+    monkeypatch.setattr(msg_id_mod._MsgIdGenerator, "time_offset", 0.0)
+    monkeypatch.setattr(msg_id_mod._MsgIdGenerator, "_last_msg_id", 0)
+    monkeypatch.setattr(msg_id_mod._MsgIdGenerator, "_base_wall", state["real"])
+    monkeypatch.setattr(msg_id_mod._MsgIdGenerator, "_base_mono", state["mono"])
+
+    return state
+
+
+@pytest.fixture(autouse=True)
+def restore_decrypt():
+    original = session_mod.warpcrypto.unpack_message
+    yield
+    session_mod.warpcrypto.unpack_message = original
+
+
+def server_msg_id(unixtime):
+    return (int(unixtime) << 32) | 1
+
+
+async def feed(session, body, msg_id):
+    blob = body.write()
+    payload = (msg_id, 1, len(blob), blob, 32 + len(blob))
+
+    session_mod.warpcrypto.unpack_message = lambda *a, **kw: payload
+    await session.handle_packet(b"packet")
+
+
+def make_session():
+    s = Session(MsgIdTimeOffsetDummyClient(), 2, b"\x00" * 256, False, crypto_executor=None)
+    s.connection = FakeConn()
+    return s
+
+
+async def test_clock_behind_does_not_kill_own_connection(clock):
+    clock["skew"] = -60.0
+    s = make_session()
+
+    await feed(s, raw.types.Pong(msg_id=1, ping_id=0), server_msg_id(clock["real"]))
+    assert abs(MsgId.time_offset - 60.0) < 2, (
+        f"first server packet must set the time offset, got {MsgId.time_offset}"
+    )
+
+    await feed(s, raw.types.Pong(msg_id=2, ping_id=0), server_msg_id(clock["real"] + 1))
+    assert not s.connection.closed, "a merely skewed clock must not close the connection"
+    assert len(s.stored_msg_ids) == 2, "both packets must be accepted"
+
+
+async def test_outgoing_msg_id_follows_server_clock(clock):
+    clock["skew"] = -60.0
+    s = make_session()
+
+    await feed(s, raw.types.Pong(msg_id=1, ping_id=0), server_msg_id(clock["real"]))
+
+    sent = s.msg_factory(raw.functions.Ping(ping_id=0)).msg_id
+    assert abs((sent >> 32) - int(clock["real"])) <= 1, (
+        "outgoing msg_id must track server time, not the wrong local clock"
+    )
+
+
+async def test_bad_msg_notification_frees_the_msg_id_floor(clock):
+    clock["skew"] = 400.0
+    s = make_session()
+    s.stored_msg_ids.append(server_msg_id(clock["real"] - 1))
+
+    too_high = s.msg_factory(raw.functions.Ping(ping_id=0)).msg_id
+
+    await feed(
+        s,
+        raw.types.BadMsgNotification(bad_msg_id=too_high, bad_msg_seqno=0, error_code=17),
+        server_msg_id(clock["real"]),
+    )
+
+    assert not s.connection.closed, "the message carrying the fix must not be discarded"
+    assert abs(MsgId.time_offset + 400.0) < 2, (
+        f"error_code 17 must resync the clock, got {MsgId.time_offset}"
+    )
+
+    resent = s.msg_factory(raw.functions.Ping(ping_id=0)).msg_id
+    assert resent < too_high, (
+        "the resend must drop back below the msg_ids the server rejected"
+    )
+    assert abs((resent >> 32) - int(clock["real"])) <= 1
+
+
+async def test_stop_clears_stored_msg_ids_after_draining_packets(clock):
+    s = make_session()
+    s.stored_msg_ids.append(server_msg_id(clock["real"]))
+
+    async def slow_teardown():
+        await asyncio.sleep(0.05)
+
+    async def late_packet():
+        await asyncio.sleep(0.01)
+        s.stored_msg_ids.append(server_msg_id(clock["real"]) + 2)
+
+    s.ping_task = asyncio.ensure_future(slow_teardown())
+    s._packet_tasks.add(asyncio.ensure_future(late_packet()))
+
+    await s.stop()
+
+    assert not s.stored_msg_ids, (
+        "a leftover packet must not leave state that skips the next connection's time sync"
+    )
+
+
+async def test_a_lone_stale_packet_is_dropped_without_resyncing(clock):
+    s = make_session()
+    s.stored_msg_ids.append(server_msg_id(clock["real"] - 7200))
+    stale = server_msg_id(clock["real"] - 3600)
+
+    await feed(s, raw.types.Pong(msg_id=1, ping_id=0), stale)
+
+    assert not s.connection.closed, "one stale packet must not cost a reconnect"
+    assert stale not in s.stored_msg_ids, "replay protection must still drop it"
+    assert MsgId.time_offset == 0.0, (
+        "a single out-of-window message must never be allowed to move the clock, "
+        "or a replay could drag the whole session out of step"
+    )
+
+
+async def test_a_wall_clock_step_does_not_move_mtproto_time(clock):
+    before = MsgId.now()
+
+    clock["skew"] = 900.0
+
+    assert abs(MsgId.now() - before) < 1, (
+        "MTProto time must ride the monotonic clock, so an NTP step cannot "
+        "invalidate a time offset that was correct a moment earlier"
+    )
+
+    clock["mono"] += 5
+
+    assert abs(MsgId.now() - before - 5) < 1, "it must still advance in real time"
+
+
+async def test_a_clock_step_mid_connection_does_not_reconnect(clock):
+    s = make_session()
+
+    await feed(s, raw.types.Pong(msg_id=1, ping_id=0), server_msg_id(clock["real"]))
+    await feed(s, raw.types.Pong(msg_id=2, ping_id=0), server_msg_id(clock["real"] + 1))
+
+    clock["skew"] = -600.0
+
+    accepted = server_msg_id(clock["real"] + 2)
+    await feed(s, raw.types.Pong(msg_id=3, ping_id=0), accepted)
+
+    assert not s.connection.closed, (
+        "the host clock stepping under a live session must not tear it down"
+    )
+    assert accepted in s.stored_msg_ids, "traffic must keep flowing across the step"
+
+
+async def test_a_stalled_monotonic_clock_resyncs_after_repeated_breaches(clock):
+    s = make_session()
+
+    await feed(s, raw.types.Pong(msg_id=1, ping_id=0), server_msg_id(clock["real"]))
+
+    resumed = clock["real"] + 3600
+
+    for i in range(Session.MAX_SKEW_BREACHES):
+        await feed(s, raw.types.Pong(msg_id=2 + i, ping_id=0), server_msg_id(resumed + i))
+
+    assert not s.connection.closed, (
+        "a suspended host leaves CLOCK_MONOTONIC behind; that must resync, not reconnect"
+    )
+    assert abs(MsgId.time_offset - 3600) < 5, (
+        f"consecutive breaches must resync the offset, got {MsgId.time_offset}"
+    )
+
+    recovered = server_msg_id(resumed + 10)
+    await feed(s, raw.types.Pong(msg_id=9, ping_id=0), recovered)
+
+    assert recovered in s.stored_msg_ids, (
+        "traffic must be accepted again once the offset has been resynced"
+    )
+
+
+def test_msg_id_shape(clock):
+    ids = [MsgId() for _ in range(50)]
+
+    assert all(i % 4 == 0 for i in ids), "client msg_ids must be divisible by 4"
+    assert all(i & 0xFFFFFFFF for i in ids), "the low 32 bits must not be empty"
+    assert all(b > a for a, b in zip(ids, ids[1:])), "msg_ids must increase monotonically"
+
+
+@pytest.fixture
+def client():
+    return pyrogram.Client("auto_no_updates", api_id=1, api_hash="a", in_memory=True)
+
+
+@pytest.mark.parametrize("query", [
+    raw.functions.updates.GetState(),
+    raw.functions.updates.GetDifference(pts=1, date=1, qts=1),
+    raw.functions.updates.GetChannelDifference(
+        channel=raw.types.InputChannelEmpty(),
+        filter=raw.types.ChannelMessagesFilterEmpty(),
+        pts=1,
+        limit=1,
+    ),
+])
+def test_updates_queries_are_never_sent_without_updates(client, query):
+    assert client._auto_needs_updates(query) is True
+
+
+@pytest.mark.parametrize("query", [
+    raw.functions.messages.GetHistory(
+        peer=raw.types.InputPeerEmpty(), offset_id=0, offset_date=0,
+        add_offset=0, limit=1, max_id=0, min_id=0, hash=0,
+    ),
+    raw.functions.upload.GetFile(
+        location=raw.types.InputFileLocation(
+            volume_id=0, local_id=0, secret=0, file_reference=b"",
+        ),
+        offset=0,
+        limit=1,
+    ),
+])
+def test_read_only_queries_still_skip_updates(client, query):
+    assert client._auto_needs_updates(query) is False
+
+
+def test_sends_still_need_updates(client):
+    query = raw.functions.messages.SendMessage(
+        peer=raw.types.InputPeerEmpty(), message="x", random_id=1,
+    )
+
+    assert client._auto_needs_updates(query) is True

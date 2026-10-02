@@ -202,3 +202,36 @@ async def test_the_pool_is_the_window_and_counts_the_main_media_connection(monke
     assert all(s.stopped for s in made), (
         "connections above a shrunk window stay open and keep the DC dropping them"
     )
+
+
+async def test_a_transfer_never_picks_a_connection_stopped_under_it(monkeypatch):
+    from tests.test_stability import CHUNK, SharedLink, link_client
+    from pyrogram.file_id import FileId, FileType
+
+    file_size = 16 * CHUNK
+    link = SharedLink(file_size)
+    pool = [link.session() for _ in range(3)]
+    for session in pool[1:]:
+        await session.stop()
+    media_window(pool[0].auth_key, 2).size = 3
+    client = link_client(monkeypatch, link, pool)
+
+    got = 0
+    async for chunk in client.get_file(
+        FileId(file_type=FileType.DOCUMENT, dc_id=2, media_id=1, access_hash=1), file_size
+    ):
+        got += len(chunk)
+
+    assert got == file_size
+
+
+async def test_a_cdn_connection_leaves_no_window_behind():
+    session = Session(DummyClient(), 203, b"\x07" * 256, False, is_media=True, is_cdn=True,
+                      crypto_executor=None)
+    session.connection = ClosingConnection()
+
+    await session.recv_worker()
+
+    assert (session.auth_key, 203) not in session_mod._media_windows, (
+        "a CDN key is minted per download; a window per key grows without bound"
+    )
