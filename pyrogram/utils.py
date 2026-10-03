@@ -165,14 +165,14 @@ def get_input_media_from_file_id(
             spoiler=has_spoiler,
             ttl_seconds=ttl_seconds,
             live_photo=live_photo,
-            video=get_input_media_from_file_id(
-                live_photo_video_file_id,
-                expected_file_type=FileType.VIDEO,
-                has_spoiler=has_spoiler,
-                live_photo=live_photo,
-            )
-            if live_photo
-            else None,
+            video=(
+                get_input_media_from_file_id(
+                    live_photo_video_file_id,
+                    expected_file_type=FileType.VIDEO,
+                ).id
+                if live_photo
+                else None
+            ),
         )
 
     if file_type in DOCUMENT_TYPES:

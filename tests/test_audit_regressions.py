@@ -4642,3 +4642,65 @@ async def test_resolve_peer_keeps_peer_id_invalid_for_a_phone_telegram_does_not_
 
     with pytest.raises(pyrogram.errors.PeerIdInvalid):
         await client.resolve_peer("+999 000 0000")
+
+
+def _photo_file_id():
+    from pyrogram.file_id import FileId, FileType, ThumbnailSource
+
+    return FileId(file_type=FileType.PHOTO, dc_id=2, media_id=1, access_hash=2, file_reference=b"r",
+                  thumbnail_source=ThumbnailSource.THUMBNAIL, volume_id=0, local_id=0,
+                  thumbnail_file_type=FileType.PHOTO, thumbnail_size="y").encode()
+
+
+def test_live_photo_by_file_id_sends_the_video_as_an_input_document():
+    from pyrogram.file_id import FileId, FileType
+
+    video = FileId(file_type=FileType.VIDEO, dc_id=2, media_id=3, access_hash=4, file_reference=b"v").encode()
+    media = utils.get_input_media_from_file_id(
+        _photo_file_id(), FileType.PHOTO, live_photo=True, live_photo_video_file_id=video
+    )
+
+    assert media.video == raw.types.InputDocument(id=3, access_hash=4, file_reference=b"v")
+    assert raw.core.TLObject.read(BytesIO(media.write())).video == media.video
+
+
+@pytest.mark.parametrize("make, expected", [
+    (lambda path: types.InputMediaPhoto(path, has_spoiler=True), raw.types.InputMediaPhoto),
+    (lambda path: types.InputMediaVideo(path, has_spoiler=True), raw.types.InputMediaDocument),
+    (lambda path: types.InputMediaPhoto(_photo_file_id(), has_spoiler=True), raw.types.InputMediaPhoto),
+])
+async def test_edit_inline_media_sends_the_right_media_with_its_spoiler(monkeypatch, tmp_path, make, expected):
+    import pyrogram.methods.messages.edit_inline_media as module
+
+    path = tmp_path / "a.jpg"
+    path.write_bytes(b"\xff\xd8\xff")
+    client = pyrogram.Client("inline", api_id=1, api_hash="x", in_memory=True)
+    sent = []
+
+    async def save_file(*args, **kwargs):
+        return raw.types.InputFile(id=1, parts=1, name="a.jpg", md5_checksum="")
+
+    async def invoke(query, *args, **kwargs):
+        if isinstance(query.media, raw.types.InputMediaUploadedPhoto):
+            return raw.types.MessageMediaPhoto(
+                photo=raw.types.Photo(id=5, access_hash=6, file_reference=b"r", date=0, sizes=[], dc_id=2)
+            )
+        return raw.types.MessageMediaDocument(
+            document=raw.types.Document(id=7, access_hash=8, file_reference=b"r", date=0,
+                                        mime_type="video/mp4", size=1, dc_id=2, attributes=[])
+        )
+
+    async def invoke_inline(client, dc_id, query, business_connection_id=None):
+        sent.append(query)
+        return True
+
+    monkeypatch.setattr(client, "save_file", save_file)
+    monkeypatch.setattr(client, "invoke", invoke)
+    monkeypatch.setattr(module, "invoke_inline", invoke_inline)
+    inline_message_id = utils.pack_inline_message_id(
+        raw.types.InputBotInlineMessageID(dc_id=2, id=1, access_hash=2)
+    )
+
+    assert await client.edit_inline_media(inline_message_id, make(str(path))) is True
+    assert isinstance(sent[0].media, expected)
+    assert sent[0].media.spoiler is True

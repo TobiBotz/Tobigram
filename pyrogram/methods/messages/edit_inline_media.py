@@ -84,6 +84,8 @@ class EditInlineMedia:
         """
         caption = media.caption
         parse_mode = media.parse_mode
+        has_spoiler = getattr(media, "has_spoiler", None)
+        is_photo = isinstance(media, types.InputMediaPhoto)
 
         is_bytes_io = isinstance(media.media, io.BytesIO)
         is_uploaded_file = is_bytes_io or os.path.isfile(media.media)
@@ -116,7 +118,7 @@ class EditInlineMedia:
                     url=media.media, spoiler=media.has_spoiler
                 )
             else:
-                media = utils.get_input_media_from_file_id(media.media, FileType.PHOTO)
+                media = utils.get_input_media_from_file_id(media.media, FileType.PHOTO, has_spoiler=has_spoiler)
         elif is_video:
             vcover_file = None
             vcover_media = None
@@ -193,6 +195,7 @@ class EditInlineMedia:
                 media = utils.get_input_media_from_file_id(
                     media.media,
                     FileType.VIDEO,
+                    has_spoiler=has_spoiler,
                     video_cover=_vcover,
                     video_start_timestamp=_vtimestamp,
                 )
@@ -239,7 +242,7 @@ class EditInlineMedia:
                     url=media.media, spoiler=media.has_spoiler
                 )
             else:
-                media = utils.get_input_media_from_file_id(media.media, FileType.ANIMATION)
+                media = utils.get_input_media_from_file_id(media.media, FileType.ANIMATION, has_spoiler=has_spoiler)
         elif isinstance(media, types.InputMediaDocument):
             if is_uploaded_file:
                 media = raw.types.InputMediaUploadedDocument(
@@ -270,16 +273,16 @@ class EditInlineMedia:
                         access_hash=uploaded_media.photo.access_hash,
                         file_reference=uploaded_media.photo.file_reference,
                     ),
-                    spoiler=getattr(media, "has_spoiler", None),
+                    spoiler=has_spoiler,
                 )
-                if isinstance(media, types.InputMediaPhoto)
+                if is_photo
                 else raw.types.InputMediaDocument(
                     id=raw.types.InputDocument(
                         id=uploaded_media.document.id,
                         access_hash=uploaded_media.document.access_hash,
                         file_reference=uploaded_media.document.file_reference,
                     ),
-                    spoiler=getattr(media, "has_spoiler", None),
+                    spoiler=has_spoiler,
                     **(
                         {"video_cover": _vcover, "video_timestamp": _vtimestamp} if is_video else {}
                     ),
