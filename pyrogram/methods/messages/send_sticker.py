@@ -381,6 +381,7 @@ class SendSticker:
                                 raw.types.UpdateNewChannelMessage,
                                 raw.types.UpdateNewScheduledMessage,
                                 raw.types.UpdateNewEphemeralMessage,
+                                raw.types.UpdateBotNewBusinessMessage,
                             ),
                         ):
                             return await types.Message._parse(
@@ -389,6 +390,9 @@ class SendSticker:
                                 {i.id: i for i in r.users},
                                 {i.id: i for i in r.chats},
                                 is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
+                                business_connection_id=getattr(i, "connection_id", None),
+                                raw_reply_to_message=getattr(i, "reply_to_message", None),
+
                             )
 
                     # a send that succeeded is never re-sent, whatever the answer carried

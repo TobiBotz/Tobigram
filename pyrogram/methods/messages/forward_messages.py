@@ -213,8 +213,18 @@ class ForwardMessages:
                     raw.types.UpdateNewMessage,
                     raw.types.UpdateNewChannelMessage,
                     raw.types.UpdateNewScheduledMessage,
+                    raw.types.UpdateBotNewBusinessMessage,
                 ),
             ):
-                forwarded_messages.append(await types.Message._parse(self, i.message, users, chats))
+                forwarded_messages.append(
+                    await types.Message._parse(
+                        self,
+                        i.message,
+                        users,
+                        chats,
+                        business_connection_id=getattr(i, "connection_id", None),
+                        raw_reply_to_message=getattr(i, "reply_to_message", None),
+                    )
+                )
 
         return types.List(forwarded_messages) if is_iterable else forwarded_messages[0]

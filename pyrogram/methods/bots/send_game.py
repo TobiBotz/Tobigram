@@ -178,7 +178,19 @@ class SendGame:
         )
 
         for i in r.updates:
-            if isinstance(i, (raw.types.UpdateNewMessage, raw.types.UpdateNewChannelMessage)):
+            if isinstance(
+                i,
+                (
+                    raw.types.UpdateNewMessage,
+                    raw.types.UpdateNewChannelMessage,
+                    raw.types.UpdateBotNewBusinessMessage,
+                ),
+            ):
                 return await types.Message._parse(
-                    self, i.message, {i.id: i for i in r.users}, {i.id: i for i in r.chats}
+                    self,
+                    i.message,
+                    {i.id: i for i in r.users},
+                    {i.id: i for i in r.chats},
+                    business_connection_id=getattr(i, "connection_id", None),
+                    raw_reply_to_message=getattr(i, "reply_to_message", None),
                 )

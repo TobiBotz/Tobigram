@@ -102,6 +102,8 @@ class EditMessageReplyMarkup:
                     raw.types.UpdateEditChannelMessage,
                     raw.types.UpdateEditEphemeralMessage,
                     raw.types.UpdateNewScheduledMessage,
+                    raw.types.UpdateBotEditBusinessMessage,
+                    raw.types.UpdateBotNewBusinessMessage,
                 ),
             ):
                 return await types.Message._parse(
@@ -110,4 +112,7 @@ class EditMessageReplyMarkup:
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
                     is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
+                    business_connection_id=getattr(i, "connection_id", None),
+                    raw_reply_to_message=getattr(i, "reply_to_message", None),
+
                 )

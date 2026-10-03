@@ -91,11 +91,11 @@ class GetForumTopics:
             if not topics:
                 return
 
-            last = topics[-1]
+            last = next((x.top_message for x in reversed(topics) if x.top_message), None)
 
-            offset_id = last.top_message.id
-            offset_date = utils.datetime_to_timestamp(last.top_message.date)
-            offset_topic = last.id
+            offset_id = last.id if last else 0
+            offset_date = utils.datetime_to_timestamp(last.date) if last else 0
+            offset_topic = topics[-1].id
 
             for topic in topics:
                 yield topic

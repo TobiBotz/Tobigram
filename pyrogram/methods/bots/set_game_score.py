@@ -96,9 +96,7 @@ class SetGameScore:
                     user_id=await self.resolve_peer(user_id),
                     score=score,
                     force=force if force is not None else None,
-                    edit_message=not disable_edit_message
-                    if disable_edit_message is not None
-                    else None,
+                    edit_message=not disable_edit_message or None,
                 ),
             )
         else:
@@ -114,11 +112,12 @@ class SetGameScore:
                     id=message_id,
                     user_id=await self.resolve_peer(user_id),
                     force=force if force is not None else None,
-                    edit_message=not disable_edit_message
-                    if disable_edit_message is not None
-                    else None,
+                    edit_message=not disable_edit_message or None,
                 )
             )
+
+        if isinstance(r, bool):
+            return r
 
         for i in r.updates:
             if isinstance(

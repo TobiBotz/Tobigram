@@ -103,11 +103,11 @@ class GetDirectMessagesTopics:
             if not topics:
                 return
 
-            last = topics[-1]
+            last = next((x.last_message for x in reversed(topics) if x.last_message), None)
 
-            offset_id = last.last_message.id
-            offset_date = utils.datetime_to_timestamp(last.last_message.date)
-            offset_peer = await self.resolve_peer(last.id)
+            offset_id = last.id if last else 0
+            offset_date = utils.datetime_to_timestamp(last.date) if last else 0
+            offset_peer = await self.resolve_peer(topics[-1].id)
 
             for topic in topics:
                 yield topic

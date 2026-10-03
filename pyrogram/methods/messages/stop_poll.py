@@ -77,10 +77,15 @@ class StopPoll:
 
                 await app.stop_poll(chat_id, message_id)
         """
-        poll = (await self.get_messages(chat_id, message_id)).poll
+        poll_id = 0
 
-        if poll is None:
-            raise ValueError(f"Message {message_id} in chat {chat_id} does not contain a poll.")
+        if not business_connection_id:
+            poll = (await self.get_messages(chat_id, message_id)).poll
+
+            if poll is None:
+                raise ValueError(f"Message {message_id} in chat {chat_id} does not contain a poll.")
+
+            poll_id = int(poll.id)
 
         r = await self.invoke(
             raw.functions.messages.EditMessage(
@@ -91,10 +96,10 @@ class StopPoll:
                 id=message_id,
                 media=raw.types.InputMediaPoll(
                     poll=raw.types.Poll(
-                        id=int(poll.id),
+                        id=poll_id,
                         question=raw.types.TextWithEntities(text="", entities=[]),
                         answers=[],
-                        hash=int(poll.id),
+                        hash=poll_id,
                         closed=True,
                     )
                 ),
@@ -106,4 +111,9 @@ class StopPoll:
         users = {i.id: i for i in r.users}
         chats = {i.id: i for i in r.chats}
 
-        return await types.Poll._parse(self, r.updates[0], users=users, chats=chats)
+        update = r.updates[0]
+
+        if isinstance(update, raw.types.UpdateBotNewBusinessMessage):
+            update = update.message.media
+
+        return await types.Poll._parse(self, update, users=users, chats=chats)

@@ -102,3 +102,6 @@ class GetCallMembers:
 
                 if current >= total:
                     return
+
+            if not offset:
+                return

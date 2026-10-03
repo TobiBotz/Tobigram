@@ -231,6 +231,9 @@ class CopyMediaGroup:
             business_connection_id=business_connection_id,
         )
 
+        if business_connection_id:
+            return await utils.parse_messages(self, r)
+
         return await utils.parse_messages(
             self,
             raw.types.messages.Messages(

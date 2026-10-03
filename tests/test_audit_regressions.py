@@ -1,4 +1,5 @@
 import asyncio
+from types import SimpleNamespace
 
 import pytest
 
@@ -4704,3 +4705,172 @@ async def test_edit_inline_media_sends_the_right_media_with_its_spoiler(monkeypa
     assert await client.edit_inline_media(inline_message_id, make(str(path))) is True
     assert isinstance(sent[0].media, expected)
     assert sent[0].media.spoiler is True
+
+
+def _roundtrip(obj):
+    return raw.core.TLObject.read(BytesIO(obj.write()))
+
+
+def _business_client():
+    client = pyrogram.Client("business", api_id=1, api_hash="x", in_memory=True)
+    client.me = SimpleNamespace(id=222, is_bot=True, is_premium=False)
+    client.sent = []
+
+    async def resolve_peer(peer):
+        return raw.types.InputPeerUser(user_id=111, access_hash=1)
+
+    async def invoke(query, *args, **kwargs):
+        client.sent.append(query)
+        count = len(query.multi_media) if isinstance(query, raw.functions.messages.SendMultiMedia) else 1
+        media = None
+        if isinstance(getattr(query, "media", None), raw.types.InputMediaPoll):
+            media = raw.types.MessageMediaPoll(
+                poll=raw.types.Poll(id=9, question=raw.types.TextWithEntities(text="q", entities=[]),
+                                    answers=[], hash=0, closed=True),
+                results=raw.types.PollResults()
+            )
+        return raw.types.Updates(
+            updates=[
+                raw.types.UpdateBotNewBusinessMessage(connection_id="BC", qts=1, message=_roundtrip(raw.types.Message(
+                    id=n + 1, peer_id=raw.types.PeerUser(user_id=111), date=1700000000, message="hi",
+                    from_id=raw.types.PeerUser(user_id=222), out=True, media=media
+                )))
+                for n in range(count)
+            ],
+            users=[_roundtrip(raw.types.User(id=111, access_hash=1, first_name="Ann")),
+                   _roundtrip(raw.types.User(id=222, access_hash=2, first_name="Bot", bot=True,
+                                             bot_info_version=1))],
+            chats=[], date=1700000000, seq=0
+        )
+
+    client.resolve_peer = resolve_peer
+    client.invoke = invoke
+    return client
+
+
+@pytest.mark.parametrize("call", [
+    lambda c: c.send_message(111, "hi", business_connection_id="BC"),
+    lambda c: c.send_dice(111, business_connection_id="BC"),
+    lambda c: c.send_location(111, 1.0, 2.0, business_connection_id="BC"),
+    lambda c: c.send_cached_media(111, _photo_file_id(), business_connection_id="BC"),
+    lambda c: c.send_game(111, "game", business_connection_id="BC"),
+    lambda c: c.edit_message_text(111, 1, "x", business_connection_id="BC"),
+    lambda c: c.pin_chat_message(111, 1, business_connection_id="BC"),
+])
+async def test_business_sends_and_edits_return_the_message(call):
+    message = await call(_business_client())
+
+    assert isinstance(message, types.Message)
+    assert message.business_connection_id == "BC"
+
+
+async def test_business_forward_and_media_group_return_every_message():
+    client = _business_client()
+
+    forwarded = await client.forward_messages(111, 111, [1], business_connection_id="BC")
+    group = await client.send_media_group(
+        111, [types.InputMediaPhoto(_photo_file_id()), types.InputMediaPhoto(_photo_file_id())],
+        business_connection_id="BC"
+    )
+
+    assert [m.business_connection_id for m in forwarded] == ["BC"]
+    assert [m.business_connection_id for m in group] == ["BC", "BC"]
+
+
+async def test_business_stop_poll_closes_the_poll_without_reading_the_chat():
+    client = _business_client()
+
+    poll = await client.stop_poll(111, 1, business_connection_id="BC")
+
+    assert poll.is_closed is True
+    assert [type(q) for q in client.sent] == [raw.functions.messages.EditMessage]
+    assert client.sent[0].media.poll.closed is True
+
+
+async def test_set_game_score_on_an_inline_message_returns_true_and_edits_by_default(monkeypatch):
+    import pyrogram.methods.bots.set_game_score as module
+
+    client = pyrogram.Client("game", api_id=1, api_hash="x", in_memory=True)
+    sent = []
+
+    async def resolve_peer(peer):
+        return raw.types.InputPeerUser(user_id=111, access_hash=1)
+
+    async def invoke_inline(client, dc_id, query, business_connection_id=None):
+        sent.append(query)
+        return True
+
+    client.resolve_peer = resolve_peer
+    monkeypatch.setattr(module, "invoke_inline", invoke_inline)
+    inline_message_id = utils.pack_inline_message_id(
+        raw.types.InputBotInlineMessageID(dc_id=2, id=1, access_hash=2)
+    )
+
+    assert await client.set_game_score(111, 10, inline_message_id=inline_message_id) is True
+    await client.set_game_score(111, 10, inline_message_id=inline_message_id, disable_edit_message=True)
+
+    assert [q.edit_message for q in sent] == [True, None]
+
+
+def _dialog(user_id, top_message):
+    return raw.types.Dialog(
+        peer=raw.types.PeerUser(user_id=user_id), top_message=top_message, read_inbox_max_id=0,
+        read_outbox_max_id=0, unread_count=0, unread_mentions_count=0, unread_reactions_count=0,
+        unread_poll_votes_count=0, notify_settings=raw.types.PeerNotifySettings()
+    )
+
+
+@pytest.mark.parametrize("with_message, offset_id", [(True, 5), (False, 0)])
+async def test_get_dialogs_pages_past_a_dialog_without_a_top_message(with_message, offset_id):
+    client = pyrogram.Client("dialogs", api_id=1, api_hash="x", in_memory=True)
+    sent = []
+    messages = [_roundtrip(raw.types.Message(
+        id=5, peer_id=raw.types.PeerUser(user_id=111), date=1700000000, message="a"
+    ))] if with_message else []
+
+    async def resolve_peer(peer):
+        return raw.types.InputPeerUser(user_id=peer, access_hash=1)
+
+    async def invoke(query, *args, **kwargs):
+        sent.append(query)
+        if len(sent) > 1:
+            return raw.types.messages.Dialogs(dialogs=[], messages=[], chats=[], users=[])
+        return raw.types.messages.DialogsSlice(
+            count=50, dialogs=[_dialog(111, 5), _dialog(333, 9)], messages=messages, chats=[],
+            users=[_roundtrip(raw.types.User(id=111, access_hash=1, first_name="Ann")),
+                   _roundtrip(raw.types.User(id=333, access_hash=3, first_name="Cy"))]
+        )
+
+    client.resolve_peer = resolve_peer
+    client.invoke = invoke
+
+    assert [d.chat.id async for d in client.get_dialogs()] == [111, 333]
+    assert len(sent) == 2
+    assert (sent[1].offset_id, sent[1].offset_peer.user_id) == (offset_id, 333)
+
+
+async def test_get_call_members_stops_when_there_is_no_next_page():
+    client = pyrogram.Client("call", api_id=1, api_hash="x", in_memory=True)
+    sent = []
+
+    async def resolve_peer(peer):
+        return raw.types.InputPeerChannel(channel_id=1, access_hash=1)
+
+    async def invoke(query, *args, **kwargs):
+        if isinstance(query, raw.functions.channels.GetFullChannel):
+            return SimpleNamespace(full_chat=SimpleNamespace(call=raw.types.InputGroupCall(id=1, access_hash=1)))
+        sent.append(query.offset)
+        return raw.types.phone.GroupParticipants(
+            count=1, next_offset="", chats=[], version=1,
+            participants=[raw.types.GroupCallParticipant(peer=raw.types.PeerUser(user_id=111), date=1700000000,
+                                                         source=1)],
+            users=[_roundtrip(raw.types.User(id=111, access_hash=1, first_name="Ann"))]
+        )
+
+    client.resolve_peer = resolve_peer
+    client.invoke = invoke
+
+    members = [m async for m in client.get_call_members(-1001)]
+
+    assert len(members) == 1
+    assert sent == [""]
