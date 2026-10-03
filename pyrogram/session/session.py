@@ -93,7 +93,7 @@ class MediaWindow:
     __slots__ = ("size", "_changed", "_shrunk")
 
     def __init__(self):
-        self.size = 1
+        self.size = 0
         self._changed = None
         self._shrunk = float("-inf")
 
@@ -102,6 +102,7 @@ class MediaWindow:
 
         if self._changed is None:
             self._changed = now
+            self.size = self.size or wanted
         elif wanted > self.size and now - self._changed >= self.GROW_AFTER:
             self.size += 1
             self._changed = now
@@ -120,8 +121,8 @@ class MediaWindow:
 
         self._shrunk = self._changed = now
 
-        if self.size > 1:
-            self.size //= 2
+        if self.size != 1:
+            self.size = max(1, self.size // 2)
             log.info("Media DC is refusing connections, using %s", self.size)
 
 

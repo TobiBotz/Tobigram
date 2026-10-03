@@ -9,13 +9,23 @@ from pyrogram.session.session import MediaWindow, Session, media_window
 from tests.test_stability import DummyClient
 
 
-def test_a_window_starts_at_one_connection():
-    assert MediaWindow().connections(16, now=0) == 1
+def test_a_window_starts_at_what_is_asked_of_it():
+    assert MediaWindow().connections(6, now=0) == 6, (
+        "starting at one connection held a premium download at a third of its speed "
+        "for the first minute"
+    )
+
+
+def test_a_drop_before_any_transfer_leaves_one_connection():
+    window = MediaWindow()
+    window.shrink(now=0)
+
+    assert window.connections(16, now=1) == 1
 
 
 def test_a_window_grows_by_one_after_a_quiet_spell():
     window = MediaWindow()
-    window.connections(16, now=0)
+    window.shrink(now=0)
 
     assert window.connections(16, now=MediaWindow.GROW_AFTER - 1) == 1
     assert window.connections(16, now=MediaWindow.GROW_AFTER + 1) == 2
