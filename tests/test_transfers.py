@@ -671,6 +671,7 @@ def make_client(monkeypatch):
     open_window(monkeypatch)
     client = Client.__new__(Client)
     client._loop = None
+    client.me = None
     client.media_session_pools = {}
     client._media_pool_demand = {}
     client._media_sessions_locks = {}
@@ -828,6 +829,7 @@ class MediaSessionPoolFakeAuth:
 class MediaSessionPoolFakeClient:
     _get_media_session_pool = pyrogram.Client._get_media_session_pool
     _make_media_session = pyrogram.Client._make_media_session
+    me = None
 
     def __init__(self):
         self.media_session_pools = {}

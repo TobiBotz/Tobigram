@@ -90,19 +90,23 @@ class MediaWindow:
     GROW_AFTER = 60
     SHRINK_COOLDOWN = 2
 
-    __slots__ = ("size", "_changed", "_shrunk")
+    __slots__ = ("size", "fixed", "_changed", "_shrunk")
 
     def __init__(self):
-        self.size = 0
+        self.size = 1
+        self.fixed = False
         self._changed = None
         self._shrunk = float("-inf")
 
     def connections(self, wanted: int, now: Optional[float] = None) -> int:
         now = time.monotonic() if now is None else now
 
+        if self.fixed:
+            self.size = max(self.size, wanted)
+            return max(1, wanted)
+
         if self._changed is None:
             self._changed = now
-            self.size = self.size or wanted
         elif wanted > self.size and now - self._changed >= self.GROW_AFTER:
             self.size += 1
             self._changed = now
@@ -116,13 +120,13 @@ class MediaWindow:
     def shrink(self, now: Optional[float] = None):
         now = time.monotonic() if now is None else now
 
-        if now - self._shrunk < self.SHRINK_COOLDOWN:
+        if self.fixed or now - self._shrunk < self.SHRINK_COOLDOWN:
             return
 
         self._shrunk = self._changed = now
 
-        if self.size != 1:
-            self.size = max(1, self.size // 2)
+        if self.size > 1:
+            self.size //= 2
             log.info("Media DC is refusing connections, using %s", self.size)
 
 

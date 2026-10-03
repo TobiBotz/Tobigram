@@ -4183,6 +4183,7 @@ async def test_a_media_session_handed_out_is_not_reaped_before_its_first_request
             self.stopped = True
 
     class _Client:
+        me = None
         _get_media_session_pool = pyrogram.Client._get_media_session_pool
         reap_media_sessions = pyrogram.Client.reap_media_sessions
         MEDIA_SESSION_IDLE_TIMEOUT = 300
