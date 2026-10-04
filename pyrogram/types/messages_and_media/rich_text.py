@@ -47,6 +47,9 @@ def _extract_plain_text(content: Any) -> str:
     return str(content) if not isinstance(content, RichText) else ""
 
 
+_plain_text = _extract_plain_text
+
+
 class RichText(Object):
     """This object represents a rich formatted text.
 
@@ -212,7 +215,7 @@ class RichText(Object):
             content = await RichText._parse(client, rich_text.text, users, chats)
             return RichTextUrl(
                 text=content,
-                url=RichText._to_plain_text(content),
+                url=_plain_text(content),
             )
 
         if isinstance(rich_text, raw.types.TextEmail):
@@ -225,7 +228,7 @@ class RichText(Object):
             content = await RichText._parse(client, rich_text.text, users, chats)
             return RichTextEmailAddress(
                 text=content,
-                email_address=RichText._to_plain_text(content),
+                email_address=_plain_text(content),
             )
 
         if isinstance(rich_text, raw.types.TextPhone):
@@ -238,14 +241,14 @@ class RichText(Object):
             content = await RichText._parse(client, rich_text.text, users, chats)
             return RichTextPhoneNumber(
                 text=content,
-                phone_number=RichText._to_plain_text(content),
+                phone_number=_plain_text(content),
             )
 
         if isinstance(rich_text, raw.types.TextBankCard):
             content = await RichText._parse(client, rich_text.text, users, chats)
             return RichTextBankCardNumber(
                 text=content,
-                bank_card_number=RichText._to_plain_text(content),
+                bank_card_number=_plain_text(content),
             )
 
         if isinstance(rich_text, raw.types.TextMention):
@@ -253,7 +256,7 @@ class RichText(Object):
 
             return RichTextMention(
                 text=content,
-                username=RichText._to_plain_text(content).lstrip("@"),
+                username=_plain_text(content).lstrip("@"),
             )
 
         if isinstance(rich_text, raw.types.TextHashtag):
@@ -261,7 +264,7 @@ class RichText(Object):
 
             return RichTextHashtag(
                 text=content,
-                hashtag=RichText._to_plain_text(content).lstrip("#"),
+                hashtag=_plain_text(content).lstrip("#"),
             )
 
         if isinstance(rich_text, raw.types.TextCashtag):
@@ -269,7 +272,7 @@ class RichText(Object):
 
             return RichTextCashtag(
                 text=content,
-                cashtag=RichText._to_plain_text(content).lstrip("$"),
+                cashtag=_plain_text(content).lstrip("$"),
             )
 
         if isinstance(rich_text, raw.types.TextBotCommand):
@@ -277,7 +280,7 @@ class RichText(Object):
 
             return RichTextBotCommand(
                 text=content,
-                bot_command=RichText._to_plain_text(content).lstrip("/"),
+                bot_command=_plain_text(content).lstrip("/"),
             )
 
         if isinstance(rich_text, raw.types.TextAnchor):
