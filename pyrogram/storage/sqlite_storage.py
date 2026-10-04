@@ -315,10 +315,10 @@ class SQLiteStorage(Storage):
         self.conn = await aiosqlite.connect(str(path), timeout=5)
 
         if self.use_wal:
-            await self.conn.execute("PRAGMA journal_mode=WAL")
+            await self.conn.execute_fetchall("PRAGMA journal_mode=WAL")
             await self.conn.execute("PRAGMA synchronous=NORMAL")
         else:
-            await self.conn.execute("PRAGMA journal_mode=DELETE")
+            await self.conn.execute_fetchall("PRAGMA journal_mode=DELETE")
 
         if file_exists:
             await self.update()
@@ -332,12 +332,11 @@ class SQLiteStorage(Storage):
         await self._ensure_committed()
 
     async def _load_cache(self):
-        cursor = await self.conn.execute(
+        row = await self._fetchone(
             "SELECT dc_id, server_address, port, api_id, test_mode, "
             "       auth_key, date, user_id, is_bot "
             "FROM sessions LIMIT 1"
         )
-        row = await cursor.fetchone()
         if row:
             keys = [
                 "dc_id",
@@ -465,10 +464,7 @@ class SQLiteStorage(Storage):
         if self.conn is None:
             raise ConnectionError("Database is not open")
 
-        cursor = await self.conn.execute(
-            "SELECT id, access_hash, type FROM peers WHERE id = ?", (peer_id,)
-        )
-        r = await cursor.fetchone()
+        r = await self._fetchone("SELECT id, access_hash, type FROM peers WHERE id = ?", (peer_id,))
 
         if r is None:
             raise KeyError(f"ID not found: {peer_id}")
@@ -481,14 +477,13 @@ class SQLiteStorage(Storage):
         if self.conn is None:
             raise ConnectionError("Database is not open")
 
-        cursor = await self.conn.execute(
+        r = await self._fetchone(
             "SELECT p.id, p.access_hash, p.type, p.last_update_on FROM peers p "
             "JOIN usernames u ON p.id = u.id "
             "WHERE u.username = ? "
             "ORDER BY p.last_update_on DESC",
             (username,),
         )
-        r = await cursor.fetchone()
 
         if r is None:
             raise KeyError(f"Username not found: {username}")
@@ -502,23 +497,28 @@ class SQLiteStorage(Storage):
         if self.conn is None:
             raise ConnectionError("Database is not open")
 
-        cursor = await self.conn.execute(
+        r = await self._fetchone(
             "SELECT id, access_hash, type FROM peers WHERE phone_number = ?", (phone_number,)
         )
-        r = await cursor.fetchone()
 
         if r is None:
             raise KeyError(f"Phone number not found: {phone_number}")
 
         return get_input_peer(*r)
 
+    async def _fetchone(self, sql: str, params: tuple = ()):
+        # PyPy frees a cursor when the GC gets to it, not when the last reference
+        #  goes, and a statement that has not run to the end blocks every commit
+        #  until then with "SQL statements in progress".
+        async with self.conn.execute(sql, params) as cursor:
+            return await cursor.fetchone()
+
     async def _read_attr(self, attr: str):
         if self.conn is None:
             raise ConnectionError("Database is not open")
         if attr in self._cache:
             return self._cache.get(attr)
-        cursor = await self.conn.execute(f"SELECT {attr} FROM sessions LIMIT 1")
-        row = await cursor.fetchone()
+        row = await self._fetchone(f"SELECT {attr} FROM sessions LIMIT 1")
         self._cache.remember(attr, row[0] if row else None)
         return self._cache.get(attr)
 
@@ -587,8 +587,7 @@ class SQLiteStorage(Storage):
         if self.conn is None:
             raise ConnectionError("Database is not open")
         if value is object:
-            cursor = await self.conn.execute("SELECT number FROM version")
-            row = await cursor.fetchone()
+            row = await self._fetchone("SELECT number FROM version")
             return row[0] if row else None
         else:
             await self.conn.execute("UPDATE version SET number = ?", (value,))

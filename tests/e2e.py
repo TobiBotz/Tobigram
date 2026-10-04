@@ -1,7 +1,13 @@
 import asyncio
 import time
-import tracemalloc
 from types import SimpleNamespace
+
+import pytest
+
+try:
+    import tracemalloc
+except ImportError:
+    tracemalloc = None
 
 import pyrogram
 from pyrogram import raw
@@ -195,6 +201,8 @@ class Measured:
 
 
 async def measure(coro_factory, dc):
+    if tracemalloc is None:
+        pytest.skip("this interpreter has no tracemalloc, so peak memory cannot be measured")
     tracemalloc.start()
     tracemalloc.reset_peak()
     started = time.monotonic()

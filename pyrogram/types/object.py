@@ -23,8 +23,6 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, TYPE_CHECKING
 
-import orjson
-
 
 def _preprocess(obj: Any) -> Any:
     """Recursively convert Enum values to their string representation before JSON serialization."""
@@ -37,15 +35,30 @@ def _preprocess(obj: Any) -> Any:
     return obj
 
 
-def dumps(obj: Any, default: Any = None) -> str:
-    def _default(o: Any) -> Any:
-        if isinstance(o, Enum):
-            return str(o)
-        if default is not None:
-            return default(o)
-        raise TypeError
+try:
+    import orjson
 
-    return orjson.dumps(obj, default=_default, option=orjson.OPT_INDENT_2).decode()
+    def dumps(obj: Any, default: Any = None) -> str:
+        def _default(o: Any) -> Any:
+            if isinstance(o, Enum):
+                return str(o)
+            if default is not None:
+                return default(o)
+            raise TypeError
+
+        return orjson.dumps(obj, default=_default, option=orjson.OPT_INDENT_2).decode()
+except ImportError:
+    import json
+
+    def dumps(obj: Any, default: Any = None) -> str:
+        def _default(o: Any) -> Any:
+            if isinstance(o, Enum):
+                return str(o)
+            if default is not None:
+                return default(o)
+            raise TypeError(f"Object of type {type(o).__name__} is not JSON serializable")
+
+        return json.dumps(obj, indent=2, default=_default)
 
 
 if TYPE_CHECKING:

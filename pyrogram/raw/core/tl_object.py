@@ -21,11 +21,16 @@ from io import BytesIO
 from struct import Struct
 from typing import Any
 
-import orjson
+try:
+    import orjson
 
+    def dumps(obj: Any, default: Any = None) -> str:
+        return orjson.dumps(obj, default=default, option=orjson.OPT_INDENT_2).decode()
+except ImportError:
+    import json
 
-def dumps(obj: Any, default: Any = None) -> str:
-    return orjson.dumps(obj, default=default, option=orjson.OPT_INDENT_2).decode()
+    def dumps(obj: Any, default: Any = None) -> str:
+        return json.dumps(obj, indent=2, default=default)
 
 
 from ..all import objects as _paths

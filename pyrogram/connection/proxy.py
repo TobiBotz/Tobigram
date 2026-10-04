@@ -258,7 +258,7 @@ _MAX_SNI_DOMAIN_SIZE: Final[int] = 182
 
 # An ee secret is shared base64url-encoded, the others as hex - but every client
 #  accepts any of the three, so the alphabet does not identify the flavour.
-_BASE64URL_ALTCHARS: Final[bytes] = b"-_"
+_BASE64URL_TO_STANDARD: Final[dict[int, int]] = str.maketrans("-_", "+/")
 
 # The WEB scheme cannot carry an ee secret whatever this library implements: the
 #  relay speaks to a stock MTProxy over a plain obfuscated2 stream and never adds
@@ -297,12 +297,12 @@ def _decode_fake_tls_secret(full_secret: bytes) -> _DecodedSecret:
     return _DecodedSecret(secret=full_secret[1:MARKED_SECRET_SIZE], sni_hostname=sni_hostname)
 
 
-def _base64_decoded(encoded_secret: str, *, altchars: bytes) -> bytes | None:
+def _base64_decoded(encoded_secret: str) -> bytes | None:
     # Telegram's own links drop the `=` padding that `base64` still requires.
     padded = encoded_secret + "=" * (-len(encoded_secret) % 4)
 
     try:
-        return base64.b64decode(padded, altchars=altchars, validate=True)
+        return base64.b64decode(padded.translate(_BASE64URL_TO_STANDARD), validate=True)
 
     # `binascii.Error` is a `ValueError`, and both mean the same thing here.
     except ValueError:
@@ -319,11 +319,12 @@ def _decode_proxy_secret(encoded_secret: str) -> bytes:
     except ValueError:
         pass
 
-    # One call covers both alphabets, unlike TDLib, which needs two: `altchars`
-    #  only rewrites `-_` into `+/` before validating, so a standard-base64
-    #  secret passes through it untouched. A second pass over `b"+/"` would
-    #  therefore never decode anything this one rejects.
-    decoded = _base64_decoded(encoded_secret, altchars=_BASE64URL_ALTCHARS)
+    # One call covers both alphabets, unlike TDLib, which needs two: rewriting
+    #  `-_` into `+/` leaves a standard-base64 secret untouched, so a second pass
+    #  would never decode anything this one rejects. The rewrite is done here
+    #  rather than through `altchars`, which Python 3.15 deprecates for input
+    #  that still carries `+` or `/`.
+    decoded = _base64_decoded(encoded_secret)
 
     if decoded is not None:
         return decoded
