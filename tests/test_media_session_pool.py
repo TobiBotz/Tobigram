@@ -20,6 +20,15 @@ import asyncio
 from types import SimpleNamespace
 
 import pyrogram
+from pyrogram.session.session import MediaWindow
+
+
+def open_window(monkeypatch):
+    def connections(self, wanted, now=None):
+        self.size = max(self.size, wanted)
+        return wanted
+
+    monkeypatch.setattr(MediaWindow, "connections", connections)
 
 
 class FakeSession:
@@ -49,6 +58,7 @@ class FakeAuth:
 class FakeClient:
     _get_media_session_pool = pyrogram.Client._get_media_session_pool
     _make_media_session = pyrogram.Client._make_media_session
+    me = None
 
     def __init__(self):
         self.media_session_pools = {}
@@ -56,6 +66,7 @@ class FakeClient:
         self._session_creation_gate = asyncio.Semaphore(4)
         self.crypto_executor = None
         self.exports = 0
+        self.media = {}
 
         class Storage:
             async def test_mode(self):
@@ -75,19 +86,23 @@ class FakeClient:
         return SimpleNamespace(id=1, bytes=b"exported")
 
     async def get_session(self, dc_id, is_media=False):
-        self.exports += 1
-        await asyncio.sleep(0)
-        return FakeSession(
-            self,
-            dc_id,
-            b"authorized-key",
-            False,
-            server_address="media.dc",
-            port=443,
-        )
+        # cached per DC, as the real one is once its first call has exported
+        if dc_id not in self.media:
+            self.exports += 1
+            await asyncio.sleep(0)
+            self.media[dc_id] = FakeSession(
+                self,
+                dc_id,
+                b"authorized-key",
+                False,
+                server_address="media.dc",
+                port=443,
+            )
+        return self.media[dc_id]
 
 
 async def test_pool_exports_authorization_once(monkeypatch):
+    open_window(monkeypatch)
     monkeypatch.setattr(pyrogram.client, "Session", FakeSession)
     monkeypatch.setattr(pyrogram.client, "Auth", FakeAuth)
 
@@ -104,6 +119,7 @@ async def test_pool_exports_authorization_once(monkeypatch):
 
 
 async def test_pool_grows_without_re_exporting(monkeypatch):
+    open_window(monkeypatch)
     monkeypatch.setattr(pyrogram.client, "Session", FakeSession)
     monkeypatch.setattr(pyrogram.client, "Auth", FakeAuth)
 
@@ -111,6 +127,6 @@ async def test_pool_grows_without_re_exporting(monkeypatch):
     small = await client._get_media_session_pool(2, 2)
     grown = await client._get_media_session_pool(2, 5)
 
-    assert client.exports == 2
+    assert client.exports == 1
     assert len(grown) == 5
     assert grown[:2] == small

@@ -158,6 +158,7 @@ class Session:
     MAX_INFLIGHT_PACKETS = int(os.environ.get("PYROGRAM_MAX_INFLIGHT_PACKETS", 16))
     MAX_INFLIGHT_MEDIA = int(os.environ.get("PYROGRAM_MAX_INFLIGHT_MEDIA", 16))
     INLINE_CRYPTO_MAX = int(os.environ.get("PYROGRAM_INLINE_CRYPTO_MAX", 32 * 1024))
+    _windowed: bool = False
 
     TRANSPORT_ERRORS = Connection.TRANSPORT_ERRORS
 
@@ -734,7 +735,7 @@ class Session:
             if reason is not None:
                 log.warning(reason)
 
-                if self._windowed and not self._stopping:
+                if getattr(self, "_windowed", False) and not getattr(self, "_stopping", False):
                     media_window(self.auth_key, self.dc_id).shrink()
 
                 self._fail_pending(ConnectionResetError(reason))
@@ -953,7 +954,7 @@ class Session:
                     str(e) or repr(e),
                 )
 
-                if self._windowed and isinstance(
+                if getattr(self, "_windowed", False) and isinstance(
                     e, (InternalServerError, ServiceUnavailable, TimeoutError)
                 ):
                     media_window(self.auth_key, self.dc_id).shrink()
