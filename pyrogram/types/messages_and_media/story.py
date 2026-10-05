@@ -466,35 +466,46 @@ class Story(Object, Update):
                 media_type = enums.MessageMediaType.UNSUPPORTED
                 media = None
 
-        privacy_map = {
-            raw.types.PrivacyValueAllowAll: enums.StoriesPrivacyRules.PUBLIC,
-            raw.types.PrivacyValueAllowContacts: enums.StoriesPrivacyRules.CONTACTS,
-            raw.types.PrivacyValueAllowCloseFriends: enums.StoriesPrivacyRules.CLOSE_FRIENDS,
-            raw.types.PrivacyValueDisallowAll: enums.StoriesPrivacyRules.SELECTED_USERS,
-        }
+        rules = {type(priv) for priv in story.privacy}
+
+        if story.public or raw.types.PrivacyValueAllowAll in rules:
+            privacy = enums.StoriesPrivacyRules.PUBLIC
+        elif story.close_friends or raw.types.PrivacyValueAllowCloseFriends in rules:
+            privacy = enums.StoriesPrivacyRules.CLOSE_FRIENDS
+        elif story.contacts or raw.types.PrivacyValueAllowContacts in rules:
+            privacy = enums.StoriesPrivacyRules.CONTACTS
+        elif story.selected_contacts or rules:
+            privacy = enums.StoriesPrivacyRules.SELECTED_USERS
+
+        allowed = []
+        disallowed = []
 
         for priv in story.privacy:
-            if type(priv) in privacy_map:
-                privacy = privacy_map[type(priv)]
-
             if isinstance(priv, raw.types.PrivacyValueAllowUsers):
-                allowed_users = types.List(
-                    types.User._parse(client, users.get(user_id, None)) for user_id in priv.users
+                allowed += (
+                    types.User._parse(client, users.get(user_id, None))
+                    for user_id in priv.users
                 )
             elif isinstance(priv, raw.types.PrivacyValueAllowChatParticipants):
-                allowed_users = types.List(
+                allowed += (
                     types.Chat._parse_chat_chat(client, chats.get(chat_id, None))
                     for chat_id in priv.chats
+                    if chat_id in chats
                 )
             elif isinstance(priv, raw.types.PrivacyValueDisallowUsers):
-                disallowed_users = types.List(
-                    types.User._parse(client, users.get(user_id, None)) for user_id in priv.users
+                disallowed += (
+                    types.User._parse(client, users.get(user_id, None))
+                    for user_id in priv.users
                 )
             elif isinstance(priv, raw.types.PrivacyValueDisallowChatParticipants):
-                disallowed_users = types.List(
+                disallowed += (
                     types.Chat._parse_chat_chat(client, chats.get(chat_id, None))
                     for chat_id in priv.chats
+                    if chat_id in chats
                 )
+
+        allowed_users = types.List(u for u in allowed if u) or None
+        disallowed_users = types.List(u for u in disallowed if u) or None
 
         entities = [
             e

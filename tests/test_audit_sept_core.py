@@ -90,6 +90,166 @@ async def test_story_privacy_survives_a_disallow_rule_after_the_public_rule():
     assert [u.id for u in parsed.disallowed_users] == [7]
 
 
+async def test_story_privacy_maps_an_allow_list_to_selected_users():
+    client = SimpleNamespace(me=None, fetch_stories=False)
+    users = {
+        7: raw.types.User(
+            id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1
+        )
+    }
+    story = raw.types.StoryItem(
+        id=1,
+        date=0,
+        expire_date=0,
+        media=raw.types.MessageMediaUnsupported(),
+        entities=[],
+        media_areas=[],
+        privacy=[raw.types.PrivacyValueAllowUsers(users=[7])],
+    )
+
+    parsed = await types.Story._parse(client, story, raw.types.PeerUser(user_id=7), users, {})
+
+    assert parsed.privacy is enums.StoriesPrivacyRules.SELECTED_USERS
+    assert [u.id for u in parsed.allowed_users] == [7]
+
+
+async def test_story_privacy_keeps_close_friends_with_extra_users():
+    client = SimpleNamespace(me=None, fetch_stories=False)
+    users = {
+        7: raw.types.User(
+            id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1
+        )
+    }
+    story = raw.types.StoryItem(
+        id=1,
+        date=0,
+        expire_date=0,
+        media=raw.types.MessageMediaUnsupported(),
+        entities=[],
+        media_areas=[],
+        privacy=[
+            raw.types.PrivacyValueAllowCloseFriends(),
+            raw.types.PrivacyValueAllowUsers(users=[7]),
+            raw.types.PrivacyValueDisallowAll(),
+        ],
+    )
+
+    parsed = await types.Story._parse(client, story, raw.types.PeerUser(user_id=7), users, {})
+
+    assert parsed.privacy is enums.StoriesPrivacyRules.CLOSE_FRIENDS
+    assert [u.id for u in parsed.allowed_users] == [7]
+
+
+async def test_story_privacy_reports_disallow_all_as_selected_users():
+    client = SimpleNamespace(me=None, fetch_stories=False)
+    story = raw.types.StoryItem(
+        id=1,
+        date=0,
+        expire_date=0,
+        media=raw.types.MessageMediaUnsupported(),
+        entities=[],
+        media_areas=[],
+        privacy=[raw.types.PrivacyValueDisallowAll()],
+    )
+
+    parsed = await types.Story._parse(
+        client,
+        story,
+        raw.types.PeerUser(user_id=7),
+        {7: raw.types.User(id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1)},
+        {},
+    )
+
+    assert parsed.privacy is enums.StoriesPrivacyRules.SELECTED_USERS
+    assert parsed.allowed_users is None
+
+
+async def test_story_privacy_reads_the_story_flags():
+    client = SimpleNamespace(me=None, fetch_stories=False)
+    story = raw.types.StoryItem(
+        id=1,
+        date=0,
+        expire_date=0,
+        media=raw.types.MessageMediaUnsupported(),
+        entities=[],
+        media_areas=[],
+        privacy=[],
+        contacts=True,
+    )
+
+    parsed = await types.Story._parse(
+        client,
+        story,
+        raw.types.PeerUser(user_id=7),
+        {7: raw.types.User(id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1)},
+        {},
+    )
+
+    assert parsed.privacy is enums.StoriesPrivacyRules.CONTACTS
+
+
+async def test_story_privacy_keeps_allowed_users_and_chats():
+    client = SimpleNamespace(me=None, fetch_stories=False)
+    users = {
+        7: raw.types.User(
+            id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1
+        )
+    }
+    chats = {
+        9: raw.types.Chat(
+            id=9, title="G", photo=raw.types.ChatPhotoEmpty(), participants_count=1, date=0, version=1
+        )
+    }
+    story = raw.types.StoryItem(
+        id=1,
+        date=0,
+        expire_date=0,
+        media=raw.types.MessageMediaUnsupported(),
+        entities=[],
+        media_areas=[],
+        privacy=[
+            raw.types.PrivacyValueAllowUsers(users=[7, 8]),
+            raw.types.PrivacyValueAllowChatParticipants(chats=[9]),
+            raw.types.PrivacyValueDisallowAll(),
+        ],
+    )
+
+    parsed = await types.Story._parse(client, story, raw.types.PeerUser(user_id=7), users, chats)
+
+    assert parsed.privacy is enums.StoriesPrivacyRules.SELECTED_USERS
+    assert [u.id for u in parsed.allowed_users] == [7, -9]
+
+
+async def test_parse_full_user_populates_bot_admin_rights():
+    from pyrogram.types.user_and_chats.user import User
+
+    full_user = raw.types.UserFull(
+        id=1,
+        settings=raw.types.PeerSettings(),
+        notify_settings=raw.types.PeerNotifySettings(),
+        common_chats_count=0,
+        bot_group_admin_rights=raw.types.ChatAdminRights(change_info=True, ban_users=True),
+        bot_broadcast_admin_rights=raw.types.ChatAdminRights(post_messages=True),
+    )
+    users = {
+        1: raw.types.User(
+            id=1, first_name="B", usernames=[], restriction_reason=[], access_hash=1
+        )
+    }
+
+    class _Client:
+        me = None
+
+        async def get_messages(self, *args, **kwargs):
+            return None
+
+    parsed = await User._parse_full(_Client(), full_user, users, {})
+
+    assert parsed.chat_admin_rights.can_change_info is True
+    assert parsed.chat_admin_rights.can_restrict_members is True
+    assert parsed.channel_admin_rights.can_post_messages is True
+
+
 def _message(chat_id, user_id, outgoing):
     return SimpleNamespace(
         chat=SimpleNamespace(id=chat_id),
