@@ -71,7 +71,8 @@ async def test_a_part_the_server_refuses_fails_the_upload_at_once(tmp_path, monk
 
 async def test_a_flood_wait_sleeps_what_the_server_asked(tmp_path, monkeypatch):
     result, _, slept = await upload(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         lambda n: FloodWait(value=42, rpc_name="upload.SaveFilePart") if n == 1 else None,
     )
 
@@ -81,7 +82,8 @@ async def test_a_flood_wait_sleeps_what_the_server_asked(tmp_path, monkeypatch):
 
 async def test_a_503_storm_is_still_ridden_out(tmp_path, monkeypatch):
     result, attempts, _ = await upload(
-        tmp_path, monkeypatch,
+        tmp_path,
+        monkeypatch,
         lambda n: ServiceUnavailable(rpc_name="upload.SaveFilePart") if n <= 12 else None,
     )
 

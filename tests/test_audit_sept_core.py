@@ -94,9 +94,7 @@ async def test_story_privacy_survives_a_disallow_rule_after_the_public_rule():
 async def test_story_privacy_maps_an_allow_list_to_selected_users():
     client = SimpleNamespace(me=None, fetch_stories=False)
     users = {
-        7: raw.types.User(
-            id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1
-        )
+        7: raw.types.User(id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1)
     }
     story = raw.types.StoryItem(
         id=1,
@@ -117,9 +115,7 @@ async def test_story_privacy_maps_an_allow_list_to_selected_users():
 async def test_story_privacy_keeps_close_friends_with_extra_users():
     client = SimpleNamespace(me=None, fetch_stories=False)
     users = {
-        7: raw.types.User(
-            id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1
-        )
+        7: raw.types.User(id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1)
     }
     story = raw.types.StoryItem(
         id=1,
@@ -157,7 +153,11 @@ async def test_story_privacy_reports_disallow_all_as_selected_users():
         client,
         story,
         raw.types.PeerUser(user_id=7),
-        {7: raw.types.User(id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1)},
+        {
+            7: raw.types.User(
+                id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1
+            )
+        },
         {},
     )
 
@@ -182,7 +182,11 @@ async def test_story_privacy_reads_the_story_flags():
         client,
         story,
         raw.types.PeerUser(user_id=7),
-        {7: raw.types.User(id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1)},
+        {
+            7: raw.types.User(
+                id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1
+            )
+        },
         {},
     )
 
@@ -192,13 +196,16 @@ async def test_story_privacy_reads_the_story_flags():
 async def test_story_privacy_keeps_allowed_users_and_chats():
     client = SimpleNamespace(me=None, fetch_stories=False)
     users = {
-        7: raw.types.User(
-            id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1
-        )
+        7: raw.types.User(id=7, first_name="U", usernames=[], restriction_reason=[], access_hash=1)
     }
     chats = {
         9: raw.types.Chat(
-            id=9, title="G", photo=raw.types.ChatPhotoEmpty(), participants_count=1, date=0, version=1
+            id=9,
+            title="G",
+            photo=raw.types.ChatPhotoEmpty(),
+            participants_count=1,
+            date=0,
+            version=1,
         )
     }
     story = raw.types.StoryItem(
@@ -233,9 +240,7 @@ async def test_parse_full_user_populates_bot_admin_rights():
         bot_broadcast_admin_rights=raw.types.ChatAdminRights(post_messages=True),
     )
     users = {
-        1: raw.types.User(
-            id=1, first_name="B", usernames=[], restriction_reason=[], access_hash=1
-        )
+        1: raw.types.User(id=1, first_name="B", usernames=[], restriction_reason=[], access_hash=1)
     }
 
     class _Client:

@@ -1937,9 +1937,7 @@ class Client(Methods):
 
                     started = [
                         asyncio.ensure_future(_worker(pool, i))
-                        for i in range(
-                            min(dl_pool_size * dl_workers_per_session, chunks_needed)
-                        )
+                        for i in range(min(dl_pool_size * dl_workers_per_session, chunks_needed))
                     ]
 
                     for t in started:
@@ -2469,19 +2467,23 @@ class Client(Methods):
             while needed > 0:
                 chunk = min(needed, 3)
                 async with self._session_creation_gate:
-                    extras.extend(await asyncio.gather(*(
-                        self._make_media_session(
-                            dc_id, media.auth_key, media.server_address, media.port
+                    extras.extend(
+                        await asyncio.gather(
+                            *(
+                                self._make_media_session(
+                                    dc_id, media.auth_key, media.server_address, media.port
+                                )
+                                for _ in range(chunk)
+                            )
                         )
-                        for _ in range(chunk)
-                    )))
+                    )
                 needed -= chunk
 
             for session in extras:
                 session.last_used = time.monotonic()
 
             self.media_session_pools[dc_id] = extras
-            return [media] + extras[:n - 1]
+            return [media] + extras[: n - 1]
 
     async def get_dc_option(
         self,

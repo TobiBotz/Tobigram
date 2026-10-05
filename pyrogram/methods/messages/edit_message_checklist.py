@@ -136,5 +136,4 @@ class EditMessageChecklist:
                     is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage),
                     business_connection_id=getattr(i, "connection_id", None),
                     raw_reply_to_message=getattr(i, "reply_to_message", None),
-
                 )

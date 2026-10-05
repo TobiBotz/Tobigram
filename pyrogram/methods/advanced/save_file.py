@@ -164,7 +164,7 @@ class SaveFile:
                             MAX_RETRIES,
                             str(e)[:120],
                         )
-                        await asyncio.sleep(min(e.value, 300) if flood else min(2 ** attempt, 30))
+                        await asyncio.sleep(min(e.value, 300) if flood else min(2**attempt, 30))
 
             async def read_batch():
                 batch_size = min(PART_SIZE * n_workers, MAX_BATCH)
@@ -243,10 +243,7 @@ class SaveFile:
                 n_workers = max(len(pool), pool_size) * 2
                 queue = asyncio.Queue(n_workers)
                 budget = ReadAhead(self.read_ahead_slots)
-                workers = [
-                    self.loop.create_task(worker(pool, i))
-                    for i in range(n_workers)
-                ]
+                workers = [self.loop.create_task(worker(pool, i)) for i in range(n_workers)]
             except BaseException:
                 await pool_lease.aclose()
                 raise

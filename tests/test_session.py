@@ -457,6 +457,8 @@ async def test_retries_still_retry():
 
     assert session.sent == 3
     assert result == "answer"
+
+
 METHODS = Path(__file__).resolve().parents[1] / "pyrogram" / "methods"
 
 
@@ -491,18 +493,20 @@ def _retry_loops():
 
 
 def _cases():
-    return [pytest.param(p, t, id=f"{p.parent.name}/{p.stem}:{t.lineno}") for p, t in _retry_loops()]
+    return [
+        pytest.param(p, t, id=f"{p.parent.name}/{p.stem}:{t.lineno}") for p, t in _retry_loops()
+    ]
 
 
 def test_the_retry_loops_are_still_there():
     assert len(_cases()) >= 10, (
-        "this file guards the upload-retry loops; if they are gone the guard is "
-        "checking nothing"
+        "this file guards the upload-retry loops; if they are gone the guard is checking nothing"
     )
 
 
-@pytest.mark.parametrize("path,try_node", [(p.values[0], p.values[1]) for p in _cases()],
-                         ids=[p.id for p in _cases()])
+@pytest.mark.parametrize(
+    "path,try_node", [(p.values[0], p.values[1]) for p in _cases()], ids=[p.id for p in _cases()]
+)
 def test_a_successful_send_is_never_retried(path, try_node):
     # `while True` is there to re-send after FilePartMissing and nothing else. If
     # the success branch can fall off the end - the server answered with an
@@ -644,9 +648,7 @@ async def test_bad_msg_notification_frees_the_msg_id_floor(clock):
     )
 
     resent = s.msg_factory(raw.functions.Ping(ping_id=0)).msg_id
-    assert resent < too_high, (
-        "the resend must drop back below the msg_ids the server rejected"
-    )
+    assert resent < too_high, "the resend must drop back below the msg_ids the server rejected"
     assert abs((resent >> 32) - int(clock["real"])) <= 1
 
 
@@ -756,40 +758,57 @@ def client():
     return pyrogram.Client("auto_no_updates", api_id=1, api_hash="a", in_memory=True)
 
 
-@pytest.mark.parametrize("query", [
-    raw.functions.updates.GetState(),
-    raw.functions.updates.GetDifference(pts=1, date=1, qts=1),
-    raw.functions.updates.GetChannelDifference(
-        channel=raw.types.InputChannelEmpty(),
-        filter=raw.types.ChannelMessagesFilterEmpty(),
-        pts=1,
-        limit=1,
-    ),
-])
+@pytest.mark.parametrize(
+    "query",
+    [
+        raw.functions.updates.GetState(),
+        raw.functions.updates.GetDifference(pts=1, date=1, qts=1),
+        raw.functions.updates.GetChannelDifference(
+            channel=raw.types.InputChannelEmpty(),
+            filter=raw.types.ChannelMessagesFilterEmpty(),
+            pts=1,
+            limit=1,
+        ),
+    ],
+)
 def test_updates_queries_are_never_sent_without_updates(client, query):
     assert client._auto_needs_updates(query) is True
 
 
-@pytest.mark.parametrize("query", [
-    raw.functions.messages.GetHistory(
-        peer=raw.types.InputPeerEmpty(), offset_id=0, offset_date=0,
-        add_offset=0, limit=1, max_id=0, min_id=0, hash=0,
-    ),
-    raw.functions.upload.GetFile(
-        location=raw.types.InputFileLocation(
-            volume_id=0, local_id=0, secret=0, file_reference=b"",
+@pytest.mark.parametrize(
+    "query",
+    [
+        raw.functions.messages.GetHistory(
+            peer=raw.types.InputPeerEmpty(),
+            offset_id=0,
+            offset_date=0,
+            add_offset=0,
+            limit=1,
+            max_id=0,
+            min_id=0,
+            hash=0,
         ),
-        offset=0,
-        limit=1,
-    ),
-])
+        raw.functions.upload.GetFile(
+            location=raw.types.InputFileLocation(
+                volume_id=0,
+                local_id=0,
+                secret=0,
+                file_reference=b"",
+            ),
+            offset=0,
+            limit=1,
+        ),
+    ],
+)
 def test_read_only_queries_still_skip_updates(client, query):
     assert client._auto_needs_updates(query) is False
 
 
 def test_sends_still_need_updates(client):
     query = raw.functions.messages.SendMessage(
-        peer=raw.types.InputPeerEmpty(), message="x", random_id=1,
+        peer=raw.types.InputPeerEmpty(),
+        message="x",
+        random_id=1,
     )
 
     assert client._auto_needs_updates(query) is True

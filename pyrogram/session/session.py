@@ -98,7 +98,7 @@ class MediaWindow:
         self._changed = None
         self._shrunk = float("-inf")
 
-    def connections(self, wanted: int, now: Optional[float] = None) -> int:
+    def connections(self, wanted: int, now: float | None = None) -> int:
         now = time.monotonic() if now is None else now
 
         if self.fixed:
@@ -113,11 +113,11 @@ class MediaWindow:
 
         return max(1, min(self.size, wanted))
 
-    def pick(self, pool: list, i: int) -> "Session":
+    def pick(self, pool: list, i: int) -> Session:
         session = pool[i % self.connections(len(pool))]
         return pool[0] if getattr(session, "is_closed", False) else session
 
-    def shrink(self, now: Optional[float] = None):
+    def shrink(self, now: float | None = None):
         now = time.monotonic() if now is None else now
 
         if self.fixed or now - self._shrunk < self.SHRINK_COOLDOWN:
@@ -953,7 +953,9 @@ class Session:
                     str(e) or repr(e),
                 )
 
-                if self._windowed and isinstance(e, (InternalServerError, ServiceUnavailable, TimeoutError)):
+                if self._windowed and isinstance(
+                    e, (InternalServerError, ServiceUnavailable, TimeoutError)
+                ):
                     media_window(self.auth_key, self.dc_id).shrink()
 
                 if isinstance(e, ConnectionResetError):

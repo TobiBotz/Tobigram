@@ -483,8 +483,7 @@ class Story(Object, Update):
         for priv in story.privacy:
             if isinstance(priv, raw.types.PrivacyValueAllowUsers):
                 allowed += (
-                    types.User._parse(client, users.get(user_id, None))
-                    for user_id in priv.users
+                    types.User._parse(client, users.get(user_id, None)) for user_id in priv.users
                 )
             elif isinstance(priv, raw.types.PrivacyValueAllowChatParticipants):
                 allowed += (
@@ -494,8 +493,7 @@ class Story(Object, Update):
                 )
             elif isinstance(priv, raw.types.PrivacyValueDisallowUsers):
                 disallowed += (
-                    types.User._parse(client, users.get(user_id, None))
-                    for user_id in priv.users
+                    types.User._parse(client, users.get(user_id, None)) for user_id in priv.users
                 )
             elif isinstance(priv, raw.types.PrivacyValueDisallowChatParticipants):
                 disallowed += (

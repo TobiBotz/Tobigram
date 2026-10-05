@@ -101,8 +101,8 @@ async def download(tmp_path, chunks, file_size):
 @pytest.mark.parametrize(
     "chunks",
     [
-        [b"x" * 2048],                        # single short chunk
-        [b"a" * CHUNK, b"b" * 4096],          # spills into the sequential loop
+        [b"x" * 2048],  # single short chunk
+        [b"a" * CHUNK, b"b" * 4096],  # spills into the sequential loop
     ],
 )
 async def test_unknown_size_download_is_written(tmp_path, chunks):
@@ -137,20 +137,28 @@ async def test_a_download_ends_when_its_workers_do(tmp_path):
     client.session = ShortAfterFirstSession()
 
     path = await asyncio.wait_for(
-        client.handle_download(
-            (file_id(), str(tmp_path), "out.bin", False, 20 * CHUNK, None, ())
-        ),
+        client.handle_download((file_id(), str(tmp_path), "out.bin", False, 20 * CHUNK, None, ())),
         timeout=10,
     )
 
     assert path is not None
-FILE_ID = FileId(
-    file_type=FileType.DOCUMENT, dc_id=2, media_id=1, access_hash=1
-).encode()
+
+
+FILE_ID = FileId(file_type=FileType.DOCUMENT, dc_id=2, media_id=1, access_hash=1).encode()
 STRIPPED = bytes([0x01, 0x20, 0x20]) + bytes(range(64)) * 3
 MEDIA_ATTRIBUTES = (
-    "audio", "document", "photo", "sticker", "animation", "video", "voice",
-    "video_note", "new_chat_photo", "paid_media", "story", "reply_to_story",
+    "audio",
+    "document",
+    "photo",
+    "sticker",
+    "animation",
+    "video",
+    "voice",
+    "video_note",
+    "new_chat_photo",
+    "paid_media",
+    "story",
+    "reply_to_story",
     "media",
 )
 
@@ -180,9 +188,7 @@ def fake_media(file_name):
 @pytest.fixture
 def client():
     workdir = tempfile.mkdtemp()
-    app = pyrogram.Client(
-        "dlkinds", api_id=1, api_hash="x", in_memory=True, workdir=workdir
-    )
+    app = pyrogram.Client("dlkinds", api_id=1, api_hash="x", in_memory=True, workdir=workdir)
     app.me = SimpleNamespace(is_bot=False, is_premium=False, id=1)
 
     async def handle_download(packet):
@@ -206,9 +212,7 @@ async def test_a_paid_media_message_downloads_every_item(client):
 
 
 async def test_a_paid_media_info_object_downloads_every_item(client):
-    info = types.PaidMediaInfo(
-        stars_amount=5, media=[fake_media("one.bin"), fake_media("two.bin")]
-    )
+    info = types.PaidMediaInfo(stars_amount=5, media=[fake_media("one.bin"), fake_media("two.bin")])
 
     result = await client.download_media(info)
 
@@ -216,9 +220,7 @@ async def test_a_paid_media_info_object_downloads_every_item(client):
 
 
 async def test_a_named_paid_media_download_does_not_overwrite_itself(client):
-    info = types.PaidMediaInfo(
-        stars_amount=5, media=[fake_media("one.bin"), fake_media("two.bin")]
-    )
+    info = types.PaidMediaInfo(stars_amount=5, media=[fake_media("one.bin"), fake_media("two.bin")])
 
     result = await client.download_media(info, file_name="shot.jpg")
 
@@ -389,6 +391,8 @@ async def test_a_file_name_from_the_server_cannot_escape_the_directory(client):
     result = await client.download_media(fake_media("../../evil.bin"))
 
     assert os.path.basename(result) == "evil.bin"
+
+
 SIZE = 8 * CHUNK
 HASH_LIMIT = 128 * 1024
 KEY = bytes(range(32))
@@ -538,7 +542,7 @@ async def test_cdn_download_writes_every_chunk_to_disk(tmp_path):
     assert len(data) == SIZE
 
     for n in range(SIZE // CHUNK):
-        assert data[n * CHUNK: (n + 1) * CHUNK] == bytes([n]) * CHUNK
+        assert data[n * CHUNK : (n + 1) * CHUNK] == bytes([n]) * CHUNK
 
 
 class CdnSessionFakeSession:
@@ -862,8 +866,12 @@ class MediaSessionPoolFakeClient:
             self.exports += 1
             await asyncio.sleep(0)
             self.media[dc_id] = MediaSessionPoolFakeSession(
-                self, dc_id, b"authorized-key", False,
-                server_address="media.dc", port=443,
+                self,
+                dc_id,
+                b"authorized-key",
+                False,
+                server_address="media.dc",
+                port=443,
             )
         return self.media[dc_id]
 
@@ -947,9 +955,10 @@ def test_a_named_buffer_is_reduced_to_its_base_name():
 
 
 def test_an_explicit_name_still_wins(sample):
-    assert utils.get_file_name(
-        FsPath(sample), file_name="chosen.bin", fallback="file.zip"
-    ) == "chosen.bin"
+    assert (
+        utils.get_file_name(FsPath(sample), file_name="chosen.bin", fallback="file.zip")
+        == "chosen.bin"
+    )
 
 
 @pytest.mark.parametrize("value", [b"raw", bytearray(b"raw"), 5, None, object()])

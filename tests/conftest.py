@@ -40,7 +40,10 @@ def fresh_media_windows():
 def fresh_msg_id_clock():
     from pyrogram.session.internals.msg_id import _MsgIdGenerator
 
-    saved = {k: getattr(_MsgIdGenerator, k) for k in ("_last_msg_id", "_base_wall", "_base_mono", "time_offset")}
+    saved = {
+        k: getattr(_MsgIdGenerator, k)
+        for k in ("_last_msg_id", "_base_wall", "_base_mono", "time_offset")
+    }
     yield
     for k, v in saved.items():
         setattr(_MsgIdGenerator, k, v)

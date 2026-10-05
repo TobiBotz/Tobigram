@@ -118,7 +118,9 @@ class EditInlineMedia:
                     url=media.media, spoiler=media.has_spoiler
                 )
             else:
-                media = utils.get_input_media_from_file_id(media.media, FileType.PHOTO, has_spoiler=has_spoiler)
+                media = utils.get_input_media_from_file_id(
+                    media.media, FileType.PHOTO, has_spoiler=has_spoiler
+                )
         elif is_video:
             vcover_file = None
             vcover_media = None
@@ -242,7 +244,9 @@ class EditInlineMedia:
                     url=media.media, spoiler=media.has_spoiler
                 )
             else:
-                media = utils.get_input_media_from_file_id(media.media, FileType.ANIMATION, has_spoiler=has_spoiler)
+                media = utils.get_input_media_from_file_id(
+                    media.media, FileType.ANIMATION, has_spoiler=has_spoiler
+                )
         elif isinstance(media, types.InputMediaDocument):
             if is_uploaded_file:
                 media = raw.types.InputMediaUploadedDocument(

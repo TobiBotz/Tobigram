@@ -32,8 +32,7 @@ def test_a_window_does_not_grow_past_what_is_asked_of_it():
         window.connections(1, now=t)
 
     assert window.connections(16, now=100_001) <= 2, (
-        "an idle window that kept growing would open a burst of connections on the "
-        "next transfer"
+        "an idle window that kept growing would open a burst of connections on the next transfer"
     )
 
 
@@ -179,7 +178,6 @@ async def test_a_503_backs_off_and_shrinks_the_window(monkeypatch):
 
 
 class PoolSession:
-
     def __init__(self, auth_key_id=b"p" * 8):
         self.auth_key = b"p" * 256
         self.auth_key_id = auth_key_id
@@ -255,8 +253,9 @@ async def test_a_transfer_never_picks_a_connection_stopped_under_it(monkeypatch)
 
 
 async def test_a_cdn_connection_leaves_no_window_behind():
-    session = Session(DummyClient(), 203, b"\x07" * 256, False, is_media=True, is_cdn=True,
-                      crypto_executor=None)
+    session = Session(
+        DummyClient(), 203, b"\x07" * 256, False, is_media=True, is_cdn=True, crypto_executor=None
+    )
     session.connection = ClosingConnection()
 
     await session.recv_worker()
