@@ -403,12 +403,20 @@ class Client(Methods):
             Pass True to automatically fetch names of sticker sets.
             Defaults to True.
 
-        loop (:py:class:`asyncio.AbstractEventLoop`, *optional*):
-            Event loop.
-
         init_connection_params (``dict``, *optional*):
             Additional initConnection parameters.
             For now, only the tz_offset field is supported, for specifying timezone offset in seconds.
+
+        connection_factory (:obj:`~pyrogram.connection.Connection`, *optional*):
+            The network connection factory to use.
+            Defaults to :obj:`~pyrogram.connection.Connection`.
+
+        protocol_factory (:obj:`~pyrogram.connection.transport.TCP`, *optional*):
+            The transport protocol factory to use.
+            Defaults to :obj:`~pyrogram.connection.transport.TCPAbridged`.
+
+        loop (:py:class:`asyncio.AbstractEventLoop`, *optional*):
+            Event loop.
 
         rate_limits (``dict``, *optional*):
             Rate limits for different categories of API calls. Each category can have "rate" (calls/sec) and
