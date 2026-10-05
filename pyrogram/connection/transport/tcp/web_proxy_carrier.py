@@ -211,6 +211,9 @@ class _HttpConnection:
                     self._drop_connection()
                     if attempt == 2:
                         raise WebCarrierError(f"{method} {path}: timed out") from e
+                except BaseException:
+                    self._drop_connection()
+                    raise
             raise AssertionError("unreachable")
 
     def _drop_connection(self) -> None:
@@ -260,9 +263,7 @@ class _HttpConnection:
             resp_body = await self._reader.readexactly(content_length)
 
         if resp_headers.get("connection", "").lower() == "close":
-            self._writer.close()
-            self._writer = None
-            self._reader = None
+            self._drop_connection()
 
         return status, resp_headers, resp_body
 
