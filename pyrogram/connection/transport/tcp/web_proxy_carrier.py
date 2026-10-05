@@ -204,16 +204,26 @@ class _HttpConnection:
                         timeout=timeout,
                     )
                 except (ConnectionError, EOFError, OSError) as e:
-                    self._writer = None
-                    self._reader = None
+                    self._drop_connection()
                     if attempt == 2:
                         raise WebCarrierError(f"{method} {path}: {e}") from e
                 except asyncio.TimeoutError as e:
-                    self._writer = None
-                    self._reader = None
+                    self._drop_connection()
                     if attempt == 2:
                         raise WebCarrierError(f"{method} {path}: timed out") from e
             raise AssertionError("unreachable")
+
+    def _drop_connection(self) -> None:
+        writer = self._writer
+
+        self._writer = None
+        self._reader = None
+
+        if writer is not None:
+            try:
+                writer.close()
+            except OSError as e:
+                log.debug("WEB proxy: dropping the HTTP connection failed: %s", e)
 
     async def _send_and_read(
         self,
