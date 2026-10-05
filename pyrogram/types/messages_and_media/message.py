@@ -10443,6 +10443,13 @@ class Message(Object, Update):
             )
 
         if self.rich_message:
+            rich_message = self.rich_message
+
+            if rich_message.is_partial:
+                rich_message = (
+                    await self._client.get_rich_message(self.chat.id, self.id)
+                ).rich_message
+
             if reply_parameters is None and reply_to_message_id is not None:
                 reply_parameters = types.ReplyParameters(
                     message_id=reply_to_message_id,
@@ -10453,7 +10460,7 @@ class Message(Object, Update):
 
             return await self._client.send_rich_message(
                 chat_id=chat_id,
-                rich_text=self.rich_message,
+                rich_text=rich_message,
                 disable_notification=disable_notification,
                 message_thread_id=message_thread_id,
                 reply_parameters=reply_parameters,

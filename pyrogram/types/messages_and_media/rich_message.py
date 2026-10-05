@@ -288,6 +288,7 @@ class RichMessage(Object):
         self.is_rtl = is_rtl
         self.is_partial = is_partial
         self._raw: raw.types.RichMessage | None = None
+        self._users: list[raw.types.InputUser] | None = None
 
     @property
     def html(self) -> str:
@@ -361,6 +362,7 @@ class RichMessage(Object):
                 rtl=self._raw.rtl,
                 photos=photos or None,
                 documents=documents or None,
+                users=getattr(self, "_users", None) or None,
             )
 
         raise ValueError(
@@ -369,6 +371,8 @@ class RichMessage(Object):
 
     def write(self) -> raw.base.InputRichMessage:
         return self.to_input_rich_message()
+
+    _write = write
 
     @staticmethod
     async def _parse(
@@ -399,4 +403,25 @@ class RichMessage(Object):
                 is_partial=rich_message.part,
             )
             parsed._raw = rich_message
+            parsed._users = [
+                raw.types.InputUser(user_id=user.id, access_hash=user.access_hash)
+                for user in (users.get(i) for i in _mentioned_user_ids(rich_message.blocks))
+                if isinstance(user, raw.types.User) and user.access_hash is not None
+            ]
             return parsed
+
+
+def _mentioned_user_ids(obj, found=None) -> set:
+    found = set() if found is None else found
+
+    if isinstance(obj, raw.types.TextMentionName):
+        found.add(obj.user_id)
+
+    if isinstance(obj, list):
+        for item in obj:
+            _mentioned_user_ids(item, found)
+    elif isinstance(obj, raw.core.TLObject):
+        for name in obj.__slots__:
+            _mentioned_user_ids(getattr(obj, name), found)
+
+    return found

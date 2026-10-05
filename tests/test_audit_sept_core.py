@@ -1,3 +1,4 @@
+from io import BytesIO
 from types import SimpleNamespace
 
 import pytest
@@ -299,3 +300,57 @@ def test_invoice_photo_url():
     assert (
         types.Invoice._parse(None, raw.types.Invoice(currency="XTR", prices=[])).photo_url is None
     )
+
+
+def _roundtrip(obj):
+    return raw.core.TLObject.read(BytesIO(obj.write()))
+
+
+async def _received_rich_message(client, part=False):
+    blocks = [
+        raw.types.PageBlockParagraph(
+            text=raw.types.TextConcat(
+                texts=[
+                    raw.types.TextPlain(text="Hi "),
+                    raw.types.TextMentionName(text=raw.types.TextPlain(text="you"), user_id=111),
+                ]
+            )
+        )
+    ]
+    photo = raw.types.Photo(id=5, access_hash=6, file_reference=b"r", date=0, sizes=[], dc_id=2)
+    rich = raw.types.RichMessage(blocks=blocks, photos=[photo], documents=[], part=part)
+    users = {111: _roundtrip(raw.types.User(id=111, access_hash=9, first_name="Ann"))}
+    return blocks, await types.RichMessage._parse(client, rich, users, {})
+
+
+@pytest.mark.parametrize("partial", [False, True])
+async def test_a_received_rich_message_can_be_copied(partial):
+    from pyrogram import utils
+
+    client = pyrogram.Client("rich", api_id=1, api_hash="x", in_memory=True)
+    blocks, rich = await _received_rich_message(client, part=partial)
+    full_blocks, full = await _received_rich_message(client)
+    sent, fetched = [], []
+
+    async def send_rich_message(chat_id, **kwargs):
+        sent.append(await utils.build_input_rich_message(client, kwargs["rich_text"]))
+        return "copied"
+
+    async def get_rich_message(chat_id, message_id):
+        fetched.append((chat_id, message_id))
+        return SimpleNamespace(rich_message=full)
+
+    client.send_rich_message = send_rich_message
+    client.get_rich_message = get_rich_message
+    message = types.Message(
+        id=7,
+        chat=types.Chat(id=-1001, type=enums.ChatType.SUPERGROUP),
+        rich_message=rich,
+        client=client,
+    )
+
+    assert await message.copy(42) == "copied"
+    assert fetched == ([(-1001, 7)] if partial else [])
+    assert sent[0].blocks == (full_blocks if partial else blocks)
+    assert sent[0].photos == [raw.types.InputPhoto(id=5, access_hash=6, file_reference=b"r")]
+    assert sent[0].users == [raw.types.InputUser(user_id=111, access_hash=9)]
