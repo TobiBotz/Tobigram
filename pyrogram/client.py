@@ -65,7 +65,6 @@ from pyrogram.methods import Methods
 from pyrogram.methods.rate_limiter import TokenBucket
 from pyrogram.qrlogin import QRLogin
 from pyrogram.session import Auth, Session
-from pyrogram.session.session import media_window
 from pyrogram.storage import SQLiteStorage, Storage
 from pyrogram.types import (
     LinkPreviewOptions,
@@ -1850,9 +1849,8 @@ class Client(Methods):
                 _last_rate_adj = 0.0
                 _fast_window = 0
 
-                async def _worker(pool, i):
+                async def _worker(session):
                     nonlocal _done_count, _last_rate_adj, _fast_window
-                    window = media_window(getattr(pool[0], "auth_key", None), dc_id)
                     while True:
                         await buffer_slots.acquire()
 
@@ -1861,8 +1859,6 @@ class Client(Methods):
                         except asyncio.QueueEmpty:
                             buffer_slots.release()
                             return
-
-                        session = window.pick(pool, i)
 
                         try:
                             await _getfile_rate.acquire()
@@ -1936,8 +1932,10 @@ class Client(Methods):
                         work.put_nowait(start + i * chunk_size)
 
                     started = [
-                        asyncio.ensure_future(_worker(pool, i))
-                        for i in range(min(dl_pool_size * dl_workers_per_session, chunks_needed))
+                        asyncio.ensure_future(_worker(pool[i % n_sessions]))
+                        for i in range(
+                            min(dl_pool_size * dl_workers_per_session, chunks_needed)
+                        )
                     ]
 
                     for t in started:
@@ -2446,44 +2444,33 @@ class Client(Methods):
     async def _get_media_session_pool(self, dc_id: int, n: int) -> list:
         lock = self._media_sessions_locks.setdefault(dc_id, asyncio.Lock())
         async with lock:
-            media = await self.get_session(dc_id, is_media=True)
-            window = media_window(media.auth_key, dc_id)
-            window.fixed = bool(getattr(getattr(self, "me", None), "is_premium", False))
-            n = window.connections(n)
-            extras = []
+            pool = []
 
             for session in self.media_session_pools.get(dc_id, []):
-                if not (session.is_started.is_set() or session.is_restarting):
+                if session.is_started.is_set() or session.is_restarting:
+                    session.last_used = time.monotonic()
+                    pool.append(session)
+                else:
                     # dropping it here puts it out of the reaper's reach, and its
                     # socket, ping task and receive task outlive the client
                     utils.run_in_background(session.stop(), self.loop)
-                elif len(extras) >= window.size - 1 and not session.results:
-                    utils.run_in_background(session.stop(), self.loop)
-                else:
-                    extras.append(session)
 
-            needed = n - 1 - len(extras)
+            needed = n - len(pool)
+            if needed > 0:
+                media = await self.get_session(dc_id, is_media=True)
 
-            while needed > 0:
-                chunk = min(needed, 3)
-                async with self._session_creation_gate:
-                    extras.extend(
-                        await asyncio.gather(
-                            *(
-                                self._make_media_session(
-                                    dc_id, media.auth_key, media.server_address, media.port
-                                )
-                                for _ in range(chunk)
+                while needed > 0:
+                    chunk = min(needed, 3)
+                    async with self._session_creation_gate:
+                        pool.extend(await asyncio.gather(*(
+                            self._make_media_session(
+                                dc_id, media.auth_key, media.server_address, media.port
                             )
-                        )
-                    )
-                needed -= chunk
-
-            for session in extras:
-                session.last_used = time.monotonic()
-
-            self.media_session_pools[dc_id] = extras
-            return [media] + extras[: n - 1]
+                            for _ in range(chunk)
+                        )))
+                    needed -= chunk
+            self.media_session_pools[dc_id] = pool
+            return list(pool)
 
     async def get_dc_option(
         self,

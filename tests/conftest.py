@@ -25,17 +25,6 @@ def auth_key_id(auth_key):
 @pytest.fixture
 def msg_id():
     return MsgId()
-
-
-@pytest.fixture(autouse=True)
-def fresh_media_windows():
-    from pyrogram.session import session
-
-    session._media_windows.clear()
-    yield
-    session._media_windows.clear()
-
-
 @pytest.fixture(autouse=True)
 def fresh_msg_id_clock():
     from pyrogram.session.internals.msg_id import _MsgIdGenerator
@@ -47,3 +36,4 @@ def fresh_msg_id_clock():
     yield
     for k, v in saved.items():
         setattr(_MsgIdGenerator, k, v)
+

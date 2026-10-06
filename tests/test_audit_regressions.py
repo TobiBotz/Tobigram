@@ -4184,26 +4184,18 @@ async def test_a_media_session_handed_out_is_not_reaped_before_its_first_request
             self.stopped = True
 
     class _Client:
-        me = None
         _get_media_session_pool = pyrogram.Client._get_media_session_pool
         reap_media_sessions = pyrogram.Client.reap_media_sessions
         MEDIA_SESSION_IDLE_TIMEOUT = 300
 
         def __init__(self):
-            self.media = _MediaSession()
-            self.media.auth_key = b"media-key"
             self.media_session_pools = {2: [_MediaSession()]}
             self._media_sessions_locks = {}
 
-        async def get_session(self, dc_id, is_media=False):
-            return self.media
-
     client = _Client()
     session = client.media_session_pools[2][0]
-    # the main media session is the first connection; the pooled one is the second
-    media_window(client.media.auth_key, 2).size = 2
 
-    assert await client._get_media_session_pool(2, 2) == [client.media, session]
+    assert await client._get_media_session_pool(2, 1) == [session]
     assert await client.reap_media_sessions() == 0
     assert not session.stopped
 

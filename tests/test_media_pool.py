@@ -6,7 +6,6 @@ import inspect
 import pytest
 
 from pyrogram import Client
-from pyrogram.session.session import MediaWindow
 
 
 class FakeSession:
@@ -15,31 +14,13 @@ class FakeSession:
     port = 443
 
     def __init__(self):
-        self.results = {}
-        self.stopped = False
         self.is_started = asyncio.Event()
         self.is_started.set()
         self.is_restarting = False
 
-    async def stop(self):
-        self.stopped = True
-
-
-def open_window(monkeypatch):
-    # these cover how demand sizes the pool; the learned window is a ceiling on
-    # top of it, covered in test_media_window
-    def connections(self, wanted, now=None):
-        self.size = max(self.size, wanted)
-        return wanted
-
-    monkeypatch.setattr(MediaWindow, "connections", connections)
-
 
 def make_client(monkeypatch):
-    open_window(monkeypatch)
     client = Client.__new__(Client)
-    client._loop = None
-    client.me = None
     client.media_session_pools = {}
     client._media_pool_demand = {}
     client._media_sessions_locks = {}
@@ -47,10 +28,8 @@ def make_client(monkeypatch):
 
     created = []
 
-    media = FakeSession()
-
     async def fake_get_session(dc_id, is_media=False):
-        return media
+        return FakeSession()
 
     async def fake_make(dc_id, auth_key, server_address, port):
         created.append(dc_id)
@@ -69,7 +48,7 @@ async def test_single_transfer_pool_is_unchanged(monkeypatch):
         pool = await task
 
     assert len(pool) == 5
-    assert len(created) == 4, "the main media session is the first connection"
+    assert len(created) == 5
     assert client._media_pool_demand == {}
 
 
@@ -129,7 +108,7 @@ async def test_parallel_leases_are_serialised(monkeypatch):
     sizes = await asyncio.gather(*(transfer() for _ in range(4)))
 
     assert max(sizes) == Client.MEDIA_POOL_CAP
-    assert len(created) == Client.MEDIA_POOL_CAP - 1
+    assert len(created) == Client.MEDIA_POOL_CAP
     assert client._media_pool_demand == {}
 
 
@@ -153,16 +132,11 @@ async def test_pool_survives_a_lease_but_the_demand_does_not(monkeypatch):
         async with client._media_pool(2, 5) as b:
             await b
 
-    assert len(client.media_session_pools[2]) == 9
+    assert len(client.media_session_pools[2]) == 10
     assert client._media_pool_demand == {}
 
     async with client._media_pool(2, 5) as task:
         pool = await task
-    await asyncio.sleep(0)
 
-    assert len(pool) == 5, "an existing pool is reused, not rebuilt"
-    assert len(created) == 9, "and no extra sessions are opened for it"
-    assert len(client.media_session_pools[2]) == 9, (
-        "a connection above demand but inside the window may still be held by "
-        "another transfer's worker; only the window closes connections"
-    )
+    assert len(pool) == 10, "an existing pool is reused, not rebuilt"
+    assert len(created) == 10, "and no extra sessions are opened for it"
