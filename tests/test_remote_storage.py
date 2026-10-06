@@ -85,6 +85,24 @@ class TestPeerCache:
         assert cache.get(9) is not None
         assert cache.get(0) is None
 
+    async def test_reads_keep_a_peer_recent(self):
+        cache = PeerRowCache(size=3)
+
+        for peer_id in (1, 2, 3):
+            cache.remember((peer_id, 0, "user"), written=True)
+
+        cache.get(1)
+        cache.remember((4, 0, "user"), written=True)
+
+        assert cache.get(1) is not None
+        assert cache.get(2) is None
+
+        cache.matches(1, 0, "user")
+        cache.remember((5, 0, "user"), written=True)
+
+        assert cache.get(1) is not None
+        assert cache.get(3) is None
+
     async def test_cache_holds_rows_not_input_peers(self):
         """Callers hand InputPeers to the API and are free to mutate them, so a
         shared instance would be shared mutable state."""

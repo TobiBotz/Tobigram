@@ -68,7 +68,12 @@ class PeerRowCache:
     def get(self, peer_id: int) -> tuple[int, int, str] | None:
         entry = self._rows.get(peer_id)
 
-        return entry[0] if entry is not None else None
+        if entry is None:
+            return None
+
+        self._rows.move_to_end(peer_id)
+
+        return entry[0]
 
     def matches(
         self, peer_id: int, access_hash: int, peer_type: str, phone_number: str | None = None
@@ -83,7 +88,12 @@ class PeerRowCache:
         if written_at is None or time.monotonic() - written_at > self.write_ttl:
             return False
 
-        return row == (peer_id, access_hash, peer_type) and phone == phone_number
+        if row != (peer_id, access_hash, peer_type) or phone != phone_number:
+            return False
+
+        self._rows.move_to_end(peer_id)
+
+        return True
 
     def remember(
         self, row: tuple[int, int, str], phone_number: str | None = None, written: bool = False
