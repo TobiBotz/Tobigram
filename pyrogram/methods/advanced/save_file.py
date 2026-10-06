@@ -261,10 +261,15 @@ class SaveFile:
             next_batch_task = None
             _pacer = TokenBucket(rate=rate_limit, burst=PACER_BURST)
             _stalled_since = 0.0
+            _last_reported = -1
 
             async def _report(parts: int) -> None:
-                if not progress:
+                nonlocal _last_reported
+
+                if not progress or parts == _last_reported:
                     return
+
+                _last_reported = parts
 
                 func = functools.partial(
                     progress, min(parts * part_size, file_size), file_size, *progress_args

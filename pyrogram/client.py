@@ -1784,13 +1784,26 @@ class Client(Methods):
             chunk_size = 1024 * 1024
             offset_bytes = abs(offset) * chunk_size
             _last_progress_time = 0.0
+            _last_reported = -1
 
             async def _report(sent: int) -> None:
+                nonlocal _last_reported
+
                 if not progress:
                     return
 
+                sent = min(sent, file_size) if file_size else sent
+
+                if sent == _last_reported:
+                    return
+
+                _last_reported = sent
+
                 func = functools.partial(
-                    progress, min(sent, file_size) if file_size else sent, file_size, *progress_args
+                    progress,
+                    sent,
+                    file_size,
+                    *progress_args
                 )
 
                 try:

@@ -5,7 +5,6 @@ import pytest
 
 import pyrogram
 from pyrogram import enums, raw, types, utils
-from pyrogram.session.session import media_window
 from pyrogram.dispatcher import Dispatcher
 from pyrogram.handlers import MessageHandler
 from pyrogram.methods.rate_limiter import TokenBucket
@@ -1692,6 +1691,9 @@ async def test_a_finished_download_says_it_finished(tmp_path):
             f"{label}: no call may claim more than the file holds"
         )
         assert seen == sorted(seen), f"{label}: progress must not go backwards"
+        assert len(seen) == len(set(seen)), (
+            f"{label}: the same value was reported more than once: {seen}"
+        )
 
 
 async def test_a_download_progress_callback_may_be_a_plain_function(tmp_path):
@@ -1768,8 +1770,47 @@ async def test_a_finished_upload_says_it_finished(tmp_path):
     assert seen[-1] == (size, size), f"the last call must report the whole file, got {seen[-1]}"
     assert all(c <= size for c, _ in seen), "no call may claim more bytes than were sent"
     assert seen == sorted(seen), "progress must not go backwards"
+    assert len(seen) == len(set(seen)), (
+        f"the same value was reported more than once: {seen}"
+    )
 
 
+async def test_stop_transmission_from_the_callback_still_stops_both_ways(tmp_path):
+    import pyrogram
+    from types import SimpleNamespace as NS
+
+    from tests.e2e import CHUNK, FakeDC, make_client
+    from tests.test_transfers import file_id
+
+    calls = []
+
+    async def stop_on_second(current, total):
+        calls.append(current)
+        if len(calls) == 2:
+            raise pyrogram.StopTransmission
+
+    client = _progress_client([b"a" * CHUNK, b"b" * CHUNK, b"c" * CHUNK])
+    result = await client.handle_download(
+        (file_id(), str(tmp_path), "out.bin", False, 3 * CHUNK, stop_on_second, ())
+    )
+
+    assert result is None and not (tmp_path / "out.bin.temp").exists()
+    assert len(calls) == 2, f"download kept reporting after the stop: {calls}"
+
+    calls.clear()
+    size = 8 * CHUNK
+    path = tmp_path / "up.bin"
+    path.write_bytes(b"\x01" * size)
+
+    dc = FakeDC(size, step=0.00002)
+    client = make_client(dc, "upstop", pool=dc.pool(4))
+    client.me = NS(is_bot=False, is_premium=False)
+    await client.storage.open()
+
+    with pytest.raises(pyrogram.StopTransmission):
+        await client.save_file(str(path), progress=stop_on_second)
+
+    assert len(calls) == 2, f"upload kept reporting after the stop: {calls}"
 OWN_ID = 7933658472
 
 
