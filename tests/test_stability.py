@@ -664,6 +664,35 @@ class ReapableClient:
     def __init__(self):
         self.media_session_pools = {}
         self._media_sessions_locks = {}
+        self.media_sessions = {}
+        self.sessions = {}
+        self._session_locks = {}
+        self.session = FakeSession(last_used=0)
+
+
+async def test_reaping_also_closes_the_idle_per_dc_sessions():
+    import time
+
+    now = time.monotonic()
+    client = ReapableClient()
+
+    idle_media = FakeSession(last_used=now - 10_000)
+    idle_foreign = FakeSession(last_used=now - 10_000)
+    busy_media = FakeSession(last_used=now - 10_000, results={1: object()})
+    fresh_foreign = FakeSession(last_used=now)
+    client.media_sessions = {2: idle_media, 4: busy_media}
+    client.sessions = {2: idle_foreign, 4: fresh_foreign, 1: client.session}
+
+    reaped = await client.reap_media_sessions(idle_timeout=300)
+
+    assert reaped == 2
+    assert idle_media.stopped and idle_foreign.stopped
+    assert not busy_media.stopped and not fresh_foreign.stopped
+    assert not client.session.stopped, "the main session is never reaped"
+    assert client.media_sessions == {4: busy_media}
+    assert client.sessions == {4: fresh_foreign, 1: client.session}, (
+        "a stopped session left in the dict would be handed out again and fail"
+    )
 
 
 async def test_reaping_closes_idle_sessions_and_keeps_busy_ones():

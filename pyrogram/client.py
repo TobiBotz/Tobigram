@@ -765,7 +765,7 @@ class Client(Methods):
                 log.exception("Media session reaper failed")
 
     async def reap_media_sessions(self, idle_timeout: int | None = None) -> int:
-        """Stop pooled media sessions unused for longer than *idle_timeout* seconds."""
+        """Stop pooled and per-DC sessions unused for longer than *idle_timeout* seconds; the main session is never stopped."""
         if idle_timeout is None:
             idle_timeout = self.MEDIA_SESSION_IDLE_TIMEOUT
 
@@ -795,6 +795,30 @@ class Client(Methods):
                     self.media_session_pools[dc_id] = keep
                 else:
                     self.media_session_pools.pop(dc_id, None)
+
+        for sessions, is_media in ((self.media_sessions, True), (self.sessions, False)):
+            for dc_id, session in list(sessions.items()):
+                if session is self.session:
+                    continue
+
+                lock = self._session_locks.setdefault((dc_id, is_media), asyncio.Lock())
+
+                async with lock:
+                    if (
+                        sessions.get(dc_id) is not session
+                        or session.results
+                        or now - session.last_used < idle_timeout
+                    ):
+                        continue
+
+                    sessions.pop(dc_id, None)
+
+                    try:
+                        await session.stop()
+                    except Exception:
+                        log.exception("Error stopping idle media session")
+
+                    reaped += 1
 
         if reaped:
             log.info("Reaped %s idle media session(s)", reaped)
@@ -2327,6 +2351,7 @@ class Client(Methods):
         sessions = self.media_sessions if is_media else self.sessions
 
         if not temporary and sessions.get(dc_id):
+            sessions[dc_id].last_used = time.monotonic()
             return sessions[dc_id]
 
         # Concurrent exports for one DC invalidate each other: AUTH_BYTES_INVALID.
@@ -2334,6 +2359,7 @@ class Client(Methods):
 
         async with lock:
             if not temporary and sessions.get(dc_id):
+                sessions[dc_id].last_used = time.monotonic()
                 return sessions[dc_id]
 
             if not server_address or not port:

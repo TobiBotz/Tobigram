@@ -4232,6 +4232,10 @@ async def test_a_media_session_handed_out_is_not_reaped_before_its_first_request
         def __init__(self):
             self.media_session_pools = {2: [_MediaSession()]}
             self._media_sessions_locks = {}
+            self.media_sessions = {}
+            self.sessions = {}
+            self._session_locks = {}
+            self.session = None
 
     client = _Client()
     session = client.media_session_pools[2][0]
