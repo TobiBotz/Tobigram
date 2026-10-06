@@ -31,7 +31,7 @@ from hashlib import md5
 from typing import BinaryIO, TYPE_CHECKING
 
 from pyrogram import StopTransmission, raw, utils
-from pyrogram.errors import RPCError
+from pyrogram.errors import Flood, RPCError
 from pyrogram.methods.rate_limiter import TokenBucket
 from pyrogram.session import Session
 
@@ -139,11 +139,20 @@ class SaveFile:
             async def _send_part(session, data):
                 for attempt in range(MAX_RETRIES):
                     try:
-                        await session.invoke(data, timeout=Session.MEDIA_WAIT_TIMEOUT)
+                        if not await session.invoke(
+                            data, timeout=Session.MEDIA_WAIT_TIMEOUT
+                        ):
+                            raise OSError("part not accepted by the server")
                         break
                     except StopTransmission:
                         raise
                     except (OSError, TimeoutError, RPCError, asyncio.TimeoutError) as e:
+                        if (
+                            isinstance(e, RPCError)
+                            and not isinstance(e, Flood)
+                            and not 500 <= (e.CODE or 0) < 600
+                        ):
+                            raise
                         if attempt == MAX_RETRIES - 1:
                             log.exception(
                                 "Upload part failed after %d attempts",
