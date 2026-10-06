@@ -11,7 +11,7 @@ import pyrogram.session.session as session_mod
 from pyrogram import raw
 from pyrogram.connection import Connection
 from pyrogram.connection.transport import TCPAbridged
-from pyrogram.errors import AuthKeyUnregistered
+from pyrogram.errors import AuthKeyUnregistered, ServiceUnavailable
 from pyrogram.session.internals import msg_id as msg_id_mod, MsgId
 from pyrogram.session.session import Session, _serialize_file_part
 
@@ -811,3 +811,30 @@ def test_sends_still_need_updates(client):
     )
 
     assert client._auto_needs_updates(query) is True
+
+
+async def test_a_5xx_waits_longer_each_time():
+    class Fails(FakeSession):
+        async def send(self, query, timeout):
+            self.sent += 1
+            if self.sent <= self.fail_times:
+                raise ServiceUnavailable(rpc_name="upload.GetFile")
+            return "answer"
+
+    slept = []
+
+    async def sleep(delay, *args):
+        slept.append(delay)
+
+    session = Fails(fail_times=5)
+    real_sleep = asyncio.sleep
+    asyncio.sleep = sleep
+    try:
+        result = await Session._invoke(session, FakeQuery(), 10, 1, 1)
+    finally:
+        asyncio.sleep = real_sleep
+
+    assert result == "answer"
+    assert slept == [1, 2, 4, 8, 16], (
+        f"slept {slept}; a DC that keeps answering 5xx needs room to recover"
+    )
