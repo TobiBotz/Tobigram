@@ -5119,3 +5119,165 @@ async def test_edit_story_media_without_media_does_not_crash():
     assert result is None
     assert isinstance(client.sent[0], raw.functions.stories.EditStory)
     assert client.sent[0].media is None
+
+
+def _state(pts, qts):
+    from pyrogram import raw
+
+    return raw.types.updates.State(pts=pts, qts=qts, date=9, seq=3, unread_count=0)
+
+
+class _TooLongClient:
+    handle_updates = pyrogram.Client.handle_updates
+    _save_update_state = pyrogram.Client._save_update_state
+    _recover_too_long = pyrogram.Client._recover_too_long
+    _recover_too_long_state = pyrogram.Client._recover_too_long_state
+
+    def __init__(self, states=(), replies=()):
+        self.states = []
+        self._state_marks = {}
+        self._recovering = set()
+        self.skip_updates = False
+        self.loop = None
+        self.recovered = []
+        self.fetched = []
+        self.sent = []
+        self.replies = list(replies)
+
+        outer = self
+
+        class _Storage:
+            async def update_state(self, value=object):
+                if value is object:
+                    return list(states)
+                outer.states.append(value)
+
+        class _Dispatcher:
+            async def enqueue_update(self, update, users, chats):
+                return True
+
+        self.storage = _Storage()
+        self.dispatcher = _Dispatcher()
+
+    async def fetch_peers(self, peers):
+        self.fetched.extend(peers)
+        return any(getattr(p, "min", False) for p in peers)
+
+    async def resolve_peer(self, peer_id):
+        return raw.types.InputChannel(channel_id=1, access_hash=0)
+
+    async def invoke(self, query, **kwargs):
+        self.sent.append(query)
+        return self.replies.pop(0)
+
+    async def recover_gaps(self, ids=None):
+        self.recovered.append(ids)
+        return (0, 0)
+
+
+async def _settle():
+    for _ in range(5):
+        await asyncio.sleep(0)
+
+
+def _too_long_batch(*updates):
+    return raw.types.Updates(updates=list(updates), users=[], chats=[], date=1700000000, seq=4)
+
+
+async def test_a_channel_too_long_update_recovers_from_the_state_seen_in_this_run():
+    client = _TooLongClient()
+    client._state_marks[-1000000000005] = (10, None)
+
+    await client.handle_updates(
+        _too_long_batch(raw.types.UpdateChannelTooLong(channel_id=5, pts=30))
+    )
+    await _settle()
+
+    assert client.recovered == [-1000000000005]
+    assert client.states == []
+    assert client._recovering == set()
+
+
+async def test_a_channel_too_long_update_for_a_channel_not_seen_in_this_run_only_records_its_pts():
+    client = _TooLongClient(states=[(-1000000000005, 10, None, None, None)])
+
+    await client.handle_updates(
+        _too_long_batch(raw.types.UpdateChannelTooLong(channel_id=5, pts=30))
+    )
+    await _settle()
+
+    assert client.recovered == []
+    assert client.states == [(-1000000000005, 30, None, None, None)]
+    assert client._state_marks[-1000000000005] == (30, None)
+
+
+async def test_a_channel_too_long_update_behind_the_known_pts_is_ignored():
+    client = _TooLongClient()
+    client._state_marks[-1000000000005] = (30, None)
+
+    await client.handle_updates(
+        _too_long_batch(raw.types.UpdateChannelTooLong(channel_id=5, pts=30))
+    )
+    await _settle()
+
+    assert client.recovered == []
+
+
+async def test_updates_too_long_recovers_the_common_state_seen_in_this_run():
+    client = _TooLongClient()
+    client._state_marks[0] = (10, 50)
+
+    await client.handle_updates(raw.types.UpdatesTooLong())
+    await _settle()
+
+    assert client.recovered == [0]
+
+
+async def test_updates_too_long_before_any_update_records_the_server_state():
+    client = _TooLongClient(replies=[_state(40, 50)])
+
+    await client.handle_updates(raw.types.UpdatesTooLong())
+    await _settle()
+
+    assert client.recovered == []
+    assert isinstance(client.sent[0], raw.functions.updates.GetState)
+    assert client.states == [(0, 40, 50, 9, 3)]
+
+
+async def test_repeated_too_long_updates_recover_once_at_a_time():
+    client = _TooLongClient()
+    client._state_marks[0] = (10, 50)
+    gate = asyncio.Event()
+
+    async def recover_gaps(ids=None):
+        client.recovered.append(ids)
+        await gate.wait()
+        return (0, 0)
+
+    client.recover_gaps = recover_gaps
+
+    await client.handle_updates(raw.types.UpdatesTooLong())
+    await client.handle_updates(raw.types.UpdatesTooLong())
+    await _settle()
+    gate.set()
+    await _settle()
+
+    assert client.recovered == [0]
+    assert client._recovering == set()
+
+
+async def test_a_failing_too_long_recovery_is_logged_and_releases_the_key(caplog):
+    client = _TooLongClient()
+    client._state_marks[0] = (10, 50)
+
+    async def recover_gaps(ids=None):
+        raise RuntimeError("boom")
+
+    client.recover_gaps = recover_gaps
+
+    with caplog.at_level("ERROR"):
+        await client.handle_updates(raw.types.UpdatesTooLong())
+        await _settle()
+
+    assert "Recovery after too long update failed" in caplog.text
+    assert client._recovering == set()

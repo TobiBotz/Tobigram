@@ -679,6 +679,8 @@ class Client(Methods):
         self.updates_watchdog_event = asyncio.Event()
         self.last_update_time = datetime.now()
         self._last_update_monotonic = time.monotonic()
+        self._state_marks = {}
+        self._recovering = set()
 
         self.media_pool_reaper_task = None
         self.media_pool_reaper_event = asyncio.Event()
@@ -1392,6 +1394,7 @@ class Client(Methods):
             # one write per peer per batch rather than per update: each costs a
             # thread hand-off into aiosqlite, and only the highest pts matters
             pending_states = {}
+            too_long = {}
 
             for update in updates.updates:
                 msg = getattr(update, "message", None)
@@ -1408,7 +1411,9 @@ class Client(Methods):
                 pts_count = getattr(update, "pts_count", None)
                 qts = getattr(update, "qts", None)
 
-                if pts:
+                if isinstance(update, raw.types.UpdateChannelTooLong):
+                    too_long[utils.get_channel_id(channel_id)] = pts
+                elif pts:
                     key = utils.get_channel_id(channel_id) if channel_id else 0
                     known = pending_states.get(key, (key, None, None, updates.date, updates.seq))
 
@@ -1420,9 +1425,6 @@ class Client(Methods):
 
                     if known[2] is None or qts > known[2]:
                         pending_states[0] = known[:2] + (qts,) + known[3:]
-
-                if isinstance(update, raw.types.UpdateChannelTooLong):
-                    log.info(update)
 
                 if isinstance(update, raw.types.UpdateNewChannelMessage) and is_min:
                     message = update.message
@@ -1469,6 +1471,9 @@ class Client(Methods):
             for state in pending_states.values():
                 if callable(save_state):
                     await save_state(state)
+
+            for key, pts in too_long.items():
+                self._recover_too_long(key, pts)
         elif isinstance(updates, (raw.types.UpdateShortMessage, raw.types.UpdateShortChatMessage)):
             if callable(save_state):
                 await save_state((0, updates.pts, None, updates.date, None))
@@ -1499,7 +1504,33 @@ class Client(Methods):
                 if callable(save_state):
                     await save_state((0, None, qts, updates.date, None))
         elif isinstance(updates, raw.types.UpdatesTooLong):
-            log.info(updates)
+            self._recover_too_long(0, None)
+
+    def _recover_too_long(self, key, pts):
+        if key in self._recovering:
+            return
+
+        known_pts = self._state_marks.get(key, (None, None))[0]
+
+        if pts is not None and known_pts is not None and known_pts >= pts:
+            return
+
+        self._recovering.add(key)
+        utils.run_in_background(self._recover_too_long_state(key, pts), self.loop)
+
+    async def _recover_too_long_state(self, key, pts):
+        try:
+            if key in self._state_marks:
+                await self.recover_gaps(key)
+            elif key == 0:
+                state = await self.invoke(raw.functions.updates.GetState())
+                await self._save_update_state((0, state.pts, state.qts, state.date, state.seq))
+            elif pts is not None:
+                await self._save_update_state((key, pts, None, None, None))
+        except Exception:
+            log.exception("Recovery after too long update failed for %s", key)
+        finally:
+            self._recovering.discard(key)
 
     async def load_session(self):
         self._state_marks = {}
