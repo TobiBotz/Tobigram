@@ -52,6 +52,17 @@ log = logging.getLogger(__name__)
 EPHEMERAL_QUOTE_SECONDS = 13
 
 
+def _without_reply(message: Message | None) -> Message | None:
+    if message is None or message.reply_to_message is None:
+        return message
+
+    clone = message.__class__.__new__(message.__class__)
+    clone.__dict__ = message.__dict__.copy()
+    clone.reply_to_message = None
+
+    return clone
+
+
 class Str(str):
     """A message text or caption, indexed the way Telegram counts it.
 
@@ -2091,7 +2102,23 @@ class Message(Object, Update):
         business_connection_id: str | None = None,
         raw_reply_to_message: raw.base.Message | None = None,
     ):
-        if isinstance(message.reply_to, raw.types.MessageReplyHeader):
+        if isinstance(message.reply_to, raw.types.MessageReplyHeader) and message.reply_to.reply_to_ephemeral:
+            if replies:
+                replied = client.message_cache[
+                    (parsed_message.chat.id, "ephemeral", message.reply_to.reply_to_msg_id)
+                ]
+
+                if (
+                    replied
+                    and replied.receiver_user
+                    and replied.from_user
+                    and parsed_message.from_user
+                    and parsed_message.receiver_user
+                    and replied.receiver_user.id == parsed_message.from_user.id
+                    and replied.from_user.id == parsed_message.receiver_user.id
+                ):
+                    parsed_message.reply_to_message = _without_reply(replied)
+        elif isinstance(message.reply_to, raw.types.MessageReplyHeader):
             parsed_message.reply_to_message_id = message.reply_to.reply_to_msg_id
             parsed_message.reply_to_top_message_id = message.reply_to.reply_to_top_id
             parsed_message.reply_to_checklist_task_id = message.reply_to.todo_item_id
@@ -2112,7 +2139,7 @@ class Message(Object, Update):
                     key = (parsed_message.chat.id, parsed_message.reply_to_message_id)
                     reply_to_params = {"chat_id": key[0], "reply_to_message_ids": message.id}
 
-                parsed_message.reply_to_message = client.message_cache[key]
+                parsed_message.reply_to_message = _without_reply(client.message_cache[key])
 
                 if raw_reply_to_message:  # For business bots only
                     parsed_message.reply_to_message = await types.Message._parse(
