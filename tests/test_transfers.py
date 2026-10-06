@@ -700,6 +700,41 @@ async def test_concurrent_transfers_add_capacity(monkeypatch):
 
 
 @pytest.mark.asyncio
+async def test_a_refused_session_does_not_sink_the_pool(monkeypatch):
+    client, _ = make_client(monkeypatch)
+    made = []
+    refuse = {2, 4}
+
+    async def flaky_make(dc_id, auth_key, server_address, port):
+        n = len(made) + 1
+        made.append(n)
+        await asyncio.sleep(0)
+        if n in refuse:
+            raise OSError(f"refused {n}")
+        return MediaPoolFakeSession()
+
+    client._make_media_session = flaky_make
+
+    async with client._media_pool(2, 5) as task:
+        pool = await task
+
+    assert pool, "one refused session must not fail the whole transfer"
+    assert len(pool) == len(made) - len(refuse & set(made)), (
+        "every session that did start must be in the pool, none may leak"
+    )
+    assert client.media_session_pools[2] == pool
+
+    client, _ = make_client(monkeypatch)
+    made.clear()
+    refuse = set(range(1, 100))
+    client._make_media_session = flaky_make
+
+    with pytest.raises(OSError):
+        async with client._media_pool(2, 5) as task:
+            await task
+
+
+@pytest.mark.asyncio
 async def test_pool_is_capped(monkeypatch):
     client, _ = make_client(monkeypatch)
 

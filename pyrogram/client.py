@@ -2475,12 +2475,27 @@ class Client(Methods):
                 while needed > 0:
                     chunk = min(needed, 3)
                     async with self._session_creation_gate:
-                        pool.extend(await asyncio.gather(*(
+                        results = await asyncio.gather(*(
                             self._make_media_session(
                                 dc_id, media.auth_key, media.server_address, media.port
                             )
                             for _ in range(chunk)
-                        )))
+                        ), return_exceptions=True)
+
+                    failed = [r for r in results if isinstance(r, BaseException)]
+                    pool.extend(r for r in results if not isinstance(r, BaseException))
+
+                    if failed:
+                        if not pool:
+                            raise failed[0]
+
+                        log.warning(
+                            "Media pool for DC %s is short by %d session(s): %s",
+                            dc_id, needed - (chunk - len(failed)),
+                            str(failed[0]) or type(failed[0]).__name__,
+                        )
+                        break
+
                     needed -= chunk
             self.media_session_pools[dc_id] = pool
             return list(pool)
