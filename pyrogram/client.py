@@ -563,6 +563,7 @@ class Client(Methods):
         self.system_lang_code = system_lang_code.lower()
 
         self.ipv6 = ipv6
+        self._proxy: Proxy | None = None
         self.proxy = proxy
         self.test_mode = test_mode
         self.bot_token = bot_token
@@ -689,7 +690,6 @@ class Client(Methods):
             self.loop = None
 
         self.__config: raw.types.Config = None
-        self._proxy: Proxy | None = None
 
     @property
     def proxy(self) -> Proxy | None:

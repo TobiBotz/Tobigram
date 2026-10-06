@@ -430,3 +430,18 @@ def test_normalize_proxy_mtproxy_rejects_a_secret_in_no_known_encoding() -> None
         normalize_proxy(
             {"scheme": "mtproxy", "hostname": "1.2.3.4", "port": 443, "secret": "not a secret!"}
         )
+
+
+def test_client_initialization_preserves_proxy() -> None:
+    from pyrogram import Client
+
+    client = Client(
+        "test",
+        api_id=1,
+        api_hash="x",
+        in_memory=True,
+        proxy={"scheme": "mtproxy", "hostname": "1.2.3.4", "port": 443, "secret": PLAIN_SECRET_HEX},
+    )
+    assert isinstance(client.proxy, MTProxy)
+    assert client.proxy.hostname == "1.2.3.4"
+    assert client.proxy.port == 443
