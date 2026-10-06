@@ -5281,3 +5281,44 @@ async def test_a_failing_too_long_recovery_is_logged_and_releases_the_key(caplog
 
     assert "Recovery after too long update failed" in caplog.text
     assert client._recovering == set()
+
+
+async def test_peers_fetched_for_a_min_channel_message_are_stored():
+    full_user = raw.types.User(id=7, access_hash=99, first_name="x")
+    client = _TooLongClient(
+        replies=[
+            raw.types.updates.ChannelDifference(
+                pts=12,
+                new_messages=[],
+                other_updates=[],
+                chats=[],
+                users=[full_user],
+                final=True,
+            )
+        ]
+    )
+
+    await client.handle_updates(
+        raw.types.Updates(
+            updates=[
+                raw.types.UpdateNewChannelMessage(
+                    message=raw.types.Message(
+                        id=3,
+                        peer_id=raw.types.PeerChannel(channel_id=5),
+                        date=0,
+                        message="hi",
+                        from_id=raw.types.PeerUser(user_id=7),
+                    ),
+                    pts=12,
+                    pts_count=1,
+                )
+            ],
+            users=[raw.types.User(id=7, min=True, first_name="x")],
+            chats=[],
+            date=1700000000,
+            seq=4,
+        )
+    )
+
+    assert isinstance(client.sent[0], raw.functions.updates.GetChannelDifference)
+    assert full_user in client.fetched

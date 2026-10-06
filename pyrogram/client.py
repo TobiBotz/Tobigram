@@ -1463,6 +1463,8 @@ class Client(Methods):
                             )
                         else:
                             if not isinstance(diff, raw.types.updates.ChannelDifferenceEmpty):
+                                await self.fetch_peers(diff.users)
+                                await self.fetch_peers(diff.chats)
                                 users.update({u.id: u for u in diff.users})
                                 chats.update({c.id: c for c in diff.chats})
 
