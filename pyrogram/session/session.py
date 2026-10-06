@@ -100,6 +100,7 @@ class Session:
     MAX_SKEW_BREACHES = 3
     MAX_INFLIGHT_PACKETS = int(os.environ.get("PYROGRAM_MAX_INFLIGHT_PACKETS", 16))
     MAX_INFLIGHT_MEDIA = int(os.environ.get("PYROGRAM_MAX_INFLIGHT_MEDIA", 6))
+    MAX_PENDING_UPDATES = int(os.environ.get("PYROGRAM_MAX_PENDING_UPDATES", 256))
     INLINE_CRYPTO_MAX = int(os.environ.get("PYROGRAM_INLINE_CRYPTO_MAX", 32 * 1024))
 
     TRANSPORT_ERRORS = Connection.TRANSPORT_ERRORS
@@ -145,7 +146,11 @@ class Session:
         self._packet_tasks = set()
         self._packet_semaphore = asyncio.Semaphore(Session.MAX_INFLIGHT_PACKETS)
         self._update_semaphore = asyncio.Semaphore(32)
-        self._invoke_semaphore = asyncio.Semaphore(Session.MAX_INFLIGHT_MEDIA) if is_media else None
+        self._pending_updates = 0
+        self._dropped_updates = 0
+        self._invoke_semaphore = (
+            asyncio.Semaphore(Session.MAX_INFLIGHT_MEDIA) if is_media else None
+        )
 
         self.ping_task = None
         self.ping_task_event = asyncio.Event()
@@ -562,7 +567,7 @@ class Session:
                 msg_id = msg.body.msg_id
             else:
                 if self.client is not None:
-                    utils.run_in_background(self._run_update(msg.body), self.loop)
+                    self._schedule_update(msg.body)
 
             if msg_id in self.results:
                 self.results[msg_id].value = getattr(msg.body, "result", msg.body)
@@ -624,6 +629,31 @@ class Session:
         log.debug("Sending %s acks", len(ack_ids))
 
         await self.send(raw.types.MsgsAck(msg_ids=ack_ids), False)
+
+    def _schedule_update(self, body):
+        if self._pending_updates >= Session.MAX_PENDING_UPDATES:
+            self._dropped_updates += 1
+
+            if self._dropped_updates == 1:
+                log.warning(
+                    "Dropping %s: %s update batches are already waiting for handlers, "
+                    "handlers cannot keep up with the update rate. Consider raising "
+                    "`workers` or moving slow work off the handler.",
+                    type(body).__name__, self._pending_updates
+                )
+
+            return
+
+        task = utils.run_in_background(self._run_update(body), self.loop)
+        self._pending_updates += 1
+        task.add_done_callback(self._update_done)
+
+    def _update_done(self, _task):
+        self._pending_updates -= 1
+
+        if self._dropped_updates and self._pending_updates <= Session.MAX_PENDING_UPDATES // 2:
+            log.warning("Dropped %s update batches while handlers were busy", self._dropped_updates)
+            self._dropped_updates = 0
 
     async def _run_update(self, body):
         async with self._update_semaphore:

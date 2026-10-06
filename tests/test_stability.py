@@ -644,6 +644,50 @@ async def test_the_updates_queue_stays_bounded():
     )
 
 
+async def test_update_batches_waiting_for_handlers_are_capped(monkeypatch, caplog):
+    class BlockedClient(DummyClient):
+        def __init__(self):
+            super().__init__()
+            self.gate = asyncio.Event()
+
+        async def handle_updates(self, body):
+            await self.gate.wait()
+            self.updates.append(body)
+
+    client = BlockedClient()
+    session = make_session(client)
+    session.connection = RecordingConnection()
+    monkeypatch.setattr(Session, "MAX_PENDING_UPDATES", 40)
+
+    body = raw.types.UpdatesTooLong().write()
+    base = MsgId() | 1
+
+    with caplog.at_level("WARNING"):
+        for i in range(100):
+            monkeypatch.setattr(
+                session_mod.warpcrypto, "unpack_message", unpacked_as(base + 4 * i, body)
+            )
+            await session.handle_packet(b"ignored")
+
+        assert session._pending_updates == 40, (
+            "update batches must stop piling up once handlers fall behind"
+        )
+        assert session._dropped_updates == 60
+        assert caplog.text.count("Dropping") == 1, "one warning per overload, not one per batch"
+
+        client.gate.set()
+
+        for _ in range(100):
+            if session._pending_updates == 0:
+                break
+            await asyncio.sleep(0.01)
+
+    assert len(client.updates) == 40
+    assert session._pending_updates == 0
+    assert session._dropped_updates == 0
+    assert "Dropped 60 update batches" in caplog.text
+
+
 class FakeSession:
     def __init__(self, last_used: float, results=None):
         self.last_used = last_used

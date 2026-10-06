@@ -111,6 +111,10 @@ Both are per connection on purpose: they cap latency on one socket, not total me
 deployment with many clients on one slow uplink should lower ``PYROGRAM_MAX_INFLIGHT_MEDIA``
 rather than assume the default protects the link globally.
 
+``PYROGRAM_MAX_PENDING_UPDATES`` (256) caps update batches that have been received but not yet
+handled, per client. Decrypting never stops, so when handlers fall behind, the batches above
+the cap are dropped with one warning per overload instead of piling up as tasks in memory.
+
 Environment knobs
 -----------------
 
@@ -139,6 +143,9 @@ Environment knobs
     * - ``PYROGRAM_MAX_INFLIGHT_PACKETS``
       - 16
       - packets decrypting at once
+    * - ``PYROGRAM_MAX_PENDING_UPDATES``
+      - 256
+      - update batches waiting for handlers
     * - ``PYROGRAM_INLINE_CRYPTO_MAX``
       - 32768
       - bytes encrypted on the event loop
