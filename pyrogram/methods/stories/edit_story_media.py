@@ -160,7 +160,7 @@ class EditStoryMedia:
                         )
                 else:
                     media = utils.get_input_media_from_file_id(media)
-            else:
+            elif media is not None:
                 thumb = await self.save_file(thumb)
                 file = await self.save_file(media, progress=progress, progress_args=progress_args)
                 mime_type = self.guess_mime_type(file.name)
