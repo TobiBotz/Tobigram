@@ -4999,3 +4999,47 @@ async def test_get_call_members_stops_when_there_is_no_next_page():
 
     assert len(members) == 1
     assert sent == [""]
+
+
+_PLUGIN_SOURCE = (
+    "import logging, logging.handlers\n"
+    "from pyrogram import Client, filters\n"
+    "\n"
+    "@Client.on_message(filters.command('ping'))\n"
+    "async def ping(client, message):\n"
+    "    pass\n"
+)
+
+
+def _plugin_client(tmp_path, monkeypatch, name, plugins, cls=None):
+    package = tmp_path / name
+    package.mkdir()
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "bot.py").write_text(_PLUGIN_SOURCE, encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+    return (cls or pyrogram.Client)(name, in_memory=True, plugins=dict(plugins, root=name))
+
+
+def test_loading_plugins_again_does_not_register_handlers_twice(tmp_path, monkeypatch):
+    client = _plugin_client(tmp_path, monkeypatch, "reloaded", {})
+
+    client.load_plugins()
+    client.load_plugins()
+
+    assert [h.callback.__name__ for h in client.dispatcher.groups[0]] == ["ping"], (
+        "a restart that keeps handlers must not make plugin handlers run twice"
+    )
+
+
+async def test_adding_a_handler_twice_under_a_running_loop_keeps_one():
+    client = _DispatcherClient()
+    dispatcher = Dispatcher(client)
+    handler = MessageHandler(lambda c, m: None)
+
+    dispatcher.add_handler(handler, 0)
+    dispatcher.add_handler(handler, 0)
+    await asyncio.sleep(0.05)
+
+    assert dispatcher.groups[0] == [handler]
