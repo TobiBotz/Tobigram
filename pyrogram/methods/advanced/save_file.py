@@ -33,7 +33,7 @@ from typing import BinaryIO, TYPE_CHECKING
 import pyrogram
 from pyrogram import StopTransmission, raw, utils
 from pyrogram.errors import Flood, RPCError
-from pyrogram.methods.rate_limiter import TokenBucket
+from pyrogram.methods.rate_limiter import AdaptiveBucket
 from pyrogram.session import Session
 
 if TYPE_CHECKING:
@@ -47,7 +47,7 @@ MAX_RETRIES = 16
 STALL_TIMEOUT = 900
 READ_BUFFER = 4 * 1024 * 1024
 MAX_BATCH = 4 * 1024 * 1024
-PACER_BURST = 8
+PACER_BURST = 16
 
 
 async def _stop_workers(queue: asyncio.Queue, workers: list) -> list:
@@ -133,6 +133,7 @@ class SaveFile:
                     try:
                         await _send_part(session, data)
                         _acked[0] += 1
+                        _pacer.on_success()
                     finally:
                         data = None
                         budget.release()
@@ -140,7 +141,9 @@ class SaveFile:
             async def _send_part(session, data):
                 for attempt in range(MAX_RETRIES):
                     try:
-                        if not await session.invoke(data, timeout=Session.MEDIA_WAIT_TIMEOUT):
+                        if not await session.invoke(
+                            data, timeout=Session.MEDIA_WAIT_TIMEOUT, sleep_threshold=0
+                        ):
                             raise OSError("part not accepted by the server")
                         break
                     except StopTransmission:
@@ -160,11 +163,10 @@ class SaveFile:
                             raise
                         delay = min(2**attempt, 30)
                         err_str = str(e)
-                        if "FLOOD" in err_str:
-                            for part in err_str.split():
-                                if part.isdigit():
-                                    delay = min(int(part), 300)
-                                    break
+                        if isinstance(e, Flood):
+                            if isinstance(e.value, int):
+                                delay = min(e.value, 300)
+                            _pacer.on_flood()
                         log.warning(
                             "Retrying upload part (attempt %d/%d): %s",
                             attempt + 1,
@@ -210,9 +212,9 @@ class SaveFile:
             is_big = file_size > 10 * 1024 * 1024
             pool_cap = max(1, math.ceil((file_total_parts - file_part) / 2))
             if is_bot:
-                rate_limit = int(os.environ.get("TOBIGRAM_UPLOAD_RATE_BOT", 120))
+                rate_limit = int(os.environ.get("TOBIGRAM_UPLOAD_RATE_BOT", 32))
                 pool_size = min(
-                    int(os.environ.get("TOBIGRAM_UPLOAD_POOL_BOT", 5)),
+                    int(os.environ.get("TOBIGRAM_UPLOAD_POOL_BOT", 8)),
                     POOL_SIZE,
                     pool_cap,
                 )
@@ -224,9 +226,9 @@ class SaveFile:
                     pool_cap,
                 )
             else:
-                rate_limit = int(os.environ.get("TOBIGRAM_UPLOAD_RATE_USER", 120))
+                rate_limit = int(os.environ.get("TOBIGRAM_UPLOAD_RATE_USER", 32))
                 pool_size = min(
-                    int(os.environ.get("TOBIGRAM_UPLOAD_POOL_USER", 5)),
+                    int(os.environ.get("TOBIGRAM_UPLOAD_POOL_USER", 12)),
                     POOL_SIZE,
                     pool_cap,
                 )
@@ -257,7 +259,9 @@ class SaveFile:
                 await pool_lease.aclose()
                 raise
             next_batch_task = None
-            _pacer = TokenBucket(rate=rate_limit, burst=PACER_BURST)
+            _pacer = AdaptiveBucket(
+                rate=rate_limit, ceiling=max(rate_limit, 300), burst=PACER_BURST, step=1.0
+            )
             _stalled_since = 0.0
             _last_reported = -1
 

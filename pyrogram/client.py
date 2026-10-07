@@ -52,6 +52,8 @@ from pyrogram.errors import (
     CDNFileHashMismatch,
     ChannelInvalid,
     ChannelPrivate,
+    FloodPremiumWait,
+    FloodWait,
     PeerIdInvalid,
     PersistentTimestampInvalid,
     PersistentTimestampOutdated,
@@ -62,7 +64,7 @@ from pyrogram.errors import (
 )
 from pyrogram.handlers.handler import Handler
 from pyrogram.methods import Methods
-from pyrogram.methods.rate_limiter import TokenBucket
+from pyrogram.methods.rate_limiter import AdaptiveBucket, TokenBucket
 from pyrogram.qrlogin import QRLogin
 from pyrogram.session import Auth, Session
 from pyrogram.storage import SQLiteStorage, Storage
@@ -1878,8 +1880,8 @@ class Client(Methods):
                 if _is_bot:
                     dl_pool_size = int(os.environ.get("TOBIGRAM_DL_POOL_BOT", 5))
                     dl_workers_per_session = int(os.environ.get("TOBIGRAM_DL_WORKERS_BOT", 3))
-                    dl_rate = int(os.environ.get("TOBIGRAM_DL_RATE_BOT", 100))
-                    dl_burst = int(os.environ.get("TOBIGRAM_DL_BURST_BOT", 25))
+                    dl_rate = int(os.environ.get("TOBIGRAM_DL_RATE_BOT", 16))
+                    dl_burst = int(os.environ.get("TOBIGRAM_DL_BURST_BOT", 8))
                 elif _is_premium:
                     dl_pool_size = int(os.environ.get("TOBIGRAM_DL_POOL_PREMIUM", 6))
                     dl_workers_per_session = int(os.environ.get("TOBIGRAM_DL_WORKERS_PREMIUM", 4))
@@ -1888,8 +1890,8 @@ class Client(Methods):
                 else:
                     dl_pool_size = int(os.environ.get("TOBIGRAM_DL_POOL_USER", 5))
                     dl_workers_per_session = int(os.environ.get("TOBIGRAM_DL_WORKERS_USER", 3))
-                    dl_rate = int(os.environ.get("TOBIGRAM_DL_RATE_USER", 100))
-                    dl_burst = int(os.environ.get("TOBIGRAM_DL_BURST_USER", 25))
+                    dl_rate = int(os.environ.get("TOBIGRAM_DL_RATE_USER", 8))
+                    dl_burst = int(os.environ.get("TOBIGRAM_DL_BURST_USER", 8))
 
                 total_chunks = math.ceil((file_size - offset_bytes) / chunk_size)
                 pool_size = min(dl_pool_size, total_chunks)
@@ -1910,12 +1912,12 @@ class Client(Methods):
                 tasks = []
                 _done_count = 0
                 _total_chunks = 0
-                _getfile_rate = TokenBucket(rate=dl_rate, burst=dl_burst)
-                _last_rate_adj = 0.0
-                _fast_window = 0
+                _getfile_rate = AdaptiveBucket(
+                    rate=dl_rate, ceiling=max(dl_rate, 150), burst=dl_burst
+                )
 
                 async def _worker(session):
-                    nonlocal _done_count, _last_rate_adj, _fast_window
+                    nonlocal _done_count
                     while True:
                         await buffer_slots.acquire()
 
@@ -1926,24 +1928,43 @@ class Client(Methods):
                             return
 
                         try:
-                            await _getfile_rate.acquire()
-                            t0 = time.monotonic()
-                            r = await session.invoke(
-                                raw.functions.upload.GetFile(
-                                    location=location,
-                                    offset=offset,
-                                    limit=chunk_size,
-                                ),
-                                timeout=Session.MEDIA_WAIT_TIMEOUT,
-                                sleep_threshold=30,
-                            )
+                            slept = 0.0
+
+                            while True:
+                                await _getfile_rate.acquire()
+
+                                try:
+                                    r = await session.invoke(
+                                        raw.functions.upload.GetFile(
+                                            location=location,
+                                            offset=offset,
+                                            limit=chunk_size,
+                                        ),
+                                        timeout=Session.MEDIA_WAIT_TIMEOUT,
+                                        sleep_threshold=0,
+                                    )
+                                    break
+                                except (FloodWait, FloodPremiumWait) as e:
+                                    amount = e.value
+
+                                    if amount > 30 or slept + amount > 30 * Session.MAX_RETRIES:
+                                        raise
+
+                                    slept += amount
+                                    _getfile_rate.on_flood()
+                                    log.warning(
+                                        '[%s] Waiting for %s seconds before continuing (required by "upload.GetFile")',
+                                        self.name,
+                                        amount,
+                                    )
+                                    await asyncio.sleep(amount)
                         except BaseException:
                             buffer_slots.release()
                             raise
 
+                        _getfile_rate.on_success()
                         chunk_data = r.bytes
                         r = None
-                        t1 = time.monotonic()
 
                         if _write_mode:
                             write_at(_write_fd, chunk_data, offset)
@@ -1959,21 +1980,6 @@ class Client(Methods):
 
                         if chunk_len < chunk_size:
                             return
-
-                        elapsed = t1 - t0
-                        now = t1
-                        if elapsed > 2.0 and now - _last_rate_adj > 0.5:
-                            _last_rate_adj = now
-                            _fast_window = 0
-                            _getfile_rate.rate = max(_getfile_rate.rate * 0.8, 3.0)
-                        elif elapsed < 0.5:
-                            _fast_window += 1
-                            if _fast_window >= 5 and now - _last_rate_adj > 0.5:
-                                _last_rate_adj = now
-                                _getfile_rate.rate = min(_getfile_rate.rate + 2.0, dl_rate)
-                                _fast_window = 0
-                        else:
-                            _fast_window = 0
 
                 async def _launch(start):
                     nonlocal _total_chunks
