@@ -34,6 +34,8 @@ import pyrogram
 from pyrogram import StopTransmission, raw, utils
 from pyrogram.errors import Flood, RPCError
 from pyrogram.methods.rate_limiter import AdaptiveBucket
+
+TokenBucket = AdaptiveBucket
 from pyrogram.session import Session
 
 if TYPE_CHECKING:

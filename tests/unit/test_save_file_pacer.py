@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from pyrogram.methods.advanced.save_file import SaveFile
-from pyrogram.methods.rate_limiter import TokenBucket
+from pyrogram.methods.rate_limiter import AdaptiveBucket
 
 
 class DummyStorage:
@@ -57,14 +57,14 @@ async def test_save_file_pacer_token_bucket_user():
     bio = io.BytesIO(data)
 
     with patch(
-        "pyrogram.methods.advanced.save_file.TokenBucket", wraps=TokenBucket
+        "pyrogram.methods.advanced.save_file.AdaptiveBucket", wraps=AdaptiveBucket
     ) as mock_bucket_cls:
         res = await client.save_file(bio)
         assert res is not None
         assert mock_bucket_cls.called
         _, kwargs = mock_bucket_cls.call_args
-        assert kwargs["rate"] == 120
-        assert kwargs["burst"] == 8
+        assert kwargs["rate"] == 32
+        assert kwargs["burst"] == 16
 
 
 @pytest.mark.asyncio
@@ -74,14 +74,14 @@ async def test_save_file_pacer_token_bucket_premium():
     bio = io.BytesIO(data)
 
     with patch(
-        "pyrogram.methods.advanced.save_file.TokenBucket", wraps=TokenBucket
+        "pyrogram.methods.advanced.save_file.AdaptiveBucket", wraps=AdaptiveBucket
     ) as mock_bucket_cls:
         res = await client.save_file(bio)
         assert res is not None
         assert mock_bucket_cls.called
         _, kwargs = mock_bucket_cls.call_args
         assert kwargs["rate"] == 300
-        assert kwargs["burst"] == 8
+        assert kwargs["burst"] == 16
 
 
 @pytest.mark.asyncio
@@ -92,14 +92,14 @@ async def test_save_file_pacer_token_bucket_bot():
 
     with patch.dict(os.environ, {"TOBIGRAM_UPLOAD_RATE_BOT": "150"}):
         with patch(
-            "pyrogram.methods.advanced.save_file.TokenBucket", wraps=TokenBucket
+            "pyrogram.methods.advanced.save_file.AdaptiveBucket", wraps=AdaptiveBucket
         ) as mock_bucket_cls:
             res = await client.save_file(bio)
             assert res is not None
             assert mock_bucket_cls.called
             _, kwargs = mock_bucket_cls.call_args
             assert kwargs["rate"] == 150
-            assert kwargs["burst"] == 8
+            assert kwargs["burst"] == 16
 
 
 @pytest.mark.asyncio
@@ -110,11 +110,11 @@ async def test_save_file_pacer_token_bucket_env_override():
 
     with patch.dict(os.environ, {"TOBIGRAM_UPLOAD_RATE_USER": "200"}):
         with patch(
-            "pyrogram.methods.advanced.save_file.TokenBucket", wraps=TokenBucket
+            "pyrogram.methods.advanced.save_file.AdaptiveBucket", wraps=AdaptiveBucket
         ) as mock_bucket_cls:
             res = await client.save_file(bio)
             assert res is not None
             assert mock_bucket_cls.called
             _, kwargs = mock_bucket_cls.call_args
             assert kwargs["rate"] == 200
-            assert kwargs["burst"] == 8
+            assert kwargs["burst"] == 16
