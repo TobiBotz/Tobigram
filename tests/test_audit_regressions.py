@@ -1770,9 +1770,7 @@ async def test_a_finished_upload_says_it_finished(tmp_path):
     assert seen[-1] == (size, size), f"the last call must report the whole file, got {seen[-1]}"
     assert all(c <= size for c, _ in seen), "no call may claim more bytes than were sent"
     assert seen == sorted(seen), "progress must not go backwards"
-    assert len(seen) == len(set(seen)), (
-        f"the same value was reported more than once: {seen}"
-    )
+    assert len(seen) == len(set(seen)), f"the same value was reported more than once: {seen}"
 
 
 async def test_stop_transmission_from_the_callback_still_stops_both_ways(tmp_path):
@@ -1811,6 +1809,8 @@ async def test_stop_transmission_from_the_callback_still_stops_both_ways(tmp_pat
         await client.save_file(str(path), progress=stop_on_second)
 
     assert len(calls) == 2, f"upload kept reporting after the stop: {calls}"
+
+
 OWN_ID = 7933658472
 
 
@@ -5058,11 +5058,21 @@ async def test_a_reply_chain_does_not_keep_every_message_alive():
     refs = []
 
     for i in range(1, 41):
-        message = await types.Message._parse(client, raw.types.Message(
-            id=i, peer_id=raw.types.PeerChannel(channel_id=100), from_id=raw.types.PeerUser(user_id=5),
-            date=0, message="x", entities=[], restriction_reason=[],
-            reply_to=raw.types.MessageReplyHeader(reply_to_msg_id=i - 1) if i > 1 else None,
-        ), users, chats)
+        message = await types.Message._parse(
+            client,
+            raw.types.Message(
+                id=i,
+                peer_id=raw.types.PeerChannel(channel_id=100),
+                from_id=raw.types.PeerUser(user_id=5),
+                date=0,
+                message="x",
+                entities=[],
+                restriction_reason=[],
+                reply_to=raw.types.MessageReplyHeader(reply_to_msg_id=i - 1) if i > 1 else None,
+            ),
+            users,
+            chats,
+        )
         chat_id = message.chat.id
         refs.append(weakref.ref(message))
         del message

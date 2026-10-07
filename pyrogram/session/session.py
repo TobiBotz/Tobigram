@@ -148,9 +148,7 @@ class Session:
         self._update_semaphore = asyncio.Semaphore(32)
         self._pending_updates = 0
         self._dropped_updates = 0
-        self._invoke_semaphore = (
-            asyncio.Semaphore(Session.MAX_INFLIGHT_MEDIA) if is_media else None
-        )
+        self._invoke_semaphore = asyncio.Semaphore(Session.MAX_INFLIGHT_MEDIA) if is_media else None
 
         self.ping_task = None
         self.ping_task_event = asyncio.Event()
@@ -639,7 +637,8 @@ class Session:
                     "Dropping %s: %s update batches are already waiting for handlers, "
                     "handlers cannot keep up with the update rate. Consider raising "
                     "`workers` or moving slow work off the handler.",
-                    type(body).__name__, self._pending_updates
+                    type(body).__name__,
+                    self._pending_updates,
                 )
 
             return

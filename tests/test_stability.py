@@ -823,7 +823,6 @@ CHUNK = 1024 * 1024
 
 
 class ChunkSession:
-
     def __init__(self, file_size: int):
         self.file_size = file_size
         self.served = 0

@@ -1823,12 +1823,7 @@ class Client(Methods):
 
                 _last_reported = sent
 
-                func = functools.partial(
-                    progress,
-                    sent,
-                    file_size,
-                    *progress_args
-                )
+                func = functools.partial(progress, sent, file_size, *progress_args)
 
                 try:
                     if inspect.iscoroutinefunction(progress):
@@ -1970,9 +1965,7 @@ class Client(Methods):
 
                     started = [
                         asyncio.ensure_future(_worker(pool[i % n_sessions]))
-                        for i in range(
-                            min(dl_pool_size * dl_workers_per_session, chunks_needed)
-                        )
+                        for i in range(min(dl_pool_size * dl_workers_per_session, chunks_needed))
                     ]
 
                     for t in started:
@@ -2501,12 +2494,15 @@ class Client(Methods):
                 while needed > 0:
                     chunk = min(needed, 3)
                     async with self._session_creation_gate:
-                        results = await asyncio.gather(*(
-                            self._make_media_session(
-                                dc_id, media.auth_key, media.server_address, media.port
-                            )
-                            for _ in range(chunk)
-                        ), return_exceptions=True)
+                        results = await asyncio.gather(
+                            *(
+                                self._make_media_session(
+                                    dc_id, media.auth_key, media.server_address, media.port
+                                )
+                                for _ in range(chunk)
+                            ),
+                            return_exceptions=True,
+                        )
 
                     failed = [r for r in results if isinstance(r, BaseException)]
                     pool.extend(r for r in results if not isinstance(r, BaseException))
@@ -2517,7 +2513,8 @@ class Client(Methods):
 
                         log.warning(
                             "Media pool for DC %s is short by %d session(s): %s",
-                            dc_id, needed - (chunk - len(failed)),
+                            dc_id,
+                            needed - (chunk - len(failed)),
                             str(failed[0]) or type(failed[0]).__name__,
                         )
                         break

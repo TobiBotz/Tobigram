@@ -2102,7 +2102,10 @@ class Message(Object, Update):
         business_connection_id: str | None = None,
         raw_reply_to_message: raw.base.Message | None = None,
     ):
-        if isinstance(message.reply_to, raw.types.MessageReplyHeader) and message.reply_to.reply_to_ephemeral:
+        if (
+            isinstance(message.reply_to, raw.types.MessageReplyHeader)
+            and message.reply_to.reply_to_ephemeral
+        ):
             if replies:
                 replied = client.message_cache[
                     (parsed_message.chat.id, "ephemeral", message.reply_to.reply_to_msg_id)

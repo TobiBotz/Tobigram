@@ -30,6 +30,7 @@ import time
 from hashlib import md5
 from typing import BinaryIO, TYPE_CHECKING
 
+import pyrogram
 from pyrogram import StopTransmission, raw, utils
 from pyrogram.errors import Flood, RPCError
 from pyrogram.methods.rate_limiter import TokenBucket
@@ -139,9 +140,7 @@ class SaveFile:
             async def _send_part(session, data):
                 for attempt in range(MAX_RETRIES):
                     try:
-                        if not await session.invoke(
-                            data, timeout=Session.MEDIA_WAIT_TIMEOUT
-                        ):
+                        if not await session.invoke(data, timeout=Session.MEDIA_WAIT_TIMEOUT):
                             raise OSError("part not accepted by the server")
                         break
                     except StopTransmission:
@@ -252,8 +251,7 @@ class SaveFile:
                 queue = asyncio.Queue(n_workers)
                 budget = ReadAhead(self.read_ahead_slots)
                 workers = [
-                    self.loop.create_task(worker(pool[i % len(pool)]))
-                    for i in range(n_workers)
+                    self.loop.create_task(worker(pool[i % len(pool)])) for i in range(n_workers)
                 ]
             except BaseException:
                 await pool_lease.aclose()
