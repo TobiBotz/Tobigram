@@ -223,14 +223,8 @@ class Markdown:
 
     @staticmethod
     def unparse(text: str, entities: list):
-        text = utils.add_surrogates(text)
-
-        entities_offsets = []
-
-        for entity in entities:
+        def parse_one(entity, start, end):
             entity_type = entity.type
-            start = entity.offset
-            end = start + entity.length
 
             if entity_type == MessageEntityType.BOLD:
                 start_tag = end_tag = BOLD_DELIM
@@ -251,13 +245,17 @@ class Markdown:
                 start_tag = EXPANDABLE_QUOTE_DELIM if expandable else QUOTE_DELIM
                 end_tag = SPOILER_DELIM if expandable else ""
 
+                extra = []
+
                 for index in range(start, end - 1):
                     if text[index] == "\n":
-                        entities_offsets.append((QUOTE_DELIM, index + 1))
+                        extra.append((QUOTE_DELIM, index + 1))
 
                 if expandable:
                     line_end = text.find("\n", end)
                     end = len(text) if line_end < 0 else line_end
+
+                return (start_tag, start), (end_tag, end), extra
             elif entity_type == MessageEntityType.DATE_TIME:
                 unix_time = getattr(entity, "unix_time", 0) or 0
                 dt_format = getattr(entity, "date_time_format", "") or ""
@@ -281,29 +279,48 @@ class Markdown:
                 start_tag = "["
                 end_tag = f"](tg://user?id={user.id})"
             else:
-                continue
+                return None
 
-            entities_offsets.append(
-                (
-                    start_tag,
-                    start,
-                )
-            )
-            entities_offsets.append(
-                (
-                    end_tag,
-                    end,
-                )
-            )
+            return (start_tag, start), (end_tag, end), []
 
-        entities_offsets = (
-            x[1]
-            for x in sorted(
-                enumerate(entities_offsets), key=lambda x: (x[1][1], x[0]), reverse=True
-            )
-        )
+        def recursive(span_i: int) -> int:
+            start, end, entity = spans[span_i]
+            this = parse_one(entity, start, end)
 
-        for entity, offset in entities_offsets:
-            text = text[:offset] + entity + text[offset:]
+            if this is None:
+                return 1
+
+            (start_tag, start), (end_tag, end), extra = this
+
+            entities_offsets.append((start_tag, start))
+            entities_offsets.extend(extra)
+
+            internal_i = span_i + 1
+
+            while internal_i < len(spans) and spans[internal_i][0] < end:
+                internal_i += recursive(internal_i)
+
+            entities_offsets.append((end_tag, end))
+
+            return internal_i - span_i
+
+        text = utils.add_surrogates(text)
+
+        spans = utils.split_crossing_spans(text, entities)
+
+        entities_offsets = []
+
+        i = 0
+
+        while i < len(spans):
+            i += recursive(i)
+
+        entities_offsets.sort(key=lambda x: x[1])
+
+        last_offset = len(text)
+
+        for entity, offset in reversed(entities_offsets):
+            text = text[:offset] + entity + text[offset:last_offset] + text[last_offset:]
+            last_offset = offset
 
         return utils.remove_surrogates(text)

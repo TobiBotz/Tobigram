@@ -217,13 +217,11 @@ class HTML:
 
     @staticmethod
     def unparse(text: str, entities: list):
-        def parse_one(entity):
+        def parse_one(entity, start, end):
             """
             Parses a single entity and returns (start_tag, start), (end_tag, end)
             """
             entity_type = entity.type
-            start = entity.offset
-            end = start + entity.length
 
             if entity_type in (
                 MessageEntityType.BOLD,
@@ -275,35 +273,27 @@ class HTML:
 
             return (start_tag, start), (end_tag, end)
 
-        def recursive(entity_i: int) -> int:
-            """
-            Takes the index of the entity to start parsing from, returns the number of parsed entities inside it.
-            Uses entities_offsets as a stack, pushing (start_tag, start) first, then parsing nested entities,
-            and finally pushing (end_tag, end) to the stack.
-            No need to sort at the end.
-            """
-            this = parse_one(entities[entity_i])
+        def recursive(span_i: int) -> int:
+            start, end, entity = spans[span_i]
+            this = parse_one(entity, start, end)
             if this is None:
                 return 1
             (start_tag, start), (end_tag, end) = this
             entities_offsets.append((start_tag, start))
-            internal_i = entity_i + 1
-            # while the next entity is inside the current one, keep parsing
-            while internal_i < len(entities) and entities[internal_i].offset < end:
+            internal_i = span_i + 1
+            while internal_i < len(spans) and spans[internal_i][0] < end:
                 internal_i += recursive(internal_i)
             entities_offsets.append((end_tag, end))
-            return internal_i - entity_i
+            return internal_i - span_i
 
         text = utils.add_surrogates(text)
 
+        spans = utils.split_crossing_spans(text, entities)
+
         entities_offsets = []
 
-        # probably useless because entities are already sorted by telegram
-        entities.sort(key=lambda e: (e.offset, -e.length))
-
-        # main loop for first-level entities
         i = 0
-        while i < len(entities):
+        while i < len(spans):
             i += recursive(i)
 
         last_offset = len(text)

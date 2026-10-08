@@ -303,3 +303,138 @@ class TestMarkdownUnparse:
         result = Markdown.unparse("Hello test", [EntityBold(), EntityItalic()])
         assert BOLD_DELIM in result
         assert ITALIC_DELIM in result
+
+
+def test_unparse_half_emoji_entity_widens_to_the_whole_code_point():
+    class Entity:
+        type = MessageEntityType.BOLD
+        offset = 0
+        length = 1
+
+    result = Markdown.unparse("😀", [Entity()])
+    assert result == "**😀**"
+
+
+def test_unparse_entity_starting_inside_an_emoji():
+    class Entity:
+        type = MessageEntityType.BOLD
+        offset = 1
+        length = 1
+
+    result = Markdown.unparse("😀", [Entity()])
+    assert result == "**😀**"
+
+
+def test_unparse_entity_ending_inside_an_emoji():
+    class Entity:
+        type = MessageEntityType.BOLD
+        offset = 1
+        length = 1
+
+    result = Markdown.unparse("a😀b", [Entity()])
+    assert result == "a**😀**b"
+
+
+def test_unparse_aligned_emoji_entity_is_unchanged():
+    class Entity:
+        type = MessageEntityType.BOLD
+        offset = 1
+        length = 2
+
+    result = Markdown.unparse("a😀b", [Entity()])
+    assert result == "a**😀**b"
+
+
+def test_unparse_normal_entity_after_emoji_is_unchanged():
+    class Entity:
+        type = MessageEntityType.BOLD
+        offset = 3
+        length = 5
+
+    result = Markdown.unparse("😀 hello", [Entity()])
+    assert result == "😀 **hello**"
+
+
+def test_unparse_entity_with_leading_space_is_unchanged():
+    class Entity:
+        type = MessageEntityType.BOLD
+        offset = 2
+        length = 5
+
+    result = Markdown.unparse("😀 hello", [Entity()])
+    assert result == "😀** hell**o"
+
+
+def test_unparse_overlapping_entities_stay_well_formed():
+    class Bold:
+        type = MessageEntityType.BOLD
+        offset = 1
+        length = 1
+
+    class Italic:
+        type = MessageEntityType.ITALIC
+        offset = 2
+        length = 1
+
+    result = Markdown.unparse("a😀b", [Bold(), Italic()])
+    assert result == "a**__😀__**b"
+
+
+def test_unparse_overlapping_entities_at_start_stay_well_formed():
+    class Italic:
+        type = MessageEntityType.ITALIC
+        offset = 0
+        length = 1
+
+    class Bold:
+        type = MessageEntityType.BOLD
+        offset = 1
+        length = 1
+
+    result = Markdown.unparse("😀x", [Italic(), Bold()])
+    assert result == "__**😀**__x"
+
+
+def test_unparse_fully_overlapping_entities_nest():
+    class Bold:
+        type = MessageEntityType.BOLD
+        offset = 0
+        length = 5
+
+    class Italic:
+        type = MessageEntityType.ITALIC
+        offset = 0
+        length = 5
+
+    result = Markdown.unparse("hello", [Bold(), Italic()])
+    assert result == "**__hello__**"
+
+
+def test_unparse_partially_overlapping_entities_stay_well_formed():
+    class Bold:
+        type = MessageEntityType.BOLD
+        offset = 0
+        length = 7
+
+    class Italic:
+        type = MessageEntityType.ITALIC
+        offset = 5
+        length = 6
+
+    result = Markdown.unparse("hello world", [Bold(), Italic()])
+    assert result == "**hello__ w__**__orld__"
+
+
+def test_unparse_partially_overlapping_entities_reversed_input_order():
+    class Bold:
+        type = MessageEntityType.BOLD
+        offset = 0
+        length = 7
+
+    class Italic:
+        type = MessageEntityType.ITALIC
+        offset = 5
+        length = 6
+
+    result = Markdown.unparse("hello world", [Italic(), Bold()])
+    assert result == "**hello__ w__**__orld__"

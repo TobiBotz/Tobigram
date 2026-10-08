@@ -375,3 +375,86 @@ def test_html_parse_tg_time_with_an_empty_unix():
         assert result["entities"] is None
 
     asyncio.run(run())
+
+
+def _entity(entity_type, offset, length, **kwargs):
+    return pyrogram.types.MessageEntity(type=entity_type, offset=offset, length=length, **kwargs)
+
+
+def test_html_unparse_half_emoji_entity_widens_to_the_whole_code_point():
+    # An entity covering only the first UTF-16 unit of an emoji must not split
+    # the surrogate pair: it widens outward and stays crash-free.
+    text = "😀"
+    entities = pyrogram.types.List([_entity(pyrogram.enums.MessageEntityType.BOLD, 0, 1)])
+
+    assert HTML.unparse(text=text, entities=entities) == "<b>😀</b>"
+
+
+def test_html_unparse_entity_starting_inside_an_emoji():
+    text = "😀"
+    entities = pyrogram.types.List([_entity(pyrogram.enums.MessageEntityType.BOLD, 1, 1)])
+
+    assert HTML.unparse(text=text, entities=entities) == "<b>😀</b>"
+
+
+def test_html_unparse_entity_ending_inside_an_emoji():
+    # Emoji occupies UTF-16 units 1..2 in "a😀b"; a bold ending at unit 2 splits
+    # the pair and must widen right.
+    text = "a😀b"
+    entities = pyrogram.types.List([_entity(pyrogram.enums.MessageEntityType.BOLD, 1, 1)])
+
+    assert HTML.unparse(text=text, entities=entities) == "a<b>😀</b>b"
+
+
+def test_html_unparse_custom_emoji_half_entity():
+    text = "😀"
+    entities = pyrogram.types.List(
+        [
+            _entity(
+                pyrogram.enums.MessageEntityType.CUSTOM_EMOJI,
+                0,
+                1,
+                custom_emoji_id="12345",
+            )
+        ]
+    )
+
+    assert HTML.unparse(text=text, entities=entities) == '<tg-emoji emoji-id="12345">😀</tg-emoji>'
+
+
+def test_html_unparse_aligned_emoji_entity_is_unchanged():
+    # Sanity check: an entity already aligned to the emoji boundary is untouched.
+    text = "a😀b"
+    entities = pyrogram.types.List([_entity(pyrogram.enums.MessageEntityType.BOLD, 1, 2)])
+
+    assert HTML.unparse(text=text, entities=entities) == "a<b>😀</b>b"
+
+
+def test_html_unparse_normal_entity_after_emoji_is_unchanged():
+    # "😀 hello": the emoji is UTF-16 units 0..1, then " hello".  A normal,
+    # aligned entity must be byte-identical to the pre-fix output.
+    text = "😀 hello"
+    entities = pyrogram.types.List([_entity(pyrogram.enums.MessageEntityType.BOLD, 3, 5)])
+
+    assert HTML.unparse(text=text, entities=entities) == "😀 <b>hello</b>"
+
+
+def test_html_unparse_entity_with_leading_space_is_unchanged():
+    # The exact case requested: entity(offset=2, length=5) on "😀 hello".  The
+    # fix must only touch misaligned surrogate boundaries, never valid ones.
+    text = "😀 hello"
+    entities = pyrogram.types.List([_entity(pyrogram.enums.MessageEntityType.BOLD, 2, 5)])
+
+    assert HTML.unparse(text=text, entities=entities) == "😀<b> hell</b>o"
+
+
+def test_html_unparse_partially_overlapping_entities_stay_well_formed():
+    text = "hello world"
+    entities = pyrogram.types.List(
+        [
+            _entity(pyrogram.enums.MessageEntityType.BOLD, 0, 7),
+            _entity(pyrogram.enums.MessageEntityType.ITALIC, 5, 6),
+        ]
+    )
+
+    assert HTML.unparse(text=text, entities=entities) == "<b>hello<i> w</i></b><i>orld</i>"
