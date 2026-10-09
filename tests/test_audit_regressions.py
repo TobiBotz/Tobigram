@@ -5703,3 +5703,52 @@ async def test_a_received_rich_button_can_be_sent_again():
 
     assert button.write().text.write() == text.write()
     assert button.write_text().text.write() == text.write()
+
+
+async def test_anchor_links_are_resolved_against_the_anchors_of_the_whole_message():
+    def link(name):
+        return raw.types.TextUrl(text=raw.types.TextPlain(text=name), url=f"#{name}", webpage_id=0)
+
+    received = raw.types.RichMessage(
+        blocks=[
+            raw.types.PageBlockParagraph(
+                text=raw.types.TextConcat(
+                    texts=[
+                        raw.types.TextAnchor(text=raw.types.TextEmpty(), name="plain"),
+                        raw.types.TextAnchor(text=raw.types.TextPlain(text="Ref"), name="ref"),
+                        raw.types.TextAnchor(text=raw.types.TextEmpty(), name="a b"),
+                    ]
+                )
+            ),
+            raw.types.PageBlockList(
+                items=[
+                    raw.types.PageListItemText(
+                        text=raw.types.TextConcat(
+                            texts=[
+                                link("plain"),
+                                link("ref"),
+                                link("missing"),
+                                link("a%20b"),
+                            ]
+                        )
+                    )
+                ]
+            ),
+        ],
+        photos=[],
+        documents=[],
+    )
+
+    parsed = await types.RichMessage._parse(None, received)
+    links = parsed.blocks[1].items[0].blocks[0].text
+
+    assert [type(item).__name__ for item in links] == [
+        "RichTextAnchorLink",
+        "RichTextReferenceLink",
+        "RichTextUrl",
+        "RichTextAnchorLink",
+    ]
+    assert links[0].anchor_name == "plain"
+    assert links[1].reference_name == "ref"
+    assert links[2].url == "#missing"
+    assert links[3].anchor_name == "a b"

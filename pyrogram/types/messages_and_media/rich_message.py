@@ -16,8 +16,9 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-
 from __future__ import annotations
+
+from urllib.parse import unquote
 
 import pyrogram
 from pyrogram import raw, types
@@ -402,6 +403,11 @@ class RichMessage(Object):
                 is_rtl=rich_message.rtl,
                 is_partial=rich_message.part,
             )
+            anchors = {}
+
+            if _collect_anchors(rich_message.blocks, anchors):
+                _resolve_anchor_links(parsed.blocks, anchors)
+
             parsed._raw = rich_message
             parsed._users = [
                 raw.types.InputUser(user_id=user.id, access_hash=user.access_hash)
@@ -490,6 +496,61 @@ def _to_input(obj):
         )
 
     return type(obj)(**{slot: _to_input(getattr(obj, slot)) for slot in obj.__slots__})
+
+
+def _collect_anchors(obj, anchors: dict[str, bool]) -> bool:
+    has_anchor_links = False
+
+    if isinstance(obj, raw.types.TextAnchor):
+        anchors[obj.name] = not (
+            isinstance(obj.text, raw.types.TextEmpty)
+            or isinstance(obj.text, raw.types.TextPlain)
+            and not obj.text.text
+        )
+    elif isinstance(obj, raw.types.TextUrl) and obj.url.startswith("#"):
+        has_anchor_links = True
+
+    if isinstance(obj, list):
+        values = obj
+    elif isinstance(obj, raw.core.TLObject):
+        values = (getattr(obj, name) for name in obj.__slots__)
+    else:
+        return has_anchor_links
+
+    for value in values:
+        has_anchor_links = _collect_anchors(value, anchors) or has_anchor_links
+
+    return has_anchor_links
+
+
+def _resolve_anchor_links(obj, anchors: dict[str, bool]):
+    if isinstance(obj, list):
+        for index, item in enumerate(obj):
+            obj[index] = _resolve_anchor_links(item, anchors)
+
+        return obj
+
+    if not isinstance(obj, Object):
+        return obj
+
+    for key, value in list(vars(obj).items()):
+        if not key.startswith("_"):
+            setattr(obj, key, _resolve_anchor_links(value, anchors))
+
+    if isinstance(obj, types.RichTextAnchorLink):
+        for name in dict.fromkeys((obj.anchor_name, unquote(obj.anchor_name))):
+            if name not in anchors:
+                continue
+
+            if anchors[name]:
+                return types.RichTextReferenceLink(text=obj.text, reference_name=name)
+
+            obj.anchor_name = name
+            return obj
+
+        return types.RichTextUrl(text=obj.text, url=f"#{obj.anchor_name}")
+
+    return obj
 
 
 def _mentioned_user_ids(obj, found=None) -> set:
