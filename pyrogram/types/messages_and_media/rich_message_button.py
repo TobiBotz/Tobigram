@@ -18,7 +18,6 @@
 
 from __future__ import annotations
 
-
 from pyrogram import raw, types
 from pyrogram.enums import RichButtonStyle
 from pyrogram.types.bots_and_keyboards.inline_keyboard_button import (
@@ -149,12 +148,15 @@ class RichMessageButton(Object):
 
     @staticmethod
     async def _parse(
-        client, button: raw.types.PageButton | raw.types.TextButton
+        client,
+        button: raw.types.PageButton | raw.types.TextButton,
+        users: dict[int, raw.base.User] = {},
+        chats: dict[int, raw.base.Chat] = {},
     ) -> RichMessageButton:
         fields = read_button_type(button.type)
 
         result = RichMessageButton(
-            text=await types.RichText._parse(client, button.text),
+            text=await types.RichText._parse(client, button.text, users, chats),
             style=RichMessageButton._parse_style(button.style),
             **{k: v for k, v in fields.items() if k in RichMessageButton._FIELDS},
         )

@@ -353,7 +353,7 @@ class RichBlock(Object):
             return RichBlockButtons(
                 buttons=types.List(
                     [
-                        await types.RichMessageButton._parse(client, button)
+                        await types.RichMessageButton._parse(client, button, users, chats)
                         for button in rich_block.buttons
                     ]
                 ),

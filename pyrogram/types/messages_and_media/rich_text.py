@@ -296,7 +296,9 @@ class RichText(Object):
             )
 
         if isinstance(rich_text, raw.types.TextButton):
-            return RichTextButton(button=await types.RichMessageButton._parse(client, rich_text))
+            return RichTextButton(
+                button=await types.RichMessageButton._parse(client, rich_text, users, chats)
+            )
 
         # Preserve readable content when a newer layer adds a text wrapper.
         content = getattr(rich_text, "text", None)

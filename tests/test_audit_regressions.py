@@ -5189,6 +5189,57 @@ def test_a_mention_inside_received_rich_text_is_collected():
     assert _collect_mentioned_user_ids([InputRichBlockParagraph(text=text)]) == [555]
 
 
+async def test_a_mentioned_user_is_resolved_at_any_depth_of_a_received_rich_message():
+    from pyrogram.raw.core import TLObject
+
+    users = {
+        42: TLObject.read(BytesIO(raw.types.User(id=42, first_name="Bob", access_hash=1).write()))
+    }
+    mention = lambda: raw.types.TextConcat(
+        texts=[
+            raw.types.TextPlain(text="hi "),
+            raw.types.TextBold(
+                text=raw.types.TextMentionName(text=raw.types.TextPlain(text="Bob"), user_id=42)
+            ),
+        ]
+    )
+
+    blocks = [
+        raw.types.PageBlockParagraph(text=mention()),
+        raw.types.PageBlockList(items=[raw.types.PageListItemText(text=mention())]),
+        raw.types.PageBlockTable(
+            title=mention(),
+            rows=[raw.types.PageTableRow(cells=[raw.types.PageTableCell(text=mention())])],
+        ),
+        raw.types.PageBlockBlockquote(text=mention(), caption=mention()),
+        raw.types.PageBlockButtonRow(
+            buttons=[
+                raw.types.PageButton(
+                    text=mention(), type=raw.types.InlineButtonTypeUrl(url="https://a.b")
+                ),
+            ]
+        ),
+    ]
+
+    found = []
+
+    def walk(obj):
+        if isinstance(obj, types.RichTextTextMention):
+            found.append(obj.user)
+        elif isinstance(obj, list):
+            for item in obj:
+                walk(item)
+        elif isinstance(obj, types.Object):
+            for value in vars(obj).values():
+                walk(value)
+
+    for block in blocks:
+        walk(await types.RichBlock._parse(None, block, {}, {}, users, {}))
+
+    assert len(found) == 7
+    assert all(user is not None and user.id == 42 for user in found)
+
+
 class _TooLongClient:
     handle_updates = pyrogram.Client.handle_updates
     _save_update_state = pyrogram.Client._save_update_state
