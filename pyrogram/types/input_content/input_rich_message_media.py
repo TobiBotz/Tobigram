@@ -153,7 +153,7 @@ class InputRichMessageMedia(Object):
             client,
             chat_id,
             self.media,
-            is_photo=isinstance(self.media, types.InputMediaPhoto),
+            type(self.media),
         )
 
         self._file = (

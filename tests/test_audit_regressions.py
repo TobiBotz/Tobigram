@@ -5240,6 +5240,93 @@ async def test_a_mentioned_user_is_resolved_at_any_depth_of_a_received_rich_mess
     assert all(user is not None and user.id == 42 for user in found)
 
 
+class _RichUploadClient:
+    def __init__(self):
+        self.sent = []
+
+    def guess_mime_type(self, *args):
+        return "video/mp4"
+
+    async def resolve_peer(self, peer):
+        return raw.types.InputPeerSelf()
+
+    async def save_file(self, *args, **kwargs):
+        return raw.types.InputFile(id=1, parts=1, name="f", md5_checksum="")
+
+    async def invoke(self, query):
+        self.sent.append(query.media)
+
+        if isinstance(
+            query.media, (raw.types.InputMediaUploadedPhoto, raw.types.InputMediaPhotoExternal)
+        ):
+            return raw.types.MessageMediaPhoto(
+                photo=raw.types.Photo(
+                    id=7, access_hash=8, file_reference=b"", date=0, sizes=[], dc_id=1
+                )
+            )
+
+        return raw.types.MessageMediaDocument(
+            document=raw.types.Document(
+                id=9,
+                access_hash=10,
+                file_reference=b"",
+                date=0,
+                mime_type="x",
+                size=1,
+                dc_id=1,
+                attributes=[],
+            )
+        )
+
+
+@pytest.mark.parametrize(
+    "block_type, attribute, uploaded",
+    [
+        ("InputRichBlockPhoto", "photo", raw.types.InputMediaUploadedPhoto),
+        ("InputRichBlockVideo", "video", raw.types.InputMediaUploadedDocument),
+        ("InputRichBlockAnimation", "animation", raw.types.InputMediaUploadedDocument),
+        ("InputRichBlockAudio", "audio", raw.types.InputMediaUploadedDocument),
+        ("InputRichBlockVoiceNote", "voice", raw.types.InputMediaUploadedDocument),
+        ("InputRichBlockDocument", "document", raw.types.InputMediaUploadedDocument),
+    ],
+)
+async def test_a_rich_media_block_uploads_a_local_path(tmp_path, block_type, attribute, uploaded):
+    from pyrogram.types.input_content import input_rich_block
+
+    path = tmp_path / "file.bin"
+    path.write_bytes(b"x")
+    client = _RichUploadClient()
+    block = getattr(input_rich_block, block_type)(**{attribute: str(path)})
+    photos, documents = [], []
+
+    await block._upload(client, None, photos, documents)
+
+    assert isinstance(client.sent[0], uploaded)
+    assert len(photos) + len(documents) == 1
+
+
+@pytest.mark.parametrize(
+    "block_type, attribute, external, collected",
+    [
+        ("InputRichBlockPhoto", "photo", raw.types.InputMediaPhotoExternal, "photos"),
+        ("InputRichBlockDocument", "document", raw.types.InputMediaDocumentExternal, "documents"),
+    ],
+)
+async def test_a_rich_media_block_sends_an_http_url_as_external_media(
+    block_type, attribute, external, collected
+):
+    from pyrogram.types.input_content import input_rich_block
+
+    client = _RichUploadClient()
+    block = getattr(input_rich_block, block_type)(**{attribute: "https://example.com/file.jpg"})
+    media = {"photos": [], "documents": []}
+
+    await block._upload(client, None, media["photos"], media["documents"])
+
+    assert isinstance(client.sent[0], external)
+    assert len(media[collected]) == 1
+
+
 class _TooLongClient:
     handle_updates = pyrogram.Client.handle_updates
     _save_update_state = pyrogram.Client._save_update_state
