@@ -5522,3 +5522,105 @@ async def test_peers_fetched_for_a_min_channel_message_are_stored():
 
     assert isinstance(client.sent[0], raw.functions.updates.GetChannelDifference)
     assert full_user in client.fetched
+
+
+async def test_an_inline_rich_message_uploads_its_media_and_mentions():
+    from pyrogram.types.input_content.input_rich_block import (
+        InputRichBlockParagraph,
+        InputRichBlockPhoto,
+    )
+
+    class _Client:
+        async def resolve_peer(self, peer_id):
+            return raw.types.InputPeerUser(user_id=peer_id, access_hash=5)
+
+    photo = raw.types.InputPhoto(id=7, access_hash=8, file_reference=b"")
+    content = types.InputRichMessageContent(
+        types.InputRichMessage(
+            blocks=[
+                InputRichBlockParagraph(text=_mention(42)),
+                InputRichBlockPhoto(photo=photo),
+            ]
+        )
+    )
+
+    result = await content.write(_Client(), None)
+
+    assert result.rich_message.users == [raw.types.InputUser(user_id=42, access_hash=5)]
+    assert result.rich_message.photos == [photo]
+    assert result.rich_message.blocks[1].photo_id == 7
+    result.write()
+
+
+def _ordered_item(text, **kwargs):
+    return raw.types.PageListOrderedItemText(text=raw.types.TextPlain(text=text), **kwargs)
+
+
+@pytest.mark.parametrize(
+    "block, expected",
+    [
+        (
+            raw.types.PageBlockOrderedList(
+                items=[_ordered_item("one", num="1"), _ordered_item("two", num="2")]
+            ),
+            [("1.", 1, "1"), ("2.", 2, "1")],
+        ),
+        (
+            raw.types.PageBlockOrderedList(
+                reversed=True,
+                start=3,
+                type="a",
+                items=[
+                    _ordered_item("x", num="c"),
+                    _ordered_item("y", num="b"),
+                    _ordered_item("z", num="a"),
+                ],
+            ),
+            [("c.", 3, "a"), ("b.", 2, "a"), ("a.", 1, "a")],
+        ),
+        (
+            raw.types.PageBlockOrderedList(
+                start=5,
+                type="a",
+                items=[
+                    _ordered_item("x"),
+                    _ordered_item("y", num="7", value=7),
+                    _ordered_item("z", type="I"),
+                ],
+            ),
+            [("e.", 5, "a"), ("7.", 7, "a"), ("VIII.", 8, "I")],
+        ),
+        (
+            raw.types.PageBlockOrderedList(type="x", items=[_ordered_item("x")]),
+            [("1.", 1, "1")],
+        ),
+    ],
+)
+async def test_an_ordered_list_is_numbered_like_tdlib(block, expected):
+    parsed = await types.RichBlock._parse(None, block)
+
+    assert [(item.label, item.value, item.type) for item in parsed.items] == expected
+
+
+@pytest.mark.parametrize(
+    "voice, expected", [(True, "RichBlockVoiceNote"), (False, "RichBlockAudio")]
+)
+async def test_a_voice_note_in_an_audio_block_is_parsed_as_a_voice_note(voice, expected):
+    document = raw.types.Document(
+        id=9,
+        access_hash=1,
+        file_reference=b"",
+        date=0,
+        mime_type="audio/ogg",
+        size=10,
+        dc_id=1,
+        attributes=[raw.types.DocumentAttributeAudio(duration=3, voice=voice)],
+    )
+    block = raw.types.PageBlockAudio(
+        audio_id=9,
+        caption=raw.types.PageCaption(text=raw.types.TextEmpty(), credit=raw.types.TextEmpty()),
+    )
+
+    parsed = await types.RichBlock._parse(None, block, {}, {9: document})
+
+    assert type(parsed).__name__ == expected

@@ -27,6 +27,10 @@ from pyrogram.enums import BlockAlignment
 from ..object import Object
 
 
+def _get_ordered_list_type(list_type: str | None) -> Literal["a", "A", "i", "I", "1"]:
+    return list_type if list_type in ("a", "A", "i", "I", "1") else "1"
+
+
 def _get_ordered_list_label(num: int, list_type: Literal["a", "A", "i", "I", "1"]) -> str:
     if list_type in ("a", "A") and num > 0:
         result = ""
@@ -173,16 +177,30 @@ class RichBlock(Object):
                 )
             )
         if isinstance(rich_block, raw.types.PageBlockOrderedList):
-            return RichBlockList(
-                items=types.List(
-                    [
-                        await types.RichBlockListItem._parse(
-                            client, i, photos, documents, users, chats
-                        )
-                        for i in rich_block.items
-                    ]
+            base_type = _get_ordered_list_type(rich_block.type)
+            next_value = 1 if rich_block.start is None else rich_block.start
+            items = types.List()
+
+            for list_item in rich_block.items:
+                item = await types.RichBlockListItem._parse(
+                    client, list_item, photos, documents, users, chats
                 )
-            )
+
+                if item is not None:
+                    item.value = next_value if list_item.value is None else list_item.value
+                    item.type = (
+                        _get_ordered_list_type(list_item.type) if list_item.type else base_type
+                    )
+                    item.label = (
+                        f"{list_item.num}."
+                        if list_item.num
+                        else _get_ordered_list_label(item.value, item.type)
+                    )
+                    next_value = item.value + (-1 if rich_block.reversed else 1)
+
+                items.append(item)
+
+            return RichBlockList(items=items)
         if isinstance(rich_block, raw.types.PageBlockBlockquoteBlocks):
             return RichBlockBlockQuotation(
                 blocks=types.List(
@@ -322,6 +340,14 @@ class RichBlock(Object):
             audio_attributes = attributes.get(raw.types.DocumentAttributeAudio, None)
             if audio_attributes is None:
                 return RichBlockUnsupported(original_type=type(rich_block).__name__, raw=rich_block)
+
+            if audio_attributes.voice:
+                return RichBlockVoiceNote(
+                    voice_note=types.Voice._parse(client, doc, audio_attributes),
+                    caption=await types.RichBlockCaption._parse(
+                        client, rich_block.caption, users, chats
+                    ),
+                )
 
             if audio_attributes.voice:
                 return RichBlockVoiceNote(
@@ -590,13 +616,9 @@ class RichBlockListItem(RichBlock):
             )
             has_checkbox = list_item.checkbox
             is_checked = list_item.checked
-            value = list_item.value
-            item_type = list_item.type or "1"
-
-            if value is not None:
-                label = _get_ordered_list_label(value, item_type)
-            else:
-                label = list_item.num
+            value = None
+            item_type = None
+            label = None
 
         elif isinstance(list_item, raw.types.PageListOrderedItemText):
             blocks = types.List(
@@ -608,13 +630,9 @@ class RichBlockListItem(RichBlock):
             )
             has_checkbox = list_item.checkbox
             is_checked = list_item.checked
-            value = list_item.value
-            item_type = list_item.type or "1"
-
-            if value is not None:
-                label = _get_ordered_list_label(value, item_type)
-            else:
-                label = list_item.num
+            value = None
+            item_type = None
+            label = None
         else:
             return RichBlockUnsupported(original_type=type(list_item).__name__)
 
