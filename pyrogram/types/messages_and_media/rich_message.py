@@ -410,6 +410,87 @@ class RichMessage(Object):
             ]
             return parsed
 
+    def _write(self) -> raw.types.InputRichMessage:
+        if getattr(self, "_raw", None) is None:
+            raise ValueError("Only a received rich message can be sent again")
+
+        return raw.types.InputRichMessage(
+            blocks=_to_input(self._raw.blocks),
+            rtl=self._raw.rtl,
+            photos=[
+                raw.types.InputPhoto(
+                    id=p.id, access_hash=p.access_hash, file_reference=p.file_reference
+                )
+                for p in self._raw.photos
+                if isinstance(p, raw.types.Photo)
+            ]
+            or None,
+            documents=[
+                raw.types.InputDocument(
+                    id=d.id, access_hash=d.access_hash, file_reference=d.file_reference
+                )
+                for d in self._raw.documents
+                if isinstance(d, raw.types.Document)
+            ]
+            or None,
+            users=self._users or None,
+        )
+
+
+_DETECTED_TEXT_TYPES = frozenset(
+    {
+        "TextMention",
+        "TextHashtag",
+        "TextBotCommand",
+        "TextCashtag",
+        "TextAutoUrl",
+        "TextAutoEmail",
+        "TextAutoPhone",
+        "TextBankCard",
+        "TextTonAddress",
+    }
+)
+
+_RECEIVE_ONLY_BLOCK_TYPES = frozenset(
+    {
+        "PageBlockUnsupported",
+        "PageBlockEmbed",
+        "PageBlockEmbedPost",
+        "PageBlockChannel",
+    }
+)
+
+
+def _to_input(obj):
+    if isinstance(obj, list):
+        return [_to_input(item) for item in obj]
+
+    if not isinstance(obj, raw.core.TLObject):
+        return obj
+
+    name = type(obj).__name__
+
+    if name in _DETECTED_TEXT_TYPES:
+        return _to_input(obj.text)
+
+    if name in _RECEIVE_ONLY_BLOCK_TYPES:
+        return raw.types.PageBlockDivider()
+
+    if isinstance(obj, raw.types.PageBlockMap):
+        return raw.types.InputPageBlockMap(
+            geo=raw.types.InputGeoPoint(
+                lat=obj.geo.lat, long=obj.geo.long, accuracy_radius=obj.geo.accuracy_radius
+            )
+            if isinstance(obj.geo, raw.types.GeoPoint)
+            else raw.types.InputGeoPointEmpty(),
+            zoom=obj.zoom,
+            w=obj.w,
+            h=obj.h,
+            caption=_to_input(obj.caption),
+        )
+
+    return type(obj)(**{slot: _to_input(getattr(obj, slot)) for slot in obj.__slots__})
+
 
 def _mentioned_user_ids(obj, found=None) -> set:
     found = set() if found is None else found

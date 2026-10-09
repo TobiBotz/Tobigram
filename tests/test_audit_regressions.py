@@ -5624,3 +5624,82 @@ async def test_a_voice_note_in_an_audio_block_is_parsed_as_a_voice_note(voice, e
     parsed = await types.RichBlock._parse(None, block, {}, {9: document})
 
     assert type(parsed).__name__ == expected
+
+
+async def test_a_copied_rich_message_only_sends_input_blocks_and_texts():
+    caption = raw.types.PageCaption(
+        text=raw.types.TextPlain(text="map"), credit=raw.types.TextEmpty()
+    )
+    detected = raw.types.TextConcat(
+        texts=[
+            raw.types.TextPlain(text="see "),
+            raw.types.TextAutoUrl(text=raw.types.TextPlain(text="https://t.me")),
+            raw.types.TextBold(text=raw.types.TextMention(text=raw.types.TextPlain(text="@durov"))),
+            raw.types.TextBankCard(text=raw.types.TextPlain(text="1234")),
+        ]
+    )
+    received = raw.types.RichMessage(
+        blocks=[
+            raw.types.PageBlockParagraph(text=detected),
+            raw.types.PageBlockMap(
+                geo=raw.types.GeoPoint(long=90.41, lat=23.81, access_hash=1),
+                zoom=13,
+                w=400,
+                h=200,
+                caption=caption,
+            ),
+            raw.types.PageBlockEmbed(caption=caption),
+            raw.types.PageBlockUnsupported(),
+        ],
+        photos=[
+            raw.types.PhotoEmpty(id=1),
+            raw.types.Photo(id=2, access_hash=3, file_reference=b"", date=0, sizes=[], dc_id=1),
+        ],
+        documents=[raw.types.DocumentEmpty(id=4)],
+    )
+
+    written = (await types.RichMessage._parse(None, received))._write()
+
+    assert written.blocks[0].text == raw.types.TextConcat(
+        texts=[
+            raw.types.TextPlain(text="see "),
+            raw.types.TextPlain(text="https://t.me"),
+            raw.types.TextBold(text=raw.types.TextPlain(text="@durov")),
+            raw.types.TextPlain(text="1234"),
+        ]
+    )
+    assert written.blocks[1] == raw.types.InputPageBlockMap(
+        geo=raw.types.InputGeoPoint(lat=23.81, long=90.41),
+        zoom=13,
+        w=400,
+        h=200,
+        caption=caption,
+    )
+    assert written.blocks[2:] == [raw.types.PageBlockDivider(), raw.types.PageBlockDivider()]
+    assert written.photos == [raw.types.InputPhoto(id=2, access_hash=3, file_reference=b"")]
+    assert written.documents is None
+    assert received.blocks[0].text == detected
+    written.write()
+
+
+async def test_a_received_rich_button_can_be_sent_again():
+    text = raw.types.TextConcat(
+        texts=[
+            raw.types.TextPlain(text="at "),
+            raw.types.TextDate(
+                text=raw.types.TextPlain(text="time"),
+                date=1760000000,
+                short_date=True,
+                short_time=True,
+            ),
+            raw.types.TextCustomEmoji(document_id=5368324170671202286, alt="👍"),
+        ]
+    )
+    received = raw.types.PageButton(
+        text=text, type=raw.types.InlineButtonTypeUrl(url="https://t.me")
+    )
+
+    button = await types.RichMessageButton._parse(None, received)
+
+    assert button.write().text.write() == text.write()
+    assert button.write_text().text.write() == text.write()

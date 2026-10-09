@@ -18,7 +18,7 @@
 
 from __future__ import annotations
 
-from pyrogram import raw, types
+from pyrogram import raw, types, utils
 from pyrogram.enums import RichButtonStyle
 from pyrogram.types.bots_and_keyboards.inline_keyboard_button import (
     read_button_type,
@@ -27,6 +27,37 @@ from pyrogram.types.bots_and_keyboards.inline_keyboard_button import (
 
 from ..input_content.input_rich_block import _to_rich_text
 from ..object import Object
+
+
+def _write_button_text(text) -> raw.base.RichText:
+    if isinstance(text, (list, types.RichTextCustomEmoji, types.RichTextDateTime)):
+        return _write_button_text_part(text)
+
+    return _to_rich_text(text)
+
+
+def _write_button_text_part(text) -> raw.base.RichText:
+    from pyrogram.parser.html import Parser
+
+    if isinstance(text, str):
+        return raw.types.TextPlain(text=text)
+
+    if isinstance(text, list) and not isinstance(text, raw.core.TLObject):
+        return raw.types.TextConcat(texts=[_write_button_text_part(part) for part in text])
+
+    if isinstance(text, types.RichTextCustomEmoji):
+        return raw.types.TextCustomEmoji(
+            document_id=int(text.custom_emoji_id), alt=text.alternative_text
+        )
+
+    if isinstance(text, types.RichTextDateTime):
+        return raw.types.TextDate(
+            text=_write_button_text_part(text.text),
+            date=utils.datetime_to_timestamp(text.date),
+            **Parser._parse_date_time_format({}, text.date_time_format),
+        )
+
+    return _to_rich_text(text)
 
 
 class RichMessageButton(Object):
@@ -179,14 +210,14 @@ class RichMessageButton(Object):
 
     def write(self) -> raw.types.PageButton:
         return raw.types.PageButton(
-            text=_to_rich_text(self.text),
+            text=_write_button_text(self.text),
             type=self._write_type(),
             style=self._write_style(),
         )
 
     def write_text(self) -> raw.types.TextButton:
         return raw.types.TextButton(
-            text=_to_rich_text(self.text),
+            text=_write_button_text(self.text),
             type=self._write_type(),
             style=self._write_style(),
         )
