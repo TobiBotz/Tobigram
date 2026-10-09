@@ -5127,6 +5127,68 @@ def _state(pts, qts):
     return raw.types.updates.State(pts=pts, qts=qts, date=9, seq=3, unread_count=0)
 
 
+def _mention(uid):
+    return raw.types.TextMentionName(text=raw.types.TextPlain(text="you"), user_id=uid)
+
+
+def test_a_mention_inside_a_list_item_is_collected():
+    from pyrogram.types.input_content.input_rich_block import (
+        InputRichBlockList,
+        InputRichBlockListItem,
+        _collect_mentioned_user_ids,
+    )
+
+    blocks = [InputRichBlockList(items=[InputRichBlockListItem(text=_mention(111))])]
+
+    assert _collect_mentioned_user_ids(blocks) == [111]
+
+
+def test_a_mention_inside_a_table_cell_is_collected():
+    from pyrogram.types.input_content.input_rich_block import (
+        InputRichBlockTable,
+        InputRichBlockTableCell,
+        _collect_mentioned_user_ids,
+    )
+
+    blocks = [InputRichBlockTable(title="t", rows=[[InputRichBlockTableCell(text=_mention(222))]])]
+
+    assert _collect_mentioned_user_ids(blocks) == [222]
+
+
+def test_mentions_are_deduplicated_across_blocks():
+    from pyrogram.types.input_content.input_rich_block import (
+        InputRichBlockList,
+        InputRichBlockListItem,
+        InputRichBlockParagraph,
+        _collect_mentioned_user_ids,
+    )
+
+    blocks = [
+        InputRichBlockParagraph(text=_mention(333)),
+        InputRichBlockList(
+            items=[
+                InputRichBlockListItem(text=_mention(444)),
+                InputRichBlockListItem(text=_mention(333)),
+            ]
+        ),
+    ]
+
+    assert _collect_mentioned_user_ids(blocks) == [333, 444]
+
+
+def test_a_mention_inside_received_rich_text_is_collected():
+    from pyrogram.types.input_content.input_rich_block import (
+        InputRichBlockParagraph,
+        _collect_mentioned_user_ids,
+    )
+
+    text = raw.types.TextConcat(
+        texts=raw.core.List([raw.types.TextPlain(text="hi "), _mention(555)])
+    )
+
+    assert _collect_mentioned_user_ids([InputRichBlockParagraph(text=text)]) == [555]
+
+
 class _TooLongClient:
     handle_updates = pyrogram.Client.handle_updates
     _save_update_state = pyrogram.Client._save_update_state
