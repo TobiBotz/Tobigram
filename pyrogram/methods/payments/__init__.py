@@ -23,6 +23,7 @@ from .check_gift_code import CheckGiftCode
 from .convert_gift_to_stars import ConvertGiftToStars
 from .craft_gift import CraftGift
 from .create_gift_collection import CreateGiftCollection
+from .create_onramp_session import CreateOnrampSession
 from .delete_gift_collection import DeleteGiftCollection
 from .drop_gift_original_details import DropGiftOriginalDetails
 from .edit_star_subscription import EditStarSubscription
@@ -35,6 +36,11 @@ from .get_gift_collections import GetGiftCollections
 from .get_gift_upgrade_preview import GetGiftUpgradePreview
 from .get_gift_upgrade_variants import GetGiftUpgradeVariants
 from .get_gifts_for_crafting import GetGiftsForCrafting
+from .get_onramp_availability import GetOnrampAvailability
+from .get_onramp_base_currencies import GetOnrampBaseCurrencies
+from .get_onramp_limits import GetOnrampLimits
+from .get_onramp_providers import GetOnrampProviders
+from .get_onramp_quote import GetOnrampQuote
 from .get_payment_form import GetPaymentForm
 from .get_stars_balance import GetStarsBalance
 from .get_stars_revenue_stats import GetStarsRevenueStats
@@ -102,6 +108,7 @@ class Payments(
     ConvertGiftToStars,
     CraftGift,
     CreateGiftCollection,
+    CreateOnrampSession,
     DeleteGiftCollection,
     DropGiftOriginalDetails,
     EditStarSubscription,
@@ -114,6 +121,11 @@ class Payments(
     GetGiftUpgradePreview,
     GetGiftUpgradeVariants,
     GetGiftsForCrafting,
+    GetOnrampAvailability,
+    GetOnrampBaseCurrencies,
+    GetOnrampLimits,
+    GetOnrampProviders,
+    GetOnrampQuote,
     GetPaymentForm,
     GetStarsBalance,
     GetStarsRevenueStats,

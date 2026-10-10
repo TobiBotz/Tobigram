@@ -386,3 +386,63 @@ async def test_get_currency_rates():
     assert res is True
     assert len(client.calls) == 1
     assert isinstance(client.calls[0], raw.functions.payments.GetCurrencyRates)
+
+
+@pytest.mark.asyncio
+async def test_onramp_methods():
+    from pyrogram.methods.payments.create_onramp_session import CreateOnrampSession
+    from pyrogram.methods.payments.get_onramp_availability import GetOnrampAvailability
+    from pyrogram.methods.payments.get_onramp_base_currencies import GetOnrampBaseCurrencies
+    from pyrogram.methods.payments.get_onramp_limits import GetOnrampLimits
+    from pyrogram.methods.payments.get_onramp_providers import GetOnrampProviders
+    from pyrogram.methods.payments.get_onramp_quote import GetOnrampQuote
+
+    class _Client(
+        _Recorder,
+        GetOnrampProviders,
+        GetOnrampBaseCurrencies,
+        GetOnrampAvailability,
+        GetOnrampLimits,
+        GetOnrampQuote,
+        CreateOnrampSession,
+    ):
+        pass
+
+    client = _Client()
+
+    await client.get_onramp_providers(crypto_currency="TON")
+    assert isinstance(client.calls[0], raw.functions.payments.GetOnrampProviders)
+    assert client.calls[0].crypto_currency == "TON"
+
+    await client.get_onramp_base_currencies(provider="p1", crypto_currency="TON")
+    assert isinstance(client.calls[1], raw.functions.payments.GetOnrampBaseCurrencies)
+    assert client.calls[1].provider == "p1"
+    assert client.calls[1].crypto_currency == "TON"
+
+    await client.get_onramp_availability(provider="p1", crypto_currency="TON", base_currency="USD")
+    assert isinstance(client.calls[2], raw.functions.payments.GetOnrampAvailability)
+    assert client.calls[2].provider == "p1"
+    assert client.calls[2].base_currency == "USD"
+
+    await client.get_onramp_limits(provider="p1", crypto_currency="TON", base_currency="USD")
+    assert isinstance(client.calls[3], raw.functions.payments.GetOnrampLimits)
+    assert client.calls[3].provider == "p1"
+
+    await client.get_onramp_quote(
+        provider="p1",
+        crypto_currency="TON",
+        base_currency="USD",
+        base_amount="50",
+    )
+    assert isinstance(client.calls[4], raw.functions.payments.GetOnrampQuote)
+    assert client.calls[4].base_amount == "50"
+
+    await client.create_onramp_session(
+        provider="p1",
+        crypto_currency="TON",
+        address="EQD...",
+        base_currency="USD",
+        base_amount="50",
+    )
+    assert isinstance(client.calls[5], raw.functions.payments.CreateOnrampSession)
+    assert client.calls[5].address == "EQD..."

@@ -921,6 +921,7 @@ def pyrogram_api():
             convert_gift_to_stars
             craft_gift
             create_gift_collection
+            create_onramp_session
             delete_gift_collection
             drop_gift_original_details
             edit_connected_star_ref_bot
@@ -938,6 +939,11 @@ def pyrogram_api():
             get_gift_upgrade_variants
             get_gifts_for_crafting
             get_giveaway_info
+            get_onramp_availability
+            get_onramp_base_currencies
+            get_onramp_limits
+            get_onramp_providers
+            get_onramp_quote
             get_payment_form
             get_payment_receipt
             get_premium_gift_code_options
