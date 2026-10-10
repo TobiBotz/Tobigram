@@ -1971,3 +1971,39 @@ def test_bot_verification_parse_with_text_with_entities():
     assert parsed.custom_emoji_id == "456"
     assert parsed.description == "Verified partner"
     assert parsed.bot.id == 123
+
+
+def test_gram_transfer_parse():
+    action = raw.types.MessageActionGramTransfer(
+        amount=1000000000,
+        peer_address="EQBvW8Z5huBkMJYdn3PCDnTWKKJ222PBK3-Q1gT0jO5L2-kM",
+        transaction_id="tx_12345",
+        comment="test memo",
+        comment_encrypted=False,
+    )
+    parsed = types.GramTransfer._parse(MagicMock(), action)
+    assert parsed.amount == 1000000000
+    assert parsed.peer_address == "EQBvW8Z5huBkMJYdn3PCDnTWKKJ222PBK3-Q1gT0jO5L2-kM"
+    assert parsed.transaction_id == "tx_12345"
+    assert parsed.comment == "test memo"
+    assert parsed.comment_encrypted is False
+
+
+def test_wallet_ton_connect_request_parse():
+    action = raw.types.MessageActionWalletTonConnectRequest(
+        session_id=98765,
+        expires=1700000000,
+        accepted=True,
+        declined=False,
+        topic="connect",
+        trace_id="tr_abc",
+        dapp_name="TestDApp",
+    )
+    parsed = types.WalletTonConnectRequest._parse(MagicMock(), action)
+    assert parsed.session_id == 98765
+    assert parsed.expires is not None
+    assert parsed.accepted is True
+    assert parsed.declined is False
+    assert parsed.topic == "connect"
+    assert parsed.trace_id == "tr_abc"
+    assert parsed.dapp_name == "TestDApp"

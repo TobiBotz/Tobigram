@@ -1412,6 +1412,7 @@ def pyrogram_api():
             GiveawayCreated
             GiveawayPrizeStars
             GiveawayWinners
+            GramTransfer
             InputChecklistTask
             Invoice
             LinkPreviewOptions
@@ -1471,6 +1472,7 @@ def pyrogram_api():
             UpgradedGiftOriginalDetails
             UpgradedGiftPurchaseOffer
             UpgradedGiftValueInfo
+            WalletTonConnectRequest
             WriteAccessAllowed
             AuctionBid
             AuctionRound

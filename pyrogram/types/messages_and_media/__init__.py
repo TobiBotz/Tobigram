@@ -82,6 +82,7 @@ from .giveaway_completed import GiveawayCompleted
 from .giveaway_created import GiveawayCreated
 from .giveaway_prize_stars import GiveawayPrizeStars
 from .giveaway_winners import GiveawayWinners
+from .gram_transfer import GramTransfer
 from .input_checklist_task import InputChecklistTask
 from .invoice import Invoice
 from .link_preview_options import LinkPreviewOptions
@@ -238,6 +239,7 @@ from .video import Video
 from .video_note import VideoNote
 from .video_quality import VideoQuality
 from .voice import Voice
+from .wallet_ton_connect_request import WalletTonConnectRequest
 from .web_app_data import WebAppData
 from .web_page import WebPage
 from .write_access_allowed import WriteAccessAllowed
@@ -309,6 +311,7 @@ __all__ = [
     "GiveawayCreated",
     "GiveawayPrizeStars",
     "GiveawayWinners",
+    "GramTransfer",
     "InputChecklistTask",
     "Invoice",
     "LinkPreviewOptions",
@@ -457,6 +460,7 @@ __all__ = [
     "VideoNote",
     "VideoQuality",
     "Voice",
+    "WalletTonConnectRequest",
     "WebAppData",
     "WebPage",
     "WriteAccessAllowed",

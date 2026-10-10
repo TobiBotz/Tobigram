@@ -191,6 +191,7 @@ class RichMessageSerializer:
             types.RichTextCashtag,
             types.RichTextBotCommand,
             types.RichTextBankCardNumber,
+            types.RichTextTonAddress,
         ):
             return self.text(node.text, html, path + ".text")
 

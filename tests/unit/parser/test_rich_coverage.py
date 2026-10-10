@@ -84,6 +84,9 @@ TEXTS = [
     types.RichTextAnchorLink(text="anchor link", anchor_name="a"),
     types.RichTextReference(text="reference", name="r"),
     types.RichTextReferenceLink(text="reference link", reference_name="r"),
+    types.RichTextTonAddress(
+        text="ton", address="EQBvW8Z5huBkMJYdn3PCDnTWKKJ222PBK3-Q1gT0jO5L2-kM"
+    ),
 ]
 
 

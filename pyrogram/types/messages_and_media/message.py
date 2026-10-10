@@ -531,6 +531,12 @@ class Message(Object, Update):
         gifted_grams (:obj:`~pyrogram.types.GiftedGrams`, *optional*):
             Service message: gifted grams information.
 
+        gram_transfer (:obj:`~pyrogram.types.GramTransfer`, *optional*):
+            Service message: gram transfer information.
+
+        wallet_ton_connect_request (:obj:`~pyrogram.types.WalletTonConnectRequest`, *optional*):
+            Service message: wallet TON connect request.
+
         gift (:obj:`~pyrogram.types.Gift`, *optional*):
             Service message: star gift information.
 
@@ -866,6 +872,8 @@ class Message(Object, Update):
         gifted_premium: types.GiftedPremium | None = None,
         gifted_stars: types.GiftedStars | None = None,
         gifted_grams: types.GiftedGrams | None = None,
+        gram_transfer: types.GramTransfer | None = None,
+        wallet_ton_connect_request: types.WalletTonConnectRequest | None = None,
         gift: types.Gift | None = None,
         is_prepaid_upgrade: bool | None = None,
         is_from_auction: bool | None = None,
@@ -1165,6 +1173,8 @@ class Message(Object, Update):
         self.gifted_premium = gifted_premium
         self.gifted_stars = gifted_stars
         self.gifted_grams = gifted_grams
+        self.gram_transfer = gram_transfer
+        self.wallet_ton_connect_request = wallet_ton_connect_request
         self.gift = gift
         self.is_prepaid_upgrade = is_prepaid_upgrade
         self.is_from_auction = is_from_auction
@@ -1277,6 +1287,8 @@ class Message(Object, Update):
         gifted_premium = None
         gifted_stars = None
         gifted_grams = None
+        gram_transfer = None
+        wallet_ton_connect_request = None
         giveaway_created = None
         giveaway_completed = None
         managed_bot_created = None
@@ -1427,8 +1439,10 @@ class Message(Object, Update):
             )
         elif isinstance(action, raw.types.MessageActionGramTransfer):
             service_type = enums.MessageServiceType.GRAM_TRANSFER
+            gram_transfer = types.GramTransfer._parse(client, action)
         elif isinstance(action, raw.types.MessageActionWalletTonConnectRequest):
             service_type = enums.MessageServiceType.WALLET_TON_CONNECT_REQUEST
+            wallet_ton_connect_request = types.WalletTonConnectRequest._parse(client, action)
         elif isinstance(action, raw.types.MessageActionGiveawayLaunch):
             service_type = enums.MessageServiceType.GIVEAWAY_CREATED
             giveaway_created = types.GiveawayCreated._parse(client, action)
@@ -1648,6 +1662,8 @@ class Message(Object, Update):
             gifted_premium=gifted_premium,
             gifted_stars=gifted_stars,
             gifted_grams=gifted_grams,
+            gram_transfer=gram_transfer,
+            wallet_ton_connect_request=wallet_ton_connect_request,
             giveaway_created=giveaway_created,
             giveaway_completed=giveaway_completed,
             managed_bot_created=managed_bot_created,
