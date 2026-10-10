@@ -31,7 +31,7 @@ import shutil
 import sys
 import time
 import weakref
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime
 from hashlib import sha256
@@ -438,6 +438,11 @@ class Client(Methods):
             Pass True to disable notification about the current user joining Telegram for other users that added
             them to contact list. Pass False to notify people on Telegram who know my phone number that I signed up.
             Defaults to False.
+
+        max_recovery_age (``int``, *optional*):
+            Maximum age in seconds of updates to recover during gap recovery.
+            Updates older than this will be skipped without dispatching handlers,
+            while still advancing the state. Defaults to None (recover all).
     """
 
     APP_VERSION = f"Tobigram {__version__}"
@@ -550,6 +555,7 @@ class Client(Methods):
         rate_limits: dict | None = None,
         auto_no_updates: bool | None = True,
         no_joined_notifications: bool = False,
+        max_recovery_age: int | None = None,
     ):
         super().__init__()
 
@@ -677,11 +683,14 @@ class Client(Methods):
         # Sometimes, for some reason, the server will stop sending updates and will only respond to pings.
         # This watchdog will invoke updates.GetState in order to wake up the server and enable it sending updates again
         # after some idle time has been detected.
+        self.max_recovery_age = max_recovery_age
         self.updates_watchdog_task = None
         self.updates_watchdog_event = asyncio.Event()
         self.last_update_time = datetime.now()
         self._last_update_monotonic = time.monotonic()
         self._state_marks = {}
+        self._seen_messages = set()
+        self._seen_messages_queue = deque(maxlen=10000)
         self._recovering = set()
 
         self.media_pool_reaper_task = None
@@ -1510,6 +1519,25 @@ class Client(Methods):
         elif isinstance(updates, raw.types.UpdatesTooLong):
             self._recover_too_long(0, None)
 
+    def register_seen_message(self, peer_id: int, message_id: int) -> None:
+        """Register a seen message to prevent duplicate processing during gap recovery."""
+        if not hasattr(self, "_seen_messages"):
+            self._seen_messages = set()
+            self._seen_messages_queue = deque(maxlen=10000)
+        key = (peer_id, message_id)
+        if key not in self._seen_messages:
+            if len(self._seen_messages_queue) >= 10000:
+                oldest = self._seen_messages_queue.popleft()
+                self._seen_messages.discard(oldest)
+            self._seen_messages_queue.append(key)
+            self._seen_messages.add(key)
+
+    def is_message_seen(self, peer_id: int, message_id: int) -> bool:
+        """Check if a message was already seen/processed."""
+        if not hasattr(self, "_seen_messages"):
+            return False
+        return (peer_id, message_id) in self._seen_messages
+
     def _recover_too_long(self, key, pts):
         if key in self._recovering:
             return
@@ -1538,6 +1566,8 @@ class Client(Methods):
 
     async def load_session(self):
         self._state_marks = {}
+        self._seen_messages = set()
+        self._seen_messages_queue = deque(maxlen=10000)
         await self.storage.open()
 
         session_empty = any(

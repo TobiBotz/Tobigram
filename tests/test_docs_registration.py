@@ -24,6 +24,7 @@ INTERNAL_METHODS = {
     "guess_mime_type",
     "handle_download",
     "handle_updates",
+    "is_message_seen",
     "load_plugins",
     "load_session",
     "media_pool_reaper",
@@ -31,6 +32,7 @@ INTERNAL_METHODS = {
     "reap_media_sessions",
     "register_min_peer",
     "register_min_peers_from_message",
+    "register_seen_message",
     "updates_watchdog",
 }
 

@@ -156,6 +156,7 @@ class Dispatcher:
 
         self.updates_queue = asyncio.Queue(maxsize=256)
         self.groups = OrderedDict()
+        self.recovery_task = None
 
         self.listeners = getattr(client, "listeners", None)
         self.listener_types = {
@@ -362,6 +363,28 @@ class Dispatcher:
 
     async def enqueue_update(self, update, users, chats) -> bool:
         """Hand an update to the workers, waiting for room. Returns False if dropped."""
+        msg = getattr(update, "message", None)
+        if msg and getattr(msg, "id", None):
+            peer = getattr(msg, "peer_id", None)
+            peer_id = None
+            if peer:
+                try:
+                    peer_id = utils.get_peer_id(peer)
+                except Exception:
+                    pass
+            if peer_id is None:
+                from_id = getattr(msg, "from_id", None)
+                if from_id:
+                    try:
+                        peer_id = utils.get_peer_id(from_id)
+                    except Exception:
+                        pass
+            if peer_id is None:
+                peer_id = 0
+            reg = getattr(self.client, "register_seen_message", None)
+            if callable(reg):
+                reg(peer_id, msg.id)
+
         try:
             self.updates_queue.put_nowait((update, users, chats))
             return True
@@ -403,12 +426,18 @@ class Dispatcher:
             log.info("Started %s HandlerTasks", self.client.workers)
 
             if not self.client.skip_updates:
-                await self.client.recover_gaps()
+                self.recovery_task = utils.run_in_background(
+                    self.client.recover_gaps(), self.client.loop
+                )
 
     def prune_workers(self):
         self.handler_worker_tasks = [t for t in self.handler_worker_tasks if not t.done()]
 
     async def stop(self, clear_handlers: bool = True):
+        if self.recovery_task and not self.recovery_task.done():
+            self.recovery_task.cancel()
+            self.recovery_task = None
+
         if callable(self.client.stop_handler):
             try:
                 await self.client.stop_handler(self.client)

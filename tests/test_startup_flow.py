@@ -261,3 +261,109 @@ async def test_an_unbounded_start_says_something_before_the_second_minute(monkey
         f"that cannot reach Telegram looks hung with no output at all "
         f"({_NeverConnects.attempts} attempts made silently)"
     )
+
+
+async def test_seen_messages_registration_and_eviction():
+    client = pyrogram.Client("dummy_seen", in_memory=True)
+
+    client.register_seen_message(123, 1)
+    assert client.is_message_seen(123, 1)
+    assert not client.is_message_seen(123, 2)
+
+    # Test sliding window eviction at 10000
+    for i in range(2, 10002):
+        client.register_seen_message(123, i)
+
+    assert len(client._seen_messages) == 10000
+    assert not client.is_message_seen(123, 1)
+    assert client.is_message_seen(123, 10001)
+
+
+async def test_gap_recovery_deduplication_and_max_recovery_age():
+    import time
+    from unittest.mock import AsyncMock
+
+    client = pyrogram.Client("dummy_gap", in_memory=True, skip_updates=False, max_recovery_age=3600)
+
+    now = int(time.time())
+    # Message 1: already seen
+    client.register_seen_message(-1000000012345, 101)
+    msg1 = raw.types.Message(
+        id=101,
+        peer_id=raw.types.PeerChannel(channel_id=12345),
+        date=now - 100,
+        message="seen",
+    )
+    # Message 2: older than max_recovery_age (2 hours old)
+    msg2 = raw.types.Message(
+        id=102,
+        peer_id=raw.types.PeerChannel(channel_id=12345),
+        date=now - 7200,
+        message="old",
+    )
+    # Message 3: valid, not seen and within age limit
+    msg3 = raw.types.Message(
+        id=103,
+        peer_id=raw.types.PeerChannel(channel_id=12345),
+        date=now - 50,
+        message="fresh",
+    )
+
+    diff = raw.types.updates.ChannelDifference(
+        final=True,
+        pts=10,
+        timeout=0,
+        new_messages=[msg1, msg2, msg3],
+        other_updates=[],
+        chats=[],
+        users=[],
+    )
+
+    client.storage.update_state = AsyncMock(return_value=[(-1000000012345, 5, 0, 0, 0)])
+    client.resolve_peer = AsyncMock(
+        return_value=raw.types.InputChannel(channel_id=12345, access_hash=0)
+    )
+    client.invoke = AsyncMock(return_value=diff)
+    client.dispatcher.enqueue_update = AsyncMock()
+
+    recovered_msgs, _ = await client.recover_gaps()
+
+    assert recovered_msgs == 1
+    client.dispatcher.enqueue_update.assert_awaited_once()
+    enqueued_msg = client.dispatcher.enqueue_update.call_args[0][0]
+    assert enqueued_msg.message.id == 103
+
+
+async def test_dispatcher_background_recovery_and_seen_registration():
+    client = pyrogram.Client("dummy_disp", in_memory=True, skip_updates=False)
+
+    recovery_started = asyncio.Event()
+
+    async def fake_recover_gaps():
+        recovery_started.set()
+        await asyncio.sleep(10)
+
+    client.recover_gaps = fake_recover_gaps
+
+    await client.dispatcher.start()
+
+    # Verify recover_gaps runs in background without blocking start()
+    assert client.dispatcher.recovery_task is not None
+    await asyncio.wait_for(recovery_started.wait(), timeout=1.0)
+    assert not client.dispatcher.recovery_task.done()
+
+    # Verify enqueue_update registers seen message
+    msg = raw.types.Message(
+        id=777,
+        peer_id=raw.types.PeerChannel(channel_id=999),
+        date=12345,
+        message="test",
+    )
+    upd = raw.types.UpdateNewMessage(message=msg, pts=1, pts_count=1)
+    await client.dispatcher.enqueue_update(upd, {}, {})
+
+    assert client.is_message_seen(-1000000000999, 777)
+
+    # Verify stop cancels recovery_task
+    await client.dispatcher.stop()
+    assert client.dispatcher.recovery_task is None

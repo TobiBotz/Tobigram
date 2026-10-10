@@ -20,7 +20,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-
+import time
+from typing import TYPE_CHECKING
 
 import pyrogram
 from pyrogram import raw
@@ -31,13 +32,28 @@ from pyrogram.errors import (
     PersistentTimestampInvalid,
     PersistentTimestampOutdated,
 )
-from pyrogram.utils import ZERO_CHANNEL_ID
-from typing import TYPE_CHECKING
+from pyrogram.utils import ZERO_CHANNEL_ID, get_peer_id
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
 log = logging.getLogger(__name__)
+
+
+def _extract_msg_peer_id(msg, default_id: int = 0) -> int:
+    peer = getattr(msg, "peer_id", None)
+    if peer:
+        try:
+            return get_peer_id(peer)
+        except Exception:
+            pass
+    from_id = getattr(msg, "from_id", None)
+    if from_id:
+        try:
+            return get_peer_id(from_id)
+        except Exception:
+            pass
+    return default_id
 
 
 class RecoverGaps:
@@ -198,7 +214,20 @@ class RecoverGaps:
                 users = {i.id: i for i in diff.users}
                 chats = {i.id: i for i in diff.chats}
 
+                now = int(time.time())
+                max_age = getattr(self, "max_recovery_age", None)
+
                 for message in diff.new_messages:
+                    msg_id = getattr(message, "id", None)
+                    msg_peer_id = _extract_msg_peer_id(message, id)
+                    if msg_id and self.is_message_seen(msg_peer_id, msg_id):
+                        continue
+
+                    msg_date = getattr(message, "date", None)
+                    if max_age is not None and msg_date is not None:
+                        if (now - msg_date) > max_age:
+                            continue
+
                     message_updates_counter += 1
                     await self.dispatcher.enqueue_update(
                         raw.types.UpdateNewMessage(message=message, pts=local_pts, pts_count=-1),
@@ -207,6 +236,18 @@ class RecoverGaps:
                     )
 
                 for update in diff.other_updates:
+                    msg = getattr(update, "message", None)
+                    if msg:
+                        msg_id = getattr(msg, "id", None)
+                        msg_peer_id = _extract_msg_peer_id(msg, id)
+                        if msg_id and self.is_message_seen(msg_peer_id, msg_id):
+                            continue
+
+                        msg_date = getattr(msg, "date", None)
+                        if max_age is not None and msg_date is not None:
+                            if (now - msg_date) > max_age:
+                                continue
+
                     other_updates_counter += 1
                     await self.dispatcher.enqueue_update(update, users, chats)
 
