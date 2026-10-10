@@ -1065,6 +1065,17 @@ def pyrogram_api():
             leave_sms_jobs
             update_sms_jobs_settings
         """,
+        wallet="""
+        Wallet
+            get_existing_wallet_balance
+            get_ton_connect_sessions
+            get_user_wallet_addresses
+            get_wallet_gasless_info
+            get_wallet_nfts
+            get_wallet_state
+            get_wallet_transactions
+            send_wallet_transfer
+        """,
         stats="""
         Stats
             get_broadcast_stats

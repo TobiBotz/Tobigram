@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, Mock
 
 import pytest
@@ -2007,3 +2008,73 @@ def test_wallet_ton_connect_request_parse():
     assert parsed.topic == "connect"
     assert parsed.trace_id == "tr_abc"
     assert parsed.dapp_name == "TestDApp"
+
+
+@pytest.mark.asyncio
+async def test_user_gram_address_parse():
+    user = types.User(id=123, gram_address="EQBvW8Z5huBkMJYdn3PCDnTWKKJ222PBK3-Q1gT0jO5L2-kM")
+    assert user.gram_address == "EQBvW8Z5huBkMJYdn3PCDnTWKKJ222PBK3-Q1gT0jO5L2-kM"
+
+    raw_user = raw.types.User(id=123, first_name="TON User")
+    user_full = SimpleNamespace(
+        id=123,
+        settings=raw.types.PeerSettings(),
+        notify_settings=raw.types.PeerNotifySettings(),
+        common_chats_count=0,
+        blocked=False,
+        phone_calls_available=False,
+        phone_calls_private=False,
+        can_pin_message=False,
+        has_scheduled=False,
+        video_calls_available=False,
+        voice_messages_forbidden=False,
+        translations_disabled=False,
+        stories_pinned_available=False,
+        blocked_my_stories_from=False,
+        wallpaper_overridden=False,
+        contact_require_premium=False,
+        read_dates_private=False,
+        sponsored_enabled=False,
+        can_view_revenue=False,
+        bot_can_manage_emoji_status=False,
+        display_gifts_button=False,
+        unofficial_security_risk=False,
+        about=None,
+        personal_photo=None,
+        profile_photo=None,
+        fallback_photo=None,
+        bot_info=None,
+        pinned_msg_id=None,
+        folder_id=None,
+        ttl_period=None,
+        theme=None,
+        private_forward_name=None,
+        bot_group_admin_rights=None,
+        bot_broadcast_admin_rights=None,
+        wallpaper=None,
+        stories=None,
+        business_work_hours=None,
+        business_location=None,
+        business_greeting_message=None,
+        business_away_message=None,
+        business_intro=None,
+        birthday=None,
+        personal_channel_id=None,
+        personal_channel_message=None,
+        stargifts_count=None,
+        starref_program=None,
+        bot_verification=None,
+        send_paid_messages_stars=None,
+        disallowed_gifts=None,
+        stars_rating=None,
+        stars_my_pending_rating=None,
+        stars_my_pending_rating_date=None,
+        main_tab=None,
+        saved_music=None,
+        note=None,
+        bot_manager_id=None,
+        gram_address="EQBvW8Z5huBkMJYdn3PCDnTWKKJ222PBK3-Q1gT0jO5L2-kM",
+    )
+    parsed = await types.User._parse_full(MagicMock(), user_full, {123: raw_user}, {})
+    assert parsed is not None
+    assert parsed.gram_address == "EQBvW8Z5huBkMJYdn3PCDnTWKKJ222PBK3-Q1gT0jO5L2-kM"

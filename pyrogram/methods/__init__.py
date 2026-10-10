@@ -43,6 +43,7 @@ from .aicompose import AICompose
 from .stats import Stats
 from .langpack import Langpack
 from .smsjobs import Smsjobs
+from .wallet import Wallet
 from .help import Help
 
 
@@ -73,6 +74,7 @@ class Methods(
     Stats,
     Langpack,
     Smsjobs,
+    Wallet,
     Help,
 ):
     pass

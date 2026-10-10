@@ -431,6 +431,10 @@ class User(Object, Update):
         bot_info_version (``int``, *optional*):
             Bot info version.
 
+        gram_address (``str``, *optional*):
+            TON / Gram address associated with this user.
+            Returned only in :meth:`~pyrogram.Client.get_users`.
+
         starref_program (:obj:`~pyrogram.raw.types.StarRefProgram`, *optional*):
             Telegram Star referral program information.
 
@@ -556,6 +560,7 @@ class User(Object, Update):
         supports_join_request_queries: bool | None = None,
         community: types.Community | None = None,
         bot_manager_id: int | None = None,
+        gram_address: str | None = None,
         access_hash: int | None = None,
         bot_info_version: int | None = None,
         starref_program: raw.types.StarRefProgram | None = None,
@@ -662,6 +667,7 @@ class User(Object, Update):
         self.supports_join_request_queries = supports_join_request_queries
         self.community = community
         self.bot_manager_id = bot_manager_id
+        self.gram_address = gram_address
         self.access_hash = access_hash
         self.bot_info_version = bot_info_version
         self.starref_program = starref_program
@@ -922,6 +928,7 @@ class User(Object, Update):
             parsed_user.community = types.Community._parse(client, chats.get(community_id))
 
         parsed_user.bot_manager_id = getattr(user, "bot_manager_id", None)
+        parsed_user.gram_address = getattr(user, "gram_address", None)
 
         if getattr(user, "noforwards_peer_enabled", False):
             parsed_user.has_protected_content = True
