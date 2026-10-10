@@ -1955,3 +1955,19 @@ async def test_giveaway_winners_parse_when_the_launch_message_is_gone():
 
     assert winners.giveaway_message_id == 5
     assert winners.giveaway_message is None
+
+
+def test_bot_verification_parse_with_text_with_entities():
+    verification_raw = raw.types.BotVerification(
+        bot_id=123,
+        icon=456,
+        description=raw.types.TextWithEntities(text="Verified partner", entities=[]),
+    )
+    user_raw = raw.types.User(id=123, first_name="Bot", is_self=False)
+    client = MagicMock()
+
+    parsed = types.BotVerification._parse(client, verification_raw, {123: user_raw})
+    assert parsed is not None
+    assert parsed.custom_emoji_id == "456"
+    assert parsed.description == "Verified partner"
+    assert parsed.bot.id == 123

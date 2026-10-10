@@ -17,6 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from .add_bot_preview_media import AddBotPreviewMedia
+from .add_bot_username import AddBotUsername
 from .allow_bot_send_message import AllowBotSendMessage
 from .answer_callback_query import AnswerCallbackQuery
 from .answer_chat_join_request_query import AnswerChatJoinRequestQuery
@@ -57,6 +58,7 @@ from .invoke_web_view_custom_method import InvokeWebViewCustomMethod
 from .refund_star_payment import RefundStarPayment
 from .reorder_bot_preview_medias import ReorderBotPreviewMedias
 from .reorder_bot_usernames import ReorderBotUsernames
+from .remove_bot_username import RemoveBotUsername
 from .replace_managed_bot_token import ReplaceManagedBotToken
 from .request_callback_answer import RequestCallbackAnswer
 from .request_web_view_button import RequestWebViewButton
@@ -81,6 +83,7 @@ from .update_user_emoji_status import UpdateUserEmojiStatus
 
 class Bots(
     AddBotPreviewMedia,
+    AddBotUsername,
     AllowBotSendMessage,
     AnswerCallbackQuery,
     AnswerChatJoinRequestQuery,
@@ -121,6 +124,7 @@ class Bots(
     RefundStarPayment,
     ReorderBotPreviewMedias,
     ReorderBotUsernames,
+    RemoveBotUsername,
     ReplaceManagedBotToken,
     RequestCallbackAnswer,
     RequestWebViewButton,

@@ -29,6 +29,7 @@ from .edit_star_subscription import EditStarSubscription
 from .get_available_gifts import GetAvailableGifts
 from .get_chat_gifts import GetChatGifts
 from .get_chat_gifts_count import GetChatGiftsCount
+from .get_currency_rates import GetCurrencyRates
 from .get_gift_auction_state import GetGiftAuctionState
 from .get_gift_collections import GetGiftCollections
 from .get_gift_upgrade_preview import GetGiftUpgradePreview
@@ -106,8 +107,9 @@ class Payments(
     EditStarSubscription,
     GetAvailableGifts,
     GetChatGifts,
-    GetGiftAuctionState,
     GetChatGiftsCount,
+    GetCurrencyRates,
+    GetGiftAuctionState,
     GetGiftCollections,
     GetGiftUpgradePreview,
     GetGiftUpgradeVariants,

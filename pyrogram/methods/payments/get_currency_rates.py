@@ -22,29 +22,21 @@ import pyrogram
 from pyrogram import raw
 
 
-class CheckBotUsername:
-    async def check_bot_username(
+class GetCurrencyRates:
+    async def get_currency_rates(
         self: pyrogram.Client,
-        username: str,
-        additional: bool | None = None,
-    ) -> bool:
-        """Checks whether a username can be set for a new bot or as an additional username.
+    ) -> raw.base.payments.CurrencyRates:
+        """Get the current currency exchange rates.
 
         .. include:: /_includes/usable-by/users.rst
 
-        Parameters:
-            username (``str``):
-                Username to be checked.
-
-            additional (``bool``, *optional*):
-                Pass True to check if the username is available as an additional username for an existing bot.
-
         Returns:
-            ``bool``: True if the username can be used.
+            :obj:`~pyrogram.raw.base.payments.CurrencyRates`: On success, the currency rates are returned.
+
+        Example:
+            .. code-block:: python
+
+                # Get currency rates
+                rates = await app.get_currency_rates()
         """
-        return await self.invoke(
-            raw.functions.bots.CheckUsername(
-                username=username,
-                additional=additional,
-            )
-        )
+        return await self.invoke(raw.functions.payments.GetCurrencyRates())

@@ -27,6 +27,7 @@ class InitFirebasePnvLogin:
         self: pyrogram.Client,
         api_id: int | None = None,
         api_hash: str | None = None,
+        except_ids: list[int] | None = None,
     ) -> raw.base.auth.FirebasePnvIntent:
         """Initialize Firebase phone number verification login.
 
@@ -38,6 +39,9 @@ class InitFirebasePnvLogin:
 
             api_hash (``str``, *optional*):
                 Application identifier hash. Defaults to the client's api_hash.
+
+            except_ids (List of ``int``, *optional*):
+                List of user IDs to exclude.
 
         Returns:
             :obj:`~pyrogram.raw.base.auth.FirebasePnvIntent`: The Firebase PNV intent object.
@@ -51,5 +55,6 @@ class InitFirebasePnvLogin:
             raw.functions.auth.InitFirebasePnvLogin(
                 api_id=api_id or self.api_id,
                 api_hash=api_hash or self.api_hash,
+                except_ids=except_ids,
             )
         )

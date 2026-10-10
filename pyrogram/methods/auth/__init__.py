@@ -20,6 +20,7 @@ from .accept_login_token import AcceptLoginToken
 from .accept_terms_of_service import AcceptTermsOfService
 from .bind_temp_auth_key import BindTempAuthKey
 from .cancel_code import CancelCode
+from .cancel_web_token_authorization import CancelWebTokenAuthorization
 from .change_phone_number import ChangePhoneNumber
 from .check_paid_auth import CheckPaidAuth
 from .check_password import CheckPassword
@@ -63,6 +64,7 @@ class Auth(
     AcceptTermsOfService,
     BindTempAuthKey,
     CancelCode,
+    CancelWebTokenAuthorization,
     ChangePhoneNumber,
     CheckPaidAuth,
     CheckPassword,

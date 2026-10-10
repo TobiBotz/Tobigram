@@ -36,13 +36,19 @@ async def test_verify_user_and_chat():
     call1 = client.calls[0][0]
     assert isinstance(call1, raw.functions.bots.SetCustomVerification)
     assert call1.enabled is True
-    assert call1.custom_description == "Gold User"
+    assert call1.custom_description == "Gold User" or (
+        isinstance(call1.custom_description, raw.types.TextWithEntities)
+        and call1.custom_description.text == "Gold User"
+    )
 
     await client.verify_chat(456, custom_description="Official Chat")
     call2 = client.calls[1][0]
     assert isinstance(call2, raw.functions.bots.SetCustomVerification)
     assert call2.enabled is True
-    assert call2.custom_description == "Official Chat"
+    assert call2.custom_description == "Official Chat" or (
+        isinstance(call2.custom_description, raw.types.TextWithEntities)
+        and call2.custom_description.text == "Official Chat"
+    )
 
 
 @pytest.mark.asyncio

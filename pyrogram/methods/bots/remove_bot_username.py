@@ -22,29 +22,34 @@ import pyrogram
 from pyrogram import raw
 
 
-class CheckBotUsername:
-    async def check_bot_username(
+class RemoveBotUsername:
+    async def remove_bot_username(
         self: pyrogram.Client,
+        bot: int | str,
         username: str,
-        additional: bool | None = None,
     ) -> bool:
-        """Checks whether a username can be set for a new bot or as an additional username.
+        """Remove an additional username from a bot we own.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            username (``str``):
-                Username to be checked.
+            bot (``int`` | ``str``):
+                Unique identifier (int) or username (str) of the target bot.
 
-            additional (``bool``, *optional*):
-                Pass True to check if the username is available as an additional username for an existing bot.
+            username (``str``):
+                The username to remove.
 
         Returns:
-            ``bool``: True if the username can be used.
+            ``bool``: On success, True is returned.
+
+        Example:
+            .. code-block:: python
+
+                await app.remove_bot_username("my_bot", "cool_bot")
         """
         return await self.invoke(
-            raw.functions.bots.CheckUsername(
+            raw.functions.bots.RemoveUsername(
+                bot=await self.resolve_peer(bot),
                 username=username,
-                additional=additional,
             )
         )

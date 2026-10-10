@@ -372,3 +372,17 @@ async def test_invoice_and_store_methods():
 
     await client.assign_play_market_transaction("json_receipt", purpose)
     assert isinstance(client.calls[7], raw.functions.payments.AssignPlayMarketTransaction)
+
+
+@pytest.mark.asyncio
+async def test_get_currency_rates():
+    from pyrogram.methods.payments.get_currency_rates import GetCurrencyRates
+
+    class _Client(_Recorder, GetCurrencyRates):
+        pass
+
+    client = _Client()
+    res = await client.get_currency_rates()
+    assert res is True
+    assert len(client.calls) == 1
+    assert isinstance(client.calls[0], raw.functions.payments.GetCurrencyRates)

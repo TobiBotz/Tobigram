@@ -254,5 +254,11 @@ class MessageServiceType(AutoName):
     PASSPORT_DATA_RECEIVED = auto()
     "Passport data received"
 
+    GRAM_TRANSFER = auto()
+    "Gram transfer"
+
+    WALLET_TON_CONNECT_REQUEST = auto()
+    "Wallet TON Connect request"
+
     UNSUPPORTED = auto()
     "Unsupported service message"

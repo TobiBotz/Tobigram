@@ -39,17 +39,37 @@ class Username(Object):
 
         active (``bool``, *optional*):
             True, if the collectible username is active.
+
+        deletable (``bool``, *optional*):
+            True, if the username can be deleted.
+
+        expired (``bool``, *optional*):
+            True, if the username has expired.
     """
 
-    def __init__(self, *, username: str, editable: bool | None = None, active: bool | None = None):
+    def __init__(
+        self,
+        *,
+        username: str,
+        editable: bool | None = None,
+        active: bool | None = None,
+        deletable: bool | None = None,
+        expired: bool | None = None,
+    ):
         super().__init__(None)
 
         self.username = username
         self.editable = editable
         self.active = active
+        self.deletable = deletable
+        self.expired = expired
 
     @staticmethod
     def _parse(username: raw.types.Username) -> Username:
         return Username(
-            username=username.username, editable=username.editable, active=username.active
+            username=username.username,
+            editable=username.editable,
+            active=username.active,
+            deletable=username.deletable,
+            expired=username.expired,
         )

@@ -98,5 +98,8 @@ class MessageEntityType(AutoName):
     DIFF_DELETE = raw.types.MessageEntityDiffDelete
     "Diff delete entity"
 
+    TON_ADDRESS = raw.types.MessageEntityTonAddress
+    "TON blockchain address"
+
     UNKNOWN = raw.types.MessageEntityUnknown
     "Unknown message entity type"

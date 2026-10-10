@@ -1425,6 +1425,10 @@ class Message(Object, Update):
             gifted_grams = await types.GiftedGrams._parse(
                 client, action, gifter=users.get(from_id), receiver=users.get(peer_id or from_id)
             )
+        elif isinstance(action, raw.types.MessageActionGramTransfer):
+            service_type = enums.MessageServiceType.GRAM_TRANSFER
+        elif isinstance(action, raw.types.MessageActionWalletTonConnectRequest):
+            service_type = enums.MessageServiceType.WALLET_TON_CONNECT_REQUEST
         elif isinstance(action, raw.types.MessageActionGiveawayLaunch):
             service_type = enums.MessageServiceType.GIVEAWAY_CREATED
             giveaway_created = types.GiveawayCreated._parse(client, action)

@@ -426,6 +426,9 @@ def test_client_has_all_new_bots_methods():
         "reorder_bot_preview_medias",
         "toggle_bot_username",
         "reorder_bot_usernames",
+        "add_bot_username",
+        "remove_bot_username",
+        "check_bot_username",
         "toggle_user_emoji_status_permission",
         "update_user_emoji_status",
         "update_star_ref_program",
@@ -440,3 +443,42 @@ def test_client_has_all_new_bots_methods():
     ]
     for method in expected_methods:
         assert method in client_methods, f"Client is missing method: {method}"
+
+
+@pytest.mark.asyncio
+async def test_check_bot_username_with_additional():
+    from pyrogram.methods.bots.check_bot_username import CheckBotUsername
+
+    class _Client(_Recorder, CheckBotUsername):
+        pass
+
+    client = _Client(result=True)
+    res = await client.check_bot_username("test_bot", additional=True)
+    assert res is True
+    assert len(client.calls) == 1
+    call = client.calls[0]
+    assert isinstance(call, raw.functions.bots.CheckUsername)
+    assert call.username == "test_bot"
+    assert call.additional is True
+
+
+@pytest.mark.asyncio
+async def test_add_bot_username_and_remove_bot_username():
+    from pyrogram.methods.bots.add_bot_username import AddBotUsername
+    from pyrogram.methods.bots.remove_bot_username import RemoveBotUsername
+
+    class _Client(_Recorder, AddBotUsername, RemoveBotUsername):
+        pass
+
+    client = _Client(result=True)
+    res_add = await client.add_bot_username(12345, "extra_bot")
+    assert res_add is True
+    assert len(client.calls) == 1
+    assert isinstance(client.calls[0], raw.functions.bots.AddUsername)
+    assert client.calls[0].username == "extra_bot"
+
+    res_remove = await client.remove_bot_username(12345, "extra_bot")
+    assert res_remove is True
+    assert len(client.calls) == 2
+    assert isinstance(client.calls[1], raw.functions.bots.RemoveUsername)
+    assert client.calls[1].username == "extra_bot"

@@ -57,11 +57,21 @@ class VerifyChat:
         """
         peer = await self.resolve_peer(chat_id)
 
+        custom_desc = None
+        if custom_description:
+            if isinstance(custom_description, str) and hasattr(self, "parser"):
+                text, entities = (await self.parser.parse(custom_description)).values()
+                custom_desc = raw.types.TextWithEntities(text=text, entities=entities or [])
+            elif isinstance(custom_description, str):
+                custom_desc = raw.types.TextWithEntities(text=custom_description, entities=[])
+            else:
+                custom_desc = custom_description
+
         await self.invoke(
             raw.functions.bots.SetCustomVerification(
                 peer=peer,
                 enabled=True,
-                custom_description=custom_description,
+                custom_description=custom_desc,
             )
         )
 

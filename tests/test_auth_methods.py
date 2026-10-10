@@ -402,6 +402,7 @@ def test_client_has_all_new_auth_methods():
         "firebase_pnv_sign_up",
         "request_firebase_sms",
         "import_web_token_authorization",
+        "cancel_web_token_authorization",
         "cancel_code",
         "check_paid_auth",
         "check_recovery_password",
@@ -410,3 +411,37 @@ def test_client_has_all_new_auth_methods():
     ]
     for method in expected_methods:
         assert method in client_methods, f"Client is missing method: {method}"
+
+
+@pytest.mark.asyncio
+async def test_cancel_web_token_authorization_dispatches_query():
+    from pyrogram.methods.auth.cancel_web_token_authorization import CancelWebTokenAuthorization
+
+    class _Client(_Recorder, CancelWebTokenAuthorization):
+        pass
+
+    client = _Client(result=True)
+    res = await client.cancel_web_token_authorization("token_123")
+    assert res is True
+    assert len(client.calls) == 1
+    call = client.calls[0]
+    assert isinstance(call, raw.functions.auth.CancelWebTokenAuthorization)
+    assert call.web_auth_token == "token_123"
+
+
+@pytest.mark.asyncio
+async def test_init_firebase_pnv_login_with_except_ids():
+    from pyrogram.methods.auth.init_firebase_pnv_login import InitFirebasePnvLogin
+
+    class _Client(_Recorder, InitFirebasePnvLogin):
+        pass
+
+    client = _Client(result=True)
+    res = await client.init_firebase_pnv_login(except_ids=[111, 222])
+    assert res is True
+    assert len(client.calls) == 1
+    call = client.calls[0]
+    assert isinstance(call, raw.functions.auth.InitFirebasePnvLogin)
+    assert call.api_id == 12345
+    assert call.api_hash == "abcdef0123456789"
+    assert call.except_ids == [111, 222]

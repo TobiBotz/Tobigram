@@ -75,6 +75,7 @@ class RichText(Object):
     - :obj:`~pyrogram.types.RichTextEmailAddress`
     - :obj:`~pyrogram.types.RichTextPhoneNumber`
     - :obj:`~pyrogram.types.RichTextBankCardNumber`
+    - :obj:`~pyrogram.types.RichTextTonAddress`
     - :obj:`~pyrogram.types.RichTextMention`
     - :obj:`~pyrogram.types.RichTextHashtag`
     - :obj:`~pyrogram.types.RichTextCashtag`
@@ -249,6 +250,13 @@ class RichText(Object):
             return RichTextBankCardNumber(
                 text=content,
                 bank_card_number=_plain_text(content),
+            )
+
+        if isinstance(rich_text, raw.types.TextTonAddress):
+            content = await RichText._parse(client, rich_text.text, users, chats)
+            return RichTextTonAddress(
+                text=content,
+                address=_plain_text(content),
             )
 
         if isinstance(rich_text, raw.types.TextMention):
@@ -654,6 +662,24 @@ class RichTextBankCardNumber(RichText):
 
         self.text = text
         self.bank_card_number = bank_card_number
+
+
+class RichTextTonAddress(RichText):
+    """A text with a TON blockchain address.
+
+    Parameters:
+        text (:obj:`~pyrogram.types.RichText`):
+            The text.
+
+        address (``str``):
+            The TON blockchain address.
+    """
+
+    def __init__(self, text: types.RichText, address: str):
+        super().__init__()
+
+        self.text = text
+        self.address = address
 
 
 class RichTextMention(RichText):

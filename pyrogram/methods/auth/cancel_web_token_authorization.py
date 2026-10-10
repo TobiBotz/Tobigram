@@ -22,29 +22,29 @@ import pyrogram
 from pyrogram import raw
 
 
-class CheckBotUsername:
-    async def check_bot_username(
+class CancelWebTokenAuthorization:
+    async def cancel_web_token_authorization(
         self: pyrogram.Client,
-        username: str,
-        additional: bool | None = None,
+        web_auth_token: str,
     ) -> bool:
-        """Checks whether a username can be set for a new bot or as an additional username.
+        """Cancel a web token authorization request.
 
         .. include:: /_includes/usable-by/users.rst
 
         Parameters:
-            username (``str``):
-                Username to be checked.
-
-            additional (``bool``, *optional*):
-                Pass True to check if the username is available as an additional username for an existing bot.
+            web_auth_token (``str``):
+                The web authorization token to cancel.
 
         Returns:
-            ``bool``: True if the username can be used.
+            ``bool``: On success, True is returned.
+
+        Example:
+            .. code-block:: python
+
+                await app.cancel_web_token_authorization(token)
         """
         return await self.invoke(
-            raw.functions.bots.CheckUsername(
-                username=username,
-                additional=additional,
+            raw.functions.auth.CancelWebTokenAuthorization(
+                web_auth_token=web_auth_token,
             )
         )

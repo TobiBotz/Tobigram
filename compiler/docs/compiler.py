@@ -274,6 +274,7 @@ def pyrogram_api():
             accept_terms_of_service
             bind_temp_auth_key
             cancel_code
+            cancel_web_token_authorization
             change_phone_number
             check_paid_auth
             check_password
@@ -314,6 +315,7 @@ def pyrogram_api():
         bots="""
         Bots
             add_bot_preview_media
+            add_bot_username
             allow_bot_send_message
             answer_callback_query
             answer_chat_join_request_query
@@ -354,6 +356,7 @@ def pyrogram_api():
             refund_star_payment
             reorder_bot_preview_medias
             reorder_bot_usernames
+            remove_bot_username
             replace_managed_bot_token
             request_callback_answer
             request_web_view_button
@@ -928,6 +931,7 @@ def pyrogram_api():
             get_chat_gifts_count
             get_connected_star_ref_bot
             get_connected_star_ref_bots
+            get_currency_rates
             get_gift_auction_state
             get_gift_collections
             get_gift_upgrade_preview
@@ -1540,6 +1544,7 @@ def pyrogram_api():
             RichTextSubscript
             RichTextSuperscript
             RichTextTextMention
+            RichTextTonAddress
             RichTextUnderline
             RichTextUnsupported
             RichTextUrl
