@@ -86,14 +86,19 @@ from .restriction import Restriction
 from .saved_phone_contact import SavedPhoneContact
 from .stories_stealth_mode import StoriesStealthMode
 from .story_album import StoryAlbum
+from .ton_connect_session import TonConnectSession
 from .user import Link, User
 from .user_rating import UserRating
+from .user_ton_wallet_address import UserTonWalletAddress
 from .username import Username
 from .verification_status import VerificationStatus
 from .video_chat_ended import VideoChatEnded
 from .video_chat_members_invited import VideoChatMembersInvited
 from .video_chat_scheduled import VideoChatScheduled
 from .video_chat_started import VideoChatStarted
+from .wallet_gasless_info import WalletGaslessInfo
+from .wallet_state import WalletState
+from .wallet_transaction import WalletTransaction
 
 __all__ = [
     "AcceptedGiftTypes",
@@ -164,12 +169,17 @@ __all__ = [
     "SavedPhoneContact",
     "StoriesStealthMode",
     "StoryAlbum",
+    "TonConnectSession",
     "User",
     "UserRating",
+    "UserTonWalletAddress",
     "Username",
     "VerificationStatus",
     "VideoChatEnded",
     "VideoChatMembersInvited",
     "VideoChatScheduled",
     "VideoChatStarted",
+    "WalletGaslessInfo",
+    "WalletState",
+    "WalletTransaction",
 ]

@@ -63,6 +63,11 @@ class GramTransfer(Object):
         self.comment = comment
         self.comment_encrypted = comment_encrypted
 
+    @property
+    def amount_ton(self) -> float:
+        """The amount transferred converted to TON."""
+        return self.amount / 1_000_000_000
+
     @staticmethod
     def _parse(
         client,

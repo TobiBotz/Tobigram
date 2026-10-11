@@ -22,15 +22,15 @@ import pyrogram
 from pyrogram import raw
 
 
-class SendWalletTransfer:
-    async def send_wallet_transfer(
+class SendTonTransfer:
+    async def send_ton_transfer(
         self: pyrogram.Client,
         user_id: int | str,
         data_normal: bytes,
         data_gasless: bytes | None = None,
         random_id: int | None = None,
     ) -> raw.base.Updates:
-        """Submit a cryptocurrency transfer from the wallet, optionally using gasless relaying.
+        """Submit a TON transfer to a user from the wallet, optionally using gasless relaying.
 
         .. include:: /_includes/usable-by/users.rst
 
@@ -53,7 +53,7 @@ class SendWalletTransfer:
         Example:
             .. code-block:: python
 
-                updates = await app.send_wallet_transfer(
+                updates = await app.send_ton_transfer(
                     user_id=123456,
                     data_normal=b"...",
                 )
@@ -68,3 +68,6 @@ class SendWalletTransfer:
                 random_id=random_id if random_id is not None else self.rnd_id(),
             )
         )
+
+    # Backward compatibility alias
+    send_wallet_transfer = send_ton_transfer

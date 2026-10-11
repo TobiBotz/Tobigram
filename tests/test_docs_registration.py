@@ -143,9 +143,11 @@ def test_documented_client_methods_exist():
         "stats",
         "stickers",
         "stories",
+        "toncenter",
         "updates",
         "users",
         "utilities",
+        "wallet",
     ]
     compiler_text = COMPILER.read_text(encoding="utf-8")
     for cat in method_categories:

@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, types
 
 
 class GetUserWalletAddresses:
@@ -28,7 +28,7 @@ class GetUserWalletAddresses:
         users: list[int | str],
         addresses: list[str] | None = None,
         force: bool | None = None,
-    ) -> raw.base.wallet.UserAddresses:
+    ) -> list[types.UserTonWalletAddress]:
         """Resolve wallet addresses and public keys for a list of users.
 
         .. include:: /_includes/usable-by/users.rst
@@ -44,7 +44,7 @@ class GetUserWalletAddresses:
                 Whether to force cache invalidation.
 
         Returns:
-            :obj:`~pyrogram.raw.base.wallet.UserAddresses`: On success, the user wallet addresses are returned.
+            List of :obj:`~pyrogram.types.UserTonWalletAddress`: On success, the user wallet addresses are returned.
 
         Example:
             .. code-block:: python
@@ -53,10 +53,13 @@ class GetUserWalletAddresses:
                 print(addrs)
         """
         input_users = [await self.resolve_peer(u) for u in users]
-        return await self.invoke(
+        r = await self.invoke(
             raw.functions.wallet.GetUserAddresses(
                 id=input_users,
                 addresses=addresses or [],
                 force=force,
             )
         )
+        users_map = {u.id: u for u in r.users}
+        return [types.UserTonWalletAddress._parse(self, a, users_map) for a in r.addresses]
+

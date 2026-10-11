@@ -19,19 +19,19 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, types
 
 
 class GetWalletState:
     async def get_wallet_state(
         self: pyrogram.Client,
-    ) -> raw.base.WalletState:
+    ) -> types.WalletState:
         """Get the current wallet state and balance.
 
         .. include:: /_includes/usable-by/users.rst
 
         Returns:
-            :obj:`~pyrogram.raw.base.WalletState`: On success, the wallet state is returned.
+            :obj:`~pyrogram.types.WalletState`: On success, the wallet state is returned.
 
         Example:
             .. code-block:: python
@@ -39,4 +39,6 @@ class GetWalletState:
                 state = await app.get_wallet_state()
                 print(state)
         """
-        return await self.invoke(raw.functions.wallet.GetState())
+        r = await self.invoke(raw.functions.wallet.GetState())
+        return types.WalletState._parse(self, r)
+

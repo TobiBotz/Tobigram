@@ -19,7 +19,7 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, types
 
 
 class GetWalletTransactions:
@@ -29,7 +29,7 @@ class GetWalletTransactions:
         limit: int = 100,
         inbound: bool | None = None,
         outbound: bool | None = None,
-    ) -> raw.base.wallet.Transactions:
+    ) -> list[types.WalletTransaction]:
         """Get wallet transaction history.
 
         .. include:: /_includes/usable-by/users.rst
@@ -48,7 +48,7 @@ class GetWalletTransactions:
                 Filter for outbound transactions.
 
         Returns:
-            :obj:`~pyrogram.raw.base.wallet.Transactions`: On success, the transactions list is returned.
+            List of :obj:`~pyrogram.types.WalletTransaction`: On success, the transactions list is returned.
 
         Example:
             .. code-block:: python
@@ -56,7 +56,7 @@ class GetWalletTransactions:
                 txs = await app.get_wallet_transactions(limit=10)
                 print(txs)
         """
-        return await self.invoke(
+        r = await self.invoke(
             raw.functions.wallet.GetTransactions(
                 offset=offset,
                 limit=limit,
@@ -64,3 +64,7 @@ class GetWalletTransactions:
                 outbound=outbound,
             )
         )
+
+        users = {u.id: u for u in r.users}
+        return [types.WalletTransaction._parse(self, tx, users) for tx in r.transactions]
+

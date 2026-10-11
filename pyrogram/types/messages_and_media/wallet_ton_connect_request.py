@@ -77,6 +77,16 @@ class WalletTonConnectRequest(Object):
         self.trace_id = trace_id
         self.dapp_name = dapp_name
 
+    @property
+    def is_expired(self) -> bool:
+        """Whether the TON Connect request has expired."""
+        from datetime import datetime, timezone
+
+        now = datetime.now(timezone.utc)
+        if self.expires.tzinfo is None:
+            return now > self.expires.replace(tzinfo=timezone.utc)
+        return now > self.expires
+
     @staticmethod
     def _parse(
         client,

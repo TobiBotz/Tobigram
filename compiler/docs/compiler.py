@@ -1065,16 +1065,42 @@ def pyrogram_api():
             leave_sms_jobs
             update_sms_jobs_settings
         """,
+        toncenter="""
+        Toncenter
+            get_streaming_url
+            perform_api_request
+        """,
         wallet="""
         Wallet
+            accept_ton_connect_request
+            create_user_wallet
+            create_wallet
+            decline_ton_connect_request
+            disable_wallet_backup
+            disconnect_ton_connect_session
+            enable_wallet_backup
+            export_wallet_secret_phrase
+            fetch_encrypted_secret_phrase_part
+            get_backup_holder_dcs
             get_existing_wallet_balance
+            get_proof_challenge
+            get_ton_connect_next_event_id
+            get_ton_connect_pending
             get_ton_connect_sessions
             get_user_wallet_addresses
             get_wallet_gasless_info
             get_wallet_nfts
             get_wallet_state
             get_wallet_transactions
-            send_wallet_transfer
+            get_wallet_transactions_by_ids
+            get_wallet_transactions_by_msg_hash
+            import_wallet
+            register_ton_connect_key
+            replace_wallet
+            send_ton_transfer
+            start_ton_connect_session
+            submit_ton_connect_response
+            submit_ton_connect_result
         """,
         stats="""
         Stats
@@ -1346,7 +1372,12 @@ def pyrogram_api():
             FailedToAddMember
             Link
             Username
+            UserTonWalletAddress
             VerificationStatus
+            TonConnectSession
+            WalletGaslessInfo
+            WalletState
+            WalletTransaction
         """,
         messages_media="""
         Messages & Media

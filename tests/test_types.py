@@ -1988,6 +1988,7 @@ def test_gram_transfer_parse():
     assert parsed.transaction_id == "tx_12345"
     assert parsed.comment == "test memo"
     assert parsed.comment_encrypted is False
+    assert parsed.amount_ton == 1.0
 
 
 def test_wallet_ton_connect_request_parse():
@@ -2008,6 +2009,60 @@ def test_wallet_ton_connect_request_parse():
     assert parsed.topic == "connect"
     assert parsed.trace_id == "tr_abc"
     assert parsed.dapp_name == "TestDApp"
+    assert parsed.is_expired is True
+
+
+@pytest.mark.asyncio
+async def test_message_parse_gram_transfer():
+    client = MagicMock()
+    action = raw.types.MessageActionGramTransfer(
+        amount=5000000000,
+        peer_address="EQB...",
+        transaction_id="tx_999",
+        comment="payment",
+        comment_encrypted=False,
+    )
+    raw_msg = raw.types.MessageService(
+        id=1,
+        peer_id=raw.types.PeerUser(user_id=123),
+        date=1700000000,
+        action=action,
+    )
+    msg = await types.Message._parse(
+        client, raw_msg, {123: raw.types.User(id=123, first_name="A")}, {}
+    )
+    assert msg.service == enums.MessageServiceType.GRAM_TRANSFER
+    assert msg.gram_transfer is not None
+    assert msg.gram_transfer.amount == 5000000000
+    assert msg.gram_transfer.amount_ton == 5.0
+    assert msg.gram_transfer.transaction_id == "tx_999"
+
+
+@pytest.mark.asyncio
+async def test_message_parse_wallet_ton_connect_request():
+    client = MagicMock()
+    action = raw.types.MessageActionWalletTonConnectRequest(
+        session_id=777,
+        expires=1700000000,
+        accepted=True,
+        declined=False,
+        topic="sign",
+        trace_id="tr_777",
+        dapp_name="DApp777",
+    )
+    raw_msg = raw.types.MessageService(
+        id=2,
+        peer_id=raw.types.PeerUser(user_id=123),
+        date=1700000000,
+        action=action,
+    )
+    msg = await types.Message._parse(
+        client, raw_msg, {123: raw.types.User(id=123, first_name="A")}, {}
+    )
+    assert msg.service == enums.MessageServiceType.WALLET_TON_CONNECT_REQUEST
+    assert msg.wallet_ton_connect_request is not None
+    assert msg.wallet_ton_connect_request.session_id == 777
+    assert msg.wallet_ton_connect_request.dapp_name == "DApp777"
 
 
 @pytest.mark.asyncio

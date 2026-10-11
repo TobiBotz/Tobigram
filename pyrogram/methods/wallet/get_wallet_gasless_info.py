@@ -19,19 +19,19 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, types
 
 
 class GetWalletGaslessInfo:
     async def get_wallet_gasless_info(
         self: pyrogram.Client,
-    ) -> raw.base.Updates:
+    ) -> types.WalletGaslessInfo | None:
         """Get information about remaining gasless transactions and relay limits.
 
         .. include:: /_includes/usable-by/users.rst
 
         Returns:
-            :obj:`~pyrogram.raw.base.Updates`: On success, updates containing gasless configuration are returned.
+            :obj:`~pyrogram.types.WalletGaslessInfo` | ``None``: On success, gasless configuration is returned.
 
         Example:
             .. code-block:: python
@@ -39,4 +39,6 @@ class GetWalletGaslessInfo:
                 info = await app.get_wallet_gasless_info()
                 print(info)
         """
-        return await self.invoke(raw.functions.wallet.GetGaslessInfo())
+        r = await self.invoke(raw.functions.wallet.GetGaslessInfo())
+        return types.WalletGaslessInfo._parse(self, r)
+

@@ -19,19 +19,19 @@
 from __future__ import annotations
 
 import pyrogram
-from pyrogram import raw
+from pyrogram import raw, types
 
 
 class GetTonConnectSessions:
     async def get_ton_connect_sessions(
         self: pyrogram.Client,
-    ) -> raw.base.wallet.TonConnectSessions:
+    ) -> list[types.TonConnectSession]:
         """Fetch all active TON Connect sessions.
 
         .. include:: /_includes/usable-by/users.rst
 
         Returns:
-            :obj:`~pyrogram.raw.base.wallet.TonConnectSessions`: On success, active TON Connect sessions are returned.
+            List of :obj:`~pyrogram.types.TonConnectSession`: On success, active TON Connect sessions are returned.
 
         Example:
             .. code-block:: python
@@ -39,4 +39,6 @@ class GetTonConnectSessions:
                 sessions = await app.get_ton_connect_sessions()
                 print(sessions)
         """
-        return await self.invoke(raw.functions.wallet.TonConnectGetSessions())
+        r = await self.invoke(raw.functions.wallet.TonConnectGetSessions())
+        return [types.TonConnectSession._parse(self, s) for s in r.sessions]
+
