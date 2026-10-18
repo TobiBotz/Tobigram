@@ -269,7 +269,24 @@ class RecoverGaps:
 
             await save_state((id, local_pts, local_qts, local_date, local_seq))
 
+        total_recovered = message_updates_counter + other_updates_counter
         log.info(
             "Recovered %s messages and %s updates", message_updates_counter, other_updates_counter
         )
+
+        if total_recovered > 0 and getattr(self, "dispatcher", None) is not None:
+            async def _wait_processed(total: int):
+                try:
+                    queue = getattr(self.dispatcher, "updates_queue", None)
+                    if queue is not None:
+                        while not queue.empty():
+                            if not getattr(self, "is_connected", True):
+                                return
+                            await asyncio.sleep(0.5)
+                    log.info("All %s recovered updates processed successfully", total)
+                except Exception:
+                    pass
+
+            asyncio.create_task(_wait_processed(total_recovered))
+
         return (message_updates_counter, other_updates_counter)
